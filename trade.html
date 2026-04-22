@@ -2,19 +2,31 @@
 <html>
 <head>
   <title>Trade</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<h2>Trade Simulation</h2>
+<div class="container">
 
-<p>Balance: $<span id="balance"></span></p>
+  <div class="sidebar">
+    <h2>PocketTrading</h2>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="trade.html">Trade</a>
+  </div>
 
-<button onclick="trade()">Execute Trade ($100)</button>
+  <div class="main fade-in">
 
-<br><br>
-<a href="dashboard.html">Back</a>
+    <div class="card">
+      <h3>Trade Panel</h3>
+      <p>Balance: $<span id="balance"></span></p>
+
+      <button class="btn" onclick="trade()">Execute Trade ($100)</button>
+    </div>
+
+  </div>
+
+</div>
 
 <script type="module" src="js/app.js"></script>
-
 </body>
 </html>
