@@ -1,26 +1,63 @@
+<!-- deposit.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Deposit</title>
-<link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pocket Trading - Deposit</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <!-- Same sidebar -->
+            <div class="sidebar-logo">
+                <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+                    <rect width="40" height="40" rx="10" fill="#F7931A"/>
+                    <path d="M20 10L25 15L20 20L15 15L20 10Z" fill="white"/>
+                    <path d="M20 20L25 25L20 30L15 25L20 20Z" fill="white"/>
+                </svg>
+                <span>Pocket<span>Trading</span></span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">Dashboard</a>
+                <a href="trade.html" class="nav-item">Trade</a>
+                <a href="deposit.html" class="nav-item active">Deposit</a>
+                <a href="withdraw.html" class="nav-item">Withdraw</a>
+                <a href="profile.html" class="nav-item">Profile</a>
+            </nav>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </aside>
 
-<div class="main">
+        <main class="main-content">
+            <div class="deposit-container">
+                <h1>Deposit Funds</h1>
+                
+                <div class="deposit-methods">
+                    <div class="method-card" data-method="crypto">
+                        <div class="method-icon">₿</div>
+                        <h3>Cryptocurrency</h3>
+                        <p>Deposit with BTC, ETH, USDT</p>
+                    </div>
+                    <div class="method-card" data-method="card">
+                        <div class="method-icon">💳</div>
+                        <h3>Credit/Debit Card</h3>
+                        <p>Visa, Mastercard, Amex</p>
+                    </div>
+                    <div class="method-card" data-method="bank">
+                        <div class="method-icon">🏦</div>
+                        <h3>Bank Transfer</h3>
+                        <p>Wire transfer</p>
+                    </div>
+                </div>
 
-<h3>Deposit</h3>
+                <div id="depositForm" class="deposit-form" style="display: none;">
+                    <!-- Dynamic form will appear here -->
+                </div>
+            </div>
+        </main>
+    </div>
 
-<p>BTC: YOUR_BTC</p>
-<p>ETH: YOUR_ETH</p>
-<p>USDT: YOUR_USDT</p>
-
-<input id="amount" placeholder="Amount">
-<input type="file" id="proof">
-
-<button onclick="submitDeposit()" class="btn">Submit</button>
-
-</div>
-
-<script type="module" src="js/deposit.js"></script>
+    <script src="js/deposit.js"></script>
 </body>
 </html>
