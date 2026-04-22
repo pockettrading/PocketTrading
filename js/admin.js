@@ -1,37 +1,35 @@
-async function loadWithdrawals() {
-  const snapshot = await getDocs(collection(db, "withdrawals"));
-  let html = "";
+import { db } from "./firebase-config.js";
+import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  snapshot.forEach(docSnap => {
-    const w = docSnap.data();
+async function load() {
 
-    if (w.status === "pending") {
-      html += `
-        <div>
-          <p>$${w.amount} → ${w.wallet}</p>
-          <button onclick="approveWithdraw('${docSnap.id}', '${w.userId}', ${w.amount})">Approve</button>
-        </div>
-      `;
-    }
-  });
+const usersSnap = await getDocs(collection(db, "users"));
+usersSnap.forEach(d => {
+users.innerHTML += `<p>${d.data().email} - $${d.data().balance}</p>`;
+});
 
-  document.getElementById("withdrawals").innerHTML = html;
+const depSnap = await getDocs(collection(db, "deposits"));
+depSnap.forEach(d => {
+if(d.data().status==="pending"){
+deposits.innerHTML += `<button onclick="approveDeposit('${d.id}','${d.data().userId}',${d.data().amount})">Approve Deposit</button>`;
 }
-window.approveWithdraw = async function(id, userId, amount) {
+});
 
-  const userRef = doc(db, "users", userId);
-  const snap = await getDoc(userRef);
+const wSnap = await getDocs(collection(db, "withdrawals"));
+wSnap.forEach(d => {
+if(d.data().status==="pending"){
+withdrawals.innerHTML += `<button onclick="approveWithdraw('${d.id}','${d.data().userId}',${d.data().amount})">Approve Withdraw</button>`;
+}
+});
 
-  const newBalance = snap.data().balance - amount;
+}
 
-  await updateDoc(userRef, {
-    balance: newBalance
-  });
-
-  await updateDoc(doc(db, "withdrawals", id), {
-    status: "approved"
-  });
-
-  alert("Withdrawal approved");
-  location.reload();
+window.approveDeposit = async (id, uid, amt)=>{
+await updateDoc(doc(db,"deposits",id),{status:"approved"});
 };
+
+window.approveWithdraw = async (id, uid, amt)=>{
+await updateDoc(doc(db,"withdrawals",id),{status:"approved"});
+};
+
+load();
