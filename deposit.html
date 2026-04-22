@@ -2,24 +2,35 @@
 <html>
 <head>
   <title>Deposit</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<h2>Deposit Crypto</h2>
+<div class="container">
 
-<h3>BTC</h3>
-<p>YOUR_BTC_ADDRESS</p>
+  <div class="sidebar">
+    <h2>PocketTrading</h2>
+  </div>
 
-<h3>ETH</h3>
-<p>YOUR_ETH_ADDRESS</p>
+  <div class="main fade-in">
 
-<h3>USDT</h3>
-<p>YOUR_USDT_ADDRESS</p>
+    <div class="card">
+      <h3>Deposit Crypto</h3>
 
-<p>After sending, contact support.</p>
+      <p>BTC: YOUR_BTC_ADDRESS</p>
+      <p>ETH: YOUR_ETH_ADDRESS</p>
+      <p>USDT: YOUR_USDT_ADDRESS</p>
 
-<br>
-<a href="dashboard.html">Back</a>
+      <input id="amount" placeholder="Amount">
+      <input type="file" id="proof">
 
+      <button class="btn" onclick="submitDeposit()">Submit</button>
+    </div>
+
+  </div>
+
+</div>
+
+<script type="module" src="js/deposit.js"></script>
 </body>
 </html>
