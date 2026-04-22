@@ -17,3 +17,21 @@ async function loadWithdrawals() {
 
   document.getElementById("withdrawals").innerHTML = html;
 }
+window.approveWithdraw = async function(id, userId, amount) {
+
+  const userRef = doc(db, "users", userId);
+  const snap = await getDoc(userRef);
+
+  const newBalance = snap.data().balance - amount;
+
+  await updateDoc(userRef, {
+    balance: newBalance
+  });
+
+  await updateDoc(doc(db, "withdrawals", id), {
+    status: "approved"
+  });
+
+  alert("Withdrawal approved");
+  location.reload();
+};
