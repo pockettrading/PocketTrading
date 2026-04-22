@@ -2,22 +2,42 @@
 <html>
 <head>
   <title>Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<h2>PocketTrading Dashboard</h2>
+<div class="container">
 
-<p>Email: <span id="email"></span></p>
-<p>Account Type: <span id="type"></span></p>
-<p>Balance: $<span id="balance"></span></p>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>PocketTrading</h2>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="trade.html">Trade</a>
+    <a href="deposit.html">Deposit</a>
+    <a href="profile.html">Profile</a>
+    <a href="admin.html">Admin</a>
+  </div>
 
-<a href="trade.html">Trade</a><br>
-<a href="deposit.html">Deposit</a><br>
-<a href="profile.html">Profile</a><br>
+  <!-- Main -->
+  <div class="main fade-in">
 
-<button onclick="logout()">Logout</button>
+    <div class="card">
+      <h3>Account Info</h3>
+      <p>Email: <span id="email"></span></p>
+      <p>Type: <span id="type"></span></p>
+      <p>Balance: $<span id="balance"></span></p>
+    </div>
+
+    <div class="card">
+      <h3>Quick Actions</h3>
+      <button class="btn" onclick="location.href='trade.html'">Start Trading</button>
+      <button class="btn" onclick="location.href='deposit.html'">Deposit</button>
+    </div>
+
+  </div>
+
+</div>
 
 <script type="module" src="js/app.js"></script>
-
 </body>
 </html>
