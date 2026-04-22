@@ -6,35 +6,31 @@
 </head>
 <body>
 
+<div class="topbar">
+  <h2>PocketTrading</h2>
+  <button onclick="logout()">Logout</button>
+</div>
+
 <div class="container">
 
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h2>PocketTrading</h2>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="trade.html">Trade</a>
-    <a href="deposit.html">Deposit</a>
-    <a href="profile.html">Profile</a>
-    <a href="admin.html">Admin</a>
-  </div>
+<div class="sidebar">
+<a href="dashboard.html">Dashboard</a>
+<a href="trade.html">Trade</a>
+<a href="deposit.html">Deposit</a>
+<a href="withdraw.html">Withdraw</a>
+<a href="profile.html">Profile</a>
+<a href="admin.html">Admin</a>
+</div>
 
-  <!-- Main -->
-  <div class="main fade-in">
+<div class="main">
 
-    <div class="card">
-      <h3>Account Info</h3>
-      <p>Email: <span id="email"></span></p>
-      <p>Type: <span id="type"></span></p>
-      <p>Balance: $<span id="balance"></span></p>
-    </div>
+<div class="card">
+<p>Email: <span id="email"></span></p>
+<p>Type: <span id="type"></span></p>
+<p>Balance: $<span id="balance"></span></p>
+</div>
 
-    <div class="card">
-      <h3>Quick Actions</h3>
-      <button class="btn" onclick="location.href='trade.html'">Start Trading</button>
-      <button class="btn" onclick="location.href='deposit.html'">Deposit</button>
-    </div>
-
-  </div>
+</div>
 
 </div>
 
