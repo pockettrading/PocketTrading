@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pocket Trading - Markets</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Markets Page Specific Styles */
+        .markets-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .markets-header {
+            margin-bottom: 2rem;
+        }
+        
+        .markets-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .markets-header p {
+            color: var(--text-secondary);
+        }
+        
+        /* Stats Cards */
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow);
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .stat-change {
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        
+        .stat-change.positive {
+            color: var(--success);
+        }
+        
+        .stat-change.negative {
+            color: var(--danger);
+        }
+        
+        /* Filter Tabs */
+        .filter-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+        
+        .filter-tab {
+            padding: 8px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        
+        .filter-tab:hover {
+            color: var(--primary);
+            background: rgba(247, 147, 26, 0.1);
+        }
+        
+        .filter-tab.active {
+            color: var(--primary);
+            background: rgba(247, 147, 26, 0.1);
+        }
+        
+        /* Search Bar */
+        .search-bar {
+            margin-bottom: 1.5rem;
+        }
+        
+        .search-input {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px 16px;
+            background: var(--darker-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        /* Market Table */
+        .market-table-container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: 600px;
+        }
+        
+        .market-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .market-table th {
+            text-align: left;
+            padding: 1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            background: var(--card-bg);
+        }
+        
+        .market-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+        
+        .market-table tbody tr {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .market-table tbody tr:hover {
+            background: var(--card-hover);
+        }
+        
+        /* Crypto Info */
+        .crypto-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .crypto-icon {
+            font-size: 1.5rem;
+        }
+        
+        .crypto-name {
+            font-weight: 600;
+        }
+        
+        .crypto-symbol {
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+        }
+        
+        /* Price Change */
+        .price-change {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .price-change.positive {
+            background: rgba(0, 216, 151, 0.1);
+            color: var(--success);
+        }
+        
+        .price-change.negative {
+            background: rgba(255, 71, 87, 0.1);
+            color: var(--danger);
+        }
+        
+        /* Details Button */
+        .btn-details {
+            background: var(--darker-bg);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 6px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.8rem;
+        }
+        
+        .btn-details:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+        
+        /* Loading State */
+        .loading-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .stats-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .market-table th,
+            .market-table td {
+                padding: 0.75rem;
+                font-size: 0.75rem;
+            }
+            
+            .crypto-icon {
+                font-size: 1rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+                    <rect width="40" height="40" rx="10" fill="#F7931A"/>
+                    <path d="M20 10L25 15L20 20L15 15L20 10Z" fill="white"/>
+                    <path d="M20 20L25 25L20 30L15 25L20 20Z" fill="white"/>
+                </svg>
+                <span>Pocket<span>Trading</span></span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="home.html" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <path d="M9 22V12h6v10" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                    <span>Home</span>
+                </a>
+                <a href="markets.html" class="nav-item active">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 3v18h18M18 9l-4 4-3-3-4 4" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                    <span>Markets</span>
+                </a>
+                <a href="trade.html" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 12h18M12 3v18M16 8l4 4-4 4M8 8l-4 4 4 4" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                    <span>Trades</span>
+                </a>
+                <a href="profile.html" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+            </nav>
+
+            <div class="user-info-sidebar">
+                <div class="user-name" id="sidebarUserName">Guest</div>
+                <button class="logout-btn" onclick="handleLogout()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l4-4-4-4M20 13H9" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="markets-container">
+                <div class="markets-header">
+                    <h1>Cryptocurrency Prices</h1>
+                    <p>Track live cryptocurrency prices and market data</p>
+                </div>
+
+                <!-- Market Stats Cards -->
+                <div class="stats-cards" id="marketStats">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Market Cap</div>
+                        <div class="stat-value" id="totalMarketCap">$2.34T</div>
+                        <div class="stat-change positive" id="marketCapChange">+2.5%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">24h Volume</div>
+                        <div class="stat-value" id="totalVolume">$103.18B</div>
+                        <div class="stat-change positive" id="volumeChange">+5.2%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">BTC Dominance</div>
+                        <div class="stat-value" id="btcDominance">65.0%</div>
+                        <div class="stat-change" id="dominanceChange">-0.3%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Active Coins</div>
+                        <div class="stat-value" id="activeCoins">24</div>
+                        <div class="stat-change">+2 this week</div>
+                    </div>
+                </div>
+
+                <!-- Filter Tabs -->
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-filter="all">All Coins</button>
+                    <button class="filter-tab" data-filter="large">Large Cap</button>
+                    <button class="filter-tab" data-filter="mid">Mid Cap</button>
+                    <button class="filter-tab" data-filter="defi">DeFi</button>
+                    <button class="filter-tab" data-filter="meme">Meme Coins</button>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="search-bar">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search cryptocurrency (BTC, ETH, DOGE, etc.)">
+                </div>
+
+                <!-- Market Table -->
+                <div class="market-table-container">
+                    <table class="market-table" id="marketTable">
+                        <thead>
+                            <tr>
+                                <th>Coin</th>
+                                <th>Price</th>
+                                <th>24h Change</th>
+                                <th>Market Cap</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="marketTableBody">
+                            <tr>
+                                <td colspan="5" class="loading-state">Loading market data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/markets.js"></script>
+</body>
+</html>
