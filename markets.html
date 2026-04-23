@@ -227,6 +227,19 @@
             color: var(--text-secondary);
         }
         
+        /* User Info in Sidebar */
+        .user-info-sidebar {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+        
+        .user-name-sidebar {
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
         /* Responsive */
         @media (max-width: 768px) {
             .stats-cards {
@@ -298,8 +311,8 @@
             </nav>
 
             <div class="user-info-sidebar">
-                <div class="user-name" id="sidebarUserName">Guest</div>
-                <button class="logout-btn" onclick="handleLogout()">
+                <div class="user-name-sidebar" id="sidebarUserName">Guest</div>
+                <button class="logout-btn" onclick="handleLogout()" style="width: 100%;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l4-4-4-4M20 13H9" stroke="currentColor" stroke-width="2" fill="none"/>
                     </svg>
