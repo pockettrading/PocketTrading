@@ -1,5 +1,3 @@
-// js/auth.js - Updated for auto demo account
-
 class AuthManager {
     constructor() {
         this.users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
@@ -8,20 +6,16 @@ class AuthManager {
     }
 
     init() {
-        // Setup password strength indicator
         this.setupPasswordStrength();
         
-        // Check if we're on login page
         if (document.getElementById('loginForm')) {
             this.setupLogin();
         }
         
-        // Check if we're on register page
         if (document.getElementById('registerForm')) {
             this.setupRegister();
         }
         
-        // Auto-redirect if logged in
         if (this.currentUser && !window.location.pathname.includes('dashboard')) {
             window.location.href = 'dashboard.html';
         }
@@ -87,7 +81,6 @@ class AuthManager {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const rememberMe = document.getElementById('rememberMe')?.checked || false;
-            
             this.login(email, password, rememberMe);
         });
     }
@@ -101,7 +94,6 @@ class AuthManager {
             const confirmPassword = document.getElementById('confirmPassword').value;
             const termsAgree = document.getElementById('termsAgree').checked;
             
-            // Validation
             if (!email || !password || !confirmPassword) {
                 this.showError('Please fill in all fields');
                 return;
@@ -122,7 +114,6 @@ class AuthManager {
                 return;
             }
             
-            // Auto create demo account with $10,000
             this.register(email, password);
         });
     }
@@ -152,22 +143,20 @@ class AuthManager {
     }
 
     register(email, password) {
-        // Check if email already exists
         if (this.users.find(u => u.email === email)) {
             this.showError('Email already exists');
             return;
         }
         
-        // Create new user with DEMO account and $10,000
         const newUser = {
             id: Date.now(),
             name: email.split('@')[0],
             email: email,
             password: password,
-            demoBalance: 10000,      // Demo account balance
-            realBalance: 0,           // Real account balance (starts at 0)
-            accountMode: 'demo',      // Default to demo mode
-            hasRealAccount: false,    // Has not created real account yet
+            demoBalance: 10000,
+            realBalance: 0,
+            accountMode: 'demo',
+            hasRealAccount: false,
             created: new Date().toISOString(),
             lastLogin: new Date().toISOString(),
             transactions: [],
@@ -177,7 +166,6 @@ class AuthManager {
         this.users.push(newUser);
         localStorage.setItem('pocket_users', JSON.stringify(this.users));
         
-        // Create welcome transaction for demo funds
         this.addTransaction(newUser.id, {
             id: Date.now(),
             type: 'deposit',
@@ -196,7 +184,6 @@ class AuthManager {
         }, 1000);
     }
 
-    // Method to upgrade from demo to real account
     upgradeToRealAccount(userId, depositAmount) {
         const user = this.users.find(u => u.id === userId);
         
@@ -210,11 +197,9 @@ class AuthManager {
             return false;
         }
         
-        // Upgrade to real account
         user.hasRealAccount = true;
         user.realBalance += depositAmount;
         
-        // Add transaction record
         this.addTransaction(userId, {
             id: Date.now(),
             type: 'deposit',
@@ -228,7 +213,6 @@ class AuthManager {
         
         this.updateUser(user);
         
-        // If current user is the one upgrading, update current session
         if (this.currentUser && this.currentUser.id === userId) {
             this.currentUser = user;
             if (localStorage.getItem('pocket_user')) {
@@ -243,7 +227,6 @@ class AuthManager {
         return true;
     }
 
-    // Switch between demo and real account modes
     switchAccountMode(userId, mode) {
         const user = this.users.find(u => u.id === userId);
         
@@ -273,14 +256,12 @@ class AuthManager {
         return true;
     }
 
-    // Get current balance based on active mode
     getCurrentBalance(user) {
         if (!user) return 0;
         return user.accountMode === 'demo' ? user.demoBalance : user.realBalance;
     }
 
-    // Update balance based on trade
-    updateBalance(userId, amount, isTrade = true) {
+    updateBalance(userId, amount) {
         const user = this.users.find(u => u.id === userId);
         if (!user) return false;
         
@@ -320,7 +301,6 @@ class AuthManager {
             this.users[index] = updatedUser;
             localStorage.setItem('pocket_users', JSON.stringify(this.users));
             
-            // Update current session if it's the same user
             if (this.currentUser && this.currentUser.id === updatedUser.id) {
                 this.currentUser = updatedUser;
                 if (localStorage.getItem('pocket_user')) {
@@ -342,7 +322,6 @@ class AuthManager {
     }
 
     showNotification(message, type) {
-        // Remove existing notification
         const existing = document.querySelector('.auth-notification');
         if (existing) existing.remove();
         
@@ -379,37 +358,21 @@ class AuthManager {
     }
 }
 
-// Add CSS animations
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
     }
-    
     @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
     }
 `;
 document.head.appendChild(style);
 
-// Initialize auth
 const auth = new AuthManager();
 
-// Global functions
 function logout() {
     auth.logout();
 }
@@ -427,16 +390,18 @@ function socialRegister(provider) {
     auth.showNotification(`Sign up with ${provider} coming soon!`, 'success');
 }
 
-// Upgrade to real account function (to be called from dashboard)
 function upgradeToRealAccount(depositAmount) {
     if (auth.currentUser) {
         auth.upgradeToRealAccount(auth.currentUser.id, depositAmount);
     }
 }
 
-// Switch account mode function
 function switchAccountMode(mode) {
     if (auth.currentUser) {
         auth.switchAccountMode(auth.currentUser.id, mode);
     }
 }
+
+window.auth = auth;
+window.switchAccountMode = switchAccountMode;
+window.upgradeToRealAccount = upgradeToRealAccount;
