@@ -1,4 +1,4 @@
-// Markets page functionality
+// Markets page functionality - No redirect issues
 
 let currentUser = null;
 let currentFilter = 'all';
@@ -156,6 +156,46 @@ let cryptoData = [
         marketCap: 5100000000,
         volume: 420000000,
         category: 'meme'
+    },
+    { 
+        symbol: 'OP', 
+        name: 'Optimism', 
+        icon: 'O', 
+        price: 1.85, 
+        change: -0.5, 
+        marketCap: 2200000000,
+        volume: 180000000,
+        category: 'defi'
+    },
+    { 
+        symbol: 'ARB', 
+        name: 'Arbitrum', 
+        icon: 'A', 
+        price: 0.95, 
+        change: 1.8, 
+        marketCap: 1950000000,
+        volume: 160000000,
+        category: 'defi'
+    },
+    { 
+        symbol: 'WIF', 
+        name: 'Wif', 
+        icon: '🐕', 
+        price: 2.45, 
+        change: 12.5, 
+        marketCap: 2450000000,
+        volume: 380000000,
+        category: 'meme'
+    },
+    { 
+        symbol: 'BONK', 
+        name: 'Bonk', 
+        icon: '🐕', 
+        price: 0.000023, 
+        change: -5.2, 
+        marketCap: 1560000000,
+        volume: 250000000,
+        category: 'meme'
     }
 ];
 
@@ -175,6 +215,8 @@ function loadUser() {
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
         console.log('User logged in:', currentUser.email);
+    } else {
+        console.log('No user logged in - guest mode');
     }
 }
 
@@ -200,21 +242,30 @@ function loadMarketStats() {
     const btcDominance = (btcMarketCap / totalMarketCap * 100).toFixed(1);
     
     // Update DOM
-    document.getElementById('totalMarketCap').textContent = formatMarketCap(totalMarketCap);
-    document.getElementById('totalVolume').textContent = formatVolume(totalVolume);
-    document.getElementById('btcDominance').textContent = `${btcDominance}%`;
-    document.getElementById('activeCoins').textContent = cryptoData.length;
+    const totalMarketCapElem = document.getElementById('totalMarketCap');
+    const totalVolumeElem = document.getElementById('totalVolume');
+    const btcDominanceElem = document.getElementById('btcDominance');
+    const activeCoinsElem = document.getElementById('activeCoins');
     
-    // Calculate changes (simulated)
+    if (totalMarketCapElem) totalMarketCapElem.textContent = formatMarketCap(totalMarketCap);
+    if (totalVolumeElem) totalVolumeElem.textContent = formatVolume(totalVolume);
+    if (btcDominanceElem) btcDominanceElem.textContent = `${btcDominance}%`;
+    if (activeCoinsElem) activeCoinsElem.textContent = cryptoData.length;
+    
+    // Calculate random changes for display
     const marketCapChange = ((Math.random() - 0.5) * 5).toFixed(1);
     const marketCapChangeElem = document.getElementById('marketCapChange');
-    marketCapChangeElem.textContent = `${marketCapChange >= 0 ? '+' : ''}${marketCapChange}%`;
-    marketCapChangeElem.className = `stat-change ${marketCapChange >= 0 ? 'positive' : 'negative'}`;
+    if (marketCapChangeElem) {
+        marketCapChangeElem.textContent = `${marketCapChange >= 0 ? '+' : ''}${marketCapChange}%`;
+        marketCapChangeElem.className = `stat-change ${marketCapChange >= 0 ? 'positive' : 'negative'}`;
+    }
     
     const volumeChange = ((Math.random() - 0.5) * 8).toFixed(1);
     const volumeChangeElem = document.getElementById('volumeChange');
-    volumeChangeElem.textContent = `${volumeChange >= 0 ? '+' : ''}${volumeChange}%`;
-    volumeChangeElem.className = `stat-change ${volumeChange >= 0 ? 'positive' : 'negative'}`;
+    if (volumeChangeElem) {
+        volumeChangeElem.textContent = `${volumeChange >= 0 ? '+' : ''}${volumeChange}%`;
+        volumeChangeElem.className = `stat-change ${volumeChange >= 0 ? 'positive' : 'negative'}`;
+    }
 }
 
 function loadMarketTable() {
@@ -254,7 +305,7 @@ function loadMarketTable() {
         const changeSign = crypto.change >= 0 ? '+' : '';
         
         return `
-            <tr onclick="goToTrade('${crypto.symbol}')">
+            <tr onclick="goToTrade('${crypto.symbol}')" style="cursor: pointer;">
                 <td>
                     <div class="crypto-info">
                         <div class="crypto-icon">${crypto.icon}</div>
@@ -282,7 +333,7 @@ function loadMarketTable() {
 }
 
 function formatPrice(price, symbol) {
-    if (symbol === 'SHIB' || symbol === 'PEPE') {
+    if (symbol === 'SHIB' || symbol === 'PEPE' || symbol === 'BONK') {
         return price.toFixed(8);
     }
     if (price < 1) {
@@ -318,7 +369,8 @@ function setupEventListeners() {
     // Filter tabs
     const filterTabs = document.querySelectorAll('.filter-tab');
     filterTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
             filterTabs.forEach(t => t.classList.remove('active'));
             this.classList.add('active');
             currentFilter = this.dataset.filter;
@@ -344,20 +396,24 @@ function startPriceUpdates() {
     priceUpdateInterval = setInterval(function() {
         // Update crypto prices with random changes
         cryptoData = cryptoData.map(crypto => {
-            const volatility = crypto.symbol === 'SHIB' || crypto.symbol === 'PEPE' ? 0.02 : 0.005;
+            const volatility = crypto.symbol === 'SHIB' || crypto.symbol === 'PEPE' || crypto.symbol === 'BONK' || crypto.symbol === 'WIF' ? 0.03 : 0.005;
             const change = (Math.random() - 0.5) * 100 * volatility;
             const newPrice = Math.max(0.000001, crypto.price * (1 + change / 100));
             const percentChange = ((newPrice - crypto.price) / crypto.price) * 100;
             
             // Update volume too
             const volumeChange = (Math.random() - 0.5) * 0.1;
-            const newVolume = crypto.volume * (1 + volumeChange);
+            const newVolume = Math.max(1000000, crypto.volume * (1 + volumeChange));
+            
+            // Update market cap based on new price
+            const newMarketCap = crypto.marketCap * (newPrice / crypto.price);
             
             return {
                 ...crypto,
                 price: newPrice,
                 change: percentChange,
-                volume: newVolume
+                volume: newVolume,
+                marketCap: newMarketCap
             };
         });
         
