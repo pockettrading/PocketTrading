@@ -1,50 +1,681 @@
-<!D<!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<title>Profile</title>
-<link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pocket Trading - My Profile</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Profile Page Specific Styles */
+        .profile-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* Tabs */
+        .profile-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .tab-btn {
+            padding: 10px 24px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            border-radius: 8px;
+        }
+        
+        .tab-btn:hover {
+            color: var(--primary);
+            background: rgba(247, 147, 26, 0.1);
+        }
+        
+        .tab-btn.active {
+            color: var(--primary);
+            background: rgba(247, 147, 26, 0.1);
+        }
+        
+        /* Profile Grid */
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        
+        /* Cards */
+        .profile-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        /* User Info */
+        .user-info {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .user-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .user-email {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        /* Info Rows */
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .info-value {
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+        
+        /* KYC Status */
+        .kyc-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .kyc-pending {
+            background: rgba(255, 165, 2, 0.2);
+            color: var(--warning);
+        }
+        
+        .kyc-verified {
+            background: rgba(0, 216, 151, 0.2);
+            color: var(--success);
+        }
+        
+        .kyc-rejected {
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--danger);
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .btn-action {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            text-decoration: none;
+        }
+        
+        .btn-deposit-action {
+            background: linear-gradient(135deg, var(--success), #00b894);
+            color: white;
+            border: none;
+        }
+        
+        .btn-withdraw-action {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+        }
+        
+        .btn-action:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+        }
+        
+        /* Stat Boxes */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stat-box {
+            background: var(--darker-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        
+        .stat-value.positive {
+            color: var(--success);
+        }
+        
+        .stat-value.negative {
+            color: var(--danger);
+        }
+        
+        /* Menu Items */
+        .menu-items {
+            margin-top: 0.5rem;
+        }
+        
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 1rem;
+            background: var(--darker-bg);
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .menu-item:hover {
+            background: var(--card-hover);
+            transform: translateX(4px);
+        }
+        
+        .menu-icon {
+            font-size: 1.2rem;
+        }
+        
+        .menu-text {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        .menu-arrow {
+            color: var(--text-tertiary);
+        }
+        
+        /* Trade History Table */
+        .trade-history-table {
+            overflow-x: auto;
+        }
+        
+        .trade-history-table table {
+            width: 100%;
+        }
+        
+        .trade-history-table th {
+            text-align: left;
+            padding: 0.75rem;
+            font-size: 0.75rem;
+        }
+        
+        .trade-history-table td {
+            padding: 0.75rem;
+            font-size: 0.8rem;
+        }
+        
+        .trade-type-buy {
+            color: var(--success);
+        }
+        
+        .trade-type-sell {
+            color: var(--danger);
+        }
+        
+        /* KYC Form */
+        .kyc-form {
+            margin-top: 1rem;
+        }
+        
+        .file-upload {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 1rem;
+        }
+        
+        .file-upload:hover {
+            border-color: var(--primary);
+        }
+        
+        /* Update Profile Form */
+        .update-form .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .update-form input {
+            width: 100%;
+            padding: 12px;
+            background: var(--darker-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+        }
+        
+        .btn-save {
+            background: var(--primary);
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        @media (max-width: 768px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .profile-tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+        }
+    </style>
 </head>
 <body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+                    <rect width="40" height="40" rx="10" fill="#F7931A"/>
+                    <path d="M20 10L25 15L20 20L15 15L20 10Z" fill="white"/>
+                    <path d="M20 20L25 25L20 30L15 25L20 20Z" fill="white"/>
+                </svg>
+                <span>Pocket<span>Trading</span></span>
+            </div>
 
-<div class="main">
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/>
+                    </svg>
+                    <span>Home</span>
+                </a>
+                <a href="dashboard.html" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 3v18h18M18 9l-4 4-3-3-4 4" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                    <span>Markets</span>
+                </a>
+                <a href="trade.html" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 12h18M12 3v18M16 8l4 4-4 4M8 8l-4 4 4 4" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                    <span>Trades</span>
+                </a>
+                <a href="profile.html" class="nav-item active">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+            </nav>
 
-<p>Email: <span id="email"></span></p>
-<p>Type: <span id="type"></span></p>
+            <button class="logout-btn" onclick="handleLogout()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l4-4-4-4M20 13H9" stroke="currentColor" stroke-width="2" fill="none"/>
+                </svg>
+                <span>Logout</span>
+            </button>
+        </aside>
 
-<button onclick="logout()" class="btn">Logout</button>
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="profile-container">
+                <!-- Tabs -->
+                <div class="profile-tabs">
+                    <button class="tab-btn active" data-tab="profile">User Profile</button>
+                    <button class="tab-btn" data-tab="history">Trade History</button>
+                    <button class="tab-btn" data-tab="kyc">KYC Verification</button>
+                    <button class="tab-btn" data-tab="update">Update Profile</button>
+                    <button class="tab-btn" data-tab="support">Customer Support</button>
+                </div>
 
-</div>
+                <!-- Tab Content: User Profile -->
+                <div id="profileTab" class="tab-content active">
+                    <div class="profile-grid">
+                        <!-- Left Column -->
+                        <div>
+                            <!-- User Info Card -->
+                            <div class="profile-card">
+                                <div class="user-info">
+                                    <div class="user-avatar" id="userAvatar">JD</div>
+                                    <div class="user-name" id="profileFullName">John Doe</div>
+                                    <div class="user-email" id="profileEmail">john@example.com</div>
+                                </div>
+                                
+                                <div class="info-row">
+                                    <span class="info-label">Full Name</span>
+                                    <span class="info-value" id="infoFullName">John Doe</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Email</span>
+                                    <span class="info-value" id="infoEmail">john@example.com</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Member Since</span>
+                                    <span class="info-value" id="memberSince">4/23/2026</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Account Balance</span>
+                                    <span class="info-value" id="accountBalance">$0.00</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">KYC Status</span>
+                                    <span class="info-value">
+                                        <span class="kyc-status kyc-pending" id="kycStatus">pending</span>
+                                    </span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Daily Profit/Loss</span>
+                                    <span class="info-value" id="dailyProfitLoss">$0.00 USDT</span>
+                                </div>
+                                
+                                <div class="action-buttons">
+                                    <a href="deposit.html" class="btn-action btn-deposit-action">Deposit</a>
+                                    <a href="withdraw.html" class="btn-action btn-withdraw-action">Withdraw Funds</a>
+                                </div>
+                            </div>
+                        </div>
 
-<script type="module" src="js/app.js"></script>
-</body>
-</html>OCTYPE html>
-<html>
-<head>
-  <title>Profile</title>
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
+                        <!-- Right Column -->
+                        <div>
+                            <!-- Trading Statistics -->
+                            <div class="profile-card">
+                                <div class="card-title">Trading Statistics</div>
+                                <div class="stats-grid">
+                                    <div class="stat-box">
+                                        <div class="stat-label">Total Trades</div>
+                                        <div class="stat-value" id="totalTrades">0</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-label">Win Rate</div>
+                                        <div class="stat-value" id="winRate">0%</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-label">Total Volume</div>
+                                        <div class="stat-value" id="totalVolume">$0.00</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-label">Total Profit</div>
+                                        <div class="stat-value" id="totalProfit">$0.00</div>
+                                    </div>
+                                </div>
+                            </div>
 
-<div class="container">
+                            <!-- Menu Items -->
+                            <div class="profile-card">
+                                <div class="menu-items">
+                                    <div class="menu-item" onclick="switchTab('history')">
+                                        <span class="menu-icon">📊</span>
+                                        <span class="menu-text">Trade History</span>
+                                        <span class="menu-arrow">→</span>
+                                    </div>
+                                    <div class="menu-item" onclick="switchTab('kyc')">
+                                        <span class="menu-icon">✓</span>
+                                        <span class="menu-text">KYC Verification</span>
+                                        <span class="menu-arrow">→</span>
+                                    </div>
+                                    <div class="menu-item" onclick="switchTab('update')">
+                                        <span class="menu-icon">✎</span>
+                                        <span class="menu-text">Update Profile</span>
+                                        <span class="menu-arrow">→</span>
+                                    </div>
+                                    <div class="menu-item" onclick="switchTab('support')">
+                                        <span class="menu-icon">💬</span>
+                                        <span class="menu-text">Customer Support</span>
+                                        <span class="menu-arrow">→</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-  <div class="sidebar">
-    <h2>PocketTrading</h2>
-  </div>
+                <!-- Tab Content: Trade History -->
+                <div id="historyTab" class="tab-content" style="display: none;">
+                    <div class="profile-card">
+                        <div class="card-title">Trade History</div>
+                        <div class="trade-history-table">
+                            <table id="tradeHistoryTable">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Crypto</th>
+                                        <th>Amount</th>
+                                        <th>Price</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tradeHistoryBody">
+                                    <tr>
+                                        <td colspan="6" style="text-align: center;">No trades yet</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
-  <div class="main fade-in">
+                <!-- Tab Content: KYC Verification -->
+                <div id="kycTab" class="tab-content" style="display: none;">
+                    <div class="profile-card">
+                        <div class="card-title">KYC Verification</div>
+                        <div class="alert alert-info" style="background: rgba(247, 147, 26, 0.1); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                            <p>Please verify your identity to unlock full trading limits and withdrawal features.</p>
+                        </div>
+                        
+                        <form id="kycForm" class="kyc-form">
+                            <div class="form-group">
+                                <label>Full Name (as on ID)</label>
+                                <input type="text" id="kycFullName" placeholder="Enter your full name" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Date of Birth</label>
+                                <input type="date" id="kycDob" required>
+                            </div>
+                            <div class="form-group">
+                                <label>ID Type</label>
+                                <select id="kycIdType" style="width: 100%; padding: 12px; background: var(--darker-bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary);">
+                                    <option value="passport">Passport</option>
+                                    <option value="drivers_license">Driver's License</option>
+                                    <option value="national_id">National ID Card</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Upload ID (Front)</label>
+                                <div class="file-upload" onclick="document.getElementById('idFront').click()">
+                                    <div>📄 Click to upload front side of ID</div>
+                                    <div style="font-size: 0.75rem; margin-top: 0.5rem;">JPG, PNG (Max 5MB)</div>
+                                </div>
+                                <input type="file" id="idFront" accept="image/jpeg,image/png" style="display: none;">
+                            </div>
+                            <div class="form-group">
+                                <label>Upload ID (Back)</label>
+                                <div class="file-upload" onclick="document.getElementById('idBack').click()">
+                                    <div>📄 Click to upload back side of ID</div>
+                                    <div style="font-size: 0.75rem; margin-top: 0.5rem;">JPG, PNG (Max 5MB)</div>
+                                </div>
+                                <input type="file" id="idBack" accept="image/jpeg,image/png" style="display: none;">
+                            </div>
+                            <div class="form-group">
+                                <label>Selfie with ID</label>
+                                <div class="file-upload" onclick="document.getElementById('selfie').click()">
+                                    <div>📸 Click to upload selfie holding ID</div>
+                                    <div style="font-size: 0.75rem; margin-top: 0.5rem;">JPG, PNG (Max 5MB)</div>
+                                </div>
+                                <input type="file" id="selfie" accept="image/jpeg,image/png" style="display: none;">
+                            </div>
+                            <button type="submit" class="btn-save">Submit KYC</button>
+                        </form>
+                    </div>
+                </div>
 
-    <div class="card">
-      <h3>Profile</h3>
-      <p>Email: <span id="email"></span></p>
-      <p>Type: <span id="type"></span></p>
+                <!-- Tab Content: Update Profile -->
+                <div id="updateTab" class="tab-content" style="display: none;">
+                    <div class="profile-card">
+                        <div class="card-title">Update Profile</div>
+                        <form id="updateProfileForm" class="update-form">
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input type="text" id="updateFullName" placeholder="Enter your full name">
+                            </div>
+                            <div class="form-group">
+                                <label>Email Address</label>
+                                <input type="email" id="updateEmail" placeholder="Enter your email">
+                            </div>
+                            <div class="form-group">
+                                <label>Phone Number</label>
+                                <input type="tel" id="updatePhone" placeholder="Enter your phone number">
+                            </div>
+                            <div class="form-group">
+                                <label>Country</label>
+                                <select id="updateCountry" style="width: 100%; padding: 12px; background: var(--darker-bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary);">
+                                    <option value="">Select Country</option>
+                                    <option value="USA">United States</option>
+                                    <option value="UK">United Kingdom</option>
+                                    <option value="Canada">Canada</option>
+                                    <option value="Australia">Australia</option>
+                                    <option value="Germany">Germany</option>
+                                    <option value="France">France</option>
+                                    <option value="Japan">Japan</option>
+                                    <option value="Singapore">Singapore</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Change Password</label>
+                                <input type="password" id="newPassword" placeholder="New password (leave blank to keep current)">
+                            </div>
+                            <div class="form-group">
+                                <label>Confirm Password</label>
+                                <input type="password" id="confirmPassword" placeholder="Confirm new password">
+                            </div>
+                            <button type="submit" class="btn-save">Save Changes</button>
+                        </form>
+                    </div>
+                </div>
 
-      <button class="btn" onclick="logout()">Logout</button>
+                <!-- Tab Content: Customer Support -->
+                <div id="supportTab" class="tab-content" style="display: none;">
+                    <div class="profile-card">
+                        <div class="card-title">Customer Support</div>
+                        <div class="alert alert-info" style="background: rgba(247, 147, 26, 0.1); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                            <p>📧 Email: support@pockettrading.com</p>
+                            <p>💬 Live Chat: 24/7 Available</p>
+                            <p>📞 Phone: +1 (800) 123-4567</p>
+                        </div>
+                        
+                        <form id="supportForm">
+                            <div class="form-group">
+                                <label>Subject</label>
+                                <input type="text" id="supportSubject" placeholder="Enter subject" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Message</label>
+                                <textarea id="supportMessage" rows="5" placeholder="Describe your issue..." style="width: 100%; padding: 12px; background: var(--darker-bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary);" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Attach Screenshot (Optional)</label>
+                                <div class="file-upload" onclick="document.getElementById('supportAttachment').click()">
+                                    <div>📎 Click to attach file</div>
+                                </div>
+                                <input type="file" id="supportAttachment" accept="image/jpeg,image/png" style="display: none;">
+                            </div>
+                            <button type="submit" class="btn-save">Send Message</button>
+                        </form>
+                        
+                        <div class="faq-section" style="margin-top: 2rem;">
+                            <div class="card-title">Frequently Asked Questions</div>
+                            <div class="info-row">
+                                <span class="info-label">How to deposit?</span>
+                                <span class="info-value">Go to Deposit page and follow instructions</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">How long do withdrawals take?</span>
+                                <span class="info-value">24-48 hours for processing</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">What are the fees?</span>
+                                <span class="info-value">0.1% trading fee, no deposit fee</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
-  </div>
-
-</div>
-
-<script type="module" src="js/app.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/profile.js"></script>
 </body>
 </html>
