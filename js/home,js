@@ -1,0 +1,146 @@
+// Home page functionality
+
+let currentUser = null;
+let cryptoPrices = {
+    BTC: { price: 43250.00, change: 2.5, volume: '32.5B', icon: '₿', name: 'Bitcoin' },
+    ETH: { price: 2250.80, change: 1.8, volume: '15.2B', icon: 'Ξ', name: 'Ethereum' },
+    BNB: { price: 305.60, change: -0.5, volume: '2.1B', icon: 'B', name: 'Binance Coin' },
+    SOL: { price: 98.40, change: 5.2, volume: '1.8B', icon: 'S', name: 'Solana' },
+    XRP: { price: 0.62, change: 0.3, volume: '1.2B', icon: 'X', name: 'Ripple' },
+    ADA: { price: 0.48, change: -1.2, volume: '0.8B', icon: 'A', name: 'Cardano' },
+    DOGE: { price: 0.12, change: 3.2, volume: '0.9B', icon: 'Ð', name: 'Dogecoin' },
+    DOT: { price: 6.85, change: -0.8, volume: '0.5B', icon: '●', name: 'Polkadot' }
+};
+let priceUpdateInterval = null;
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Home page loaded');
+    loadUser();
+    updateUserDisplay();
+    loadUserStats();
+    loadMarketData();
+    startPriceUpdates();
+});
+
+function loadUser() {
+    const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
+    if (storedUser) {
+        currentUser = JSON.parse(storedUser);
+        console.log('User logged in:', currentUser.email);
+    } else {
+        console.log('No user logged in - guest mode');
+    }
+}
+
+function updateUserDisplay() {
+    const userNameSpan = document.getElementById('userNameText');
+    if (userNameSpan) {
+        if (currentUser) {
+            const displayName = currentUser.name || currentUser.email.split('@')[0];
+            userNameSpan.textContent = displayName;
+        } else {
+            userNameSpan.textContent = 'Guest';
+        }
+    }
+}
+
+function loadUserStats() {
+    if (!currentUser) {
+        // Guest mode - show placeholder stats
+        document.getElementById('userBalance').textContent = '$0';
+        document.getElementById('totalTrades').textContent = '0';
+        document.getElementById('winRate').textContent = '0%';
+        document.getElementById('totalProfit').textContent = '$0';
+        return;
+    }
+    
+    // Get current balance
+    const currentBalance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
+    document.getElementById('userBalance').textContent = `$${currentBalance.toFixed(2)}`;
+    
+    // Calculate trading stats
+    const transactions = currentUser.transactions || [];
+    const trades = transactions.filter(t => t.type === 'trade' || t.type === 'buy' || t.type === 'sell');
+    
+    const totalTrades = trades.length;
+    
+    let winningTrades = 0;
+    let totalProfit = 0;
+    
+    trades.forEach(trade => {
+        if (trade.pnl) {
+            totalProfit += trade.pnl;
+            if (trade.pnl > 0) winningTrades++;
+        }
+    });
+    
+    const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100).toFixed(1) : 0;
+    
+    document.getElementById('totalTrades').textContent = totalTrades;
+    document.getElementById('winRate').textContent = `${winRate}%`;
+    
+    const profitElem = document.getElementById('totalProfit');
+    const profitSign = totalProfit >= 0 ? '+' : '';
+    profitElem.textContent = `${profitSign}$${totalProfit.toFixed(2)}`;
+    profitElem.style.color = totalProfit >= 0 ? 'var(--success)' : 'var(--danger)';
+}
+
+function loadMarketData() {
+    const tbody = document.getElementById('marketTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = Object.entries(cryptoPrices).map(([symbol, data]) => {
+        const changeClass = data.change >= 0 ? 'positive' : 'negative';
+        const changeSign = data.change >= 0 ? '+' : '';
+        
+        return `
+            <tr onclick="window.location.href='trade.html?crypto=${symbol}'" style="cursor: pointer;">
+                <td>
+                    <div class="market-crypto">
+                        <span class="market-icon">${data.icon}</span>
+                        <div>
+                            <div><strong>${symbol}</strong></div>
+                            <div style="font-size: 0.7rem; color: var(--text-tertiary);">${data.name}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>$${data.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td class="${changeClass}">${changeSign}${data.change.toFixed(2)}%</td>
+                <td>$${data.volume}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function startPriceUpdates() {
+    if (priceUpdateInterval) {
+        clearInterval(priceUpdateInterval);
+    }
+    
+    priceUpdateInterval = setInterval(function() {
+        // Update crypto prices
+        Object.keys(cryptoPrices).forEach(symbol => {
+            const change = (Math.random() - 0.5) * 100;
+            const newPrice = Math.max(0.01, cryptoPrices[symbol].price + change);
+            const percentChange = ((newPrice - cryptoPrices[symbol].price) / cryptoPrices[symbol].price) * 100;
+            
+            cryptoPrices[symbol] = {
+                ...cryptoPrices[symbol],
+                price: newPrice,
+                change: percentChange
+            };
+        });
+        
+        loadMarketData();
+    }, 10000); // Update every 10 seconds
+}
+
+function handleLogout() {
+    localStorage.removeItem('pocket_user');
+    sessionStorage.removeItem('pocket_user');
+    window.location.href = 'login.html';
+}
+
+// Make functions global
+window.handleLogout = handleLogout;
