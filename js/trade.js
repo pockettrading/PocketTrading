@@ -2,25 +2,42 @@
 
 class TradeManager {
     constructor() {
-        this.user = JSON.parse(localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user'));
+        // Get user from storage
+        this.user = null;
+        this.loadUser();
+        
         this.orderType = 'buy';
         this.cryptoPrices = {
             BTC: { price: 43250.00, change: 2.5, icon: '₿', name: 'Bitcoin' },
             ETH: { price: 2250.80, change: 1.8, icon: 'Ξ', name: 'Ethereum' },
             BNB: { price: 305.60, change: -0.5, icon: 'B', name: 'Binance Coin' },
-            SOL: { price: 98.40, change: 5.2, icon: 'S', name: 'Solana' }
+            SOL: { price: 98.40, change: 5.2, icon: 'S', name: 'Solana' },
+            XRP: { price: 0.62, change: 0.3, icon: 'X', name: 'Ripple' },
+            ADA: { price: 0.48, change: -1.2, icon: 'A', name: 'Cardano' }
         };
         this.selectedCrypto = 'BTC';
         this.openOrders = JSON.parse(localStorage.getItem('pocket_orders') || '[]');
         this.tradeHistory = JSON.parse(localStorage.getItem('pocket_trade_history') || '[]');
-        this.init();
-    }
-
-    init() {
+        this.priceUpdateInterval = null;
+        
+        // Check if user is logged in
         if (!this.user) {
             window.location.href = 'login.html';
             return;
         }
+        
+        this.init();
+    }
+
+    loadUser() {
+        // Try to get user from localStorage or sessionStorage
+        const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
+        if (storedUser) {
+            this.user = JSON.parse(storedUser);
+        }
+    }
+
+    init() {
         this.setupEventListeners();
         this.updateBalance();
         this.loadMarketPrices();
@@ -31,6 +48,8 @@ class TradeManager {
     }
 
     updateBalance() {
+        if (!this.user) return;
+        
         const currentBalance = this.user.accountMode === 'demo' ? this.user.demoBalance : this.user.realBalance;
         const balanceElement = document.getElementById('availableBalance');
         const badgeElement = document.getElementById('accountBadge');
@@ -47,18 +66,31 @@ class TradeManager {
 
     setupEventListeners() {
         // Order type tabs (Buy/Sell)
-        document.querySelectorAll('.order-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                const orderType = tab.dataset.order;
-                this.setOrderType(orderType);
+        const buyTab = document.querySelector('.order-tab[data-order="buy"]');
+        const sellTab = document.querySelector('.order-tab[data-order="sell"]');
+        
+        if (buyTab) {
+            buyTab.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.setOrderType('buy');
             });
-        });
+        }
+        
+        if (sellTab) {
+            sellTab.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.setOrderType('sell');
+            });
+        }
 
         // Order type radio (Market/Limit)
         document.querySelectorAll('input[name="orderType"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
                 const limitGroup = document.getElementById('limitPriceGroup');
-                limitGroup.style.display = e.target.value === 'limit' ? 'block' : 'none';
+                if (limitGroup) {
+                    limitGroup.style.display = e.target.value === 'limit' ? 'block' : 'none';
+                }
+                this.calculateTotal();
             });
         });
 
@@ -71,6 +103,7 @@ class TradeManager {
         // Quick amount buttons
         document.querySelectorAll('.quick-amount').forEach(btn => {
             btn.addEventListener('click', (e) => {
+                e.preventDefault();
                 const percent = parseInt(btn.dataset.percent);
                 this.setQuickAmount(percent);
             });
@@ -81,26 +114,32 @@ class TradeManager {
         const cryptoDropdown = document.getElementById('cryptoDropdown');
         
         if (selectedCrypto) {
-            selectedCrypto.addEventListener('click', () => {
-                cryptoDropdown.style.display = cryptoDropdown.style.display === 'none' ? 'block' : 'none';
+            selectedCrypto.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (cryptoDropdown) {
+                    cryptoDropdown.style.display = cryptoDropdown.style.display === 'none' ? 'block' : 'none';
+                }
             });
         }
 
         // Crypto options
         document.querySelectorAll('.crypto-option').forEach(option => {
-            option.addEventListener('click', () => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const symbol = option.dataset.symbol;
                 const name = option.dataset.name;
                 const icon = option.dataset.icon;
                 this.changeCrypto(symbol, name, icon);
-                cryptoDropdown.style.display = 'none';
+                if (cryptoDropdown) {
+                    cryptoDropdown.style.display = 'none';
+                }
             });
         });
 
         // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.crypto-selector')) {
-                if (cryptoDropdown) cryptoDropdown.style.display = 'none';
+            if (cryptoDropdown && !e.target.closest('.crypto-selector')) {
+                cryptoDropdown.style.display = 'none';
             }
         });
 
@@ -136,7 +175,7 @@ class TradeManager {
         const placeOrderBtn = document.getElementById('placeOrderBtn');
         if (placeOrderBtn) {
             const crypto = this.selectedCrypto;
-            const cryptoName = this.cryptoPrices[crypto].name;
+            const cryptoName = this.cryptoPrices[crypto]?.name || crypto;
             
             if (type === 'buy') {
                 placeOrderBtn.textContent = `Buy ${cryptoName} (${crypto})`;
@@ -151,8 +190,10 @@ class TradeManager {
     }
 
     setQuickAmount(percent) {
+        if (!this.user) return;
+        
         const currentBalance = this.user.accountMode === 'demo' ? this.user.demoBalance : this.user.realBalance;
-        const currentPrice = this.cryptoPrices[this.selectedCrypto].price;
+        const currentPrice = this.cryptoPrices[this.selectedCrypto]?.price || 0;
         const maxAmount = currentBalance / currentPrice;
         const amount = maxAmount * (percent / 100);
         
@@ -164,14 +205,14 @@ class TradeManager {
     }
 
     calculateTotal() {
-        const amount = parseFloat(document.getElementById('amount').value) || 0;
-        const currentPrice = this.cryptoPrices[this.selectedCrypto].price;
+        const amount = parseFloat(document.getElementById('amount')?.value || 0);
+        const currentPrice = this.cryptoPrices[this.selectedCrypto]?.price || 0;
         const orderTypeRadio = document.querySelector('input[name="orderType"]:checked');
         const isLimit = orderTypeRadio && orderTypeRadio.value === 'limit';
         
         let price = currentPrice;
         if (isLimit) {
-            const limitPrice = parseFloat(document.getElementById('limitPrice').value);
+            const limitPrice = parseFloat(document.getElementById('limitPrice')?.value || 0);
             if (limitPrice && limitPrice > 0) {
                 price = limitPrice;
             }
@@ -181,9 +222,13 @@ class TradeManager {
         const fee = total * 0.001; // 0.1% fee
         const totalCost = this.orderType === 'buy' ? total + fee : total - fee;
         
-        document.getElementById('totalValue').textContent = `$${total.toFixed(2)}`;
-        document.getElementById('feeAmount').textContent = `$${fee.toFixed(2)}`;
-        document.getElementById('totalCost').textContent = `$${totalCost.toFixed(2)}`;
+        const totalValueElem = document.getElementById('totalValue');
+        const feeAmountElem = document.getElementById('feeAmount');
+        const totalCostElem = document.getElementById('totalCost');
+        
+        if (totalValueElem) totalValueElem.textContent = `$${total.toFixed(2)}`;
+        if (feeAmountElem) feeAmountElem.textContent = `$${fee.toFixed(2)}`;
+        if (totalCostElem) totalCostElem.textContent = `$${totalCost.toFixed(2)}`;
         
         return { total, fee, totalCost, price };
     }
@@ -220,6 +265,8 @@ class TradeManager {
 
     updateCurrentPrice() {
         const crypto = this.cryptoPrices[this.selectedCrypto];
+        if (!crypto) return;
+        
         const priceElement = document.getElementById('currentPrice');
         const changeElement = document.getElementById('priceChange');
         
@@ -235,7 +282,13 @@ class TradeManager {
     }
 
     placeOrder() {
-        const amount = parseFloat(document.getElementById('amount').value);
+        if (!this.user) {
+            this.showNotification('Please login to trade', 'error');
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        const amount = parseFloat(document.getElementById('amount')?.value || 0);
         const orderTypeRadio = document.querySelector('input[name="orderType"]:checked');
         const isLimit = orderTypeRadio && orderTypeRadio.value === 'limit';
         
@@ -244,11 +297,11 @@ class TradeManager {
             return;
         }
         
-        const currentPrice = this.cryptoPrices[this.selectedCrypto].price;
+        const currentPrice = this.cryptoPrices[this.selectedCrypto]?.price || 0;
         let price = currentPrice;
         
         if (isLimit) {
-            const limitPrice = parseFloat(document.getElementById('limitPrice').value);
+            const limitPrice = parseFloat(document.getElementById('limitPrice')?.value || 0);
             if (!limitPrice || limitPrice <= 0) {
                 this.showNotification('Please enter a valid limit price', 'error');
                 return;
@@ -277,11 +330,11 @@ class TradeManager {
             }
             
             this.addTransaction('buy', this.selectedCrypto, amount, price, total, fee);
-            this.updateUserData();
+            this.saveUserData();
             
             this.showNotification(`Successfully bought ${amount.toFixed(6)} ${this.selectedCrypto} at $${price.toFixed(2)}`, 'success');
         } else {
-            // Check if user has enough crypto (simplified - in real app you'd track holdings)
+            // Process sell order
             const newBalance = currentBalance + totalCost;
             if (this.user.accountMode === 'demo') {
                 this.user.demoBalance = newBalance;
@@ -290,16 +343,17 @@ class TradeManager {
             }
             
             this.addTransaction('sell', this.selectedCrypto, amount, price, total, fee);
-            this.updateUserData();
+            this.saveUserData();
             
             this.showNotification(`Successfully sold ${amount.toFixed(6)} ${this.selectedCrypto} at $${price.toFixed(2)}`, 'success');
         }
         
         // Reset form
-        document.getElementById('amount').value = '';
-        if (isLimit) {
-            document.getElementById('limitPrice').value = '';
-        }
+        const amountInput = document.getElementById('amount');
+        if (amountInput) amountInput.value = '';
+        
+        const limitPriceInput = document.getElementById('limitPrice');
+        if (limitPriceInput && isLimit) limitPriceInput.value = '';
         
         this.updateBalance();
         this.calculateTotal();
@@ -327,17 +381,16 @@ class TradeManager {
         
         // Add to trade history
         this.tradeHistory.unshift(transaction);
-        localStorage.setItem('pocket_trade_history', JSON.stringify(this.tradeHistory.slice(0, 50))); // Keep last 50 trades
+        // Keep only last 50 trades
+        localStorage.setItem('pocket_trade_history', JSON.stringify(this.tradeHistory.slice(0, 50)));
         
         // Update user stats
         if (!this.user.stats) this.user.stats = {};
         this.user.stats.totalTrades = (this.user.stats.totalTrades || 0) + 1;
         this.user.stats.totalVolume = (this.user.stats.totalVolume || 0) + total;
-        
-        this.updateUserData();
     }
 
-    updateUserData() {
+    saveUserData() {
         // Update in users array
         const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
         const userIndex = users.findIndex(u => u.id === this.user.id);
@@ -387,7 +440,7 @@ class TradeManager {
         const container = document.getElementById('openOrdersList');
         if (!container) return;
         
-        const userOpenOrders = this.openOrders.filter(order => order.userId === this.user.id);
+        const userOpenOrders = this.openOrders.filter(order => order.userId === this.user?.id);
         
         if (userOpenOrders.length === 0) {
             container.innerHTML = '<div class="empty-state">No open orders</div>';
@@ -409,6 +462,8 @@ class TradeManager {
     loadTradeHistory() {
         const container = document.getElementById('tradeHistory');
         if (!container) return;
+        
+        if (!this.user) return;
         
         const userTrades = this.tradeHistory.filter(trade => trade.accountMode === this.user.accountMode).slice(0, 10);
         
@@ -438,7 +493,12 @@ class TradeManager {
     }
 
     startPriceUpdates() {
-        setInterval(() => {
+        // Clear existing interval if any
+        if (this.priceUpdateInterval) {
+            clearInterval(this.priceUpdateInterval);
+        }
+        
+        this.priceUpdateInterval = setInterval(() => {
             // Simulate price changes
             Object.keys(this.cryptoPrices).forEach(crypto => {
                 const change = (Math.random() - 0.5) * 100;
@@ -455,12 +515,22 @@ class TradeManager {
             this.loadMarketPrices();
             this.updateCurrentPrice();
             this.calculateTotal();
+            
+            // Update last updated timestamp
+            const lastUpdated = document.getElementById('lastUpdated');
+            if (lastUpdated) {
+                lastUpdated.textContent = new Date().toLocaleTimeString();
+            }
         }, 5000);
     }
 
     showNotification(message, type) {
+        // Remove existing notification
+        const existing = document.querySelector('.trade-notification');
+        if (existing) existing.remove();
+        
         const notification = document.createElement('div');
-        notification.className = `notification-${type}`;
+        notification.className = `trade-notification notification-${type}`;
         notification.textContent = message;
         notification.style.cssText = `
             position: fixed;
@@ -483,11 +553,18 @@ class TradeManager {
             setTimeout(() => notification.remove(), 300);
         }, 3000);
     }
+
+    // Clean up on page unload
+    destroy() {
+        if (this.priceUpdateInterval) {
+            clearInterval(this.priceUpdateInterval);
+        }
+    }
 }
 
 // Global functions
 function clearAllOrders() {
-    if (window.tradeManager) {
+    if (window.tradeManager && window.tradeManager.user) {
         window.tradeManager.openOrders = window.tradeManager.openOrders.filter(o => o.userId !== window.tradeManager.user.id);
         localStorage.setItem('pocket_orders', JSON.stringify(window.tradeManager.openOrders));
         window.tradeManager.loadOpenOrders();
@@ -495,10 +572,28 @@ function clearAllOrders() {
     }
 }
 
-// Initialize trade manager
+function logout() {
+    if (window.auth) {
+        window.auth.logout();
+    } else {
+        localStorage.removeItem('pocket_user');
+        sessionStorage.removeItem('pocket_user');
+        window.location.href = 'login.html';
+    }
+}
+
+// Initialize trade manager when page loads
 document.addEventListener('DOMContentLoaded', () => {
     window.tradeManager = new TradeManager();
 });
 
+// Clean up on page unload
+window.addEventListener('beforeunload', () => {
+    if (window.tradeManager) {
+        window.tradeManager.destroy();
+    }
+});
+
 // Make functions globally available
 window.clearAllOrders = clearAllOrders;
+window.logout = logout;
