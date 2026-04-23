@@ -6,6 +6,326 @@
     <title>Pocket Trading - Trade</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Additional inline styles to ensure trading page works */
+        .trade-container {
+            margin-top: 1rem;
+        }
+        .trade-grid {
+            display: grid;
+            grid-template-columns: 1fr 0.8fr;
+            gap: 1.5rem;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        .order-type-tabs {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1.5rem 1.5rem 0 1.5rem;
+        }
+        .order-tab {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            background: var(--darker-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        .order-tab.active {
+            background: rgba(247, 147, 26, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .trade-form {
+            padding: 1.5rem;
+        }
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .current-price {
+            background: var(--darker-bg);
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 1.25rem;
+        }
+        .price-display {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+        }
+        .price-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .price-change {
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+        .price-change.positive {
+            color: var(--success);
+            background: rgba(0, 216, 151, 0.1);
+        }
+        .price-change.negative {
+            color: var(--danger);
+            background: rgba(255, 71, 87, 0.1);
+        }
+        .order-type-selector {
+            display: flex;
+            gap: 1rem;
+        }
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        .amount-input-wrapper input {
+            width: 100%;
+            padding: 12px;
+            background: var(--darker-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+        .quick-amounts {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .quick-amount {
+            flex: 1;
+            padding: 6px;
+            background: var(--darker-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.75rem;
+        }
+        .quick-amount:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .order-summary {
+            background: var(--darker-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.25rem;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+        .summary-row.total {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+            font-size: 1rem;
+            font-weight: 700;
+        }
+        .btn-buy, .btn-sell {
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+        .btn-buy {
+            background: linear-gradient(135deg, var(--success), #00b894);
+            color: white;
+        }
+        .btn-sell {
+            background: linear-gradient(135deg, var(--danger), #ff6b6b);
+            color: white;
+        }
+        .market-prices {
+            padding: 0.5rem;
+        }
+        .market-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .market-item:hover {
+            background: var(--card-hover);
+        }
+        .market-item-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .market-icon {
+            font-size: 1.2rem;
+        }
+        .market-symbol {
+            font-weight: 600;
+        }
+        .market-name {
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+        }
+        .market-item-price {
+            text-align: right;
+        }
+        .market-price {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .market-change {
+            font-size: 0.75rem;
+        }
+        .market-change.positive {
+            color: var(--success);
+        }
+        .market-change.negative {
+            color: var(--danger);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-tertiary);
+        }
+        .btn-small {
+            padding: 6px 12px;
+            background: var(--darker-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        .open-orders-list, .trade-history {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .order-item, .trade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .order-info, .trade-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .order-type, .trade-type {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .order-type.buy, .trade-type.buy {
+            background: rgba(0, 216, 151, 0.2);
+            color: var(--success);
+        }
+        .order-type.sell, .trade-type.sell {
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--danger);
+        }
+        .order-cancel {
+            padding: 4px 12px;
+            background: rgba(255, 71, 87, 0.1);
+            border: none;
+            border-radius: 6px;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        .trade-total {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .trade-time {
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+        }
+        .crypto-selector {
+            position: relative;
+        }
+        .selected-crypto {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--darker-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+        }
+        .crypto-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-top: 4px;
+            z-index: 10;
+        }
+        .crypto-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            cursor: pointer;
+        }
+        .crypto-option:hover {
+            background: var(--card-hover);
+        }
+        @media (max-width: 968px) {
+            .trade-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -53,7 +373,7 @@
                 </a>
             </nav>
 
-            <button class="logout-btn" onclick="logout()">
+            <button class="logout-btn" onclick="handleLogout()">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l4-4-4-4M20 13H9" stroke="currentColor" stroke-width="2" fill="none"/>
                 </svg>
@@ -93,13 +413,13 @@
                             
                             <!-- Order Type Toggle -->
                             <div class="order-type-tabs">
-                                <button class="order-tab active" data-order="buy">
+                                <button class="order-tab active" id="buyTab">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                                         <path d="M12 5v14M7 10l5-5 5 5" stroke="currentColor" stroke-width="2"/>
                                     </svg>
                                     Buy
                                 </button>
-                                <button class="order-tab" data-order="sell">
+                                <button class="order-tab" id="sellTab">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                                         <path d="M12 19V5M7 14l5 5 5-5" stroke="currentColor" stroke-width="2"/>
                                     </svg>
@@ -149,20 +469,6 @@
                                                     <div class="crypto-name">Solana</div>
                                                 </div>
                                             </div>
-                                            <div class="crypto-option" data-symbol="XRP" data-name="Ripple" data-icon="X">
-                                                <span class="crypto-icon">X</span>
-                                                <div>
-                                                    <div class="crypto-symbol">XRP</div>
-                                                    <div class="crypto-name">Ripple</div>
-                                                </div>
-                                            </div>
-                                            <div class="crypto-option" data-symbol="ADA" data-name="Cardano" data-icon="A">
-                                                <span class="crypto-icon">A</span>
-                                                <div>
-                                                    <div class="crypto-symbol">ADA</div>
-                                                    <div class="crypto-name">Cardano</div>
-                                                </div>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -172,7 +478,7 @@
                                     <label>Current Price</label>
                                     <div class="price-display">
                                         <span class="price-value" id="currentPrice">$43,250.00</span>
-                                        <span class="price-change" id="priceChange">+2.5%</span>
+                                        <span class="price-change positive" id="priceChange">+2.5%</span>
                                     </div>
                                 </div>
 
@@ -191,7 +497,7 @@
                                     </div>
                                 </div>
 
-                                <!-- Limit Price (Hidden by default) -->
+                                <!-- Limit Price -->
                                 <div class="form-group" id="limitPriceGroup" style="display: none;">
                                     <label>Limit Price (USD)</label>
                                     <input type="number" id="limitPrice" placeholder="Enter limit price" step="0.01">
@@ -228,8 +534,8 @@
                                 </div>
 
                                 <!-- Place Order Button -->
-                                <button type="submit" class="btn-buy btn-block" id="placeOrderBtn">
-                                    Buy BTC
+                                <button type="submit" class="btn-buy" id="placeOrderBtn">
+                                    Buy Bitcoin (BTC)
                                 </button>
                             </form>
                         </div>
@@ -243,7 +549,7 @@
                                 <span class="last-updated" id="lastUpdated">Live</span>
                             </div>
                             <div class="market-prices" id="marketPrices">
-                                <!-- Market prices will be populated by JavaScript -->
+                                Loading...
                             </div>
                         </div>
 
@@ -251,7 +557,7 @@
                         <div class="card">
                             <div class="card-header">
                                 <h3>Open Orders</h3>
-                                <button class="btn-small" onclick="clearAllOrders()">Clear All</button>
+                                <button class="btn-small" id="clearOrdersBtn">Clear All</button>
                             </div>
                             <div class="open-orders-list" id="openOrdersList">
                                 <div class="empty-state">No open orders</div>
@@ -273,7 +579,6 @@
         </main>
     </div>
 
-    <script src="js/auth.js"></script>
     <script src="js/trade.js"></script>
 </body>
 </html>
