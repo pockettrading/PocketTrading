@@ -1,4 +1,3 @@
-<!-- dashboard.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -82,6 +81,32 @@
                 </div>
             </div>
 
+            <!-- Account Mode Switcher -->
+            <div class="account-mode-section">
+                <div class="mode-switcher">
+                    <button class="mode-btn active" data-mode="demo" onclick="switchAccountMode('demo')">
+                        <span class="mode-icon">📊</span>
+                        <div class="mode-info">
+                            <div class="mode-name">Demo Account</div>
+                            <div class="mode-balance" id="demoBalance">$10,000.00</div>
+                        </div>
+                    </button>
+                    <button class="mode-btn" data-mode="real" onclick="switchAccountMode('real')">
+                        <span class="mode-icon">💰</span>
+                        <div class="mode-info">
+                            <div class="mode-name">Real Account</div>
+                            <div class="mode-balance" id="realBalance">$0.00</div>
+                        </div>
+                    </button>
+                </div>
+                
+                <div id="upgradeSection" style="display: none;">
+                    <button class="btn-upgrade" onclick="showUpgradeModal()">
+                        Create Real Account
+                    </button>
+                </div>
+            </div>
+
             <!-- Stats Cards -->
             <div class="stats-grid">
                 <div class="stat-card">
@@ -92,7 +117,7 @@
                         </svg>
                     </div>
                     <div class="stat-value">$<span id="totalBalance">12,450.50</span></div>
-                    <div class="stat-change positive">+2.4% from last month</div>
+                    <div class="stat-change positive" id="balanceChange">+2.4% from last month</div>
                 </div>
 
                 <div class="stat-card">
@@ -181,7 +206,44 @@
         </main>
     </div>
 
+    <!-- Upgrade Modal -->
+    <div id="upgradeModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Real Account</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Minimum deposit: <strong>$100</strong></p>
+                <div class="input-group">
+                    <label>Deposit Amount (USD)</label>
+                    <input type="number" id="depositAmount" min="100" placeholder="Enter amount">
+                </div>
+                <div class="payment-methods">
+                    <h4>Select Payment Method</h4>
+                    <div class="payment-option">
+                        <input type="radio" name="payment" id="card" checked>
+                        <label for="card">Credit/Debit Card</label>
+                    </div>
+                    <div class="payment-option">
+                        <input type="radio" name="payment" id="crypto">
+                        <label for="crypto">Cryptocurrency</label>
+                    </div>
+                    <div class="payment-option">
+                        <input type="radio" name="payment" id="bank">
+                        <label for="bank">Bank Transfer</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn-primary" onclick="processUpgrade()">Create Account & Deposit</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/dashboard.js"></script>
 </body>
 </html>
