@@ -1,63 +1,43 @@
-// Deposit functionality - Complete working version
+// Deposit functionality - Real accounts only with crypto deposits
 
 // Global variables
 let currentUser = null;
-let selectedMethod = 'card';
+let selectedCrypto = 'ETH';
+let selectedFile = null;
 let depositAmount = 0;
 
-// Fee rates for different methods
-const feeRates = {
-    card: 1.5,      // 1.5% fee
-    crypto: 0.5,    // 0.5% fee
-    bank: 0,        // 0% fee
-    ewallet: 2      // 2% fee
+// Admin wallet addresses (update these with your actual addresses)
+const adminWallets = {
+    ETH: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0',
+    USDT: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0',
+    BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh'
 };
 
-// Method names
-const methodNames = {
-    card: 'Credit/Debit Card',
-    crypto: 'Cryptocurrency',
-    bank: 'Bank Transfer',
-    ewallet: 'E-Wallet (PayPal/Skrill/Neteller)'
-};
-
-// Payment details for each method
-const paymentDetails = {
-    card: {
-        fields: [
-            { label: 'Card Number', value: '**** **** **** 1234', placeholder: 'Enter your card number' },
-            { label: 'Cardholder Name', value: currentUser?.name || 'John Doe', placeholder: 'Name on card' },
-            { label: 'Expiry Date', value: '12/28', placeholder: 'MM/YY' },
-            { label: 'CVV', value: '***', placeholder: '123' }
-        ]
+// Crypto details
+const cryptoDetails = {
+    ETH: {
+        name: 'Ethereum',
+        symbol: 'ETH',
+        icon: '⟠',
+        network: 'ERC-20',
+        minAmount: 100,
+        maxAmount: 10000
     },
-    crypto: {
-        addresses: {
-            BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-            ETH: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0',
-            USDT: 'TXLAQ63Xg1NAzckPwKHvpx7yxvVQjEaHVd',
-            BNB: 'bnb1xqf8lqy2k6w9x0r8y7t6u5i4o3p2l1k0j9h8g7f',
-            SOL: 'So11111111111111111111111111111111111111111'
-        }
+    USDT: {
+        name: 'Tether',
+        symbol: 'USDT',
+        icon: '₮',
+        network: 'ERC-20',
+        minAmount: 100,
+        maxAmount: 10000
     },
-    bank: {
-        details: {
-            bankName: 'Pocket Trading Bank',
-            accountName: 'Pocket Trading Ltd',
-            accountNumber: '1234567890',
-            routingNumber: '021000021',
-            swiftCode: 'PTBKUS33',
-            iban: 'US12345678901234567890'
-        }
-    },
-    ewallet: {
-        options: ['PayPal', 'Skrill', 'Neteller', 'WebMoney'],
-        emails: {
-            PayPal: 'payments@pockettrading.com',
-            Skrill: 'merchant@skrill.pockettrading.com',
-            Neteller: 'merchant@neteller.pockettrading.com',
-            WebMoney: 'WM1234567890'
-        }
+    BTC: {
+        name: 'Bitcoin',
+        symbol: 'BTC',
+        icon: '₿',
+        network: 'Bitcoin',
+        minAmount: 100,
+        maxAmount: 10000
     }
 };
 
@@ -79,32 +59,74 @@ function loadUser() {
 }
 
 function initDepositPage() {
-    setupMethodSelection();
+    // Check if user has real account
+    checkRealAccountStatus();
+    
+    // Setup crypto selection
+    setupCryptoSelection();
+    
+    // Setup amount input
     setupAmountInput();
-    updateBalanceDisplay();
+    
+    // Update address display
+    updateWalletAddress();
 }
 
-function setupMethodSelection() {
-    const methods = document.querySelectorAll('.method-card');
+function checkRealAccountStatus() {
+    const demoAlert = document.getElementById('demoAlert');
+    const depositForm = document.getElementById('depositForm');
+    const cryptoCards = document.getElementById('cryptoCards');
     
-    methods.forEach(method => {
-        method.addEventListener('click', function() {
-            // Remove active class from all methods
-            methods.forEach(m => m.classList.remove('active'));
-            // Add active class to clicked method
+    // Only allow deposits for real accounts
+    if (!currentUser.hasRealAccount) {
+        if (demoAlert) {
+            demoAlert.style.display = 'block';
+            demoAlert.innerHTML = `
+                <strong>⚠️ Real Account Required</strong><br>
+                You are currently using a Demo Account. To make real deposits, please go to your Dashboard and click "Create Real Account" first.
+            `;
+        }
+        if (depositForm) depositForm.style.opacity = '0.5';
+        if (cryptoCards) cryptoCards.style.opacity = '0.5';
+        
+        // Disable all interactive elements
+        const depositBtn = document.getElementById('depositBtn');
+        if (depositBtn) depositBtn.disabled = true;
+        
+        showNotification('Please create a Real Account first from your Dashboard', 'error');
+    } else {
+        if (demoAlert) demoAlert.style.display = 'none';
+        if (depositForm) depositForm.style.opacity = '1';
+        if (cryptoCards) cryptoCards.style.opacity = '1';
+    }
+}
+
+function setupCryptoSelection() {
+    const cryptoCards = document.querySelectorAll('.crypto-card');
+    
+    cryptoCards.forEach(card => {
+        card.addEventListener('click', function() {
+            // Remove active class from all cards
+            cryptoCards.forEach(c => c.classList.remove('active'));
+            // Add active class to clicked card
             this.classList.add('active');
-            // Store selected method
-            selectedMethod = this.dataset.method;
-            // Update form
-            updateDepositForm();
+            // Store selected crypto
+            selectedCrypto = this.dataset.crypto;
+            // Update wallet address
+            updateWalletAddress();
+            // Validate amount
+            validateAmount();
         });
     });
+    
+    // Set default active card
+    const defaultCard = document.querySelector('[data-crypto="ETH"]');
+    if (defaultCard) defaultCard.classList.add('active');
 }
 
 function setupAmountInput() {
     const amountInput = document.getElementById('depositAmount');
     const depositBtn = document.getElementById('depositBtn');
-    const warningMsg = document.getElementById('warningMessage');
     
     if (amountInput) {
         amountInput.addEventListener('input', function() {
@@ -115,31 +137,13 @@ function setupAmountInput() {
             }
             
             depositAmount = amount;
-            
-            // Validate amount
-            if (amount < 1000 && amount > 0) {
-                warningMsg.innerHTML = '<p>⚠️ Minimum deposit amount is $1,000</p>';
-                warningMsg.style.display = 'block';
-                if (depositBtn) depositBtn.disabled = true;
-            } else if (amount > 100000) {
-                warningMsg.innerHTML = '<p>⚠️ Maximum deposit amount is $100,000</p>';
-                warningMsg.style.display = 'block';
-                if (depositBtn) depositBtn.disabled = true;
-            } else if (amount >= 1000 && amount <= 100000) {
-                warningMsg.style.display = 'none';
-                if (depositBtn) depositBtn.disabled = false;
-            } else {
-                warningMsg.style.display = 'block';
-                if (depositBtn) depositBtn.disabled = true;
-            }
-            
-            updateTotalAmount();
+            validateAmount();
         });
     }
     
     // Quick amount buttons
-    const quickBtns = document.querySelectorAll('.quick-amount-btn');
-    quickBtns.forEach(btn => {
+    const quickAmounts = document.querySelectorAll('.quick-amount');
+    quickAmounts.forEach(btn => {
         btn.addEventListener('click', function() {
             const amount = parseInt(this.dataset.amount);
             if (amountInput) {
@@ -151,298 +155,153 @@ function setupAmountInput() {
     
     // Deposit button
     if (depositBtn) {
-        depositBtn.addEventListener('click', processDeposit);
+        depositBtn.addEventListener('click', submitDepositRequest);
     }
 }
 
-function updateDepositForm() {
-    const formContainer = document.getElementById('depositFormContainer');
-    const formTitle = document.getElementById('formTitle');
-    const feePercentage = document.getElementById('feePercentage');
-    const paymentDetailsDiv = document.getElementById('paymentDetails');
-    
-    if (formContainer) {
-        formContainer.style.display = 'block';
-    }
-    
-    if (formTitle) {
-        formTitle.textContent = `Deposit via ${methodNames[selectedMethod]}`;
-    }
-    
-    if (feePercentage) {
-        feePercentage.textContent = `${feeRates[selectedMethod]}%`;
-    }
-    
-    // Generate payment details based on selected method
-    if (paymentDetailsDiv) {
-        paymentDetailsDiv.innerHTML = generatePaymentDetails();
-    }
-    
-    updateTotalAmount();
-}
-
-function generatePaymentDetails() {
-    switch(selectedMethod) {
-        case 'card':
-            return `
-                <h4>Card Details</h4>
-                <div class="detail-row">
-                    <span class="detail-label">Card Number</span>
-                    <span class="detail-value">
-                        <input type="text" id="cardNumber" class="detail-input" placeholder="1234 5678 9012 3456" style="background: var(--darker-bg); border: 1px solid var(--border); padding: 8px; border-radius: 6px; color: white; width: 200px;">
-                    </span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Cardholder Name</span>
-                    <span class="detail-value">
-                        <input type="text" id="cardName" class="detail-input" placeholder="${currentUser?.name || 'John Doe'}" style="background: var(--darker-bg); border: 1px solid var(--border); padding: 8px; border-radius: 6px; color: white; width: 200px;">
-                    </span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Expiry Date</span>
-                    <span class="detail-value">
-                        <input type="text" id="expiryDate" class="detail-input" placeholder="MM/YY" style="background: var(--darker-bg); border: 1px solid var(--border); padding: 8px; border-radius: 6px; color: white; width: 100px;">
-                    </span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">CVV</span>
-                    <span class="detail-value">
-                        <input type="password" id="cvv" class="detail-input" placeholder="123" style="background: var(--darker-bg); border: 1px solid var(--border); padding: 8px; border-radius: 6px; color: white; width: 80px;">
-                    </span>
-                </div>
-            `;
-            
-        case 'crypto':
-            return `
-                <h4>Cryptocurrency Details</h4>
-                <div class="detail-row">
-                    <span class="detail-label">Select Currency</span>
-                    <span class="detail-value">
-                        <select id="cryptoCurrency" style="background: var(--darker-bg); border: 1px solid var(--border); padding: 8px; border-radius: 6px; color: white;">
-                            <option value="BTC">Bitcoin (BTC)</option>
-                            <option value="ETH">Ethereum (ETH)</option>
-                            <option value="USDT">Tether (USDT)</option>
-                            <option value="BNB">Binance Coin (BNB)</option>
-                            <option value="SOL">Solana (SOL)</option>
-                        </select>
-                    </span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Send to Address</span>
-                    <span class="detail-value" id="cryptoAddress">${paymentDetails.crypto.addresses.BTC}</span>
-                    <button class="copy-btn" onclick="copyToClipboard('${paymentDetails.crypto.addresses.BTC}')">Copy</button>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Network</span>
-                    <span class="detail-value">ERC-20 / BEP-20</span>
-                </div>
-                <div class="warning-message" style="margin-top: 1rem;">
-                    <p>⚠️ Send only the selected cryptocurrency to this address. Other currencies will be lost.</p>
-                </div>
-            `;
-            
-        case 'bank':
-            return `
-                <h4>Bank Transfer Details</h4>
-                <div class="detail-row">
-                    <span class="detail-label">Bank Name</span>
-                    <span class="detail-value">${paymentDetails.bank.details.bankName}</span>
-                    <button class="copy-btn" onclick="copyToClipboard('${paymentDetails.bank.details.bankName}')">Copy</button>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Account Name</span>
-                    <span class="detail-value">${paymentDetails.bank.details.accountName}</span>
-                    <button class="copy-btn" onclick="copyToClipboard('${paymentDetails.bank.details.accountName}')">Copy</button>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Account Number</span>
-                    <span class="detail-value">${paymentDetails.bank.details.accountNumber}</span>
-                    <button class="copy-btn" onclick="copyToClipboard('${paymentDetails.bank.details.accountNumber}')">Copy</button>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Routing Number</span>
-                    <span class="detail-value">${paymentDetails.bank.details.routingNumber}</span>
-                    <button class="copy-btn" onclick="copyToClipboard('${paymentDetails.bank.details.routingNumber}')">Copy</button>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">SWIFT Code</span>
-                    <span class="detail-value">${paymentDetails.bank.details.swiftCode}</span>
-                    <button class="copy-btn" onclick="copyToClipboard('${paymentDetails.bank.details.swiftCode}')">Copy</button>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">IBAN</span>
-                    <span class="detail-value">${paymentDetails.bank.details.iban}</span>
-                    <button class="copy-btn" onclick="copyToClipboard('${paymentDetails.bank.details.iban}')">Copy</button>
-                </div>
-                <div class="warning-message" style="margin-top: 1rem;">
-                    <p>⚠️ Please use your registered email as reference. Transfers take 1-3 business days.</p>
-                </div>
-            `;
-            
-        case 'ewallet':
-            return `
-                <h4>E-Wallet Details</h4>
-                <div class="detail-row">
-                    <span class="detail-label">Select Wallet</span>
-                    <span class="detail-value">
-                        <select id="walletType" onchange="updateWalletEmail()" style="background: var(--darker-bg); border: 1px solid var(--border); padding: 8px; border-radius: 6px; color: white;">
-                            <option value="PayPal">PayPal</option>
-                            <option value="Skrill">Skrill</option>
-                            <option value="Neteller">Neteller</option>
-                            <option value="WebMoney">WebMoney</option>
-                        </select>
-                    </span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Send to Email/ID</span>
-                    <span class="detail-value" id="walletEmail">${paymentDetails.ewallet.emails.PayPal}</span>
-                    <button class="copy-btn" onclick="copyToClipboard(document.getElementById('walletEmail').innerText)">Copy</button>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Your Email/ID</span>
-                    <span class="detail-value">
-                        <input type="text" id="userWalletId" placeholder="Enter your ${paymentDetails.ewallet.options[0]} email/ID" style="background: var(--darker-bg); border: 1px solid var(--border); padding: 8px; border-radius: 6px; color: white; width: 100%;">
-                    </span>
-                </div>
-                <div class="warning-message" style="margin-top: 1rem;">
-                    <p>⚠️ Make sure to use the same email/ID for faster processing.</p>
-                </div>
-            `;
-            
-        default:
-            return '<p>Select a payment method</p>';
-    }
-}
-
-function updateWalletEmail() {
-    const walletSelect = document.getElementById('walletType');
-    const walletEmailSpan = document.getElementById('walletEmail');
-    
-    if (walletSelect && walletEmailSpan) {
-        const selectedWallet = walletSelect.value;
-        walletEmailSpan.innerText = paymentDetails.ewallet.emails[selectedWallet];
-    }
-}
-
-function updateTotalAmount() {
+function validateAmount() {
     const amount = depositAmount;
-    const feeRate = feeRates[selectedMethod];
-    const fee = amount * (feeRate / 100);
-    const total = amount + fee;
-    const receiveAmount = amount;
+    const depositBtn = document.getElementById('depositBtn');
+    const minAmount = 100;
+    const maxAmount = 10000;
     
-    const totalSpan = document.getElementById('totalAmount');
-    const receiveSpan = document.getElementById('receiveAmount');
-    
-    if (totalSpan) {
-        totalSpan.textContent = `$${total.toFixed(2)}`;
-    }
-    
-    if (receiveSpan) {
-        receiveSpan.textContent = `$${receiveAmount.toFixed(2)}`;
-    }
-}
-
-function updateBalanceDisplay() {
-    if (!currentUser) return;
-    
-    const balanceBadge = document.getElementById('accountBadge');
-    if (balanceBadge) {
-        balanceBadge.textContent = currentUser.accountMode === 'demo' ? 'Demo' : 'Real';
+    if (amount >= minAmount && amount <= maxAmount) {
+        if (depositBtn) depositBtn.disabled = false;
+        return true;
+    } else {
+        if (depositBtn) depositBtn.disabled = true;
+        if (amount > 0 && amount < minAmount) {
+            showNotification(`Minimum deposit is $${minAmount}`, 'error');
+        } else if (amount > maxAmount) {
+            showNotification(`Maximum deposit is $${maxAmount}`, 'error');
+        }
+        return false;
     }
 }
 
-function processDeposit() {
+function updateWalletAddress() {
+    const addressElement = document.getElementById('walletAddress');
+    if (addressElement) {
+        addressElement.textContent = adminWallets[selectedCrypto];
+    }
+}
+
+function handleFileUpload(input) {
+    const file = input.files[0];
+    const fileInfo = document.getElementById('fileInfo');
+    const uploadArea = document.getElementById('uploadArea');
+    
+    if (file) {
+        // Check file type
+        if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+            showNotification('Please upload JPG or PNG image', 'error');
+            input.value = '';
+            return;
+        }
+        
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showNotification('File size must be less than 5MB', 'error');
+            input.value = '';
+            return;
+        }
+        
+        selectedFile = file;
+        
+        // Show file info
+        if (fileInfo) {
+            fileInfo.style.display = 'block';
+            fileInfo.innerHTML = `✅ Screenshot uploaded: ${file.name}`;
+            fileInfo.style.background = 'var(--success)';
+        }
+        
+        if (uploadArea) {
+            uploadArea.style.borderColor = 'var(--success)';
+            uploadArea.style.background = 'rgba(0, 216, 151, 0.05)';
+        }
+        
+        validateAmount();
+    }
+}
+
+function submitDepositRequest() {
     if (!currentUser) {
         showNotification('Please login to deposit', 'error');
         window.location.href = 'login.html';
         return;
     }
     
+    // Check if user has real account
+    if (!currentUser.hasRealAccount) {
+        showNotification('Please create a Real Account first', 'error');
+        return;
+    }
+    
+    // Validate amount
+    if (!validateAmount()) {
+        return;
+    }
+    
+    // Validate screenshot
+    if (!selectedFile) {
+        showNotification('Please upload a screenshot of your payment', 'error');
+        return;
+    }
+    
     const amount = depositAmount;
+    const cryptoName = cryptoDetails[selectedCrypto].name;
+    const cryptoSymbol = cryptoDetails[selectedCrypto].symbol;
     
-    if (!amount || amount < 1000) {
-        showNotification('Minimum deposit amount is $1,000', 'error');
-        return;
-    }
+    // Create deposit request
+    const depositRequest = {
+        id: Date.now(),
+        userId: currentUser.id,
+        userEmail: currentUser.email,
+        userName: currentUser.name,
+        crypto: selectedCrypto,
+        cryptoName: cryptoName,
+        amount: amount,
+        status: 'pending',
+        date: new Date().toISOString(),
+        screenshot: selectedFile.name,
+        adminAddress: adminWallets[selectedCrypto]
+    };
     
-    if (amount > 100000) {
-        showNotification('Maximum deposit amount is $100,000', 'error');
-        return;
-    }
+    // Save deposit request to localStorage
+    let depositRequests = JSON.parse(localStorage.getItem('pocket_deposit_requests') || '[]');
+    depositRequests.push(depositRequest);
+    localStorage.setItem('pocket_deposit_requests', JSON.stringify(depositRequests));
     
-    // Validate payment details based on method
-    if (selectedMethod === 'card') {
-        const cardNumber = document.getElementById('cardNumber')?.value;
-        const cardName = document.getElementById('cardName')?.value;
-        const expiryDate = document.getElementById('expiryDate')?.value;
-        const cvv = document.getElementById('cvv')?.value;
-        
-        if (!cardNumber || !cardName || !expiryDate || !cvv) {
-            showNotification('Please fill in all card details', 'error');
-            return;
-        }
-    }
-    
-    if (selectedMethod === 'ewallet') {
-        const userWalletId = document.getElementById('userWalletId')?.value;
-        if (!userWalletId) {
-            showNotification('Please enter your wallet email/ID', 'error');
-            return;
-        }
-    }
-    
-    const feeRate = feeRates[selectedMethod];
-    const fee = amount * (feeRate / 100);
-    const totalDeducted = amount + fee;
-    
-    // Process deposit based on account mode
-    if (currentUser.accountMode === 'demo') {
-        // Demo account - just add to demo balance
-        currentUser.demoBalance += amount;
-        showNotification(`$${amount.toLocaleString()} added to your demo account!`, 'success');
-    } else {
-        // Real account - add to real balance
-        currentUser.realBalance += amount;
-        showNotification(`$${amount.toLocaleString()} added to your real account!`, 'success');
-    }
-    
-    // Add transaction record
-    addDepositTransaction(amount, fee, totalDeducted);
+    // Add to user's pending deposits
+    if (!currentUser.pendingDeposits) currentUser.pendingDeposits = [];
+    currentUser.pendingDeposits.push({
+        id: depositRequest.id,
+        amount: amount,
+        crypto: selectedCrypto,
+        status: 'pending',
+        date: new Date().toISOString()
+    });
     
     // Save user data
     saveUserData();
     
+    // Show success message
+    showNotification(`Deposit request submitted! Send ${amount} USDT worth of ${cryptoName} to the provided address. Admin will verify within 24 hours.`, 'success');
+    
     // Reset form
     document.getElementById('depositAmount').value = '';
     depositAmount = 0;
-    updateTotalAmount();
+    selectedFile = null;
+    document.getElementById('screenshot').value = '';
+    document.getElementById('fileInfo').style.display = 'none';
+    document.getElementById('uploadArea').style.borderColor = '';
+    document.getElementById('uploadArea').style.background = '';
+    document.getElementById('depositBtn').disabled = true;
     
-    // Update balance display
-    updateBalanceDisplay();
-    
-    // Redirect to dashboard after 2 seconds
+    // Redirect to dashboard after 3 seconds
     setTimeout(() => {
         window.location.href = 'dashboard.html';
-    }, 2000);
-}
-
-function addDepositTransaction(amount, fee, total) {
-    const transaction = {
-        id: Date.now(),
-        type: 'deposit',
-        method: selectedMethod,
-        amount: amount,
-        fee: fee,
-        total: total,
-        accountMode: currentUser.accountMode,
-        status: 'completed',
-        date: new Date().toISOString(),
-        description: `Deposit via ${methodNames[selectedMethod]}`
-    };
-    
-    if (!currentUser.transactions) currentUser.transactions = [];
-    currentUser.transactions.unshift(transaction);
+    }, 3000);
 }
 
 function saveUserData() {
@@ -463,11 +322,12 @@ function saveUserData() {
     }
 }
 
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        showNotification('Copied to clipboard!', 'success');
+function copyAddress() {
+    const address = adminWallets[selectedCrypto];
+    navigator.clipboard.writeText(address).then(() => {
+        showNotification('Address copied to clipboard!', 'success');
     }).catch(() => {
-        showNotification('Failed to copy', 'error');
+        showNotification('Failed to copy address', 'error');
     });
 }
 
@@ -490,6 +350,7 @@ function showNotification(message, type) {
         z-index: 10000;
         animation: slideIn 0.3s ease-out;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        max-width: 350px;
     `;
     
     document.body.appendChild(notification);
@@ -497,7 +358,7 @@ function showNotification(message, type) {
     setTimeout(function() {
         notification.style.animation = 'slideOut 0.3s ease-out';
         setTimeout(function() { notification.remove(); }, 300);
-    }, 3000);
+    }, 5000);
 }
 
 function handleLogout() {
@@ -507,6 +368,6 @@ function handleLogout() {
 }
 
 // Make functions global for HTML onclick
-window.copyToClipboard = copyToClipboard;
-window.updateWalletEmail = updateWalletEmail;
+window.copyAddress = copyAddress;
+window.handleFileUpload = handleFileUpload;
 window.handleLogout = handleLogout;
