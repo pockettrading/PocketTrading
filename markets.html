@@ -4,10 +4,123 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pocket Trading - Markets</title>
-    <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* Markets Page Specific Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #F7931A;
+            --primary-dark: #e67e22;
+            --primary-light: #f8b45a;
+            --dark-bg: #0A0E17;
+            --darker-bg: #06090F;
+            --card-bg: #151E2C;
+            --card-hover: #1A2535;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0AAB5;
+            --text-tertiary: #6B7A8A;
+            --success: #00D897;
+            --danger: #FF4757;
+            --warning: #FFA502;
+            --border: #2A3545;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* App Container */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--darker-bg);
+            border-right: 1px solid var(--border);
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-logo span {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 1rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: var(--card-bg);
+            color: var(--primary);
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 1rem;
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.3s;
+            margin-top: auto;
+            width: 100%;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 71, 87, 0.1);
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
+
+        /* Markets Page Styles */
         .markets-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -26,7 +139,6 @@
             color: var(--text-secondary);
         }
         
-        /* Stats Cards */
         .stats-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -71,7 +183,6 @@
             color: var(--danger);
         }
         
-        /* Filter Tabs */
         .filter-tabs {
             display: flex;
             gap: 0.5rem;
@@ -102,7 +213,6 @@
             background: rgba(247, 147, 26, 0.1);
         }
         
-        /* Search Bar */
         .search-bar {
             margin-bottom: 1.5rem;
         }
@@ -123,13 +233,12 @@
             border-color: var(--primary);
         }
         
-        /* Market Table */
         .market-table-container {
             background: var(--card-bg);
             border-radius: 16px;
             overflow-x: auto;
-            overflow-y: auto;
             max-height: 600px;
+            overflow-y: auto;
         }
         
         .market-table {
@@ -164,7 +273,6 @@
             background: var(--card-hover);
         }
         
-        /* Crypto Info */
         .crypto-info {
             display: flex;
             align-items: center;
@@ -184,7 +292,6 @@
             color: var(--text-tertiary);
         }
         
-        /* Price Change */
         .price-change {
             display: inline-block;
             padding: 4px 8px;
@@ -202,7 +309,6 @@
             color: var(--danger);
         }
         
-        /* Details Button */
         .btn-details {
             background: var(--darker-bg);
             border: 1px solid var(--border);
@@ -220,14 +326,6 @@
             color: white;
         }
         
-        /* Loading State */
-        .loading-state {
-            text-align: center;
-            padding: 3rem;
-            color: var(--text-secondary);
-        }
-        
-        /* User Info in Sidebar */
         .user-info-sidebar {
             margin-top: auto;
             padding-top: 1rem;
@@ -239,21 +337,24 @@
             color: var(--text-primary);
             font-weight: 500;
         }
-        
-        /* Responsive */
+
         @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                z-index: 100;
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
             .stats-cards {
                 grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .market-table th,
-            .market-table td {
-                padding: 0.75rem;
-                font-size: 0.75rem;
-            }
-            
-            .crypto-icon {
-                font-size: 1rem;
             }
         }
         
@@ -261,17 +362,11 @@
             .stats-cards {
                 grid-template-columns: 1fr;
             }
-            
-            .filter-tabs {
-                overflow-x: auto;
-                flex-wrap: nowrap;
-            }
         }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="sidebar-logo">
                 <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
@@ -279,32 +374,32 @@
                     <path d="M20 10L25 15L20 20L15 15L20 10Z" fill="white"/>
                     <path d="M20 20L25 25L20 30L15 25L20 20Z" fill="white"/>
                 </svg>
-                <span>Pocket<span>Trading</span></span>
+                <span>Pocket<span style="color: var(--primary);">Trading</span></span>
             </div>
 
             <nav class="sidebar-nav">
                 <a href="home.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke="currentColor" stroke-width="2" fill="none"/>
-                        <path d="M9 22V12h6v10" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                        <path d="M9 22V12h6v10"/>
                     </svg>
                     <span>Home</span>
                 </a>
                 <a href="markets.html" class="nav-item active">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M3 3v18h18M18 9l-4 4-3-3-4 4" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3v18h18M18 9l-4 4-3-3-4 4"/>
                     </svg>
                     <span>Markets</span>
                 </a>
                 <a href="trade.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M3 12h18M12 3v18M16 8l4 4-4 4M8 8l-4 4 4 4" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12h18M12 3v18M16 8l4 4-4 4M8 8l-4 4 4 4"/>
                     </svg>
                     <span>Trades</span>
                 </a>
                 <a href="profile.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/>
                     </svg>
                     <span>My Profile</span>
                 </a>
@@ -312,16 +407,15 @@
 
             <div class="user-info-sidebar">
                 <div class="user-name-sidebar" id="sidebarUserName">Guest</div>
-                <button class="logout-btn" onclick="handleLogout()" style="width: 100%;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l4-4-4-4M20 13H9" stroke="currentColor" stroke-width="2" fill="none"/>
+                <button class="logout-btn" onclick="handleLogout()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l4-4-4-4M20 13H9"/>
                     </svg>
                     <span>Logout</span>
                 </button>
             </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
             <div class="markets-container">
                 <div class="markets-header">
@@ -329,7 +423,6 @@
                     <p>Track live cryptocurrency prices and market data</p>
                 </div>
 
-                <!-- Market Stats Cards -->
                 <div class="stats-cards" id="marketStats">
                     <div class="stat-card">
                         <div class="stat-label">Total Market Cap</div>
@@ -353,7 +446,6 @@
                     </div>
                 </div>
 
-                <!-- Filter Tabs -->
                 <div class="filter-tabs">
                     <button class="filter-tab active" data-filter="all">All Coins</button>
                     <button class="filter-tab" data-filter="large">Large Cap</button>
@@ -362,14 +454,12 @@
                     <button class="filter-tab" data-filter="meme">Meme Coins</button>
                 </div>
 
-                <!-- Search Bar -->
                 <div class="search-bar">
                     <input type="text" class="search-input" id="searchInput" placeholder="Search cryptocurrency (BTC, ETH, DOGE, etc.)">
                 </div>
 
-                <!-- Market Table -->
                 <div class="market-table-container">
-                    <table class="market-table" id="marketTable">
+                    <table class="market-table">
                         <thead>
                             <tr>
                                 <th>Coin</th>
@@ -381,7 +471,7 @@
                         </thead>
                         <tbody id="marketTableBody">
                             <tr>
-                                <td colspan="5" class="loading-state">Loading market data...</td>
+                                <td colspan="5" style="text-align: center; padding: 2rem;">Loading market data...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -390,6 +480,186 @@
         </main>
     </div>
 
-    <script src="js/markets.js"></script>
+    <script>
+        // Markets page functionality - Complete standalone version
+        
+        let currentUser = null;
+        let currentFilter = 'all';
+        let searchQuery = '';
+        let priceUpdateInterval = null;
+        
+        let cryptoData = [
+            { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 75730.97, change: -3.0, marketCap: 1520000000000, volume: 32500000000, category: 'large' },
+            { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2357.44, change: 1.4, marketCap: 284440000000, volume: 15200000000, category: 'large' },
+            { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 305.60, change: -0.5, marketCap: 52000000000, volume: 2100000000, category: 'large' },
+            { symbol: 'SOL', name: 'Solana', icon: 'S', price: 98.40, change: 5.2, marketCap: 45000000000, volume: 1800000000, category: 'large' },
+            { symbol: 'XRP', name: 'Ripple', icon: 'X', price: 0.62, change: 0.3, marketCap: 34000000000, volume: 1200000000, category: 'mid' },
+            { symbol: 'ADA', name: 'Cardano', icon: 'A', price: 0.48, change: -1.2, marketCap: 17000000000, volume: 800000000, category: 'mid' },
+            { symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð', price: 0.12, change: 3.2, marketCap: 17500000000, volume: 900000000, category: 'meme' },
+            { symbol: 'DOT', name: 'Polkadot', icon: '●', price: 6.85, change: -0.8, marketCap: 9800000000, volume: 500000000, category: 'mid' },
+            { symbol: 'LINK', name: 'Chainlink', icon: 'L', price: 14.32, change: 2.1, marketCap: 8500000000, volume: 450000000, category: 'mid' },
+            { symbol: 'UNI', name: 'Uniswap', icon: 'U', price: 7.85, change: -1.5, marketCap: 5900000000, volume: 250000000, category: 'defi' },
+            { symbol: 'AAVE', name: 'Aave', icon: 'A', price: 98.50, change: 3.8, marketCap: 1450000000, volume: 150000000, category: 'defi' },
+            { symbol: 'SHIB', name: 'Shiba Inu', icon: '🐕', price: 0.000021, change: -2.3, marketCap: 12400000000, volume: 600000000, category: 'meme' },
+            { symbol: 'AVAX', name: 'Avalanche', icon: 'A', price: 35.20, change: 4.5, marketCap: 13200000000, volume: 550000000, category: 'mid' },
+            { symbol: 'MATIC', name: 'Polygon', icon: 'M', price: 0.72, change: 1.2, marketCap: 7200000000, volume: 350000000, category: 'mid' },
+            { symbol: 'PEPE', name: 'Pepe', icon: '🐸', price: 0.000012, change: 8.5, marketCap: 5100000000, volume: 420000000, category: 'meme' }
+        ];
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Markets page loaded');
+            loadUser();
+            updateSidebarUser();
+            loadMarketStats();
+            loadMarketTable();
+            setupEventListeners();
+            startPriceUpdates();
+        });
+        
+        function loadUser() {
+            const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
+            if (storedUser) {
+                currentUser = JSON.parse(storedUser);
+                console.log('User logged in:', currentUser.email);
+            }
+        }
+        
+        function updateSidebarUser() {
+            const userNameSpan = document.getElementById('sidebarUserName');
+            if (userNameSpan && currentUser) {
+                const displayName = currentUser.name || currentUser.email.split('@')[0];
+                userNameSpan.textContent = displayName;
+            }
+        }
+        
+        function loadMarketStats() {
+            const totalMarketCap = cryptoData.reduce((sum, crypto) => sum + crypto.marketCap, 0);
+            const totalVolume = cryptoData.reduce((sum, crypto) => sum + crypto.volume, 0);
+            const btcMarketCap = cryptoData.find(c => c.symbol === 'BTC')?.marketCap || 0;
+            const btcDominance = (btcMarketCap / totalMarketCap * 100).toFixed(1);
+            
+            document.getElementById('totalMarketCap').textContent = formatMarketCap(totalMarketCap);
+            document.getElementById('totalVolume').textContent = formatVolume(totalVolume);
+            document.getElementById('btcDominance').textContent = `${btcDominance}%`;
+            document.getElementById('activeCoins').textContent = cryptoData.length;
+        }
+        
+        function loadMarketTable() {
+            const tbody = document.getElementById('marketTableBody');
+            if (!tbody) return;
+            
+            let filteredData = [...cryptoData];
+            
+            if (currentFilter !== 'all') {
+                filteredData = filteredData.filter(crypto => crypto.category === currentFilter);
+            }
+            
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                filteredData = filteredData.filter(crypto => 
+                    crypto.name.toLowerCase().includes(query) || 
+                    crypto.symbol.toLowerCase().includes(query)
+                );
+            }
+            
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No cryptocurrencies found</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = filteredData.map(crypto => {
+                const changeClass = crypto.change >= 0 ? 'positive' : 'negative';
+                const changeSign = crypto.change >= 0 ? '+' : '';
+                
+                return `
+                    <tr onclick="goToTrade('${crypto.symbol}')">
+                        <td>
+                            <div class="crypto-info">
+                                <div class="crypto-icon">${crypto.icon}</div>
+                                <div>
+                                    <div class="crypto-name">${crypto.name}</div>
+                                    <div class="crypto-symbol">${crypto.symbol}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>$${formatPrice(crypto.price, crypto.symbol)}</td>
+                        <td><span class="price-change ${changeClass}">${changeSign}${crypto.change.toFixed(2)}%</span></td>
+                        <td>${formatMarketCap(crypto.marketCap)}</td>
+                        <td><button class="btn-details" onclick="event.stopPropagation(); goToTrade('${crypto.symbol}')">Trade ${crypto.symbol}</button></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function formatPrice(price, symbol) {
+            if (symbol === 'SHIB' || symbol === 'PEPE') return price.toFixed(8);
+            if (price < 1) return price.toFixed(4);
+            return price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+        
+        function formatMarketCap(marketCap) {
+            if (marketCap >= 1e12) return `$${(marketCap / 1e12).toFixed(2)}T`;
+            if (marketCap >= 1e9) return `$${(marketCap / 1e9).toFixed(2)}B`;
+            if (marketCap >= 1e6) return `$${(marketCap / 1e6).toFixed(2)}M`;
+            return `$${marketCap.toFixed(0)}`;
+        }
+        
+        function formatVolume(volume) {
+            if (volume >= 1e9) return `$${(volume / 1e9).toFixed(2)}B`;
+            if (volume >= 1e6) return `$${(volume / 1e6).toFixed(2)}M`;
+            return `$${volume.toFixed(0)}`;
+        }
+        
+        function setupEventListeners() {
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    currentFilter = this.dataset.filter;
+                    loadMarketTable();
+                });
+            });
+            
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    searchQuery = this.value;
+                    loadMarketTable();
+                });
+            }
+        }
+        
+        function startPriceUpdates() {
+            if (priceUpdateInterval) clearInterval(priceUpdateInterval);
+            
+            priceUpdateInterval = setInterval(function() {
+                cryptoData = cryptoData.map(crypto => {
+                    const volatility = crypto.symbol === 'SHIB' || crypto.symbol === 'PEPE' ? 0.03 : 0.005;
+                    const change = (Math.random() - 0.5) * 100 * volatility;
+                    const newPrice = Math.max(0.000001, crypto.price * (1 + change / 100));
+                    const percentChange = ((newPrice - crypto.price) / crypto.price) * 100;
+                    const newMarketCap = crypto.marketCap * (newPrice / crypto.price);
+                    
+                    return { ...crypto, price: newPrice, change: percentChange, marketCap: newMarketCap };
+                });
+                
+                loadMarketStats();
+                loadMarketTable();
+            }, 10000);
+        }
+        
+        function goToTrade(symbol) {
+            window.location.href = `trade.html?crypto=${symbol}`;
+        }
+        
+        function handleLogout() {
+            localStorage.removeItem('pocket_user');
+            sessionStorage.removeItem('pocket_user');
+            window.location.href = 'login.html';
+        }
+        
+        window.goToTrade = goToTrade;
+        window.handleLogout = handleLogout;
+    </script>
 </body>
 </html>
