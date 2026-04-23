@@ -1,3 +1,5 @@
+// Authentication and user management (includes registration)
+
 class AuthManager {
     constructor() {
         this.users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
@@ -48,29 +50,38 @@ class AuthManager {
         if (password.match(/[0-9]+/)) strength++;
         if (password.match(/[$@#&!]+/)) strength++;
         
+        const strengthBar = document.getElementById('strengthBar');
+        
         switch(strength) {
             case 0:
             case 1:
-                message = 'Weak password';
+                message = 'Weak';
                 className = 'strength-weak';
+                if (strengthBar) strengthBar.style.width = '20%';
                 break;
             case 2:
             case 3:
-                message = 'Medium password';
+                message = 'Medium';
                 className = 'strength-medium';
+                if (strengthBar) strengthBar.style.width = '60%';
                 break;
             case 4:
             case 5:
-                message = 'Strong password';
+                message = 'Strong';
                 className = 'strength-strong';
+                if (strengthBar) strengthBar.style.width = '100%';
                 break;
         }
         
         if (password.length > 0) {
-            strengthDiv.textContent = message;
-            strengthDiv.className = `password-strength ${className}`;
+            strengthDiv.innerHTML = `
+                <div class="strength-bar-container">
+                    <div class="strength-bar" id="strengthBar" style="width: 0%"></div>
+                </div>
+                <span class="${className}">${message} Password</span>
+            `;
         } else {
-            strengthDiv.textContent = '';
+            strengthDiv.innerHTML = '';
         }
     }
 
@@ -94,8 +105,16 @@ class AuthManager {
             const confirmPassword = document.getElementById('confirmPassword').value;
             const termsAgree = document.getElementById('termsAgree').checked;
             
+            // Validation
             if (!email || !password || !confirmPassword) {
                 this.showError('Please fill in all fields');
+                return;
+            }
+            
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                this.showError('Please enter a valid email address');
                 return;
             }
             
@@ -143,11 +162,13 @@ class AuthManager {
     }
 
     register(email, password) {
+        // Check if email already exists
         if (this.users.find(u => u.email === email)) {
             this.showError('Email already exists');
             return;
         }
         
+        // Create new user with DEMO account and $10,000
         const newUser = {
             id: Date.now(),
             name: email.split('@')[0],
@@ -160,12 +181,19 @@ class AuthManager {
             created: new Date().toISOString(),
             lastLogin: new Date().toISOString(),
             transactions: [],
-            portfolio: {}
+            portfolio: {},
+            stats: {
+                totalTrades: 0,
+                winningTrades: 0,
+                losingTrades: 0,
+                totalVolume: 0
+            }
         };
         
         this.users.push(newUser);
         localStorage.setItem('pocket_users', JSON.stringify(this.users));
         
+        // Create welcome transaction for demo funds
         this.addTransaction(newUser.id, {
             id: Date.now(),
             type: 'deposit',
@@ -197,9 +225,16 @@ class AuthManager {
             return false;
         }
         
+        if (depositAmount > 10000) {
+            this.showError('Maximum deposit for first time is $10,000');
+            return false;
+        }
+        
+        // Upgrade to real account
         user.hasRealAccount = true;
         user.realBalance += depositAmount;
         
+        // Add transaction record
         this.addTransaction(userId, {
             id: Date.now(),
             type: 'deposit',
@@ -213,6 +248,7 @@ class AuthManager {
         
         this.updateUser(user);
         
+        // If current user is the one upgrading, update current session
         if (this.currentUser && this.currentUser.id === userId) {
             this.currentUser = user;
             if (localStorage.getItem('pocket_user')) {
@@ -261,7 +297,7 @@ class AuthManager {
         return user.accountMode === 'demo' ? user.demoBalance : user.realBalance;
     }
 
-    updateBalance(userId, amount) {
+    updateBalance(userId, amount, transactionDetails = {}) {
         const user = this.users.find(u => u.id === userId);
         if (!user) return false;
         
@@ -270,6 +306,16 @@ class AuthManager {
         } else {
             user.realBalance += amount;
         }
+        
+        // Record transaction
+        this.addTransaction(userId, {
+            id: Date.now(),
+            type: transactionDetails.type || 'trade',
+            amount: Math.abs(amount),
+            ...transactionDetails,
+            status: 'completed',
+            date: new Date().toISOString()
+        });
         
         this.updateUser(user);
         
@@ -290,7 +336,22 @@ class AuthManager {
         const user = this.users.find(u => u.id === userId);
         if (user) {
             if (!user.transactions) user.transactions = [];
-            user.transactions.push(transaction);
+            user.transactions.unshift(transaction);
+            
+            // Update stats
+            if (!user.stats) user.stats = {};
+            if (transaction.type === 'trade') {
+                user.stats.totalTrades = (user.stats.totalTrades || 0) + 1;
+                user.stats.totalVolume = (user.stats.totalVolume || 0) + (transaction.amount || 0);
+                if (transaction.pnl) {
+                    if (transaction.pnl > 0) {
+                        user.stats.winningTrades = (user.stats.winningTrades || 0) + 1;
+                    } else if (transaction.pnl < 0) {
+                        user.stats.losingTrades = (user.stats.losingTrades || 0) + 1;
+                    }
+                }
+            }
+            
             this.updateUser(user);
         }
     }
@@ -301,6 +362,7 @@ class AuthManager {
             this.users[index] = updatedUser;
             localStorage.setItem('pocket_users', JSON.stringify(this.users));
             
+            // Update current session if it's the same user
             if (this.currentUser && this.currentUser.id === updatedUser.id) {
                 this.currentUser = updatedUser;
                 if (localStorage.getItem('pocket_user')) {
@@ -322,6 +384,7 @@ class AuthManager {
     }
 
     showNotification(message, type) {
+        // Remove existing notification
         const existing = document.querySelector('.auth-notification');
         if (existing) existing.remove();
         
@@ -340,6 +403,7 @@ class AuthManager {
             z-index: 10000;
             animation: slideIn 0.3s ease-out;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            font-weight: 500;
         `;
         
         document.body.appendChild(notification);
@@ -358,21 +422,108 @@ class AuthManager {
     }
 }
 
+// Add CSS animations and password strength styles
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
     }
+    
     @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    .strength-bar-container {
+        margin-top: 8px;
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        overflow: hidden;
+    }
+    
+    .strength-bar {
+        height: 100%;
+        transition: width 0.3s ease;
+        border-radius: 2px;
+    }
+    
+    .strength-weak + .strength-bar-container .strength-bar {
+        background: var(--danger);
+    }
+    
+    .strength-medium + .strength-bar-container .strength-bar {
+        background: var(--warning);
+    }
+    
+    .strength-strong + .strength-bar-container .strength-bar {
+        background: var(--success);
+    }
+    
+    .transaction-type {
+        text-transform: capitalize;
+        font-weight: 500;
+    }
+    
+    .transaction-type.buy, .transaction-type.deposit {
+        color: var(--success);
+    }
+    
+    .transaction-type.sell, .transaction-type.withdraw {
+        color: var(--danger);
+    }
+    
+    .positive-amount {
+        color: var(--success);
+    }
+    
+    .negative-amount {
+        color: var(--danger);
+    }
+    
+    .crypto-volume {
+        text-align: right;
+        min-width: 80px;
+    }
+    
+    .crypto-volume-label {
+        font-size: 0.7rem;
+        color: var(--text-tertiary);
+    }
+    
+    .crypto-volume-value {
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .crypto-item {
+        cursor: pointer;
+    }
+    
+    .crypto-item:hover {
+        transform: translateX(4px);
+        background: var(--card-hover);
     }
 `;
 document.head.appendChild(style);
 
+// Initialize auth
 const auth = new AuthManager();
 
+// Global functions
 function logout() {
     auth.logout();
 }
@@ -392,16 +543,23 @@ function socialRegister(provider) {
 
 function upgradeToRealAccount(depositAmount) {
     if (auth.currentUser) {
-        auth.upgradeToRealAccount(auth.currentUser.id, depositAmount);
+        return auth.upgradeToRealAccount(auth.currentUser.id, depositAmount);
     }
+    return false;
 }
 
 function switchAccountMode(mode) {
     if (auth.currentUser) {
-        auth.switchAccountMode(auth.currentUser.id, mode);
+        return auth.switchAccountMode(auth.currentUser.id, mode);
     }
+    return false;
 }
 
+// Make auth available globally
 window.auth = auth;
 window.switchAccountMode = switchAccountMode;
 window.upgradeToRealAccount = upgradeToRealAccount;
+window.logout = logout;
+window.forgotPassword = forgotPassword;
+window.socialLogin = socialLogin;
+window.socialRegister = socialRegister;
