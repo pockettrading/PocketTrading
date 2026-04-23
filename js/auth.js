@@ -1,4 +1,4 @@
-// Authentication and user management (includes registration)
+// Authentication and user management - Complete working version
 
 class AuthManager {
     constructor() {
@@ -18,12 +18,23 @@ class AuthManager {
             this.setupRegister();
         }
         
-        if (this.currentUser && !window.location.pathname.includes('dashboard')) {
-            window.location.href = 'dashboard.html';
+        // Only redirect to login if on protected pages and not logged in
+        const protectedPages = ['dashboard.html', 'trade.html', 'profile.html', 'deposit.html', 'withdraw.html'];
+        const currentPage = window.location.pathname.split('/').pop();
+        
+        if (protectedPages.includes(currentPage) && !this.currentUser) {
+            window.location.href = 'login.html';
         }
         
-        if (!this.currentUser && window.location.pathname.includes('dashboard')) {
-            window.location.href = 'login.html';
+        // Don't redirect on home.html or markets.html (public pages)
+        if (currentPage === 'home.html' || currentPage === 'markets.html' || currentPage === '') {
+            // Allow public access
+            return;
+        }
+        
+        // If logged in and on login/register page, redirect to home
+        if (this.currentUser && (currentPage === 'login.html' || currentPage === 'register.html')) {
+            window.location.href = 'home.html';
         }
     }
 
@@ -50,33 +61,28 @@ class AuthManager {
         if (password.match(/[0-9]+/)) strength++;
         if (password.match(/[$@#&!]+/)) strength++;
         
-        const strengthBar = document.getElementById('strengthBar');
-        
         switch(strength) {
             case 0:
             case 1:
                 message = 'Weak';
                 className = 'strength-weak';
-                if (strengthBar) strengthBar.style.width = '20%';
                 break;
             case 2:
             case 3:
                 message = 'Medium';
                 className = 'strength-medium';
-                if (strengthBar) strengthBar.style.width = '60%';
                 break;
             case 4:
             case 5:
                 message = 'Strong';
                 className = 'strength-strong';
-                if (strengthBar) strengthBar.style.width = '100%';
                 break;
         }
         
         if (password.length > 0) {
             strengthDiv.innerHTML = `
                 <div class="strength-bar-container">
-                    <div class="strength-bar" id="strengthBar" style="width: 0%"></div>
+                    <div class="strength-bar" style="width: ${strength * 20}%"></div>
                 </div>
                 <span class="${className}">${message} Password</span>
             `;
@@ -87,54 +93,56 @@ class AuthManager {
 
     setupLogin() {
         const form = document.getElementById('loginForm');
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const rememberMe = document.getElementById('rememberMe')?.checked || false;
-            this.login(email, password, rememberMe);
-        });
+        if (form) {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const rememberMe = document.getElementById('rememberMe')?.checked || false;
+                this.login(email, password, rememberMe);
+            });
+        }
     }
 
     setupRegister() {
         const form = document.getElementById('registerForm');
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const termsAgree = document.getElementById('termsAgree').checked;
-            
-            // Validation
-            if (!email || !password || !confirmPassword) {
-                this.showError('Please fill in all fields');
-                return;
-            }
-            
-            // Email validation
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                this.showError('Please enter a valid email address');
-                return;
-            }
-            
-            if (password !== confirmPassword) {
-                this.showError('Passwords do not match');
-                return;
-            }
-            
-            if (password.length < 8) {
-                this.showError('Password must be at least 8 characters');
-                return;
-            }
-            
-            if (!termsAgree) {
-                this.showError('Please agree to the Terms of Service');
-                return;
-            }
-            
-            this.register(email, password);
-        });
+        if (form) {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const termsAgree = document.getElementById('termsAgree')?.checked || false;
+                
+                if (!email || !password || !confirmPassword) {
+                    this.showError('Please fill in all fields');
+                    return;
+                }
+                
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    this.showError('Please enter a valid email address');
+                    return;
+                }
+                
+                if (password !== confirmPassword) {
+                    this.showError('Passwords do not match');
+                    return;
+                }
+                
+                if (password.length < 8) {
+                    this.showError('Password must be at least 8 characters');
+                    return;
+                }
+                
+                if (!termsAgree) {
+                    this.showError('Please agree to the Terms of Service');
+                    return;
+                }
+                
+                this.register(email, password);
+            });
+        }
     }
 
     login(email, password, rememberMe) {
@@ -154,7 +162,7 @@ class AuthManager {
             this.showSuccess(`Welcome back, ${user.name || user.email.split('@')[0]}!`);
             
             setTimeout(() => {
-                window.location.href = 'dashboard.html';
+                window.location.href = 'home.html';
             }, 500);
         } else {
             this.showError('Invalid email or password');
@@ -162,13 +170,11 @@ class AuthManager {
     }
 
     register(email, password) {
-        // Check if email already exists
         if (this.users.find(u => u.email === email)) {
             this.showError('Email already exists');
             return;
         }
         
-        // Create new user with DEMO account and $10,000
         const newUser = {
             id: Date.now(),
             name: email.split('@')[0],
@@ -178,9 +184,12 @@ class AuthManager {
             realBalance: 0,
             accountMode: 'demo',
             hasRealAccount: false,
+            kycStatus: 'pending',
             created: new Date().toISOString(),
             lastLogin: new Date().toISOString(),
             transactions: [],
+            withdrawals: [],
+            deposits: [],
             portfolio: {},
             stats: {
                 totalTrades: 0,
@@ -193,7 +202,6 @@ class AuthManager {
         this.users.push(newUser);
         localStorage.setItem('pocket_users', JSON.stringify(this.users));
         
-        // Create welcome transaction for demo funds
         this.addTransaction(newUser.id, {
             id: Date.now(),
             type: 'deposit',
@@ -225,16 +233,14 @@ class AuthManager {
             return false;
         }
         
-        if (depositAmount > 10000) {
-            this.showError('Maximum deposit for first time is $10,000');
+        if (depositAmount > 100000) {
+            this.showError('Maximum deposit for first time is $100,000');
             return false;
         }
         
-        // Upgrade to real account
         user.hasRealAccount = true;
         user.realBalance += depositAmount;
         
-        // Add transaction record
         this.addTransaction(userId, {
             id: Date.now(),
             type: 'deposit',
@@ -248,7 +254,6 @@ class AuthManager {
         
         this.updateUser(user);
         
-        // If current user is the one upgrading, update current session
         if (this.currentUser && this.currentUser.id === userId) {
             this.currentUser = user;
             if (localStorage.getItem('pocket_user')) {
@@ -307,7 +312,6 @@ class AuthManager {
             user.realBalance += amount;
         }
         
-        // Record transaction
         this.addTransaction(userId, {
             id: Date.now(),
             type: transactionDetails.type || 'trade',
@@ -338,7 +342,6 @@ class AuthManager {
             if (!user.transactions) user.transactions = [];
             user.transactions.unshift(transaction);
             
-            // Update stats
             if (!user.stats) user.stats = {};
             if (transaction.type === 'trade') {
                 user.stats.totalTrades = (user.stats.totalTrades || 0) + 1;
@@ -362,7 +365,6 @@ class AuthManager {
             this.users[index] = updatedUser;
             localStorage.setItem('pocket_users', JSON.stringify(this.users));
             
-            // Update current session if it's the same user
             if (this.currentUser && this.currentUser.id === updatedUser.id) {
                 this.currentUser = updatedUser;
                 if (localStorage.getItem('pocket_user')) {
@@ -384,7 +386,6 @@ class AuthManager {
     }
 
     showNotification(message, type) {
-        // Remove existing notification
         const existing = document.querySelector('.auth-notification');
         if (existing) existing.remove();
         
@@ -418,7 +419,15 @@ class AuthManager {
         localStorage.removeItem('pocket_user');
         sessionStorage.removeItem('pocket_user');
         this.currentUser = null;
-        window.location.href = 'login.html';
+        window.location.href = 'home.html';
+    }
+
+    isLoggedIn() {
+        return this.currentUser !== null;
+    }
+
+    getUser() {
+        return this.currentUser;
     }
 }
 
@@ -426,31 +435,19 @@ class AuthManager {
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
     }
     
     @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
     }
     
     .strength-bar-container {
         margin-top: 8px;
         height: 4px;
-        background: var(--border);
+        background: var(--border, #2A3545);
         border-radius: 2px;
         overflow: hidden;
     }
@@ -461,61 +458,28 @@ style.textContent = `
         border-radius: 2px;
     }
     
-    .strength-weak + .strength-bar-container .strength-bar {
-        background: var(--danger);
+    .strength-weak {
+        color: #FF4757;
     }
     
-    .strength-medium + .strength-bar-container .strength-bar {
-        background: var(--warning);
+    .strength-weak ~ .strength-bar-container .strength-bar {
+        background: #FF4757;
     }
     
-    .strength-strong + .strength-bar-container .strength-bar {
-        background: var(--success);
+    .strength-medium {
+        color: #FFA502;
     }
     
-    .transaction-type {
-        text-transform: capitalize;
-        font-weight: 500;
+    .strength-medium ~ .strength-bar-container .strength-bar {
+        background: #FFA502;
     }
     
-    .transaction-type.buy, .transaction-type.deposit {
-        color: var(--success);
+    .strength-strong {
+        color: #00D897;
     }
     
-    .transaction-type.sell, .transaction-type.withdraw {
-        color: var(--danger);
-    }
-    
-    .positive-amount {
-        color: var(--success);
-    }
-    
-    .negative-amount {
-        color: var(--danger);
-    }
-    
-    .crypto-volume {
-        text-align: right;
-        min-width: 80px;
-    }
-    
-    .crypto-volume-label {
-        font-size: 0.7rem;
-        color: var(--text-tertiary);
-    }
-    
-    .crypto-volume-value {
-        font-size: 0.85rem;
-        font-weight: 500;
-    }
-    
-    .crypto-item {
-        cursor: pointer;
-    }
-    
-    .crypto-item:hover {
-        transform: translateX(4px);
-        background: var(--card-hover);
+    .strength-strong ~ .strength-bar-container .strength-bar {
+        background: #00D897;
     }
 `;
 document.head.appendChild(style);
@@ -529,7 +493,7 @@ function logout() {
 }
 
 function forgotPassword(event) {
-    event.preventDefault();
+    if (event) event.preventDefault();
     auth.showNotification('Password reset link sent to your email!', 'success');
 }
 
@@ -555,6 +519,14 @@ function switchAccountMode(mode) {
     return false;
 }
 
+function isLoggedIn() {
+    return auth.isLoggedIn();
+}
+
+function getCurrentUser() {
+    return auth.getUser();
+}
+
 // Make auth available globally
 window.auth = auth;
 window.switchAccountMode = switchAccountMode;
@@ -563,3 +535,5 @@ window.logout = logout;
 window.forgotPassword = forgotPassword;
 window.socialLogin = socialLogin;
 window.socialRegister = socialRegister;
+window.isLoggedIn = isLoggedIn;
+window.getCurrentUser = getCurrentUser;
