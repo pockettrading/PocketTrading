@@ -9,7 +9,7 @@
     <style>
         /* Deposit Page Specific Styles */
         .deposit-container {
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
         }
         
@@ -26,14 +26,40 @@
             color: var(--text-secondary);
         }
         
-        .methods-grid {
+        /* Alert Messages */
+        .alert {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .alert-info {
+            background: rgba(247, 147, 26, 0.1);
+            border-left: 3px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .alert-warning {
+            background: rgba(255, 71, 87, 0.1);
+            border-left: 3px solid var(--danger);
+            color: var(--danger);
+        }
+        
+        .alert-success {
+            background: rgba(0, 216, 151, 0.1);
+            border-left: 3px solid var(--success);
+            color: var(--success);
+        }
+        
+        /* Crypto Cards */
+        .crypto-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
         
-        .method-card {
+        .crypto-card {
             background: var(--card-bg);
             border: 2px solid var(--border);
             border-radius: 16px;
@@ -41,21 +67,20 @@
             cursor: pointer;
             transition: all 0.3s;
             position: relative;
-            overflow: hidden;
         }
         
-        .method-card:hover {
+        .crypto-card:hover {
             transform: translateY(-4px);
             border-color: var(--primary);
             box-shadow: var(--shadow);
         }
         
-        .method-card.active {
+        .crypto-card.active {
             border-color: var(--primary);
             background: rgba(247, 147, 26, 0.1);
         }
         
-        .method-card.active::before {
+        .crypto-card.active::before {
             content: '✓';
             position: absolute;
             top: 10px;
@@ -71,65 +96,57 @@
             font-size: 14px;
         }
         
-        .method-icon {
+        .crypto-icon {
             font-size: 3rem;
             margin-bottom: 1rem;
         }
         
-        .method-name {
+        .crypto-name {
             font-size: 1.25rem;
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
         }
         
-        .method-description {
+        .crypto-symbol {
             color: var(--text-secondary);
             font-size: 0.85rem;
             margin-bottom: 1rem;
         }
         
-        .method-limits {
+        .crypto-limits {
             font-size: 0.8rem;
             color: var(--text-tertiary);
             padding-top: 0.5rem;
             border-top: 1px solid var(--border);
         }
         
+        /* Deposit Form */
         .deposit-form-container {
             background: var(--card-bg);
             border-radius: 16px;
             padding: 2rem;
-            margin-top: 1rem;
         }
         
-        .deposit-form {
-            max-width: 500px;
-            margin: 0 auto;
-        }
-        
-        .amount-input-wrapper {
-            position: relative;
+        .form-group {
             margin-bottom: 1.5rem;
         }
         
-        .currency-symbol {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 1.2rem;
-            font-weight: 600;
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
             color: var(--text-secondary);
+            font-size: 0.9rem;
         }
         
         .amount-input {
             width: 100%;
-            padding: 14px 16px 14px 40px;
+            padding: 14px;
             background: var(--darker-bg);
             border: 1px solid var(--border);
             border-radius: 12px;
             color: var(--text-primary);
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 600;
         }
         
@@ -138,16 +155,15 @@
             border-color: var(--primary);
         }
         
-        .quick-amount-buttons {
+        .quick-amounts {
             display: flex;
             gap: 0.75rem;
             margin-top: 0.75rem;
             flex-wrap: wrap;
         }
         
-        .quick-amount-btn {
-            flex: 1;
-            padding: 8px;
+        .quick-amount {
+            padding: 8px 16px;
             background: var(--darker-bg);
             border: 1px solid var(--border);
             border-radius: 8px;
@@ -157,7 +173,7 @@
             font-size: 0.85rem;
         }
         
-        .quick-amount-btn:hover {
+        .quick-amount:hover {
             border-color: var(--primary);
             color: var(--primary);
         }
@@ -185,63 +201,82 @@
             color: var(--text-primary);
         }
         
-        .warning-message {
-            background: rgba(255, 165, 2, 0.1);
-            border-left: 3px solid var(--warning);
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-        }
-        
-        .warning-message p {
-            color: var(--warning);
-            font-size: 0.85rem;
-            margin: 0;
-        }
-        
-        .payment-details {
+        /* Address Box */
+        .address-box {
             background: var(--darker-bg);
             border-radius: 12px;
-            padding: 1.5rem;
+            padding: 1rem;
             margin-bottom: 1.5rem;
         }
         
-        .payment-details h4 {
-            margin-bottom: 1rem;
-            font-size: 1rem;
-        }
-        
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.75rem;
-            padding: 0.5rem;
-            background: var(--card-bg);
-            border-radius: 8px;
-        }
-        
-        .detail-label {
-            color: var(--text-secondary);
+        .address-label {
             font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
         }
         
-        .detail-value {
-            font-weight: 600;
+        .address-value {
             font-family: monospace;
             font-size: 0.85rem;
+            word-break: break-all;
+            background: var(--card-bg);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
         }
         
         .copy-btn {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 4px 12px;
-            border-radius: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 0.75rem;
-            margin-left: 8px;
+            font-size: 0.85rem;
+            transition: all 0.3s;
         }
         
+        .copy-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        /* Screenshot Upload */
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 1.5rem;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(247, 147, 26, 0.05);
+        }
+        
+        .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .upload-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .file-info {
+            background: var(--success);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        
+        /* Submit Button */
         .btn-deposit {
             background: linear-gradient(135deg, var(--success), #00b894);
             color: white;
@@ -265,15 +300,22 @@
             cursor: not-allowed;
         }
         
-        .fee-info {
-            text-align: center;
-            margin-top: 1rem;
-            font-size: 0.8rem;
-            color: var(--text-tertiary);
+        /* Note */
+        .deposit-note {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(255, 165, 2, 0.1);
+            border-radius: 12px;
+        }
+        
+        .deposit-note p {
+            color: var(--warning);
+            font-size: 0.85rem;
+            margin: 0;
         }
         
         @media (max-width: 768px) {
-            .methods-grid {
+            .crypto-cards {
                 grid-template-columns: 1fr;
             }
             
@@ -281,7 +323,7 @@
                 padding: 1.5rem;
             }
             
-            .quick-amount-buttons {
+            .quick-amounts {
                 flex-wrap: wrap;
             }
         }
@@ -346,101 +388,103 @@
             <div class="deposit-container">
                 <div class="deposit-header">
                     <h1>Deposit Funds</h1>
-                    <p>Add funds to your account securely</p>
+                    <p>Add funds to your real trading account</p>
                 </div>
 
-                <!-- Deposit Methods Grid -->
-                <div class="methods-grid" id="methodsGrid">
-                    <!-- Method 1: Credit/Debit Card -->
-                    <div class="method-card" data-method="card">
-                        <div class="method-icon">💳</div>
-                        <div class="method-name">Credit/Debit Card</div>
-                        <div class="method-description">Instant deposit via Visa, Mastercard, Amex</div>
-                        <div class="method-limits">Limit: $1,000 - $100,000 | Fee: 1.5%</div>
+                <!-- Alert for Demo Account Users -->
+                <div class="alert alert-info" id="demoAlert" style="display: none;">
+                    <strong>📢 Demo Mode Active</strong><br>
+                    You are currently using a Demo Account. To make real deposits, please switch to Real Account mode from your Dashboard.
+                </div>
+
+                <!-- Cryptocurrency Selection -->
+                <div class="crypto-cards" id="cryptoCards">
+                    <!-- ETH -->
+                    <div class="crypto-card" data-crypto="ETH">
+                        <div class="crypto-icon">⟠</div>
+                        <div class="crypto-name">Ethereum</div>
+                        <div class="crypto-symbol">ETH</div>
+                        <div class="crypto-limits">Min: $100 | Max: $10,000</div>
                     </div>
 
-                    <!-- Method 2: Cryptocurrency -->
-                    <div class="method-card" data-method="crypto">
-                        <div class="method-icon">₿</div>
-                        <div class="method-name">Cryptocurrency</div>
-                        <div class="method-description">BTC, ETH, USDT, BNB, SOL</div>
-                        <div class="method-limits">Limit: $1,000 - $100,000 | Fee: 0.5%</div>
+                    <!-- USDT -->
+                    <div class="crypto-card" data-crypto="USDT">
+                        <div class="crypto-icon">₮</div>
+                        <div class="crypto-name">Tether</div>
+                        <div class="crypto-symbol">USDT (ERC-20)</div>
+                        <div class="crypto-limits">Min: $100 | Max: $10,000</div>
                     </div>
 
-                    <!-- Method 3: Bank Transfer -->
-                    <div class="method-card" data-method="bank">
-                        <div class="method-icon">🏦</div>
-                        <div class="method-name">Bank Transfer</div>
-                        <div class="method-description">Wire transfer from your bank account</div>
-                        <div class="method-limits">Limit: $1,000 - $100,000 | Fee: 0%</div>
-                    </div>
-
-                    <!-- Method 4: PayPal/Skrill -->
-                    <div class="method-card" data-method="ewallet">
-                        <div class="method-icon">📱</div>
-                        <div class="method-name">E-Wallet</div>
-                        <div class="method-description">PayPal, Skrill, Neteller, WebMoney</div>
-                        <div class="method-limits">Limit: $1,000 - $100,000 | Fee: 2%</div>
+                    <!-- BTC -->
+                    <div class="crypto-card" data-crypto="BTC">
+                        <div class="crypto-icon">₿</div>
+                        <div class="crypto-name">Bitcoin</div>
+                        <div class="crypto-symbol">BTC</div>
+                        <div class="crypto-limits">Min: $100 | Max: $10,000</div>
                     </div>
                 </div>
 
-                <!-- Deposit Form Container -->
-                <div class="deposit-form-container" id="depositFormContainer" style="display: none;">
-                    <div class="deposit-form">
-                        <h3 id="formTitle" style="margin-bottom: 1.5rem;">Deposit via Credit Card</h3>
-                        
-                        <div class="amount-input-wrapper">
-                            <span class="currency-symbol">$</span>
-                            <input type="number" id="depositAmount" class="amount-input" placeholder="Enter amount" min="1000" max="100000" step="100">
+                <!-- Deposit Form -->
+                <div class="deposit-form-container" id="depositForm">
+                    <form id="depositFormElement">
+                        <!-- Amount Input -->
+                        <div class="form-group">
+                            <label>Deposit Amount (USD)</label>
+                            <input type="number" id="depositAmount" class="amount-input" placeholder="Enter amount between $100 - $10,000" min="100" max="10000" step="10">
+                            <div class="quick-amounts">
+                                <button type="button" class="quick-amount" data-amount="100">$100</button>
+                                <button type="button" class="quick-amount" data-amount="500">$500</button>
+                                <button type="button" class="quick-amount" data-amount="1000">$1,000</button>
+                                <button type="button" class="quick-amount" data-amount="5000">$5,000</button>
+                                <button type="button" class="quick-amount" data-amount="10000">$10,000</button>
+                            </div>
                         </div>
-                        
-                        <div class="quick-amount-buttons">
-                            <button type="button" class="quick-amount-btn" data-amount="1000">$1,000</button>
-                            <button type="button" class="quick-amount-btn" data-amount="5000">$5,000</button>
-                            <button type="button" class="quick-amount-btn" data-amount="10000">$10,000</button>
-                            <button type="button" class="quick-amount-btn" data-amount="25000">$25,000</button>
-                            <button type="button" class="quick-amount-btn" data-amount="50000">$50,000</button>
-                            <button type="button" class="quick-amount-btn" data-amount="100000">$100,000</button>
-                        </div>
-                        
+
+                        <!-- Limit Info -->
                         <div class="limit-info">
                             <div class="limit-row">
                                 <span class="limit-label">Minimum Deposit:</span>
-                                <span class="limit-value">$1,000</span>
+                                <span class="limit-value">$100</span>
                             </div>
                             <div class="limit-row">
                                 <span class="limit-label">Maximum Deposit:</span>
-                                <span class="limit-value">$100,000</span>
+                                <span class="limit-value">$10,000</span>
                             </div>
                             <div class="limit-row">
-                                <span class="limit-label">Processing Fee:</span>
-                                <span class="limit-value" id="feePercentage">1.5%</span>
-                            </div>
-                            <div class="limit-row">
-                                <span class="limit-label">You'll Pay:</span>
-                                <span class="limit-value" id="totalAmount">$0.00</span>
-                            </div>
-                            <div class="limit-row">
-                                <span class="limit-label">You'll Receive:</span>
-                                <span class="limit-value" id="receiveAmount">$0.00</span>
+                                <span class="limit-label">Network Fee:</span>
+                                <span class="limit-value">Free (Paid by Pocket Trading)</span>
                             </div>
                         </div>
-                        
-                        <div class="warning-message" id="warningMessage">
-                            <p>⚠️ Minimum deposit amount is $1,000</p>
+
+                        <!-- Wallet Address -->
+                        <div class="address-box" id="addressBox">
+                            <div class="address-label">Send funds to this address:</div>
+                            <div class="address-value" id="walletAddress">0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0</div>
+                            <button type="button" class="copy-btn" onclick="copyAddress()">📋 Copy Address</button>
                         </div>
-                        
-                        <!-- Dynamic Payment Details -->
-                        <div id="paymentDetails" class="payment-details"></div>
-                        
-                        <button type="button" class="btn-deposit" id="depositBtn">
-                            Process Deposit
+
+                        <!-- Screenshot Upload -->
+                        <div class="form-group">
+                            <label>Upload Payment Screenshot</label>
+                            <div class="upload-area" id="uploadArea" onclick="document.getElementById('screenshot').click()">
+                                <div class="upload-icon">📸</div>
+                                <div class="upload-text">Click to upload screenshot of your payment</div>
+                                <div class="upload-text" style="font-size: 0.75rem; margin-top: 0.5rem;">Supported: JPG, PNG (Max 5MB)</div>
+                            </div>
+                            <input type="file" id="screenshot" accept="image/jpeg,image/png" style="display: none;" onchange="handleFileUpload(this)">
+                            <div id="fileInfo" class="file-info" style="display: none;"></div>
+                        </div>
+
+                        <!-- Deposit Button -->
+                        <button type="button" class="btn-deposit" id="depositBtn" disabled>
+                            Submit Deposit Request
                         </button>
-                        
-                        <div class="fee-info">
-                            <p>All deposits are instant and secure. Funds will be credited immediately.</p>
+
+                        <!-- Important Note -->
+                        <div class="deposit-note">
+                            <p>⚠️ Important: After sending the cryptocurrency, please upload a screenshot of your transaction. Our admin will verify and credit your account within 24 hours.</p>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
         </main>
