@@ -160,6 +160,7 @@
             transition: all 0.3s;
             text-align: center;
             text-decoration: none;
+            display: inline-block;
         }
         
         .btn-deposit-action {
@@ -261,6 +262,7 @@
             text-align: left;
             padding: 0.75rem;
             font-size: 0.75rem;
+            color: var(--text-secondary);
         }
         
         .trade-history-table td {
@@ -276,9 +278,35 @@
             color: var(--danger);
         }
         
-        /* KYC Form */
-        .kyc-form {
-            margin-top: 1rem;
+        /* Forms */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            background: var(--darker-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
         }
         
         .file-upload {
@@ -288,25 +316,10 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
-            margin-bottom: 1rem;
         }
         
         .file-upload:hover {
             border-color: var(--primary);
-        }
-        
-        /* Update Profile Form */
-        .update-form .form-group {
-            margin-bottom: 1rem;
-        }
-        
-        .update-form input {
-            width: 100%;
-            padding: 12px;
-            background: var(--darker-bg);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: var(--text-primary);
         }
         
         .btn-save {
@@ -318,6 +331,28 @@
             font-weight: 600;
             cursor: pointer;
             width: 100%;
+            margin-top: 1rem;
+        }
+        
+        .btn-save:hover {
+            background: var(--primary-dark);
+        }
+        
+        .alert-info {
+            background: rgba(247, 147, 26, 0.1);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .alert-info p {
+            margin: 0.25rem 0;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .faq-section {
+            margin-top: 2rem;
         }
         
         @media (max-width: 768px) {
@@ -405,25 +440,24 @@
                     <div class="profile-grid">
                         <!-- Left Column -->
                         <div>
-                            <!-- User Info Card -->
                             <div class="profile-card">
                                 <div class="user-info">
                                     <div class="user-avatar" id="userAvatar">JD</div>
-                                    <div class="user-name" id="profileFullName">John Doe</div>
-                                    <div class="user-email" id="profileEmail">john@example.com</div>
+                                    <div class="user-name" id="profileFullName">Loading...</div>
+                                    <div class="user-email" id="profileEmail">Loading...</div>
                                 </div>
                                 
                                 <div class="info-row">
                                     <span class="info-label">Full Name</span>
-                                    <span class="info-value" id="infoFullName">John Doe</span>
+                                    <span class="info-value" id="infoFullName">-</span>
                                 </div>
                                 <div class="info-row">
                                     <span class="info-label">Email</span>
-                                    <span class="info-value" id="infoEmail">john@example.com</span>
+                                    <span class="info-value" id="infoEmail">-</span>
                                 </div>
                                 <div class="info-row">
                                     <span class="info-label">Member Since</span>
-                                    <span class="info-value" id="memberSince">4/23/2026</span>
+                                    <span class="info-value" id="memberSince">-</span>
                                 </div>
                                 <div class="info-row">
                                     <span class="info-label">Account Balance</span>
@@ -449,7 +483,6 @@
 
                         <!-- Right Column -->
                         <div>
-                            <!-- Trading Statistics -->
                             <div class="profile-card">
                                 <div class="card-title">Trading Statistics</div>
                                 <div class="stats-grid">
@@ -472,7 +505,6 @@
                                 </div>
                             </div>
 
-                            <!-- Menu Items -->
                             <div class="profile-card">
                                 <div class="menu-items">
                                     <div class="menu-item" onclick="switchTab('history')">
@@ -531,11 +563,11 @@
                 <div id="kycTab" class="tab-content" style="display: none;">
                     <div class="profile-card">
                         <div class="card-title">KYC Verification</div>
-                        <div class="alert alert-info" style="background: rgba(247, 147, 26, 0.1); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                        <div class="alert-info">
                             <p>Please verify your identity to unlock full trading limits and withdrawal features.</p>
                         </div>
                         
-                        <form id="kycForm" class="kyc-form">
+                        <form id="kycForm">
                             <div class="form-group">
                                 <label>Full Name (as on ID)</label>
                                 <input type="text" id="kycFullName" placeholder="Enter your full name" required>
@@ -546,7 +578,7 @@
                             </div>
                             <div class="form-group">
                                 <label>ID Type</label>
-                                <select id="kycIdType" style="width: 100%; padding: 12px; background: var(--darker-bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary);">
+                                <select id="kycIdType">
                                     <option value="passport">Passport</option>
                                     <option value="drivers_license">Driver's License</option>
                                     <option value="national_id">National ID Card</option>
@@ -585,7 +617,7 @@
                 <div id="updateTab" class="tab-content" style="display: none;">
                     <div class="profile-card">
                         <div class="card-title">Update Profile</div>
-                        <form id="updateProfileForm" class="update-form">
+                        <form id="updateProfileForm">
                             <div class="form-group">
                                 <label>Full Name</label>
                                 <input type="text" id="updateFullName" placeholder="Enter your full name">
@@ -600,16 +632,12 @@
                             </div>
                             <div class="form-group">
                                 <label>Country</label>
-                                <select id="updateCountry" style="width: 100%; padding: 12px; background: var(--darker-bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary);">
+                                <select id="updateCountry">
                                     <option value="">Select Country</option>
                                     <option value="USA">United States</option>
                                     <option value="UK">United Kingdom</option>
                                     <option value="Canada">Canada</option>
                                     <option value="Australia">Australia</option>
-                                    <option value="Germany">Germany</option>
-                                    <option value="France">France</option>
-                                    <option value="Japan">Japan</option>
-                                    <option value="Singapore">Singapore</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -629,7 +657,7 @@
                 <div id="supportTab" class="tab-content" style="display: none;">
                     <div class="profile-card">
                         <div class="card-title">Customer Support</div>
-                        <div class="alert alert-info" style="background: rgba(247, 147, 26, 0.1); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                        <div class="alert-info">
                             <p>📧 Email: support@pockettrading.com</p>
                             <p>💬 Live Chat: 24/7 Available</p>
                             <p>📞 Phone: +1 (800) 123-4567</p>
@@ -642,7 +670,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Message</label>
-                                <textarea id="supportMessage" rows="5" placeholder="Describe your issue..." style="width: 100%; padding: 12px; background: var(--darker-bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary);" required></textarea>
+                                <textarea id="supportMessage" rows="5" placeholder="Describe your issue..." required></textarea>
                             </div>
                             <div class="form-group">
                                 <label>Attach Screenshot (Optional)</label>
@@ -654,7 +682,7 @@
                             <button type="submit" class="btn-save">Send Message</button>
                         </form>
                         
-                        <div class="faq-section" style="margin-top: 2rem;">
+                        <div class="faq-section">
                             <div class="card-title">Frequently Asked Questions</div>
                             <div class="info-row">
                                 <span class="info-label">How to deposit?</span>
@@ -675,7 +703,6 @@
         </main>
     </div>
 
-    <script src="js/auth.js"></script>
     <script src="js/profile.js"></script>
 </body>
 </html>
