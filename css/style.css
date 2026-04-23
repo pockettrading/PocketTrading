@@ -953,4 +953,53 @@ td {
     }
     
     .sidebar {
-       
+        transform: translateX(-100%);
+        transition: transform 0.3s;
+        z-index: 100;
+    }
+    
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    .trading-section {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .account-mode-section {
+        flex-direction: column;
+    }
+    
+    .mode-switcher {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .btn-upgrade {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .form-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .auth-container {
+        margin: 1rem;
+    }
+    
+    .auth-branding,
+    .auth-form-container {
+        padding: 1.5rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
