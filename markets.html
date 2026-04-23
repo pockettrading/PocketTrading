@@ -38,13 +38,11 @@
             min-height: 100vh;
         }
 
-        /* App Container */
         .app-container {
             display: flex;
             min-height: 100vh;
         }
 
-        /* Sidebar */
         .sidebar {
             width: 280px;
             background: var(--darker-bg);
@@ -120,7 +118,6 @@
             padding: 2rem;
         }
 
-        /* Markets Page Styles */
         .markets-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -237,8 +234,6 @@
             background: var(--card-bg);
             border-radius: 16px;
             overflow-x: auto;
-            max-height: 600px;
-            overflow-y: auto;
         }
         
         .market-table {
@@ -253,9 +248,6 @@
             font-weight: 500;
             font-size: 0.85rem;
             border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            background: var(--card-bg);
         }
         
         .market-table td {
@@ -423,7 +415,7 @@
                     <p>Track live cryptocurrency prices and market data</p>
                 </div>
 
-                <div class="stats-cards" id="marketStats">
+                <div class="stats-cards">
                     <div class="stat-card">
                         <div class="stat-label">Total Market Cap</div>
                         <div class="stat-value" id="totalMarketCap">$2.34T</div>
@@ -470,9 +462,7 @@
                             </tr>
                         </thead>
                         <tbody id="marketTableBody">
-                            <tr>
-                                <td colspan="5" style="text-align: center; padding: 2rem;">Loading market data...</td>
-                            </tr>
+                            <tr><td colspan="5" style="text-align: center; padding: 2rem;">Loading market data...</td><tr>
                         </tbody>
                     </table>
                 </div>
@@ -481,13 +471,26 @@
     </div>
 
     <script>
-        // Markets page functionality - Complete standalone version
+        // ALL CODE IS SELF-CONTAINED - NO EXTERNAL DEPENDENCIES
+        // This prevents any redirect issues from auth.js or other files
         
         let currentUser = null;
         let currentFilter = 'all';
         let searchQuery = '';
         let priceUpdateInterval = null;
         
+        // Load user from localStorage (no redirect)
+        try {
+            const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
+            if (storedUser) {
+                currentUser = JSON.parse(storedUser);
+                document.getElementById('sidebarUserName').innerText = currentUser.name || currentUser.email.split('@')[0];
+            }
+        } catch(e) {
+            console.log('No user logged in');
+        }
+        
+        // Cryptocurrency data
         let cryptoData = [
             { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 75730.97, change: -3.0, marketCap: 1520000000000, volume: 32500000000, category: 'large' },
             { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2357.44, change: 1.4, marketCap: 284440000000, volume: 15200000000, category: 'large' },
@@ -506,31 +509,13 @@
             { symbol: 'PEPE', name: 'Pepe', icon: '🐸', price: 0.000012, change: 8.5, marketCap: 5100000000, volume: 420000000, category: 'meme' }
         ];
         
+        // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Markets page loaded');
-            loadUser();
-            updateSidebarUser();
             loadMarketStats();
             loadMarketTable();
             setupEventListeners();
             startPriceUpdates();
         });
-        
-        function loadUser() {
-            const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
-            if (storedUser) {
-                currentUser = JSON.parse(storedUser);
-                console.log('User logged in:', currentUser.email);
-            }
-        }
-        
-        function updateSidebarUser() {
-            const userNameSpan = document.getElementById('sidebarUserName');
-            if (userNameSpan && currentUser) {
-                const displayName = currentUser.name || currentUser.email.split('@')[0];
-                userNameSpan.textContent = displayName;
-            }
-        }
         
         function loadMarketStats() {
             const totalMarketCap = cryptoData.reduce((sum, crypto) => sum + crypto.marketCap, 0);
@@ -538,10 +523,10 @@
             const btcMarketCap = cryptoData.find(c => c.symbol === 'BTC')?.marketCap || 0;
             const btcDominance = (btcMarketCap / totalMarketCap * 100).toFixed(1);
             
-            document.getElementById('totalMarketCap').textContent = formatMarketCap(totalMarketCap);
-            document.getElementById('totalVolume').textContent = formatVolume(totalVolume);
-            document.getElementById('btcDominance').textContent = `${btcDominance}%`;
-            document.getElementById('activeCoins').textContent = cryptoData.length;
+            document.getElementById('totalMarketCap').innerText = formatMarketCap(totalMarketCap);
+            document.getElementById('totalVolume').innerText = formatVolume(totalVolume);
+            document.getElementById('btcDominance').innerText = `${btcDominance}%`;
+            document.getElementById('activeCoins').innerText = cryptoData.length;
         }
         
         function loadMarketTable() {
@@ -634,7 +619,7 @@
             
             priceUpdateInterval = setInterval(function() {
                 cryptoData = cryptoData.map(crypto => {
-                    const volatility = crypto.symbol === 'SHIB' || crypto.symbol === 'PEPE' ? 0.03 : 0.005;
+                    const volatility = (crypto.symbol === 'SHIB' || crypto.symbol === 'PEPE') ? 0.03 : 0.005;
                     const change = (Math.random() - 0.5) * 100 * volatility;
                     const newPrice = Math.max(0.000001, crypto.price * (1 + change / 100));
                     const percentChange = ((newPrice - crypto.price) / crypto.price) * 100;
@@ -655,9 +640,10 @@
         function handleLogout() {
             localStorage.removeItem('pocket_user');
             sessionStorage.removeItem('pocket_user');
-            window.location.href = 'login.html';
+            window.location.href = 'home.html';
         }
         
+        // Make functions global
         window.goToTrade = goToTrade;
         window.handleLogout = handleLogout;
     </script>
