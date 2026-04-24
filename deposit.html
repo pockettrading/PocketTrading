@@ -38,93 +38,81 @@
             min-height: 100vh;
         }
 
-        .app-container {
-            display: flex;
-            min-height: 100vh;
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
         }
 
-        /* Sidebar */
-        .sidebar {
-            width: 280px;
-            background: var(--darker-bg);
-            border-right: 1px solid var(--border);
-            padding: 2rem 1rem;
+        /* Top Navigation Bar */
+        .top-nav {
             display: flex;
-            flex-direction: column;
-            position: fixed;
-            height: 100vh;
-            left: 0;
-            top: 0;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
-        .sidebar-logo {
+        .logo {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 0 1rem;
-            margin-bottom: 2rem;
+            gap: 10px;
         }
 
-        .sidebar-logo span {
+        .logo svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .logo span {
             font-size: 1.3rem;
             font-weight: 700;
         }
 
-        .sidebar-nav {
-            flex: 1;
+        .nav-links {
             display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
+            gap: 2rem;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 1rem;
+        .nav-link {
             color: var(--text-secondary);
             text-decoration: none;
-            border-radius: 12px;
+            font-weight: 500;
             transition: all 0.3s;
         }
 
-        .nav-item:hover,
-        .nav-item.active {
-            background: var(--card-bg);
+        .nav-link:hover {
             color: var(--primary);
         }
 
-        .logout-btn {
+        .user-section {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 1rem;
-            background: none;
-            border: none;
+            gap: 1.5rem;
+        }
+
+        .user-name {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .logout-link {
             color: var(--danger);
+            text-decoration: none;
+            font-weight: 500;
             cursor: pointer;
-            border-radius: 12px;
-            transition: all 0.3s;
-            margin-top: auto;
-            width: 100%;
         }
 
-        .logout-btn:hover {
-            background: rgba(255, 71, 87, 0.1);
+        .logout-link:hover {
+            text-decoration: underline;
         }
 
-        .main-content {
-            flex: 1;
-            margin-left: 280px;
-            padding: 2rem;
-        }
-
-        /* Deposit Container */
-        .deposit-container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
+        /* Deposit Header */
         .deposit-header {
             margin-bottom: 2rem;
         }
@@ -143,12 +131,6 @@
             padding: 1rem;
             border-radius: 12px;
             margin-bottom: 1.5rem;
-        }
-
-        .alert-info {
-            background: rgba(247, 147, 26, 0.1);
-            border-left: 3px solid var(--primary);
-            color: var(--primary);
         }
 
         .alert-warning {
@@ -248,13 +230,12 @@
 
         .amount-input {
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             background: var(--darker-bg);
             border: 1px solid var(--border);
             border-radius: 12px;
             color: var(--text-primary);
             font-size: 1rem;
-            font-weight: 600;
         }
 
         .amount-input:focus {
@@ -306,7 +287,6 @@
 
         .limit-value {
             font-weight: 600;
-            color: var(--text-primary);
         }
 
         /* Address Box */
@@ -422,223 +402,125 @@
             margin: 0;
         }
 
-        /* User Menu */
-        .user-menu-dropdown {
-            position: relative;
-            cursor: pointer;
-        }
-
-        .user-name-display {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background: var(--card-bg);
-            border-radius: 40px;
-        }
-
-        .dropdown-menu {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0.5rem;
-            min-width: 150px;
-            display: none;
-            z-index: 100;
-            margin-top: 0.5rem;
-        }
-
-        .user-menu-dropdown:hover .dropdown-menu {
-            display: block;
-        }
-
-        .dropdown-item {
-            padding: 10px 16px;
-            color: var(--text-primary);
-            text-decoration: none;
-            display: block;
-            transition: all 0.3s;
-            border-radius: 8px;
-        }
-
-        .dropdown-item:hover {
-            background: var(--card-hover);
-            color: var(--primary);
-        }
-
-        hr {
-            border-color: var(--border);
-            margin: 0.5rem 0;
-        }
-
         @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s;
-                z-index: 100;
-            }
-            
-            .main-content {
-                margin-left: 0;
-            }
-            
             .crypto-cards {
                 grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 1.5rem;
+            }
+            .nav-links {
+                gap: 1rem;
+            }
+            .top-nav {
+                flex-direction: column;
+                text-align: center;
             }
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <aside class="sidebar">
-            <div class="sidebar-logo">
-                <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+    <div class="container">
+        <!-- Top Navigation Bar -->
+        <div class="top-nav">
+            <div class="logo">
+                <svg viewBox="0 0 40 40" fill="none">
                     <rect width="40" height="40" rx="10" fill="#F7931A"/>
                     <path d="M20 10L25 15L20 20L15 15L20 10Z" fill="white"/>
                     <path d="M20 20L25 25L20 30L15 25L20 20Z" fill="white"/>
                 </svg>
                 <span>Pocket<span style="color: var(--primary);">Trading</span></span>
             </div>
-
-            <nav class="sidebar-nav">
-                <a href="home.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                        <path d="M9 22V12h6v10"/>
-                    </svg>
-                    <span>Home</span>
-                </a>
-                <a href="markets.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 3v18h18M18 9l-4 4-3-3-4 4"/>
-                    </svg>
-                    <span>Markets</span>
-                </a>
-                <a href="trade.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 12h18M12 3v18M16 8l4 4-4 4M8 8l-4 4 4 4"/>
-                    </svg>
-                    <span>Trades</span>
-                </a>
-                <a href="profile.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/>
-                    </svg>
-                    <span>My Profile</span>
-                </a>
-            </nav>
-
-            <div class="user-menu-dropdown" id="userMenu">
-                <div class="user-name-display">
-                    <span>👤</span>
-                    <span id="userNameText">Guest</span>
-                    <span>▼</span>
-                </div>
-                <div class="dropdown-menu">
-                    <a href="profile.html" class="dropdown-item">My Profile</a>
-                    <a href="dashboard.html" class="dropdown-item">Dashboard</a>
-                    <hr>
-                    <button class="dropdown-item" onclick="handleLogout()" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; color: var(--danger);">Logout</button>
-                </div>
+            <div class="nav-links">
+                <a href="home.html" class="nav-link">Home</a>
+                <a href="markets.html" class="nav-link">Markets</a>
+                <a href="trade.html" class="nav-link">Trades</a>
+                <a href="profile.html" class="nav-link">My Profile</a>
             </div>
-        </aside>
-
-        <main class="main-content">
-            <div class="deposit-container">
-                <div class="deposit-header">
-                    <h1>Deposit Funds</h1>
-                    <p>Add funds to your real trading account</p>
-                </div>
-
-                <!-- Alert for Demo Account Users -->
-                <div id="demoAlert" class="alert alert-warning" style="display: none;">
-                    <strong>⚠️ Real Account Required</strong><br>
-                    You are currently using a Demo Account. To make real deposits, please go to your Dashboard and click "Create Real Account" first.
-                </div>
-
-                <!-- Cryptocurrency Selection -->
-                <div class="crypto-cards">
-                    <div class="crypto-card" data-crypto="ETH">
-                        <div class="crypto-icon">⟠</div>
-                        <div class="crypto-name">Ethereum</div>
-                        <div class="crypto-symbol">ETH (ERC-20)</div>
-                        <div class="crypto-limits">Min: $100 | Max: $10,000</div>
-                    </div>
-                    <div class="crypto-card" data-crypto="USDT">
-                        <div class="crypto-icon">₮</div>
-                        <div class="crypto-name">Tether</div>
-                        <div class="crypto-symbol">USDT (ERC-20)</div>
-                        <div class="crypto-limits">Min: $100 | Max: $10,000</div>
-                    </div>
-                    <div class="crypto-card" data-crypto="BTC">
-                        <div class="crypto-icon">₿</div>
-                        <div class="crypto-name">Bitcoin</div>
-                        <div class="crypto-symbol">BTC</div>
-                        <div class="crypto-limits">Min: $100 | Max: $10,000</div>
-                    </div>
-                </div>
-
-                <!-- Deposit Form -->
-                <div class="deposit-form-container" id="depositForm">
-                    <form id="depositFormElement">
-                        <div class="form-group">
-                            <label>Deposit Amount (USD)</label>
-                            <input type="number" id="depositAmount" class="amount-input" placeholder="Enter amount between $100 - $10,000" min="100" max="10000" step="10">
-                            <div class="quick-amounts">
-                                <button type="button" class="quick-amount" data-amount="100">$100</button>
-                                <button type="button" class="quick-amount" data-amount="500">$500</button>
-                                <button type="button" class="quick-amount" data-amount="1000">$1,000</button>
-                                <button type="button" class="quick-amount" data-amount="5000">$5,000</button>
-                                <button type="button" class="quick-amount" data-amount="10000">$10,000</button>
-                            </div>
-                        </div>
-
-                        <div class="limit-info">
-                            <div class="limit-row">
-                                <span class="limit-label">Minimum Deposit:</span>
-                                <span class="limit-value">$100</span>
-                            </div>
-                            <div class="limit-row">
-                                <span class="limit-label">Maximum Deposit:</span>
-                                <span class="limit-value">$10,000</span>
-                            </div>
-                            <div class="limit-row">
-                                <span class="limit-label">Network Fee:</span>
-                                <span class="limit-value">Free (Paid by Pocket Trading)</span>
-                            </div>
-                        </div>
-
-                        <div class="address-box">
-                            <div class="address-label">Send funds to this address:</div>
-                            <div class="address-value" id="walletAddress">0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0</div>
-                            <button type="button" class="copy-btn" onclick="copyAddress()">📋 Copy Address</button>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Upload Payment Screenshot</label>
-                            <div class="upload-area" onclick="document.getElementById('screenshot').click()">
-                                <div class="upload-icon">📸</div>
-                                <div class="upload-text">Click to upload screenshot of your payment</div>
-                                <div class="upload-text" style="font-size: 0.75rem; margin-top: 0.5rem;">Supported: JPG, PNG (Max 5MB)</div>
-                            </div>
-                            <input type="file" id="screenshot" accept="image/jpeg,image/png" style="display: none;">
-                            <div id="fileInfo" class="file-info" style="display: none;"></div>
-                        </div>
-
-                        <button type="submit" class="btn-deposit" id="depositBtn" disabled>
-                            Submit Deposit Request
-                        </button>
-
-                        <div class="deposit-note">
-                            <p>⚠️ Important: After sending the cryptocurrency, please upload a screenshot of your transaction. Our admin will verify and credit your account within 24 hours.</p>
-                        </div>
-                    </form>
-                </div>
+            <div class="user-section">
+                <span class="user-name" id="userNameDisplay">Guest</span>
+                <span class="logout-link" onclick="handleLogout()">Logout</span>
             </div>
-        </main>
+        </div>
+
+        <div class="deposit-header">
+            <h1>Deposit Funds</h1>
+            <p>Add funds to your real trading account</p>
+        </div>
+
+        <!-- Alert for Demo Account Users -->
+        <div id="demoAlert" class="alert alert-warning" style="display: none;">
+            <strong>⚠️ Real Account Required</strong><br>
+            You are currently using a Demo Account. To make real deposits, please go to your Dashboard and click "Create Real Account" first.
+        </div>
+
+        <!-- Cryptocurrency Selection -->
+        <div class="crypto-cards">
+            <div class="crypto-card" data-crypto="ETH">
+                <div class="crypto-icon">⟠</div>
+                <div class="crypto-name">Ethereum</div>
+                <div class="crypto-symbol">ETH (ERC-20)</div>
+                <div class="crypto-limits">Min: $100 | Max: $10,000</div>
+            </div>
+            <div class="crypto-card" data-crypto="USDT">
+                <div class="crypto-icon">₮</div>
+                <div class="crypto-name">Tether</div>
+                <div class="crypto-symbol">USDT (ERC-20)</div>
+                <div class="crypto-limits">Min: $100 | Max: $10,000</div>
+            </div>
+            <div class="crypto-card" data-crypto="BTC">
+                <div class="crypto-icon">₿</div>
+                <div class="crypto-name">Bitcoin</div>
+                <div class="crypto-symbol">BTC</div>
+                <div class="crypto-limits">Min: $100 | Max: $10,000</div>
+            </div>
+        </div>
+
+        <!-- Deposit Form -->
+        <div class="deposit-form-container">
+            <form id="depositForm">
+                <div class="form-group">
+                    <label>Deposit Amount (USD)</label>
+                    <input type="number" id="depositAmount" class="amount-input" placeholder="Enter amount between $100 - $10,000" min="100" max="10000" step="10">
+                    <div class="quick-amounts">
+                        <button type="button" class="quick-amount" data-amount="100">$100</button>
+                        <button type="button" class="quick-amount" data-amount="500">$500</button>
+                        <button type="button" class="quick-amount" data-amount="1000">$1,000</button>
+                        <button type="button" class="quick-amount" data-amount="5000">$5,000</button>
+                        <button type="button" class="quick-amount" data-amount="10000">$10,000</button>
+                    </div>
+                </div>
+
+                <div class="limit-info">
+                    <div class="limit-row"><span class="limit-label">Minimum Deposit:</span><span class="limit-value">$100</span></div>
+                    <div class="limit-row"><span class="limit-label">Maximum Deposit:</span><span class="limit-value">$10,000</span></div>
+                    <div class="limit-row"><span class="limit-label">Network Fee:</span><span class="limit-value">Free (Paid by Pocket Trading)</span></div>
+                </div>
+
+                <div class="address-box">
+                    <div class="address-label">Send funds to this address:</div>
+                    <div class="address-value" id="walletAddress">0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0</div>
+                    <button type="button" class="copy-btn" onclick="copyAddress()">📋 Copy Address</button>
+                </div>
+
+                <div class="form-group">
+                    <label>Upload Payment Screenshot</label>
+                    <div class="upload-area" onclick="document.getElementById('screenshot').click()">
+                        <div class="upload-icon">📸</div>
+                        <div class="upload-text">Click to upload screenshot of your payment</div>
+                        <div class="upload-text" style="font-size: 0.75rem; margin-top: 0.5rem;">Supported: JPG, PNG (Max 5MB)</div>
+                    </div>
+                    <input type="file" id="screenshot" accept="image/jpeg,image/png" style="display: none;">
+                    <div id="fileInfo" class="file-info" style="display: none;"></div>
+                </div>
+
+                <button type="submit" class="btn-deposit" id="depositBtn" disabled>Submit Deposit Request</button>
+
+                <div class="deposit-note">
+                    <p>⚠️ Important: After sending the cryptocurrency, please upload a screenshot of your transaction. Our admin will verify and credit your account within 24 hours.</p>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script src="js/deposit.js"></script>
