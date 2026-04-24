@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     updateUserDisplay();
+    updateAccountBadges();
     initDepositPage();
 });
 
@@ -35,7 +36,24 @@ function loadUser() {
 
 function updateUserDisplay() {
     const userNameSpan = document.getElementById('userNameDisplay');
-    if (userNameSpan && currentUser) userNameSpan.textContent = currentUser.name || currentUser.email.split('@')[0];
+    if (userNameSpan && currentUser) {
+        userNameSpan.textContent = currentUser.name || currentUser.email.split('@')[0];
+    }
+}
+
+function updateAccountBadges() {
+    const demoBadge = document.getElementById('demoBadge');
+    const realBadge = document.getElementById('realBadge');
+    
+    if (currentUser) {
+        if (currentUser.accountMode === 'demo') {
+            if (demoBadge) demoBadge.textContent = 'Active';
+            if (realBadge) realBadge.textContent = currentUser.hasRealAccount ? 'Available' : 'Create';
+        } else {
+            if (demoBadge) demoBadge.textContent = 'Available';
+            if (realBadge) realBadge.textContent = 'Active';
+        }
+    }
 }
 
 function initDepositPage() {
@@ -48,18 +66,21 @@ function initDepositPage() {
 
 function checkRealAccountStatus() {
     const demoAlert = document.getElementById('demoAlert');
+    const realAlert = document.getElementById('realAlert');
     const depositForm = document.querySelector('.deposit-form-container');
     const cryptoCards = document.querySelector('.crypto-cards');
     const depositBtn = document.getElementById('depositBtn');
     
     if (!currentUser.hasRealAccount) {
         if (demoAlert) demoAlert.style.display = 'block';
+        if (realAlert) realAlert.style.display = 'none';
         if (depositForm) depositForm.style.opacity = '0.5';
         if (cryptoCards) cryptoCards.style.opacity = '0.5';
         if (depositBtn) depositBtn.disabled = true;
-        showNotification('Please create a Real Account first from your Dashboard', 'error');
+        showNotification('You need to create a Real Account first. Go to Dashboard > Create Real Account', 'error');
     } else {
         if (demoAlert) demoAlert.style.display = 'none';
+        if (realAlert) realAlert.style.display = 'block';
         if (depositForm) depositForm.style.opacity = '1';
         if (cryptoCards) cryptoCards.style.opacity = '1';
     }
@@ -220,7 +241,44 @@ function showNotification(message, type) {
     setTimeout(() => { notification.style.animation = 'slideOut 0.3s ease-out'; setTimeout(() => notification.remove(), 300); }, 4000);
 }
 
+function switchToDemo() {
+    if (!currentUser) return;
+    if (currentUser.accountMode === 'demo') {
+        showNotification('Already on Demo Account', 'info');
+        return;
+    }
+    currentUser.accountMode = 'demo';
+    saveUserData();
+    updateAccountBadges();
+    showNotification('Switched to Demo Account', 'success');
+    setTimeout(() => window.location.reload(), 500);
+}
+
+function switchToReal() {
+    if (!currentUser) return;
+    if (!currentUser.hasRealAccount) {
+        window.location.href = 'dashboard.html';
+        showNotification('Please create a Real Account first from Dashboard', 'error');
+        return;
+    }
+    if (currentUser.accountMode === 'real') {
+        showNotification('Already on Real Account', 'info');
+        return;
+    }
+    currentUser.accountMode = 'real';
+    saveUserData();
+    updateAccountBadges();
+    showNotification('Switched to Real Account', 'success');
+    setTimeout(() => window.location.reload(), 500);
+}
+
+function goToProfile() { window.location.href = 'profile.html'; }
+function goToDashboard() { window.location.href = 'dashboard.html'; }
 function handleLogout() { localStorage.removeItem('pocket_user'); sessionStorage.removeItem('pocket_user'); window.location.href = 'home.html'; }
 
 window.copyAddress = copyAddress;
+window.switchToDemo = switchToDemo;
+window.switchToReal = switchToReal;
+window.goToProfile = goToProfile;
+window.goToDashboard = goToDashboard;
 window.handleLogout = handleLogout;
