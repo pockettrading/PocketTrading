@@ -1,4 +1,4 @@
-// Trade page functionality - Complete working version
+// Trade page functionality - Fixed for demo account balance
 
 let currentUser = null;
 let currentOrderType = 'buy';
@@ -15,18 +15,25 @@ let cryptoPrices = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Trade page loaded');
     loadUser();
     if (!currentUser) {
         window.location.href = 'login.html';
         return;
     }
+    console.log('User loaded:', currentUser.email);
+    console.log('Account mode:', currentUser.accountMode);
+    console.log('Demo balance:', currentUser.demoBalance);
+    console.log('Real balance:', currentUser.realBalance);
     updateUserDisplay();
     initTradePage();
 });
 
 function loadUser() {
     const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
-    if (storedUser) currentUser = JSON.parse(storedUser);
+    if (storedUser) {
+        currentUser = JSON.parse(storedUser);
+    }
 }
 
 function updateUserDisplay() {
@@ -34,21 +41,27 @@ function updateUserDisplay() {
     const authButtonSpan = document.getElementById('authButton');
     if (userNameSpan && currentUser) {
         userNameSpan.textContent = currentUser.name || currentUser.email.split('@')[0];
-        if (authButtonSpan) authButtonSpan.innerHTML = '<span class="logout-link" onclick="handleLogout()">Logout</span>';
+        if (authButtonSpan) {
+            authButtonSpan.innerHTML = '<span class="logout-link" onclick="handleLogout()">Logout</span>';
+        }
     }
     updateBalance();
 }
 
 function updateBalance() {
     if (!currentUser) return;
+    // Get the correct balance based on account mode
     const balance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
     const balanceElem = document.getElementById('availableBalance');
     const badgeElem = document.getElementById('accountBadge');
-    if (balanceElem) balanceElem.textContent = `$${balance.toFixed(2)}`;
+    if (balanceElem) {
+        balanceElem.textContent = `$${balance.toFixed(2)}`;
+    }
     if (badgeElem) {
         badgeElem.textContent = currentUser.accountMode === 'demo' ? 'Demo' : 'Real';
         badgeElem.className = `account-badge ${currentUser.accountMode === 'demo' ? 'demo' : 'real'}`;
     }
+    console.log('Balance updated:', balance, 'Mode:', currentUser.accountMode);
 }
 
 function initTradePage() {
@@ -104,8 +117,13 @@ function setOrderType(type) {
     currentOrderType = type;
     const buyTab = document.getElementById('buyTab');
     const sellTab = document.getElementById('sellTab');
-    if (type === 'buy') { buyTab?.classList.add('active'); sellTab?.classList.remove('active'); }
-    else { sellTab?.classList.add('active'); buyTab?.classList.remove('active'); }
+    if (type === 'buy') { 
+        buyTab?.classList.add('active'); 
+        sellTab?.classList.remove('active'); 
+    } else { 
+        sellTab?.classList.add('active'); 
+        buyTab?.classList.remove('active'); 
+    }
     
     const placeBtn = document.getElementById('placeOrderBtn');
     const cryptoName = cryptoPrices[selectedCrypto]?.name || selectedCrypto;
@@ -118,11 +136,15 @@ function setOrderType(type) {
 
 function setQuickAmount(percent) {
     if (!currentUser) return;
+    // Get correct balance based on account mode
     const balance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
     const price = cryptoPrices[selectedCrypto]?.price || 0;
-    const amount = (balance / price) * (percent / 100);
+    const maxAmount = balance / price;
+    const amount = maxAmount * (percent / 100);
     const amountInput = document.getElementById('amount');
-    if (amountInput) amountInput.value = amount.toFixed(6);
+    if (amountInput) {
+        amountInput.value = amount.toFixed(6);
+    }
     calculateTotal();
 }
 
@@ -152,7 +174,9 @@ function changeCrypto(symbol, name, icon) {
     updateCurrentPrice();
     calculateTotal();
     const placeBtn = document.getElementById('placeOrderBtn');
-    if (placeBtn) placeBtn.textContent = `${currentOrderType === 'buy' ? 'Buy' : 'Sell'} ${name} (${symbol})`;
+    if (placeBtn) {
+        placeBtn.textContent = `${currentOrderType === 'buy' ? 'Buy' : 'Sell'} ${name} (${symbol})`;
+    }
 }
 
 function updateCurrentPrice() {
@@ -169,54 +193,115 @@ function loadMarketPrices() {
     if (!container) return;
     container.innerHTML = Object.entries(cryptoPrices).map(([symbol, data]) => `
         <div class="market-item ${symbol === selectedCrypto ? 'active' : ''}" onclick="changeCrypto('${symbol}', '${data.name}', '${data.icon}')">
-            <div class="market-item-info"><span class="market-icon">${data.icon}</span><div><div class="market-symbol">${symbol}</div><div class="market-name">${data.name}</div></div></div>
-            <div class="market-item-price"><div class="market-price">$${data.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            <div class="market-change ${data.change >= 0 ? 'positive' : 'negative'}">${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)}%</div></div>
+            <div class="market-item-info">
+                <span class="market-icon">${data.icon}</span>
+                <div>
+                    <div class="market-symbol">${symbol}</div>
+                    <div class="market-name">${data.name}</div>
+                </div>
+            </div>
+            <div class="market-item-price">
+                <div class="market-price">$${data.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div class="market-change ${data.change >= 0 ? 'positive' : 'negative'}">
+                    ${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)}%
+                </div>
+            </div>
         </div>
     `).join('');
 }
 
 function placeOrder() {
-    if (!currentUser) { showNotification('Please login to trade', 'error'); window.location.href = 'login.html'; return; }
+    if (!currentUser) { 
+        showNotification('Please login to trade', 'error'); 
+        window.location.href = 'login.html'; 
+        return; 
+    }
     
     const amount = parseFloat(document.getElementById('amount')?.value || 0);
-    if (!amount || amount <= 0) { showNotification('Please enter a valid amount', 'error'); return; }
+    if (!amount || amount <= 0) { 
+        showNotification('Please enter a valid amount', 'error'); 
+        return; 
+    }
     
     const price = cryptoPrices[selectedCrypto]?.price || 0;
     const total = amount * price;
     const fee = total * 0.001;
     const totalCost = currentOrderType === 'buy' ? total + fee : total - fee;
+    
+    // Get correct balance based on account mode
     const currentBalance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
     
+    console.log('=== TRADE DEBUG ===');
+    console.log('Account Mode:', currentUser.accountMode);
+    console.log('Current Balance:', currentBalance);
+    console.log('Amount:', amount);
+    console.log('Price:', price);
+    console.log('Total Cost:', totalCost);
+    console.log('Order Type:', currentOrderType);
+    
     if (currentOrderType === 'buy') {
-        if (totalCost > currentBalance) { showNotification('Insufficient balance', 'error'); return; }
+        if (totalCost > currentBalance) { 
+            showNotification(`Insufficient balance! You have $${currentBalance.toFixed(2)} but need $${totalCost.toFixed(2)}`, 'error'); 
+            return; 
+        }
+        
+        // Update balance
         const newBalance = currentBalance - totalCost;
-        if (currentUser.accountMode === 'demo') currentUser.demoBalance = newBalance;
-        else currentUser.realBalance = newBalance;
+        if (currentUser.accountMode === 'demo') {
+            currentUser.demoBalance = newBalance;
+        } else {
+            currentUser.realBalance = newBalance;
+        }
+        
+        console.log('New Balance:', newBalance);
         addTransaction('buy', amount, price, total, fee);
         saveUserData();
-        showNotification(`Successfully bought ${amount.toFixed(6)} ${selectedCrypto} at $${price.toFixed(2)}`, 'success');
+        showNotification(`✅ Successfully bought ${amount.toFixed(6)} ${selectedCrypto} at $${price.toFixed(2)}`, 'success');
     } else {
+        // Sell order
         const newBalance = currentBalance + totalCost;
-        if (currentUser.accountMode === 'demo') currentUser.demoBalance = newBalance;
-        else currentUser.realBalance = newBalance;
+        if (currentUser.accountMode === 'demo') {
+            currentUser.demoBalance = newBalance;
+        } else {
+            currentUser.realBalance = newBalance;
+        }
+        
         addTransaction('sell', amount, price, total, fee);
         saveUserData();
-        showNotification(`Successfully sold ${amount.toFixed(6)} ${selectedCrypto} at $${price.toFixed(2)}`, 'success');
+        showNotification(`✅ Successfully sold ${amount.toFixed(6)} ${selectedCrypto} at $${price.toFixed(2)}`, 'success');
     }
     
+    // Reset form and update UI
     document.getElementById('amount').value = '';
     updateBalance();
     calculateTotal();
     loadTradeHistory();
+    
+    // Refresh user data in storage
+    refreshUserData();
 }
 
 function addTransaction(type, amount, price, total, fee) {
-    const transaction = { id: Date.now(), type, crypto: selectedCrypto, amount, price, total, fee, accountMode: currentUser.accountMode, status: 'completed', date: new Date().toISOString() };
+    const transaction = { 
+        id: Date.now(), 
+        type: type, 
+        crypto: selectedCrypto, 
+        amount: amount, 
+        price: price, 
+        total: total, 
+        fee: fee, 
+        accountMode: currentUser.accountMode, 
+        status: 'completed', 
+        date: new Date().toISOString(),
+        pnl: type === 'sell' ? total - fee : 0
+    };
+    
     if (!currentUser.transactions) currentUser.transactions = [];
     currentUser.transactions.unshift(transaction);
+    
     tradeHistory.unshift(transaction);
     localStorage.setItem('pocket_trade_history', JSON.stringify(tradeHistory.slice(0, 50)));
+    
     if (!currentUser.stats) currentUser.stats = {};
     currentUser.stats.totalTrades = (currentUser.stats.totalTrades || 0) + 1;
     currentUser.stats.totalVolume = (currentUser.stats.totalVolume || 0) + total;
@@ -226,15 +311,26 @@ function loadTradeHistory() {
     const container = document.getElementById('tradeHistory');
     if (!container || !currentUser) return;
     const userTrades = (currentUser.transactions || []).filter(t => t.type === 'buy' || t.type === 'sell').slice(0, 10);
-    if (userTrades.length === 0) { container.innerHTML = '<div class="empty-state">No recent trades</div>'; return; }
+    if (userTrades.length === 0) { 
+        container.innerHTML = '<div class="empty-state">No recent trades</div>'; 
+        return; 
+    }
     container.innerHTML = userTrades.map(trade => `
-        <div class="trade-item"><div class="trade-info"><span class="trade-type ${trade.type}">${trade.type}</span>
-        <span class="trade-crypto">${trade.crypto}</span><span class="trade-amount">${trade.amount.toFixed(6)} @ $${trade.price.toFixed(2)}</span></div>
-        <div class="trade-total">$${trade.total.toFixed(2)}</div><div class="trade-time">${new Date(trade.date).toLocaleTimeString()}</div></div>
+        <div class="trade-item">
+            <div class="trade-info">
+                <span class="trade-type ${trade.type}">${trade.type}</span>
+                <span class="trade-crypto">${trade.crypto}</span>
+                <span class="trade-amount">${trade.amount.toFixed(6)} @ $${trade.price.toFixed(2)}</span>
+            </div>
+            <div class="trade-total">$${trade.total.toFixed(2)}</div>
+            <div class="trade-time">${new Date(trade.date).toLocaleTimeString()}</div>
+        </div>
     `).join('');
 }
 
-function clearAllOrders() { showNotification('All orders cleared', 'success'); }
+function clearAllOrders() { 
+    showNotification('All orders cleared', 'success'); 
+}
 
 function startPriceUpdates() {
     if (priceUpdateInterval) clearInterval(priceUpdateInterval);
@@ -248,17 +344,32 @@ function startPriceUpdates() {
         loadMarketPrices();
         updateCurrentPrice();
         calculateTotal();
-        document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+        const lastUpdated = document.getElementById('lastUpdated');
+        if (lastUpdated) lastUpdated.textContent = new Date().toLocaleTimeString();
     }, 5000);
 }
 
 function saveUserData() {
     const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
     const userIndex = users.findIndex(u => u.id === currentUser.id);
-    if (userIndex !== -1) users[userIndex] = currentUser;
-    localStorage.setItem('pocket_users', JSON.stringify(users));
-    if (localStorage.getItem('pocket_user')) localStorage.setItem('pocket_user', JSON.stringify(currentUser));
-    if (sessionStorage.getItem('pocket_user')) sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
+    if (userIndex !== -1) {
+        users[userIndex] = currentUser;
+        localStorage.setItem('pocket_users', JSON.stringify(users));
+    }
+    if (localStorage.getItem('pocket_user')) {
+        localStorage.setItem('pocket_user', JSON.stringify(currentUser));
+    }
+    if (sessionStorage.getItem('pocket_user')) {
+        sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
+    }
+}
+
+function refreshUserData() {
+    const refreshedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
+    if (refreshedUser) {
+        currentUser = JSON.parse(refreshedUser);
+        updateBalance();
+    }
 }
 
 function showNotification(message, type) {
@@ -268,10 +379,18 @@ function showNotification(message, type) {
     notification.textContent = message;
     notification.style.cssText = `position:fixed;top:20px;right:20px;background:${type === 'error' ? '#FF4757' : '#00D897'};color:white;padding:12px 20px;border-radius:12px;font-size:14px;z-index:10000;animation:slideIn 0.3s ease-out;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-width:350px;`;
     document.body.appendChild(notification);
-    setTimeout(() => { notification.style.animation = 'slideOut 0.3s ease-out'; setTimeout(() => notification.remove(), 300); }, 3000);
+    setTimeout(() => { 
+        notification.style.animation = 'slideOut 0.3s ease-out'; 
+        setTimeout(() => notification.remove(), 300); 
+    }, 3000);
 }
 
-function handleLogout() { localStorage.removeItem('pocket_user'); sessionStorage.removeItem('pocket_user'); window.location.href = 'home.html'; }
+function handleLogout() { 
+    localStorage.removeItem('pocket_user'); 
+    sessionStorage.removeItem('pocket_user'); 
+    window.location.href = 'home.html'; 
+}
 
+// Make functions global
 window.changeCrypto = changeCrypto;
 window.handleLogout = handleLogout;
