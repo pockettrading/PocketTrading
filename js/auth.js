@@ -194,21 +194,23 @@ class AuthManager {
     }
 
     register(email, password) {
+        // Check if email already exists
         if (this.users.find(u => u.email === email)) {
             this.showError('Email already exists');
             return;
         }
         
+        // Create new user with DEMO account and $10,000
         const newUser = {
             id: Date.now(),
             name: email.split('@')[0],
             email: email,
             password: password,
-            demoBalance: 10000,
-            realBalance: 0,
-            accountMode: 'demo',
-            hasRealAccount: false,
-            kycStatus: 'pending',
+            demoBalance: 10000,      // $10,000 demo funds
+            realBalance: 0,           // $0 real funds initially
+            accountMode: 'demo',      // Start with demo account
+            hasRealAccount: false,    // No real account yet
+            kycStatus: 'pending',     // KYC not verified
             created: new Date().toISOString(),
             lastLogin: new Date().toISOString(),
             transactions: [],
@@ -227,6 +229,7 @@ class AuthManager {
         this.users.push(newUser);
         localStorage.setItem('pocket_users', JSON.stringify(this.users));
         
+        // Add welcome transaction for demo funds
         this.addTransaction(newUser.id, {
             id: Date.now(),
             type: 'deposit',
@@ -240,6 +243,7 @@ class AuthManager {
         
         this.showSuccess('Demo account created successfully! You have $10,000 to start trading.');
         
+        // Auto login after registration
         setTimeout(() => {
             this.login(email, password, true);
         }, 1000);
@@ -411,6 +415,7 @@ class AuthManager {
     }
 
     showNotification(message, type) {
+        // Remove existing notification
         const existing = document.querySelector('.auth-notification');
         if (existing) existing.remove();
         
