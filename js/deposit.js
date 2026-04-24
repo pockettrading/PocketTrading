@@ -1,6 +1,5 @@
 // Deposit functionality - Real accounts only with crypto deposits
 
-// Global variables
 let currentUser = null;
 let selectedCrypto = 'ETH';
 let selectedFile = null;
@@ -43,11 +42,13 @@ const cryptoDetails = {
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Deposit page loaded');
     loadUser();
     if (!currentUser) {
         window.location.href = 'login.html';
         return;
     }
+    updateUserDisplay();
     initDepositPage();
 });
 
@@ -55,27 +56,30 @@ function loadUser() {
     const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
+        console.log('User loaded:', currentUser.email);
+    }
+}
+
+function updateUserDisplay() {
+    const userNameSpan = document.getElementById('userNameText');
+    if (userNameSpan && currentUser) {
+        const displayName = currentUser.name || currentUser.email.split('@')[0];
+        userNameSpan.textContent = displayName;
     }
 }
 
 function initDepositPage() {
-    // Check if user has real account
     checkRealAccountStatus();
-    
-    // Setup crypto selection
     setupCryptoSelection();
-    
-    // Setup amount input
     setupAmountInput();
-    
-    // Update address display
     updateWalletAddress();
+    setupFileUpload();
 }
 
 function checkRealAccountStatus() {
     const demoAlert = document.getElementById('demoAlert');
     const depositForm = document.getElementById('depositForm');
-    const cryptoCards = document.getElementById('cryptoCards');
+    const cryptoCards = document.querySelector('.crypto-cards');
     
     // Only allow deposits for real accounts
     if (!currentUser.hasRealAccount) {
@@ -89,7 +93,6 @@ function checkRealAccountStatus() {
         if (depositForm) depositForm.style.opacity = '0.5';
         if (cryptoCards) cryptoCards.style.opacity = '0.5';
         
-        // Disable all interactive elements
         const depositBtn = document.getElementById('depositBtn');
         if (depositBtn) depositBtn.disabled = true;
         
@@ -106,15 +109,10 @@ function setupCryptoSelection() {
     
     cryptoCards.forEach(card => {
         card.addEventListener('click', function() {
-            // Remove active class from all cards
             cryptoCards.forEach(c => c.classList.remove('active'));
-            // Add active class to clicked card
             this.classList.add('active');
-            // Store selected crypto
             selectedCrypto = this.dataset.crypto;
-            // Update wallet address
             updateWalletAddress();
-            // Validate amount
             validateAmount();
         });
     });
@@ -131,49 +129,44 @@ function setupAmountInput() {
     if (amountInput) {
         amountInput.addEventListener('input', function() {
             let amount = parseFloat(this.value);
-            
-            if (isNaN(amount)) {
-                amount = 0;
-            }
-            
-            depositAmount = amount;
+            depositAmount = isNaN(amount) ? 0 : amount;
             validateAmount();
         });
     }
     
-    // Quick amount buttons
     const quickAmounts = document.querySelectorAll('.quick-amount');
     quickAmounts.forEach(btn => {
         btn.addEventListener('click', function() {
             const amount = parseInt(this.dataset.amount);
             if (amountInput) {
                 amountInput.value = amount;
-                amountInput.dispatchEvent(new Event('input'));
+                depositAmount = amount;
+                validateAmount();
             }
         });
     });
     
-    // Deposit button
     if (depositBtn) {
         depositBtn.addEventListener('click', submitDepositRequest);
     }
 }
 
 function validateAmount() {
-    const amount = depositAmount;
     const depositBtn = document.getElementById('depositBtn');
-    const minAmount = 100;
-    const maxAmount = 10000;
+    const minAmount = cryptoDetails[selectedCrypto].minAmount;
+    const maxAmount = cryptoDetails[selectedCrypto].maxAmount;
     
-    if (amount >= minAmount && amount <= maxAmount) {
+    if (depositAmount >= minAmount && depositAmount <= maxAmount && selectedFile) {
         if (depositBtn) depositBtn.disabled = false;
         return true;
     } else {
         if (depositBtn) depositBtn.disabled = true;
-        if (amount > 0 && amount < minAmount) {
+        if (depositAmount > 0 && depositAmount < minAmount) {
             showNotification(`Minimum deposit is $${minAmount}`, 'error');
-        } else if (amount > maxAmount) {
+        } else if (depositAmount > maxAmount) {
             showNotification(`Maximum deposit is $${maxAmount}`, 'error');
+        } else if (!selectedFile && depositAmount >= minAmount) {
+            showNotification('Please upload a screenshot of your payment', 'error');
         }
         return false;
     }
@@ -186,71 +179,66 @@ function updateWalletAddress() {
     }
 }
 
-function handleFileUpload(input) {
-    const file = input.files[0];
+function setupFileUpload() {
+    const fileInput = document.getElementById('screenshot');
+    const uploadArea = document.querySelector('.upload-area');
     const fileInfo = document.getElementById('fileInfo');
-    const uploadArea = document.getElementById('uploadArea');
     
-    if (file) {
-        // Check file type
-        if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
-            showNotification('Please upload JPG or PNG image', 'error');
-            input.value = '';
-            return;
-        }
-        
-        // Check file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            showNotification('File size must be less than 5MB', 'error');
-            input.value = '';
-            return;
-        }
-        
-        selectedFile = file;
-        
-        // Show file info
-        if (fileInfo) {
-            fileInfo.style.display = 'block';
-            fileInfo.innerHTML = `✅ Screenshot uploaded: ${file.name}`;
-            fileInfo.style.background = 'var(--success)';
-        }
-        
-        if (uploadArea) {
-            uploadArea.style.borderColor = 'var(--success)';
-            uploadArea.style.background = 'rgba(0, 216, 151, 0.05)';
-        }
-        
-        validateAmount();
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            
+            if (file) {
+                if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+                    showNotification('Please upload JPG or PNG image', 'error');
+                    fileInput.value = '';
+                    return;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) {
+                    showNotification('File size must be less than 5MB', 'error');
+                    fileInput.value = '';
+                    return;
+                }
+                
+                selectedFile = file;
+                
+                if (fileInfo) {
+                    fileInfo.style.display = 'block';
+                    fileInfo.innerHTML = `✅ Screenshot uploaded: ${file.name}`;
+                }
+                
+                if (uploadArea) {
+                    uploadArea.style.borderColor = 'var(--success)';
+                    uploadArea.style.background = 'rgba(0, 216, 151, 0.05)';
+                }
+                
+                validateAmount();
+            }
+        });
     }
 }
 
-function submitDepositRequest() {
+function submitDepositRequest(e) {
+    e.preventDefault();
+    
     if (!currentUser) {
         showNotification('Please login to deposit', 'error');
         window.location.href = 'login.html';
         return;
     }
     
-    // Check if user has real account
     if (!currentUser.hasRealAccount) {
         showNotification('Please create a Real Account first', 'error');
         return;
     }
     
-    // Validate amount
     if (!validateAmount()) {
-        return;
-    }
-    
-    // Validate screenshot
-    if (!selectedFile) {
-        showNotification('Please upload a screenshot of your payment', 'error');
         return;
     }
     
     const amount = depositAmount;
     const cryptoName = cryptoDetails[selectedCrypto].name;
-    const cryptoSymbol = cryptoDetails[selectedCrypto].symbol;
     
     // Create deposit request
     const depositRequest = {
@@ -282,21 +270,25 @@ function submitDepositRequest() {
         date: new Date().toISOString()
     });
     
+    // Add transaction record
+    if (!currentUser.transactions) currentUser.transactions = [];
+    currentUser.transactions.unshift({
+        id: Date.now(),
+        type: 'deposit',
+        amount: amount,
+        crypto: selectedCrypto,
+        status: 'pending',
+        date: new Date().toISOString(),
+        description: `Deposit request of $${amount} via ${cryptoName} - Pending Admin Approval`
+    });
+    
     // Save user data
     saveUserData();
     
-    // Show success message
-    showNotification(`Deposit request submitted! Send ${amount} USDT worth of ${cryptoName} to the provided address. Admin will verify within 24 hours.`, 'success');
+    showNotification(`Deposit request submitted! Send $${amount} worth of ${cryptoName} to the provided address. Admin will verify within 24 hours.`, 'success');
     
     // Reset form
-    document.getElementById('depositAmount').value = '';
-    depositAmount = 0;
-    selectedFile = null;
-    document.getElementById('screenshot').value = '';
-    document.getElementById('fileInfo').style.display = 'none';
-    document.getElementById('uploadArea').style.borderColor = '';
-    document.getElementById('uploadArea').style.background = '';
-    document.getElementById('depositBtn').disabled = true;
+    resetForm();
     
     // Redirect to dashboard after 3 seconds
     setTimeout(() => {
@@ -304,8 +296,27 @@ function submitDepositRequest() {
     }, 3000);
 }
 
+function resetForm() {
+    const amountInput = document.getElementById('depositAmount');
+    const fileInput = document.getElementById('screenshot');
+    const fileInfo = document.getElementById('fileInfo');
+    const uploadArea = document.querySelector('.upload-area');
+    
+    if (amountInput) amountInput.value = '';
+    depositAmount = 0;
+    selectedFile = null;
+    if (fileInput) fileInput.value = '';
+    if (fileInfo) fileInfo.style.display = 'none';
+    if (uploadArea) {
+        uploadArea.style.borderColor = '';
+        uploadArea.style.background = '';
+    }
+    
+    const depositBtn = document.getElementById('depositBtn');
+    if (depositBtn) depositBtn.disabled = true;
+}
+
 function saveUserData() {
-    // Update in users array
     const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
     const userIndex = users.findIndex(u => u.id === currentUser.id);
     if (userIndex !== -1) {
@@ -313,7 +324,6 @@ function saveUserData() {
         localStorage.setItem('pocket_users', JSON.stringify(users));
     }
     
-    // Update current session
     if (localStorage.getItem('pocket_user')) {
         localStorage.setItem('pocket_user', JSON.stringify(currentUser));
     }
@@ -358,16 +368,15 @@ function showNotification(message, type) {
     setTimeout(function() {
         notification.style.animation = 'slideOut 0.3s ease-out';
         setTimeout(function() { notification.remove(); }, 300);
-    }, 5000);
+    }, 4000);
 }
 
 function handleLogout() {
     localStorage.removeItem('pocket_user');
     sessionStorage.removeItem('pocket_user');
-    window.location.href = 'login.html';
+    window.location.href = 'home.html';
 }
 
-// Make functions global for HTML onclick
+// Make functions global
 window.copyAddress = copyAddress;
-window.handleFileUpload = handleFileUpload;
 window.handleLogout = handleLogout;
