@@ -1,8 +1,7 @@
-// Profile functionality - Complete working version
+// Profile page functionality - Complete working version
 
 let currentUser = null;
 
-// Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Profile page loaded');
     loadUser();
@@ -23,10 +22,9 @@ function loadUser() {
 }
 
 function updateUserDisplay() {
-    const userNameSpan = document.getElementById('userNameText');
+    const userNameSpan = document.getElementById('userNameDisplay');
     if (userNameSpan && currentUser) {
-        const displayName = currentUser.name || currentUser.email.split('@')[0];
-        userNameSpan.textContent = displayName;
+        userNameSpan.textContent = currentUser.name || currentUser.email.split('@')[0];
     }
 }
 
@@ -47,7 +45,6 @@ function setupTabs() {
         tab.addEventListener('click', function(e) {
             e.preventDefault();
             const tabId = this.dataset.tab;
-            console.log('Switching to tab:', tabId);
             
             tabs.forEach(t => t.classList.remove('active'));
             this.classList.add('active');
@@ -63,7 +60,6 @@ function setupTabs() {
 }
 
 function switchTab(tabName) {
-    console.log('Switch tab called:', tabName);
     const tabs = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     
@@ -164,29 +160,23 @@ function loadTradingStats() {
     
     const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100).toFixed(1) : 0;
     
-    const totalTradesElem = document.getElementById('totalTrades');
-    const winRateElem = document.getElementById('winRate');
-    const totalVolumeElem = document.getElementById('totalVolume');
-    const totalProfitElem = document.getElementById('totalProfit');
+    document.getElementById('totalTrades').textContent = totalTrades;
+    document.getElementById('winRate').textContent = `${winRate}%`;
+    document.getElementById('totalVolume').textContent = `$${totalVolume.toFixed(2)}`;
     
-    if (totalTradesElem) totalTradesElem.textContent = totalTrades;
-    if (winRateElem) winRateElem.textContent = `${winRate}%`;
-    if (totalVolumeElem) totalVolumeElem.textContent = `$${totalVolume.toFixed(2)}`;
-    if (totalProfitElem) {
-        totalProfitElem.textContent = `${totalProfit >= 0 ? '+' : ''}$${totalProfit.toFixed(2)}`;
-        totalProfitElem.className = `stat-value ${totalProfit >= 0 ? 'positive' : 'negative'}`;
-    }
+    const profitElem = document.getElementById('totalProfit');
+    profitElem.textContent = `${totalProfit >= 0 ? '+' : ''}$${totalProfit.toFixed(2)}`;
+    profitElem.className = `stat-value ${totalProfit >= 0 ? 'positive' : 'negative'}`;
 }
 
 function loadTradeHistory() {
     const tbody = document.getElementById('tradeHistoryBody');
     if (!tbody) return;
     
-    const transactions = currentUser.transactions || [];
-    const trades = transactions.filter(t => t.type === 'trade' || t.type === 'buy' || t.type === 'sell').slice(0, 20);
+    const trades = (currentUser.transactions || []).filter(t => t.type === 'trade' || t.type === 'buy' || t.type === 'sell').slice(0, 20);
     
     if (trades.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No trades yet</td--</tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No trades yet</td></tr>';
         return;
     }
     
@@ -226,28 +216,6 @@ function setupForms() {
             sendSupportMessage();
         });
     }
-    
-    // File upload handlers
-    const idFront = document.getElementById('idFront');
-    if (idFront) {
-        idFront.addEventListener('change', function(e) {
-            handleFileUpload(e.target.files[0], 'ID Front');
-        });
-    }
-    
-    const idBack = document.getElementById('idBack');
-    if (idBack) {
-        idBack.addEventListener('change', function(e) {
-            handleFileUpload(e.target.files[0], 'ID Back');
-        });
-    }
-    
-    const selfie = document.getElementById('selfie');
-    if (selfie) {
-        selfie.addEventListener('change', function(e) {
-            handleFileUpload(e.target.files[0], 'Selfie');
-        });
-    }
 }
 
 function updateProfile() {
@@ -258,9 +226,7 @@ function updateProfile() {
     const newPassword = document.getElementById('newPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     
-    if (newName) {
-        currentUser.name = newName;
-    }
+    if (newName) currentUser.name = newName;
     
     if (newEmail && newEmail !== currentUser.email) {
         const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
@@ -271,13 +237,8 @@ function updateProfile() {
         currentUser.email = newEmail;
     }
     
-    if (newPhone) {
-        currentUser.phone = newPhone;
-    }
-    
-    if (newCountry) {
-        currentUser.country = newCountry;
-    }
+    if (newPhone) currentUser.phone = newPhone;
+    if (newCountry) currentUser.country = newCountry;
     
     if (newPassword) {
         if (newPassword.length < 8) {
@@ -307,24 +268,9 @@ function submitKYC() {
         return;
     }
     
-    // Check if files were uploaded
-    const hasIdFront = document.getElementById('idFront').files.length > 0;
-    const hasIdBack = document.getElementById('idBack').files.length > 0;
-    const hasSelfie = document.getElementById('selfie').files.length > 0;
-    
-    if (!hasIdFront || !hasIdBack || !hasSelfie) {
-        showNotification('Please upload all required documents', 'error');
-        return;
-    }
-    
     currentUser.kycStatus = 'pending';
     currentUser.kycSubmitted = new Date().toISOString();
-    currentUser.kycDetails = {
-        fullName: fullName,
-        dob: dob,
-        idType: idType,
-        submitted: new Date().toISOString()
-    };
+    currentUser.kycDetails = { fullName, dob, idType, submitted: new Date().toISOString() };
     
     saveUserData();
     showNotification('KYC documents submitted successfully! We will verify within 24-48 hours.', 'success');
@@ -368,24 +314,6 @@ function sendSupportMessage() {
     document.getElementById('supportAttachment').value = '';
 }
 
-function handleFileUpload(file, type) {
-    if (file) {
-        if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
-            showNotification(`${type} must be JPG or PNG`, 'error');
-            return false;
-        }
-        
-        if (file.size > 5 * 1024 * 1024) {
-            showNotification(`${type} must be less than 5MB`, 'error');
-            return false;
-        }
-        
-        showNotification(`${type} uploaded successfully!`, 'success');
-        return true;
-    }
-    return false;
-}
-
 function updateAvatar() {
     const avatarDiv = document.getElementById('userAvatar');
     if (avatarDiv && currentUser) {
@@ -403,12 +331,8 @@ function saveUserData() {
         localStorage.setItem('pocket_users', JSON.stringify(users));
     }
     
-    if (localStorage.getItem('pocket_user')) {
-        localStorage.setItem('pocket_user', JSON.stringify(currentUser));
-    }
-    if (sessionStorage.getItem('pocket_user')) {
-        sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
-    }
+    if (localStorage.getItem('pocket_user')) localStorage.setItem('pocket_user', JSON.stringify(currentUser));
+    if (sessionStorage.getItem('pocket_user')) sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
 }
 
 function showNotification(message, type) {
@@ -434,9 +358,9 @@ function showNotification(message, type) {
     
     document.body.appendChild(notification);
     
-    setTimeout(function() {
+    setTimeout(() => {
         notification.style.animation = 'slideOut 0.3s ease-out';
-        setTimeout(function() { notification.remove(); }, 300);
+        setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
 
@@ -446,6 +370,5 @@ function handleLogout() {
     window.location.href = 'home.html';
 }
 
-// Make functions global
 window.switchTab = switchTab;
 window.handleLogout = handleLogout;
