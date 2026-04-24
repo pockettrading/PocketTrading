@@ -1,4 +1,4 @@
-// Profile functionality - No redirect issues
+// Profile functionality - Complete working version
 
 let currentUser = null;
 
@@ -7,11 +7,10 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Profile page loaded');
     loadUser();
     if (!currentUser) {
-        console.log('No user found, redirecting to login');
         window.location.href = 'login.html';
         return;
     }
-    console.log('User loaded:', currentUser.email);
+    updateUserDisplay();
     initProfilePage();
 });
 
@@ -19,12 +18,19 @@ function loadUser() {
     const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
-        console.log('User loaded from storage');
+        console.log('User loaded:', currentUser.email);
+    }
+}
+
+function updateUserDisplay() {
+    const userNameSpan = document.getElementById('userNameText');
+    if (userNameSpan && currentUser) {
+        const displayName = currentUser.name || currentUser.email.split('@')[0];
+        userNameSpan.textContent = displayName;
     }
 }
 
 function initProfilePage() {
-    console.log('Initializing profile page');
     setupTabs();
     loadUserProfile();
     loadTradingStats();
@@ -180,13 +186,13 @@ function loadTradeHistory() {
     const trades = transactions.filter(t => t.type === 'trade' || t.type === 'buy' || t.type === 'sell').slice(0, 20);
     
     if (trades.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No trades yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No trades yet</td--</tr>';
         return;
     }
     
     tbody.innerHTML = trades.map(trade => `
         <tr>
-            <td>${new Date(trade.date).toLocaleDateString()}</td>
+            <td>${new Date(trade.date).toLocaleDateString()} ${new Date(trade.date).toLocaleTimeString()}</td>
             <td class="trade-type-${trade.type}">${trade.type.toUpperCase()}</td>
             <td>${trade.crypto || 'BTC'}</td>
             <td>${trade.amount?.toFixed(6) || '0'}</td>
@@ -218,6 +224,28 @@ function setupForms() {
         supportForm.addEventListener('submit', function(e) {
             e.preventDefault();
             sendSupportMessage();
+        });
+    }
+    
+    // File upload handlers
+    const idFront = document.getElementById('idFront');
+    if (idFront) {
+        idFront.addEventListener('change', function(e) {
+            handleFileUpload(e.target.files[0], 'ID Front');
+        });
+    }
+    
+    const idBack = document.getElementById('idBack');
+    if (idBack) {
+        idBack.addEventListener('change', function(e) {
+            handleFileUpload(e.target.files[0], 'ID Back');
+        });
+    }
+    
+    const selfie = document.getElementById('selfie');
+    if (selfie) {
+        selfie.addEventListener('change', function(e) {
+            handleFileUpload(e.target.files[0], 'Selfie');
         });
     }
 }
@@ -266,6 +294,7 @@ function updateProfile() {
     saveUserData();
     showNotification('Profile updated successfully!', 'success');
     loadUserProfile();
+    updateAvatar();
 }
 
 function submitKYC() {
@@ -275,6 +304,16 @@ function submitKYC() {
     
     if (!fullName || !dob || !idType) {
         showNotification('Please fill in all fields', 'error');
+        return;
+    }
+    
+    // Check if files were uploaded
+    const hasIdFront = document.getElementById('idFront').files.length > 0;
+    const hasIdBack = document.getElementById('idBack').files.length > 0;
+    const hasSelfie = document.getElementById('selfie').files.length > 0;
+    
+    if (!hasIdFront || !hasIdBack || !hasSelfie) {
+        showNotification('Please upload all required documents', 'error');
         return;
     }
     
@@ -327,6 +366,24 @@ function sendSupportMessage() {
     document.getElementById('supportSubject').value = '';
     document.getElementById('supportMessage').value = '';
     document.getElementById('supportAttachment').value = '';
+}
+
+function handleFileUpload(file, type) {
+    if (file) {
+        if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+            showNotification(`${type} must be JPG or PNG`, 'error');
+            return false;
+        }
+        
+        if (file.size > 5 * 1024 * 1024) {
+            showNotification(`${type} must be less than 5MB`, 'error');
+            return false;
+        }
+        
+        showNotification(`${type} uploaded successfully!`, 'success');
+        return true;
+    }
+    return false;
 }
 
 function updateAvatar() {
@@ -386,7 +443,7 @@ function showNotification(message, type) {
 function handleLogout() {
     localStorage.removeItem('pocket_user');
     sessionStorage.removeItem('pocket_user');
-    window.location.href = 'login.html';
+    window.location.href = 'home.html';
 }
 
 // Make functions global
