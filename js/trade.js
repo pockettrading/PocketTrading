@@ -1,4 +1,4 @@
-// Trade page functionality - Fixed for demo account balance
+// Trade page functionality - Fixed balance handling
 
 let currentUser = null;
 let currentOrderType = 'buy';
@@ -21,10 +21,10 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = 'login.html';
         return;
     }
-    console.log('User loaded:', currentUser.email);
-    console.log('Account mode:', currentUser.accountMode);
-    console.log('Demo balance:', currentUser.demoBalance);
-    console.log('Real balance:', currentUser.realBalance);
+    
+    // Validate and fix balance if needed
+    validateAndFixBalance();
+    
     updateUserDisplay();
     initTradePage();
 });
@@ -33,6 +33,24 @@ function loadUser() {
     const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
+    }
+}
+
+function validateAndFixBalance() {
+    // Ensure demo balance is correct (should be 10000 or less if trades were made)
+    if (currentUser.accountMode === 'demo') {
+        if (currentUser.demoBalance > 10000 || currentUser.demoBalance < 0) {
+            console.log('Invalid demo balance detected:', currentUser.demoBalance);
+            currentUser.demoBalance = 10000;
+            showNotification('Balance was reset to $10,000', 'warning');
+            saveUserData();
+        }
+    }
+    
+    // Ensure real balance is not negative
+    if (currentUser.realBalance < 0) {
+        currentUser.realBalance = 0;
+        saveUserData();
     }
 }
 
@@ -50,18 +68,30 @@ function updateUserDisplay() {
 
 function updateBalance() {
     if (!currentUser) return;
-    // Get the correct balance based on account mode
     const balance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
     const balanceElem = document.getElementById('availableBalance');
     const badgeElem = document.getElementById('accountBadge');
+    
     if (balanceElem) {
-        balanceElem.textContent = `$${balance.toFixed(2)}`;
+        // Format balance properly
+        if (balance > 1000000) {
+            // If balance is corrupted, fix it
+            if (currentUser.accountMode === 'demo') {
+                currentUser.demoBalance = 10000;
+                saveUserData();
+                balanceElem.textContent = `$10,000.00`;
+            } else {
+                balanceElem.textContent = `$${balance.toFixed(2)}`;
+            }
+        } else {
+            balanceElem.textContent = `$${balance.toFixed(2)}`;
+        }
     }
+    
     if (badgeElem) {
         badgeElem.textContent = currentUser.accountMode === 'demo' ? 'Demo' : 'Real';
         badgeElem.className = `account-badge ${currentUser.accountMode === 'demo' ? 'demo' : 'real'}`;
     }
-    console.log('Balance updated:', balance, 'Mode:', currentUser.accountMode);
 }
 
 function initTradePage() {
@@ -136,7 +166,6 @@ function setOrderType(type) {
 
 function setQuickAmount(percent) {
     if (!currentUser) return;
-    // Get correct balance based on account mode
     const balance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
     const price = cryptoPrices[selectedCrypto]?.price || 0;
     const maxAmount = balance / price;
@@ -228,16 +257,20 @@ function placeOrder() {
     const fee = total * 0.001;
     const totalCost = currentOrderType === 'buy' ? total + fee : total - fee;
     
-    // Get correct balance based on account mode
-    const currentBalance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
+    let currentBalance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
     
-    console.log('=== TRADE DEBUG ===');
-    console.log('Account Mode:', currentUser.accountMode);
-    console.log('Current Balance:', currentBalance);
-    console.log('Amount:', amount);
-    console.log('Price:', price);
+    // Validate balance is not corrupted
+    if (currentBalance > 1000000 && currentUser.accountMode === 'demo') {
+        currentBalance = 10000;
+        currentUser.demoBalance = 10000;
+        saveUserData();
+        showNotification('Balance was reset to $10,000', 'warning');
+    }
+    
+    console.log('Trade Debug:');
+    console.log('Mode:', currentUser.accountMode);
+    console.log('Balance:', currentBalance);
     console.log('Total Cost:', totalCost);
-    console.log('Order Type:', currentOrderType);
     
     if (currentOrderType === 'buy') {
         if (totalCost > currentBalance) { 
@@ -245,7 +278,6 @@ function placeOrder() {
             return; 
         }
         
-        // Update balance
         const newBalance = currentBalance - totalCost;
         if (currentUser.accountMode === 'demo') {
             currentUser.demoBalance = newBalance;
@@ -253,12 +285,10 @@ function placeOrder() {
             currentUser.realBalance = newBalance;
         }
         
-        console.log('New Balance:', newBalance);
         addTransaction('buy', amount, price, total, fee);
         saveUserData();
         showNotification(`✅ Successfully bought ${amount.toFixed(6)} ${selectedCrypto} at $${price.toFixed(2)}`, 'success');
     } else {
-        // Sell order
         const newBalance = currentBalance + totalCost;
         if (currentUser.accountMode === 'demo') {
             currentUser.demoBalance = newBalance;
@@ -271,13 +301,10 @@ function placeOrder() {
         showNotification(`✅ Successfully sold ${amount.toFixed(6)} ${selectedCrypto} at $${price.toFixed(2)}`, 'success');
     }
     
-    // Reset form and update UI
     document.getElementById('amount').value = '';
     updateBalance();
     calculateTotal();
     loadTradeHistory();
-    
-    // Refresh user data in storage
     refreshUserData();
 }
 
@@ -377,7 +404,8 @@ function showNotification(message, type) {
     if (existing) existing.remove();
     const notification = document.createElement('div');
     notification.textContent = message;
-    notification.style.cssText = `position:fixed;top:20px;right:20px;background:${type === 'error' ? '#FF4757' : '#00D897'};color:white;padding:12px 20px;border-radius:12px;font-size:14px;z-index:10000;animation:slideIn 0.3s ease-out;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-width:350px;`;
+    const bgColor = type === 'error' ? '#FF4757' : (type === 'warning' ? '#FFA502' : '#00D897');
+    notification.style.cssText = `position:fixed;top:20px;right:20px;background:${bgColor};color:white;padding:12px 20px;border-radius:12px;font-size:14px;z-index:10000;animation:slideIn 0.3s ease-out;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-width:350px;`;
     document.body.appendChild(notification);
     setTimeout(() => { 
         notification.style.animation = 'slideOut 0.3s ease-out'; 
@@ -391,6 +419,5 @@ function handleLogout() {
     window.location.href = 'home.html'; 
 }
 
-// Make functions global
 window.changeCrypto = changeCrypto;
 window.handleLogout = handleLogout;
