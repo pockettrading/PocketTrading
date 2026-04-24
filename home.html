@@ -141,6 +141,21 @@
             font-weight: 500;
         }
 
+        .auth-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 8px 20px;
+            background: rgba(247, 147, 26, 0.1);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .auth-link:hover {
+            background: var(--primary);
+            color: white;
+        }
+
         .logout-link {
             color: var(--danger);
             text-decoration: none;
@@ -411,7 +426,7 @@
                 </div>
                 <div class="user-section">
                     <span class="user-name" id="userNameDisplay">Guest</span>
-                    <span class="logout-link" onclick="handleLogout()">Logout</span>
+                    <span id="authButton"></span>
                 </div>
             </div>
 
