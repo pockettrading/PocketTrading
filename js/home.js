@@ -18,6 +18,7 @@ function loadUser() {
             console.log('User logged in:', currentUser.email);
         } else {
             console.log('No user logged in - guest mode');
+            currentUser = null;
         }
     } catch(e) {
         console.log('Error loading user:', e);
@@ -27,12 +28,24 @@ function loadUser() {
 
 function updateUserDisplay() {
     const userNameSpan = document.getElementById('userNameDisplay');
+    const authButtonSpan = document.getElementById('authButton');
+    
     if (userNameSpan) {
         if (currentUser) {
             const displayName = currentUser.name || currentUser.email.split('@')[0];
             userNameSpan.textContent = displayName;
+            
+            // Show Logout button for logged-in users
+            if (authButtonSpan) {
+                authButtonSpan.innerHTML = '<span class="logout-link" onclick="handleLogout()">Logout</span>';
+            }
         } else {
             userNameSpan.textContent = 'Guest';
+            
+            // Show Sign Up button for guest users
+            if (authButtonSpan) {
+                authButtonSpan.innerHTML = '<a href="register.html" class="auth-link">Sign Up</a>';
+            }
         }
     }
 }
@@ -45,10 +58,16 @@ function loadUserStats() {
         const winRateElem = document.getElementById('winRate');
         const profitElem = document.getElementById('totalProfit');
         
-        if (balanceElem) balanceElem.textContent = '$0';
+        if (balanceElem) {
+            balanceElem.textContent = '$0';
+            balanceElem.className = 'stat-value';
+        }
         if (tradesElem) tradesElem.textContent = '0';
         if (winRateElem) winRateElem.textContent = '0%';
-        if (profitElem) profitElem.textContent = '$0';
+        if (profitElem) {
+            profitElem.textContent = '$0';
+            profitElem.className = 'stat-value';
+        }
         return;
     }
     
