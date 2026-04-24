@@ -1,4 +1,4 @@
-// Home page functionality - Dashboard style
+// Home page functionality - Dashboard style with no sidebar
 
 let currentUser = null;
 
@@ -131,7 +131,7 @@ function loadUserStats() {
     if (tradesElem) tradesElem.textContent = totalTrades;
     if (winRateElem) {
         winRateElem.textContent = `${winRate}%`;
-        winRateElem.className = `stat-value`;
+        winRateElem.className = 'stat-value';
     }
     if (profitElem) {
         const sign = totalProfit >= 0 ? '+' : '';
