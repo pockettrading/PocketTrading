@@ -38,144 +38,78 @@
             min-height: 100vh;
         }
 
-        .app-container {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 280px;
-            background: var(--darker-bg);
-            border-right: 1px solid var(--border);
-            padding: 2rem 1rem;
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            height: 100vh;
-            left: 0;
-            top: 0;
-        }
-
-        .sidebar-logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 0 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .sidebar-logo span {
-            font-size: 1.3rem;
-            font-weight: 700;
-        }
-
-        .sidebar-nav {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 1rem;
-            color: var(--text-secondary);
-            text-decoration: none;
-            border-radius: 12px;
-            transition: all 0.3s;
-        }
-
-        .nav-item:hover,
-        .nav-item.active {
-            background: var(--card-bg);
-            color: var(--primary);
-        }
-
-        .logout-btn {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 1rem;
-            background: none;
-            border: none;
-            color: var(--danger);
-            cursor: pointer;
-            border-radius: 12px;
-            transition: all 0.3s;
-            margin-top: auto;
-            width: 100%;
-        }
-
-        .logout-btn:hover {
-            background: rgba(255, 71, 87, 0.1);
-        }
-
-        .main-content {
-            flex: 1;
-            margin-left: 280px;
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
             padding: 2rem;
         }
 
-        /* Top Bar */
-        .top-bar {
+        /* Top Navigation Bar */
+        .top-nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
             flex-wrap: wrap;
             gap: 1rem;
         }
 
-        .welcome-message h1 {
-            font-size: 1.8rem;
-            margin-bottom: 0.25rem;
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .welcome-message h1 span {
-            color: var(--primary);
+        .logo svg {
+            width: 32px;
+            height: 32px;
         }
 
-        .welcome-message p {
+        .logo span {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
             color: var(--text-secondary);
-        }
-
-        .user-menu {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .notification-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--card-bg);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
+            text-decoration: none;
+            font-weight: 500;
             transition: all 0.3s;
         }
 
-        .notification-icon:hover {
-            background: var(--card-hover);
+        .nav-link:hover {
+            color: var(--primary);
         }
 
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            overflow: hidden;
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .user-name {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .logout-link {
+            color: var(--danger);
+            text-decoration: none;
+            font-weight: 500;
             cursor: pointer;
         }
 
-        .avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .logout-link:hover {
+            text-decoration: underline;
         }
 
         /* Account Mode Switcher */
@@ -260,7 +194,7 @@
         /* Stats Cards */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
@@ -312,8 +246,7 @@
             margin-bottom: 2rem;
         }
 
-        .chart-container,
-        .market-data {
+        .chart-container, .market-data {
             background: var(--card-bg);
             border-radius: 16px;
             padding: 1.5rem;
@@ -459,13 +392,11 @@
             font-weight: 500;
         }
 
-        .transaction-type.buy,
-        .transaction-type.deposit {
+        .transaction-type.buy, .transaction-type.deposit {
             color: var(--success);
         }
 
-        .transaction-type.sell,
-        .transaction-type.withdraw {
+        .transaction-type.sell, .transaction-type.withdraw {
             color: var(--danger);
         }
 
@@ -521,14 +452,8 @@
         }
 
         @keyframes modalSlideIn {
-            from {
-                transform: translateY(-50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         .modal-header {
@@ -601,56 +526,18 @@
             background: var(--card-hover);
         }
 
-        /* User Menu Dropdown */
-        .user-menu-dropdown {
-            position: relative;
+        .btn-primary-modal {
+            background: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
             cursor: pointer;
-        }
-
-        .user-name-display {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background: var(--card-bg);
-            border-radius: 40px;
-        }
-
-        .dropdown-menu {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0.5rem;
-            min-width: 150px;
-            display: none;
-            z-index: 100;
-            margin-top: 0.5rem;
-        }
-
-        .user-menu-dropdown:hover .dropdown-menu {
-            display: block;
-        }
-
-        .dropdown-item {
-            padding: 10px 16px;
-            color: var(--text-primary);
-            text-decoration: none;
-            display: block;
             transition: all 0.3s;
-            border-radius: 8px;
         }
 
-        .dropdown-item:hover {
-            background: var(--card-hover);
-            color: var(--primary);
-        }
-
-        hr {
-            border-color: var(--border);
-            margin: 0.5rem 0;
+        .btn-primary-modal:hover {
+            background: var(--primary-dark);
         }
 
         @keyframes slideIn {
@@ -667,241 +554,169 @@
             .trading-section {
                 grid-template-columns: 1fr;
             }
-            
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s;
-                z-index: 100;
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
-            
-            .sidebar.open {
-                transform: translateX(0);
-            }
-            
-            .main-content {
-                margin-left: 0;
+            .container {
+                padding: 1.5rem;
             }
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 480px) {
             .stats-grid {
                 grid-template-columns: 1fr;
             }
-            
             .account-mode-section {
                 flex-direction: column;
             }
-            
             .mode-switcher {
                 width: 100%;
                 flex-direction: column;
             }
-            
             .btn-upgrade {
                 width: 100%;
+                text-align: center;
+            }
+            .nav-links {
+                gap: 1rem;
+            }
+            .top-nav {
+                flex-direction: column;
                 text-align: center;
             }
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <aside class="sidebar">
-            <div class="sidebar-logo">
-                <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+    <div class="container">
+        <!-- Top Navigation Bar -->
+        <div class="top-nav">
+            <div class="logo">
+                <svg viewBox="0 0 40 40" fill="none">
                     <rect width="40" height="40" rx="10" fill="#F7931A"/>
                     <path d="M20 10L25 15L20 20L15 15L20 10Z" fill="white"/>
                     <path d="M20 20L25 25L20 30L15 25L20 20Z" fill="white"/>
                 </svg>
                 <span>Pocket<span style="color: var(--primary);">Trading</span></span>
             </div>
+            <div class="nav-links">
+                <a href="home.html" class="nav-link">Home</a>
+                <a href="markets.html" class="nav-link">Markets</a>
+                <a href="trade.html" class="nav-link">Trades</a>
+                <a href="profile.html" class="nav-link" style="color: var(--primary);">My Profile</a>
+            </div>
+            <div class="user-section">
+                <span class="user-name" id="userNameDisplay">Guest</span>
+                <span class="logout-link" onclick="handleLogout()">Logout</span>
+            </div>
+        </div>
 
-            <nav class="sidebar-nav">
-                <a href="home.html" class="nav-item">
+        <!-- Account Mode Switcher -->
+        <div class="account-mode-section">
+            <div class="mode-switcher">
+                <button class="mode-btn active" data-mode="demo" onclick="switchAccountMode('demo')">
+                    <span class="mode-icon">📊</span>
+                    <div class="mode-info">
+                        <div class="mode-name">Demo Account</div>
+                        <div class="mode-balance" id="demoBalance">$10,000.00</div>
+                    </div>
+                </button>
+                <button class="mode-btn" data-mode="real" onclick="switchAccountMode('real')">
+                    <span class="mode-icon">💰</span>
+                    <div class="mode-info">
+                        <div class="mode-name">Real Account</div>
+                        <div class="mode-balance" id="realBalance">$0.00</div>
+                    </div>
+                </button>
+            </div>
+            <div id="upgradeSection" style="display: none;">
+                <button class="btn-upgrade" onclick="showUpgradeModal()">Create Real Account</button>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Total Balance</span>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                        <path d="M9 22V12h6v10"/>
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
                     </svg>
-                    <span>Home</span>
-                </a>
-                <a href="markets.html" class="nav-item">
+                </div>
+                <div class="stat-value">$<span id="totalBalance">0.00</span></div>
+                <div class="stat-change positive" id="balanceChange">0% from start</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">24h Volume</span>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 3v18h18M18 9l-4 4-3-3-4 4"/>
+                        <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9h-4m-7 9A9 9 0 013 12m9 9v-4M3 12a9 9 0 019-9m-9 9h4m7-9a9 9 0 00-9 9"/>
                     </svg>
-                    <span>Markets</span>
-                </a>
-                <a href="trade.html" class="nav-item">
+                </div>
+                <div class="stat-value">$<span id="dailyVolume">0.00</span></div>
+                <div class="stat-change positive">+0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Total Profit/Loss</span>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 12h18M12 3v18M16 8l4 4-4 4M8 8l-4 4 4 4"/>
+                        <path d="M3 17v2h6v-2M3 7v2h6V7M13 5v2h6V5M13 11v2h6v-2M13 17v2h6v-2"/>
                     </svg>
-                    <span>Trades</span>
-                </a>
-                <a href="profile.html" class="nav-item active">
+                </div>
+                <div class="stat-value" id="totalProfit">$0.00</div>
+                <div class="stat-change positive">+0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Active Trades</span>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/>
+                        <path d="M9 12h6M12 9v6M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
                     </svg>
-                    <span>My Profile</span>
-                </a>
-            </nav>
-
-            <div class="user-menu-dropdown" id="userMenu">
-                <div class="user-name-display">
-                    <span>👤</span>
-                    <span id="userNameText">Guest</span>
-                    <span>▼</span>
                 </div>
-                <div class="dropdown-menu">
-                    <a href="profile.html" class="dropdown-item">My Profile</a>
-                    <a href="dashboard.html" class="dropdown-item">Dashboard</a>
-                    <hr>
-                    <button class="dropdown-item" onclick="handleLogout()" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; color: var(--danger);">Logout</button>
-                </div>
+                <div class="stat-value"><span id="activeTrades">0</span></div>
+                <div class="stat-change">Currently open</div>
             </div>
-        </aside>
+        </div>
 
-        <main class="main-content">
-            <div class="top-bar">
-                <div class="welcome-message">
-                    <h1>Welcome back, <span id="userName">Trader</span>!</h1>
-                    <p>Here's your portfolio overview</p>
-                </div>
-                <div class="user-menu">
-                    <div class="notification-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
-                        </svg>
-                    </div>
-                    <div class="avatar">
-                        <img src="https://ui-avatars.com/api/?background=F7931A&color=fff&rounded=true" alt="Avatar">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Account Mode Switcher -->
-            <div class="account-mode-section">
-                <div class="mode-switcher">
-                    <button class="mode-btn active" data-mode="demo" onclick="switchAccountMode('demo')">
-                        <span class="mode-icon">📊</span>
-                        <div class="mode-info">
-                            <div class="mode-name">Demo Account</div>
-                            <div class="mode-balance" id="demoBalance">$10,000.00</div>
-                        </div>
-                    </button>
-                    <button class="mode-btn" data-mode="real" onclick="switchAccountMode('real')">
-                        <span class="mode-icon">💰</span>
-                        <div class="mode-info">
-                            <div class="mode-name">Real Account</div>
-                            <div class="mode-balance" id="realBalance">$0.00</div>
-                        </div>
-                    </button>
-                </div>
-                
-                <div id="upgradeSection" style="display: none;">
-                    <button class="btn-upgrade" onclick="showUpgradeModal()">
-                        Create Real Account
-                    </button>
-                </div>
-            </div>
-
-            <!-- Stats Cards -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <span>Total Balance</span>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-                        </svg>
-                    </div>
-                    <div class="stat-value">$<span id="totalBalance">0.00</span></div>
-                    <div class="stat-change positive" id="balanceChange">0% from start</div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <span>24h Volume</span>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9h-4m-7 9A9 9 0 013 12m9 9v-4M3 12a9 9 0 019-9m-9 9h4m7-9a9 9 0 00-9 9"/>
-                        </svg>
-                    </div>
-                    <div class="stat-value">$<span id="dailyVolume">0.00</span></div>
-                    <div class="stat-change positive">+0%</div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <span>Total Profit/Loss</span>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 17v2h6v-2M3 7v2h6V7M13 5v2h6V5M13 11v2h6v-2M13 17v2h6v-2"/>
-                        </svg>
-                    </div>
-                    <div class="stat-value" id="totalProfit">$0.00</div>
-                    <div class="stat-change positive">+0%</div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <span>Active Trades</span>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 12h6M12 9v6M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-                        </svg>
-                    </div>
-                    <div class="stat-value"><span id="activeTrades">0</span></div>
-                    <div class="stat-change">Currently open</div>
-                </div>
-            </div>
-
-            <!-- Trading Chart and Market Data -->
-            <div class="trading-section">
-                <div class="chart-container">
-                    <div class="section-header">
-                        <h2>Market Overview</h2>
-                        <select id="timeframe" class="timeframe-select">
-                            <option value="1H">1H</option>
-                            <option value="24H" selected>24H</option>
-                            <option value="7D">7D</option>
-                            <option value="30D">30D</option>
-                        </select>
-                    </div>
-                    <div class="chart-placeholder">
-                        <canvas id="priceChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="market-data">
-                    <div class="section-header">
-                        <h2>Top Cryptocurrencies</h2>
-                    </div>
-                    <div class="crypto-list" id="cryptoList">
-                        Loading...
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Transactions -->
-            <div class="transactions-section">
+        <!-- Trading Chart and Market Data -->
+        <div class="trading-section">
+            <div class="chart-container">
                 <div class="section-header">
-                    <h2>Recent Transactions</h2>
-                    <a href="#" class="view-all" style="color: var(--primary); text-decoration: none;">View All</a>
+                    <h2>Market Overview</h2>
+                    <select id="timeframe" class="timeframe-select">
+                        <option value="1H">1H</option>
+                        <option value="24H" selected>24H</option>
+                        <option value="7D">7D</option>
+                        <option value="30D">30D</option>
+                    </select>
                 </div>
-                <div class="transactions-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                            </tr>
-                        </thead>
-                        <tbody id="transactionsList">
-                            <tr>
-                                <td colspan="4" style="text-align: center; padding: 2rem;">No transactions yet</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="chart-placeholder">
+                    <canvas id="priceChart"></canvas>
                 </div>
             </div>
-        </main>
+            <div class="market-data">
+                <div class="section-header">
+                    <h2>Top Cryptocurrencies</h2>
+                </div>
+                <div class="crypto-list" id="cryptoList">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="transactions-section">
+            <div class="section-header">
+                <h2>Recent Transactions</h2>
+                <a href="#" class="view-all" style="color: var(--primary); text-decoration: none;">View All</a>
+            </div>
+            <div class="transactions-table">
+                <table>
+                    <thead>
+                        <tr><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+                    </thead>
+                    <tbody id="transactionsList"><tr><td colspan="4" style="text-align: center; padding: 2rem;">No transactions yet</td></tr></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Upgrade Modal -->
@@ -919,23 +734,14 @@
                 </div>
                 <div class="payment-methods">
                     <h4>Select Payment Method</h4>
-                    <div class="payment-option">
-                        <input type="radio" name="payment" id="card" checked>
-                        <label for="card">Credit/Debit Card</label>
-                    </div>
-                    <div class="payment-option">
-                        <input type="radio" name="payment" id="crypto">
-                        <label for="crypto">Cryptocurrency</label>
-                    </div>
-                    <div class="payment-option">
-                        <input type="radio" name="payment" id="bank">
-                        <label for="bank">Bank Transfer</label>
-                    </div>
+                    <div class="payment-option"><input type="radio" name="payment" id="card" checked> <label for="card">Credit/Debit Card</label></div>
+                    <div class="payment-option"><input type="radio" name="payment" id="crypto"> <label for="crypto">Cryptocurrency</label></div>
+                    <div class="payment-option"><input type="radio" name="payment" id="bank"> <label for="bank">Bank Transfer</label></div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-                <button class="btn-primary" onclick="processUpgrade()" style="background: var(--primary); color: white; padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer;">Create Account & Deposit</button>
+                <button class="btn-primary-modal" onclick="processUpgrade()">Create Account & Deposit</button>
             </div>
         </div>
     </div>
