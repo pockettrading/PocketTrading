@@ -90,10 +90,24 @@
             color: var(--primary);
         }
 
-        .user-section {
+        /* User Dropdown */
+        .user-dropdown {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .user-trigger {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--card-bg);
+            border-radius: 40px;
+            transition: all 0.3s;
+        }
+
+        .user-trigger:hover {
+            background: var(--card-hover);
         }
 
         .user-name {
@@ -101,15 +115,68 @@
             font-weight: 500;
         }
 
-        .logout-link {
-            color: var(--danger);
+        .dropdown-icon {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.5rem;
+            min-width: 200px;
+            display: none;
+            z-index: 100;
+            margin-top: 0.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .user-dropdown:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px 16px;
+            color: var(--text-primary);
             text-decoration: none;
-            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            border-radius: 8px;
             cursor: pointer;
         }
 
-        .logout-link:hover {
-            text-decoration: underline;
+        .dropdown-item:hover {
+            background: var(--card-hover);
+            color: var(--primary);
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 0.5rem 0;
+        }
+
+        .account-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 8px;
+        }
+
+        .badge-demo {
+            background: rgba(247, 147, 26, 0.2);
+            color: var(--primary);
+        }
+
+        .badge-real {
+            background: rgba(0, 216, 151, 0.2);
+            color: var(--success);
         }
 
         /* Deposit Header */
@@ -137,6 +204,12 @@
             background: rgba(255, 71, 87, 0.1);
             border-left: 3px solid var(--danger);
             color: var(--danger);
+        }
+
+        .alert-info {
+            background: rgba(247, 147, 26, 0.1);
+            border-left: 3px solid var(--primary);
+            color: var(--primary);
         }
 
         /* Crypto Cards */
@@ -437,9 +510,32 @@
                 <a href="trade.html" class="nav-link">Trades</a>
                 <a href="profile.html" class="nav-link">My Profile</a>
             </div>
-            <div class="user-section">
-                <span class="user-name" id="userNameDisplay">Guest</span>
-                <span class="logout-link" onclick="handleLogout()">Logout</span>
+            <div class="user-dropdown">
+                <div class="user-trigger">
+                    <span class="user-name" id="userNameDisplay">Guest</span>
+                    <span class="dropdown-icon">▼</span>
+                </div>
+                <div class="dropdown-menu">
+                    <div class="dropdown-item" onclick="switchToDemo()">
+                        <span>📊</span> Demo Account
+                        <span class="account-badge badge-demo" id="demoBadge">Active</span>
+                    </div>
+                    <div class="dropdown-item" onclick="switchToReal()">
+                        <span>💰</span> Real Account
+                        <span class="account-badge badge-real" id="realBadge">Inactive</span>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item" onclick="goToProfile()">
+                        <span>👤</span> My Profile
+                    </div>
+                    <div class="dropdown-item" onclick="goToDashboard()">
+                        <span>📊</span> Dashboard
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item" onclick="handleLogout()">
+                        <span>🚪</span> Logout
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -452,6 +548,12 @@
         <div id="demoAlert" class="alert alert-warning" style="display: none;">
             <strong>⚠️ Real Account Required</strong><br>
             You are currently using a Demo Account. To make real deposits, please go to your Dashboard and click "Create Real Account" first.
+        </div>
+
+        <!-- Alert for Real Account Info -->
+        <div id="realAlert" class="alert alert-info" style="display: none;">
+            <strong>✅ Real Account Active</strong><br>
+            You can now deposit funds to your real trading account.
         </div>
 
         <!-- Cryptocurrency Selection -->
