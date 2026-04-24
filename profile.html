@@ -4,15 +4,127 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pocket Trading - My Profile</title>
-    <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* Profile Page Specific Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #F7931A;
+            --primary-dark: #e67e22;
+            --primary-light: #f8b45a;
+            --dark-bg: #0A0E17;
+            --darker-bg: #06090F;
+            --card-bg: #151E2C;
+            --card-hover: #1A2535;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0AAB5;
+            --text-tertiary: #6B7A8A;
+            --success: #00D897;
+            --danger: #FF4757;
+            --warning: #FFA502;
+            --border: #2A3545;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--darker-bg);
+            border-right: 1px solid var(--border);
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-logo span {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 1rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: var(--card-bg);
+            color: var(--primary);
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 1rem;
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.3s;
+            margin-top: auto;
+            width: 100%;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 71, 87, 0.1);
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
+
+        /* Profile Container */
         .profile-container {
             max-width: 1200px;
             margin: 0 auto;
         }
-        
+
         /* Tabs */
         .profile-tabs {
             display: flex;
@@ -22,7 +134,7 @@
             padding-bottom: 1rem;
             flex-wrap: wrap;
         }
-        
+
         .tab-btn {
             padding: 10px 24px;
             background: transparent;
@@ -33,24 +145,24 @@
             font-weight: 500;
             border-radius: 8px;
         }
-        
+
         .tab-btn:hover {
             color: var(--primary);
             background: rgba(247, 147, 26, 0.1);
         }
-        
+
         .tab-btn.active {
             color: var(--primary);
             background: rgba(247, 147, 26, 0.1);
         }
-        
+
         /* Profile Grid */
         .profile-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1.5rem;
         }
-        
+
         /* Cards */
         .profile-card {
             background: var(--card-bg);
@@ -58,7 +170,7 @@
             padding: 1.5rem;
             margin-bottom: 1.5rem;
         }
-        
+
         .card-title {
             font-size: 1.1rem;
             font-weight: 600;
@@ -66,13 +178,13 @@
             padding-bottom: 0.75rem;
             border-bottom: 1px solid var(--border);
         }
-        
+
         /* User Info */
         .user-info {
             text-align: center;
             margin-bottom: 1.5rem;
         }
-        
+
         .user-avatar {
             width: 80px;
             height: 80px;
@@ -86,18 +198,18 @@
             font-weight: 700;
             color: white;
         }
-        
+
         .user-name {
             font-size: 1.25rem;
             font-weight: 600;
             margin-bottom: 0.25rem;
         }
-        
+
         .user-email {
             color: var(--text-secondary);
             font-size: 0.85rem;
         }
-        
+
         /* Info Rows */
         .info-row {
             display: flex;
@@ -105,21 +217,21 @@
             padding: 0.75rem 0;
             border-bottom: 1px solid var(--border);
         }
-        
+
         .info-row:last-child {
             border-bottom: none;
         }
-        
+
         .info-label {
             color: var(--text-secondary);
             font-size: 0.85rem;
         }
-        
+
         .info-value {
             font-weight: 500;
             font-size: 0.85rem;
         }
-        
+
         /* KYC Status */
         .kyc-status {
             display: inline-block;
@@ -128,29 +240,29 @@
             font-size: 0.75rem;
             font-weight: 600;
         }
-        
+
         .kyc-pending {
             background: rgba(255, 165, 2, 0.2);
             color: var(--warning);
         }
-        
+
         .kyc-verified {
             background: rgba(0, 216, 151, 0.2);
             color: var(--success);
         }
-        
+
         .kyc-rejected {
             background: rgba(255, 71, 87, 0.2);
             color: var(--danger);
         }
-        
+
         /* Action Buttons */
         .action-buttons {
             display: flex;
             gap: 1rem;
             margin-top: 1rem;
         }
-        
+
         .btn-action {
             flex: 1;
             padding: 10px;
@@ -162,24 +274,24 @@
             text-decoration: none;
             display: inline-block;
         }
-        
+
         .btn-deposit-action {
             background: linear-gradient(135deg, var(--success), #00b894);
             color: white;
             border: none;
         }
-        
+
         .btn-withdraw-action {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
             border: none;
         }
-        
+
         .btn-action:hover {
             transform: translateY(-2px);
             filter: brightness(1.05);
         }
-        
+
         /* Stat Boxes */
         .stats-grid {
             display: grid;
@@ -187,38 +299,38 @@
             gap: 1rem;
             margin-bottom: 1.5rem;
         }
-        
+
         .stat-box {
             background: var(--darker-bg);
             padding: 1rem;
             border-radius: 12px;
             text-align: center;
         }
-        
+
         .stat-label {
             font-size: 0.7rem;
             color: var(--text-tertiary);
             margin-bottom: 0.5rem;
         }
-        
+
         .stat-value {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 700;
         }
-        
+
         .stat-value.positive {
             color: var(--success);
         }
-        
+
         .stat-value.negative {
             color: var(--danger);
         }
-        
+
         /* Menu Items */
         .menu-items {
             margin-top: 0.5rem;
         }
-        
+
         .menu-item {
             display: flex;
             align-items: center;
@@ -230,66 +342,66 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-        
+
         .menu-item:hover {
             background: var(--card-hover);
             transform: translateX(4px);
         }
-        
+
         .menu-icon {
             font-size: 1.2rem;
         }
-        
+
         .menu-text {
             flex: 1;
             font-weight: 500;
         }
-        
+
         .menu-arrow {
             color: var(--text-tertiary);
         }
-        
+
         /* Trade History Table */
         .trade-history-table {
             overflow-x: auto;
         }
-        
+
         .trade-history-table table {
             width: 100%;
         }
-        
+
         .trade-history-table th {
             text-align: left;
             padding: 0.75rem;
             font-size: 0.75rem;
             color: var(--text-secondary);
         }
-        
+
         .trade-history-table td {
             padding: 0.75rem;
             font-size: 0.8rem;
         }
-        
+
         .trade-type-buy {
             color: var(--success);
         }
-        
+
         .trade-type-sell {
             color: var(--danger);
         }
-        
+
         /* Forms */
         .form-group {
             margin-bottom: 1rem;
         }
-        
+
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
             font-size: 0.85rem;
             color: var(--text-secondary);
         }
-        
+
         .form-group input,
         .form-group select,
         .form-group textarea {
@@ -301,14 +413,14 @@
             color: var(--text-primary);
             font-size: 0.9rem;
         }
-        
+
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
             border-color: var(--primary);
         }
-        
+
         .file-upload {
             border: 2px dashed var(--border);
             border-radius: 12px;
@@ -317,11 +429,11 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-        
+
         .file-upload:hover {
             border-color: var(--primary);
         }
-        
+
         .btn-save {
             background: var(--primary);
             color: white;
@@ -333,33 +445,97 @@
             width: 100%;
             margin-top: 1rem;
         }
-        
+
         .btn-save:hover {
             background: var(--primary-dark);
         }
-        
+
         .alert-info {
             background: rgba(247, 147, 26, 0.1);
             padding: 1rem;
             border-radius: 12px;
             margin-bottom: 1.5rem;
         }
-        
+
         .alert-info p {
             margin: 0.25rem 0;
             color: var(--text-secondary);
             font-size: 0.85rem;
         }
-        
+
         .faq-section {
             margin-top: 2rem;
         }
-        
-        @media (max-width: 768px) {
+
+        /* User Menu Dropdown */
+        .user-menu-dropdown {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .user-name-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--card-bg);
+            border-radius: 40px;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.5rem;
+            min-width: 150px;
+            display: none;
+            z-index: 100;
+            margin-top: 0.5rem;
+        }
+
+        .user-menu-dropdown:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px 16px;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s;
+            border-radius: 8px;
+        }
+
+        .dropdown-item:hover {
+            background: var(--card-hover);
+            color: var(--primary);
+        }
+
+        hr {
+            border-color: var(--border);
+            margin: 0.5rem 0;
+        }
+
+        @media (max-width: 968px) {
             .profile-grid {
                 grid-template-columns: 1fr;
             }
             
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                z-index: 100;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        @media (max-width: 480px) {
             .stats-grid {
                 grid-template-columns: 1fr;
             }
@@ -377,7 +553,6 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="sidebar-logo">
                 <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
@@ -385,45 +560,52 @@
                     <path d="M20 10L25 15L20 20L15 15L20 10Z" fill="white"/>
                     <path d="M20 20L25 25L20 30L15 25L20 20Z" fill="white"/>
                 </svg>
-                <span>Pocket<span>Trading</span></span>
+                <span>Pocket<span style="color: var(--primary);">Trading</span></span>
             </div>
 
             <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/>
+                <a href="home.html" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                        <path d="M9 22V12h6v10"/>
                     </svg>
                     <span>Home</span>
                 </a>
-                <a href="dashboard.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M3 3v18h18M18 9l-4 4-3-3-4 4" stroke="currentColor" stroke-width="2" fill="none"/>
+                <a href="markets.html" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3v18h18M18 9l-4 4-3-3-4 4"/>
                     </svg>
                     <span>Markets</span>
                 </a>
                 <a href="trade.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M3 12h18M12 3v18M16 8l4 4-4 4M8 8l-4 4 4 4" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12h18M12 3v18M16 8l4 4-4 4M8 8l-4 4 4 4"/>
                     </svg>
                     <span>Trades</span>
                 </a>
                 <a href="profile.html" class="nav-item active">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/>
                     </svg>
                     <span>My Profile</span>
                 </a>
             </nav>
 
-            <button class="logout-btn" onclick="handleLogout()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l4-4-4-4M20 13H9" stroke="currentColor" stroke-width="2" fill="none"/>
-                </svg>
-                <span>Logout</span>
-            </button>
+            <div class="user-menu-dropdown" id="userMenu">
+                <div class="user-name-display">
+                    <span>👤</span>
+                    <span id="userNameText">Guest</span>
+                    <span>▼</span>
+                </div>
+                <div class="dropdown-menu">
+                    <a href="profile.html" class="dropdown-item">My Profile</a>
+                    <a href="dashboard.html" class="dropdown-item">Dashboard</a>
+                    <hr>
+                    <button class="dropdown-item" onclick="handleLogout()" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; color: var(--danger);">Logout</button>
+                </div>
+            </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
             <div class="profile-container">
                 <!-- Tabs -->
@@ -538,7 +720,7 @@
                     <div class="profile-card">
                         <div class="card-title">Trade History</div>
                         <div class="trade-history-table">
-                            <table id="tradeHistoryTable">
+                            <table>
                                 <thead>
                                     <tr>
                                         <th>Date</th>
@@ -551,7 +733,7 @@
                                 </thead>
                                 <tbody id="tradeHistoryBody">
                                     <tr>
-                                        <td colspan="6" style="text-align: center;">No trades yet</td>
+                                        <td colspan="6" style="text-align: center; padding: 2rem;">No trades yet</td>
                                     </tr>
                                 </tbody>
                             </table>
