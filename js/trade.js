@@ -1,4 +1,4 @@
-// Trade page functionality - Fixed balance handling
+// Trade page functionality - Fixed for fractional amounts
 
 let currentUser = null;
 let currentOrderType = 'buy';
@@ -8,10 +8,10 @@ let openOrders = [];
 let tradeHistory = [];
 
 let cryptoPrices = {
-    BTC: { price: 43250.00, change: 2.5, icon: '₿', name: 'Bitcoin' },
-    ETH: { price: 2250.80, change: 1.8, icon: 'Ξ', name: 'Ethereum' },
-    BNB: { price: 305.60, change: -0.5, icon: 'B', name: 'Binance Coin' },
-    SOL: { price: 98.40, change: 5.2, icon: 'S', name: 'Solana' }
+    BTC: { price: 43250.00, change: 2.5, icon: '₿', name: 'Bitcoin', minAmount: 0.0001 },
+    ETH: { price: 2250.80, change: 1.8, icon: 'Ξ', name: 'Ethereum', minAmount: 0.001 },
+    BNB: { price: 305.60, change: -0.5, icon: 'B', name: 'Binance Coin', minAmount: 0.01 },
+    SOL: { price: 98.40, change: 5.2, icon: 'S', name: 'Solana', minAmount: 0.01 }
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -22,8 +22,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // Validate and fix balance if needed
-    validateAndFixBalance();
+    // Fix corrupted balance if needed
+    fixCorruptedBalance();
     
     updateUserDisplay();
     initTradePage();
@@ -33,24 +33,21 @@ function loadUser() {
     const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
+        console.log('User loaded:', currentUser.email);
+        console.log('Account mode:', currentUser.accountMode);
+        console.log('Demo balance:', currentUser.demoBalance);
     }
 }
 
-function validateAndFixBalance() {
-    // Ensure demo balance is correct (should be 10000 or less if trades were made)
+function fixCorruptedBalance() {
+    // Fix demo balance if it's corrupted
     if (currentUser.accountMode === 'demo') {
-        if (currentUser.demoBalance > 10000 || currentUser.demoBalance < 0) {
-            console.log('Invalid demo balance detected:', currentUser.demoBalance);
+        if (currentUser.demoBalance > 100000 || currentUser.demoBalance < 0) {
+            console.log('Fixing corrupted demo balance...');
             currentUser.demoBalance = 10000;
             showNotification('Balance was reset to $10,000', 'warning');
             saveUserData();
         }
-    }
-    
-    // Ensure real balance is not negative
-    if (currentUser.realBalance < 0) {
-        currentUser.realBalance = 0;
-        saveUserData();
     }
 }
 
@@ -73,19 +70,7 @@ function updateBalance() {
     const badgeElem = document.getElementById('accountBadge');
     
     if (balanceElem) {
-        // Format balance properly
-        if (balance > 1000000) {
-            // If balance is corrupted, fix it
-            if (currentUser.accountMode === 'demo') {
-                currentUser.demoBalance = 10000;
-                saveUserData();
-                balanceElem.textContent = `$10,000.00`;
-            } else {
-                balanceElem.textContent = `$${balance.toFixed(2)}`;
-            }
-        } else {
-            balanceElem.textContent = `$${balance.toFixed(2)}`;
-        }
+        balanceElem.textContent = `$${balance.toFixed(2)}`;
     }
     
     if (badgeElem) {
@@ -189,6 +174,7 @@ function calculateTotal() {
     const total = amount * execPrice;
     const fee = total * 0.001;
     const totalCost = currentOrderType === 'buy' ? total + fee : total - fee;
+    
     document.getElementById('totalValue').textContent = `$${total.toFixed(2)}`;
     document.getElementById('feeAmount').textContent = `$${fee.toFixed(2)}`;
     document.getElementById('totalCost').textContent = `$${totalCost.toFixed(2)}`;
@@ -259,22 +245,19 @@ function placeOrder() {
     
     let currentBalance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
     
-    // Validate balance is not corrupted
-    if (currentBalance > 1000000 && currentUser.accountMode === 'demo') {
-        currentBalance = 10000;
-        currentUser.demoBalance = 10000;
-        saveUserData();
-        showNotification('Balance was reset to $10,000', 'warning');
-    }
-    
-    console.log('Trade Debug:');
-    console.log('Mode:', currentUser.accountMode);
-    console.log('Balance:', currentBalance);
+    console.log('=== TRADE DETAILS ===');
+    console.log('Crypto:', selectedCrypto);
+    console.log('Amount:', amount);
+    console.log('Price:', price);
+    console.log('Total:', total);
+    console.log('Fee:', fee);
     console.log('Total Cost:', totalCost);
+    console.log('Balance:', currentBalance);
+    console.log('Order Type:', currentOrderType);
     
     if (currentOrderType === 'buy') {
         if (totalCost > currentBalance) { 
-            showNotification(`Insufficient balance! You have $${currentBalance.toFixed(2)} but need $${totalCost.toFixed(2)}`, 'error'); 
+            showNotification(`Insufficient balance! You have $${currentBalance.toFixed(2)} but need $${totalCost.toFixed(2)}. Try buying a smaller amount.`, 'error'); 
             return; 
         }
         
@@ -289,6 +272,7 @@ function placeOrder() {
         saveUserData();
         showNotification(`✅ Successfully bought ${amount.toFixed(6)} ${selectedCrypto} at $${price.toFixed(2)}`, 'success');
     } else {
+        // Sell order - check if user has enough crypto (simplified)
         const newBalance = currentBalance + totalCost;
         if (currentUser.accountMode === 'demo') {
             currentUser.demoBalance = newBalance;
@@ -301,7 +285,12 @@ function placeOrder() {
         showNotification(`✅ Successfully sold ${amount.toFixed(6)} ${selectedCrypto} at $${price.toFixed(2)}`, 'success');
     }
     
+    // Reset form
     document.getElementById('amount').value = '';
+    if (document.getElementById('limitPrice')) {
+        document.getElementById('limitPrice').value = '';
+    }
+    
     updateBalance();
     calculateTotal();
     loadTradeHistory();
