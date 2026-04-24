@@ -1,4 +1,4 @@
-// Home page functionality - Luno style
+// Home page functionality - Dashboard style
 
 let currentUser = null;
 
@@ -52,8 +52,9 @@ function updateUserDisplay() {
 
 function loadUserStats() {
     if (!currentUser) {
-        // Guest mode - show placeholder stats
+        // Guest mode - show placeholder stats with 0%
         const balanceElem = document.getElementById('userBalance');
+        const balanceChangeElem = document.getElementById('balanceChange');
         const tradesElem = document.getElementById('totalTrades');
         const winRateElem = document.getElementById('winRate');
         const profitElem = document.getElementById('totalProfit');
@@ -62,8 +63,15 @@ function loadUserStats() {
             balanceElem.textContent = '$0';
             balanceElem.className = 'stat-value';
         }
+        if (balanceChangeElem) {
+            balanceChangeElem.textContent = '0% from start';
+            balanceChangeElem.className = 'stat-change';
+        }
         if (tradesElem) tradesElem.textContent = '0';
-        if (winRateElem) winRateElem.textContent = '0%';
+        if (winRateElem) {
+            winRateElem.textContent = '0%';
+            winRateElem.className = 'stat-value';
+        }
         if (profitElem) {
             profitElem.textContent = '$0';
             profitElem.className = 'stat-value';
@@ -73,13 +81,28 @@ function loadUserStats() {
     
     // Get current balance
     const currentBalance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
+    const initialBalance = currentUser.accountMode === 'demo' ? 10000 : currentUser.realBalance;
+    
     const balanceElem = document.getElementById('userBalance');
+    const balanceChangeElem = document.getElementById('balanceChange');
+    
     if (balanceElem) {
         balanceElem.textContent = `$${currentBalance.toFixed(2)}`;
         if (currentBalance >= 0) {
             balanceElem.className = 'stat-value positive';
         } else {
             balanceElem.className = 'stat-value negative';
+        }
+    }
+    
+    if (balanceChangeElem) {
+        const changePercent = ((currentBalance - initialBalance) / initialBalance * 100).toFixed(1);
+        if (changePercent >= 0) {
+            balanceChangeElem.innerHTML = `+${changePercent}% from start`;
+            balanceChangeElem.className = 'stat-change positive';
+        } else {
+            balanceChangeElem.innerHTML = `${changePercent}% from start`;
+            balanceChangeElem.className = 'stat-change negative';
         }
     }
     
@@ -106,7 +129,10 @@ function loadUserStats() {
     const profitElem = document.getElementById('totalProfit');
     
     if (tradesElem) tradesElem.textContent = totalTrades;
-    if (winRateElem) winRateElem.textContent = `${winRate}%`;
+    if (winRateElem) {
+        winRateElem.textContent = `${winRate}%`;
+        winRateElem.className = `stat-value`;
+    }
     if (profitElem) {
         const sign = totalProfit >= 0 ? '+' : '';
         profitElem.textContent = `${sign}$${totalProfit.toFixed(2)}`;
