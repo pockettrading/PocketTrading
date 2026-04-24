@@ -1,4 +1,4 @@
-// Register page functionality - No redirect issues
+// Register page functionality - Complete working version
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Register page loaded');
