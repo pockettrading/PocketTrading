@@ -1,44 +1,52 @@
 // Trading functionality - Complete working version
 
-// Global variables
 let currentUser = null;
 let currentOrderType = 'buy';
 let selectedCrypto = 'BTC';
+let priceUpdateInterval = null;
+let openOrders = [];
+let tradeHistory = [];
+
+// Cryptocurrency data
 let cryptoPrices = {
     BTC: { price: 43250.00, change: 2.5, icon: '₿', name: 'Bitcoin' },
     ETH: { price: 2250.80, change: 1.8, icon: 'Ξ', name: 'Ethereum' },
     BNB: { price: 305.60, change: -0.5, icon: 'B', name: 'Binance Coin' },
-    SOL: { price: 98.40, change: 5.2, icon: 'S', name: 'Solana' }
+    SOL: { price: 98.40, change: 5.2, icon: 'S', name: 'Solana' },
+    XRP: { price: 0.62, change: 0.3, icon: 'X', name: 'Ripple' },
+    ADA: { price: 0.48, change: -1.2, icon: 'A', name: 'Cardano' }
 };
-let openOrders = [];
-let tradeHistory = [];
-let priceUpdateInterval = null;
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Trade page loaded');
     loadUser();
     if (!currentUser) {
         window.location.href = 'login.html';
         return;
     }
+    updateUserDisplay();
     initTradePage();
+    loadTradeHistory();
+    loadOpenOrders();
 });
 
 function loadUser() {
     const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
+        console.log('User loaded:', currentUser.email);
     }
 }
 
-function initTradePage() {
+function updateUserDisplay() {
+    const userNameSpan = document.getElementById('userNameText');
+    if (userNameSpan && currentUser) {
+        const displayName = currentUser.name || currentUser.email.split('@')[0];
+        userNameSpan.textContent = displayName;
+    }
+    
     updateBalance();
-    loadMarketPrices();
-    loadOpenOrders();
-    loadTradeHistory();
-    startPriceUpdates();
-    updateCurrentPrice();
-    setupEventListeners();
 }
 
 function updateBalance() {
@@ -55,6 +63,20 @@ function updateBalance() {
     if (badgeElement) {
         badgeElement.textContent = currentUser.accountMode === 'demo' ? 'Demo' : 'Real';
         badgeElement.className = `account-badge ${currentUser.accountMode === 'demo' ? 'demo' : 'real'}`;
+    }
+}
+
+function initTradePage() {
+    loadMarketPrices();
+    updateCurrentPrice();
+    setupEventListeners();
+    startPriceUpdates();
+    
+    // Check URL for crypto parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const cryptoParam = urlParams.get('crypto');
+    if (cryptoParam && cryptoPrices[cryptoParam]) {
+        changeCrypto(cryptoParam, cryptoPrices[cryptoParam].name, cryptoPrices[cryptoParam].icon);
     }
 }
 
@@ -168,7 +190,6 @@ function setupEventListeners() {
 function setOrderType(type) {
     currentOrderType = type;
     
-    // Update tab styles
     const buyTab = document.getElementById('buyTab');
     const sellTab = document.getElementById('sellTab');
     
@@ -182,7 +203,6 @@ function setOrderType(type) {
         }
     }
     
-    // Update button
     const placeBtn = document.getElementById('placeOrderBtn');
     if (placeBtn) {
         const cryptoName = cryptoPrices[selectedCrypto]?.name || selectedCrypto;
@@ -242,15 +262,14 @@ function calculateTotal() {
 function changeCrypto(symbol, name, icon) {
     selectedCrypto = symbol;
     
-    // Update display
     const selectedDiv = document.getElementById('selectedCrypto');
     if (selectedDiv) {
         selectedDiv.innerHTML = `
             <span class="crypto-icon">${icon}</span>
             <span class="crypto-symbol">${symbol}</span>
             <span class="crypto-name">${name}</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2"/>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 9l6 6 6-6"/>
             </svg>
         `;
     }
@@ -258,7 +277,6 @@ function changeCrypto(symbol, name, icon) {
     updateCurrentPrice();
     calculateTotal();
     
-    // Update button text
     const placeBtn = document.getElementById('placeOrderBtn');
     if (placeBtn) {
         if (currentOrderType === 'buy') {
@@ -285,6 +303,29 @@ function updateCurrentPrice() {
         changeElem.textContent = `${crypto.change >= 0 ? '+' : ''}${crypto.change.toFixed(2)}%`;
         changeElem.className = `price-change ${changeClass}`;
     }
+}
+
+function loadMarketPrices() {
+    const container = document.getElementById('marketPrices');
+    if (!container) return;
+    
+    container.innerHTML = Object.entries(cryptoPrices).map(([symbol, data]) => `
+        <div class="market-item ${symbol === selectedCrypto ? 'active' : ''}" onclick="window.changeCrypto('${symbol}', '${data.name}', '${data.icon}')">
+            <div class="market-item-info">
+                <span class="market-icon">${data.icon}</span>
+                <div>
+                    <div class="market-symbol">${symbol}</div>
+                    <div class="market-name">${data.name}</div>
+                </div>
+            </div>
+            <div class="market-item-price">
+                <div class="market-price">$${data.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div class="market-change ${data.change >= 0 ? 'positive' : 'negative'}">
+                    ${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)}%
+                </div>
+            </div>
+        </div>
+    `).join('');
 }
 
 function placeOrder() {
@@ -326,7 +367,6 @@ function placeOrder() {
             return;
         }
         
-        // Process buy order
         const newBalance = currentBalance - totalCost;
         if (currentUser.accountMode === 'demo') {
             currentUser.demoBalance = newBalance;
@@ -339,7 +379,6 @@ function placeOrder() {
         
         showNotification(`Successfully bought ${amount.toFixed(6)} ${selectedCrypto} at $${price.toFixed(2)}`, 'success');
     } else {
-        // Process sell order
         const newBalance = currentBalance + totalCost;
         if (currentUser.accountMode === 'demo') {
             currentUser.demoBalance = newBalance;
@@ -379,52 +418,41 @@ function addTransaction(type, amount, price, total, fee) {
         date: new Date().toISOString()
     };
     
-    // Add to user transactions
     if (!currentUser.transactions) currentUser.transactions = [];
     currentUser.transactions.unshift(transaction);
     
     // Add to trade history
     tradeHistory.unshift(transaction);
     localStorage.setItem('pocket_trade_history', JSON.stringify(tradeHistory.slice(0, 50)));
-}
-
-function saveUserData() {
-    // Update in users array
-    const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
-    const userIndex = users.findIndex(u => u.id === currentUser.id);
-    if (userIndex !== -1) {
-        users[userIndex] = currentUser;
-        localStorage.setItem('pocket_users', JSON.stringify(users));
-    }
     
-    // Update current session
-    if (localStorage.getItem('pocket_user')) {
-        localStorage.setItem('pocket_user', JSON.stringify(currentUser));
-    }
-    if (sessionStorage.getItem('pocket_user')) {
-        sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
-    }
+    // Update stats
+    if (!currentUser.stats) currentUser.stats = {};
+    currentUser.stats.totalTrades = (currentUser.stats.totalTrades || 0) + 1;
+    currentUser.stats.totalVolume = (currentUser.stats.totalVolume || 0) + total;
 }
 
-function loadMarketPrices() {
-    const container = document.getElementById('marketPrices');
+function loadTradeHistory() {
+    const container = document.getElementById('tradeHistory');
     if (!container) return;
     
-    container.innerHTML = Object.entries(cryptoPrices).map(([symbol, data]) => `
-        <div class="market-item" onclick="changeCrypto('${symbol}', '${data.name}', '${data.icon}')">
-            <div class="market-item-info">
-                <span class="market-icon">${data.icon}</span>
-                <div>
-                    <div class="market-symbol">${symbol}</div>
-                    <div class="market-name">${data.name}</div>
-                </div>
+    if (!currentUser) return;
+    
+    const userTrades = (currentUser.transactions || []).filter(t => t.type === 'buy' || t.type === 'sell').slice(0, 10);
+    
+    if (userTrades.length === 0) {
+        container.innerHTML = '<div class="empty-state">No recent trades</div>';
+        return;
+    }
+    
+    container.innerHTML = userTrades.map(trade => `
+        <div class="trade-item">
+            <div class="trade-info">
+                <span class="trade-type ${trade.type}">${trade.type}</span>
+                <span class="trade-crypto">${trade.crypto}</span>
+                <span class="trade-amount">${trade.amount.toFixed(6)} @ $${trade.price.toFixed(2)}</span>
             </div>
-            <div class="market-item-price">
-                <div class="market-price">$${data.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                <div class="market-change ${data.change >= 0 ? 'positive' : 'negative'}">
-                    ${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)}%
-                </div>
-            </div>
+            <div class="trade-total">$${trade.total.toFixed(2)}</div>
+            <div class="trade-time">${new Date(trade.date).toLocaleTimeString()}</div>
         </div>
     `).join('');
 }
@@ -452,39 +480,6 @@ function loadOpenOrders() {
     `).join('');
 }
 
-function loadTradeHistory() {
-    const container = document.getElementById('tradeHistory');
-    if (!container) return;
-    
-    if (!currentUser) return;
-    
-    const userTrades = tradeHistory.filter(t => t.accountMode === currentUser.accountMode).slice(0, 10);
-    
-    if (userTrades.length === 0) {
-        container.innerHTML = '<div class="empty-state">No recent trades</div>';
-        return;
-    }
-    
-    container.innerHTML = userTrades.map(trade => `
-        <div class="trade-item">
-            <div class="trade-info">
-                <span class="trade-type ${trade.type}">${trade.type}</span>
-                <span class="trade-crypto">${trade.crypto}</span>
-                <span class="trade-amount">${trade.amount.toFixed(6)} @ $${trade.price.toFixed(2)}</span>
-            </div>
-            <div class="trade-total">$${trade.total.toFixed(2)}</div>
-            <div class="trade-time">${new Date(trade.date).toLocaleTimeString()}</div>
-        </div>
-    `).join('');
-}
-
-function cancelOrder(orderId) {
-    openOrders = openOrders.filter(o => o.id !== orderId);
-    localStorage.setItem('pocket_orders', JSON.stringify(openOrders));
-    loadOpenOrders();
-    showNotification('Order cancelled', 'success');
-}
-
 function clearAllOrders() {
     if (currentUser) {
         openOrders = openOrders.filter(o => o.userId !== currentUser.id);
@@ -500,14 +495,13 @@ function startPriceUpdates() {
     }
     
     priceUpdateInterval = setInterval(function() {
-        // Update prices
-        Object.keys(cryptoPrices).forEach(crypto => {
+        Object.keys(cryptoPrices).forEach(symbol => {
             const change = (Math.random() - 0.5) * 100;
-            const newPrice = Math.max(1, cryptoPrices[crypto].price + change);
-            const percentChange = ((newPrice - cryptoPrices[crypto].price) / cryptoPrices[crypto].price) * 100;
+            const newPrice = Math.max(0.01, cryptoPrices[symbol].price + change);
+            const percentChange = ((newPrice - cryptoPrices[symbol].price) / cryptoPrices[symbol].price) * 100;
             
-            cryptoPrices[crypto] = {
-                ...cryptoPrices[crypto],
+            cryptoPrices[symbol] = {
+                ...cryptoPrices[symbol],
                 price: newPrice,
                 change: percentChange
             };
@@ -524,12 +518,27 @@ function startPriceUpdates() {
     }, 5000);
 }
 
+function saveUserData() {
+    const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
+    const userIndex = users.findIndex(u => u.id === currentUser.id);
+    if (userIndex !== -1) {
+        users[userIndex] = currentUser;
+        localStorage.setItem('pocket_users', JSON.stringify(users));
+    }
+    
+    if (localStorage.getItem('pocket_user')) {
+        localStorage.setItem('pocket_user', JSON.stringify(currentUser));
+    }
+    if (sessionStorage.getItem('pocket_user')) {
+        sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
+    }
+}
+
 function showNotification(message, type) {
     const existing = document.querySelector('.trade-notification');
     if (existing) existing.remove();
     
     const notification = document.createElement('div');
-    notification.className = `trade-notification`;
     notification.textContent = message;
     notification.style.cssText = `
         position: fixed;
@@ -543,6 +552,7 @@ function showNotification(message, type) {
         z-index: 10000;
         animation: slideIn 0.3s ease-out;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        max-width: 350px;
     `;
     
     document.body.appendChild(notification);
@@ -556,10 +566,10 @@ function showNotification(message, type) {
 function handleLogout() {
     localStorage.removeItem('pocket_user');
     sessionStorage.removeItem('pocket_user');
-    window.location.href = 'login.html';
+    window.location.href = 'home.html';
 }
 
-// Make functions global for HTML onclick
+// Make functions global
 window.changeCrypto = changeCrypto;
 window.cancelOrder = cancelOrder;
 window.handleLogout = handleLogout;
