@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = 'login.html';
         return;
     }
+    updateUserDisplay();
     initWithdrawPage();
 });
 
@@ -27,13 +28,20 @@ function loadUser() {
     }
 }
 
+function updateUserDisplay() {
+    const userNameSpan = document.getElementById('userNameText');
+    if (userNameSpan && currentUser) {
+        const displayName = currentUser.name || currentUser.email.split('@')[0];
+        userNameSpan.textContent = displayName;
+    }
+}
+
 function initWithdrawPage() {
     loadUserInfo();
     loadBalance();
     loadTradingStats();
     setupEventListeners();
     checkWithdrawalEligibility();
-    loadTodayWithdrawals();
 }
 
 function loadUserInfo() {
@@ -103,9 +111,13 @@ function loadTradingStats() {
     
     const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100).toFixed(1) : 0;
     
-    document.getElementById('totalTrades').textContent = totalTrades;
-    document.getElementById('winRate').textContent = `${winRate}%`;
-    document.getElementById('totalVolume').textContent = `$${totalVolume.toFixed(2)}`;
+    const totalTradesElem = document.getElementById('totalTrades');
+    const winRateElem = document.getElementById('winRate');
+    const totalVolumeElem = document.getElementById('totalVolume');
+    
+    if (totalTradesElem) totalTradesElem.textContent = totalTrades;
+    if (winRateElem) winRateElem.textContent = `${winRate}%`;
+    if (totalVolumeElem) totalVolumeElem.textContent = `$${totalVolume.toFixed(2)}`;
 }
 
 function setupEventListeners() {
@@ -177,14 +189,12 @@ function checkWithdrawalEligibility() {
     return true;
 }
 
-function loadTodayWithdrawals() {
+function getTodayWithdrawals() {
     const today = new Date().toDateString();
     const withdrawals = (currentUser.withdrawals || []).filter(w => 
-        new Date(w.date).toDateString() === today
+        new Date(w.date).toDateString() === today && w.status !== 'rejected'
     );
-    
-    const todayTotal = withdrawals.reduce((sum, w) => sum + w.amount, 0);
-    return todayTotal;
+    return withdrawals.reduce((sum, w) => sum + w.amount, 0);
 }
 
 function validateWithdrawAmount() {
@@ -198,16 +208,17 @@ function validateWithdrawAmount() {
     if (isNaN(amount)) amount = 0;
     withdrawAmount = amount;
     
-    const currentBalance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
-    const todayWithdrawn = loadTodayWithdrawals();
+    const currentBalance = currentUser.realBalance;
+    const todayWithdrawn = getTodayWithdrawals();
     const remainingDailyLimit = MAX_WITHDRAW_PER_DAY - todayWithdrawn;
     
     // Calculate fee and receive amount
-    const fee = Math.min(Math.max(amount * (WITHDRAW_FEE_PERCENT / 100), 1), 50);
+    let fee = amount * (WITHDRAW_FEE_PERCENT / 100);
+    fee = Math.min(Math.max(fee, 1), 50);
     const receiveAmount = amount - fee;
     
     if (receiveAmountSpan) {
-        receiveAmountSpan.textContent = `$${receiveAmount.toFixed(2)} ($${fee.toFixed(2)} fee)`;
+        receiveAmountSpan.textContent = `$${receiveAmount.toFixed(2)} (Fee: $${fee.toFixed(2)})`;
     }
     
     // Validate
@@ -229,7 +240,7 @@ function validateWithdrawAmount() {
     if (amount > remainingDailyLimit) {
         if (warningMsg) {
             warningMsg.style.display = 'block';
-            warningMsg.innerHTML = `<p>⚠️ Daily withdrawal limit remaining: $${remainingDailyLimit}</p>`;
+            warningMsg.innerHTML = `<p>⚠️ Daily withdrawal limit remaining: $${remainingDailyLimit.toFixed(2)}</p>`;
         }
         if (withdrawBtn) withdrawBtn.disabled = true;
         return false;
@@ -253,7 +264,8 @@ function processWithdrawal() {
     if (!validateWithdrawAmount()) return;
     
     const walletAddress = document.getElementById('walletAddress').value;
-    const crypto = document.getElementById('withdrawCrypto').value;
+    const cryptoSelect = document.getElementById('withdrawCrypto');
+    const crypto = cryptoSelect.value;
     const cryptoName = getCryptoName(crypto);
     
     if (!walletAddress || walletAddress.trim() === '') {
@@ -270,7 +282,8 @@ function processWithdrawal() {
     }
     
     // Calculate fee
-    const fee = Math.min(Math.max(amount * (WITHDRAW_FEE_PERCENT / 100), 1), 50);
+    let fee = amount * (WITHDRAW_FEE_PERCENT / 100);
+    fee = Math.min(Math.max(fee, 1), 50);
     const receiveAmount = amount - fee;
     
     // Process withdrawal
@@ -301,7 +314,7 @@ function processWithdrawal() {
         crypto: crypto,
         status: 'pending',
         date: new Date().toISOString(),
-        description: `Withdrawal request to ${cryptoName} wallet`
+        description: `Withdrawal request of $${amount} to ${cryptoName} wallet - Pending Admin Approval`
     });
     
     // Save user data
@@ -387,13 +400,13 @@ function showNotification(message, type) {
     setTimeout(function() {
         notification.style.animation = 'slideOut 0.3s ease-out';
         setTimeout(function() { notification.remove(); }, 300);
-    }, 3000);
+    }, 4000);
 }
 
 function handleLogout() {
     localStorage.removeItem('pocket_user');
     sessionStorage.removeItem('pocket_user');
-    window.location.href = 'login.html';
+    window.location.href = 'home.html';
 }
 
 // Make functions global
