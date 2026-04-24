@@ -4,12 +4,708 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pocket Trading - Dashboard</title>
-    <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #F7931A;
+            --primary-dark: #e67e22;
+            --primary-light: #f8b45a;
+            --dark-bg: #0A0E17;
+            --darker-bg: #06090F;
+            --card-bg: #151E2C;
+            --card-hover: #1A2535;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0AAB5;
+            --text-tertiary: #6B7A8A;
+            --success: #00D897;
+            --danger: #FF4757;
+            --warning: #FFA502;
+            --border: #2A3545;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--darker-bg);
+            border-right: 1px solid var(--border);
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-logo span {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 1rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: var(--card-bg);
+            color: var(--primary);
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 1rem;
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.3s;
+            margin-top: auto;
+            width: 100%;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 71, 87, 0.1);
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .welcome-message h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .welcome-message h1 span {
+            color: var(--primary);
+        }
+
+        .welcome-message p {
+            color: var(--text-secondary);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .notification-icon:hover {
+            background: var(--card-hover);
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Account Mode Switcher */
+        .account-mode-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .mode-switcher {
+            display: flex;
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .mode-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 1rem;
+            background: var(--darker-bg);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+
+        .mode-btn.active {
+            border-color: var(--primary);
+            background: rgba(247, 147, 26, 0.1);
+        }
+
+        .mode-btn:hover:not(.active) {
+            border-color: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .mode-icon {
+            font-size: 2rem;
+        }
+
+        .mode-info {
+            flex: 1;
+        }
+
+        .mode-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .mode-balance {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .btn-upgrade {
+            background: linear-gradient(135deg, var(--success), #00b894);
+            color: white;
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn-upgrade:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 216, 151, 0.3);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-change {
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+        }
+
+        .stat-change.positive {
+            color: var(--success);
+        }
+
+        .stat-change.negative {
+            color: var(--danger);
+        }
+
+        /* Trading Section */
+        .trading-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container,
+        .market-data {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.3rem;
+        }
+
+        .timeframe-select {
+            background: var(--darker-bg);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .chart-placeholder {
+            min-height: 300px;
+        }
+
+        canvas {
+            max-height: 300px;
+            width: 100%;
+        }
+
+        /* Crypto List */
+        .crypto-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .crypto-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: var(--darker-bg);
+            border-radius: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .crypto-item:hover {
+            background: var(--card-hover);
+            transform: translateX(4px);
+        }
+
+        .crypto-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .crypto-icon {
+            font-size: 1.5rem;
+        }
+
+        .crypto-symbol {
+            font-weight: 600;
+        }
+
+        .crypto-name {
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+        }
+
+        .crypto-price {
+            text-align: right;
+        }
+
+        .crypto-price-value {
+            font-weight: 600;
+        }
+
+        .crypto-change {
+            font-size: 0.85rem;
+        }
+
+        .crypto-change.positive {
+            color: var(--success);
+        }
+
+        .crypto-change.negative {
+            color: var(--danger);
+        }
+
+        .crypto-volume {
+            text-align: right;
+            min-width: 80px;
+        }
+
+        .crypto-volume-label {
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+        }
+
+        .crypto-volume-value {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Transactions Section */
+        .transactions-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .transactions-table {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .transaction-type {
+            text-transform: capitalize;
+            font-weight: 500;
+        }
+
+        .transaction-type.buy,
+        .transaction-type.deposit {
+            color: var(--success);
+        }
+
+        .transaction-type.sell,
+        .transaction-type.withdraw {
+            color: var(--danger);
+        }
+
+        .positive-amount {
+            color: var(--success);
+        }
+
+        .negative-amount {
+            color: var(--danger);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-completed {
+            background: rgba(0, 216, 151, 0.1);
+            color: var(--success);
+        }
+
+        .status-pending {
+            background: rgba(255, 165, 2, 0.1);
+            color: var(--warning);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 2rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .payment-methods {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--darker-bg);
+            border-radius: 12px;
+        }
+
+        .payment-methods h4 {
+            margin-bottom: 0.75rem;
+        }
+
+        .payment-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .payment-option input[type="radio"] {
+            width: auto;
+            accent-color: var(--primary);
+        }
+
+        .btn-secondary {
+            background: var(--darker-bg);
+            color: var(--text-primary);
+            padding: 10px 20px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--card-hover);
+        }
+
+        /* User Menu Dropdown */
+        .user-menu-dropdown {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .user-name-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--card-bg);
+            border-radius: 40px;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.5rem;
+            min-width: 150px;
+            display: none;
+            z-index: 100;
+            margin-top: 0.5rem;
+        }
+
+        .user-menu-dropdown:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px 16px;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s;
+            border-radius: 8px;
+        }
+
+        .dropdown-item:hover {
+            background: var(--card-hover);
+            color: var(--primary);
+        }
+
+        hr {
+            border-color: var(--border);
+            margin: 0.5rem 0;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        @media (max-width: 968px) {
+            .trading-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                z-index: 100;
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .account-mode-section {
+                flex-direction: column;
+            }
+            
+            .mode-switcher {
+                width: 100%;
+                flex-direction: column;
+            }
+            
+            .btn-upgrade {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="sidebar-logo">
                 <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
@@ -17,53 +713,53 @@
                     <path d="M20 10L25 15L20 20L15 15L20 10Z" fill="white"/>
                     <path d="M20 20L25 25L20 30L15 25L20 20Z" fill="white"/>
                 </svg>
-                <span>Pocket<span>Trading</span></span>
+                <span>Pocket<span style="color: var(--primary);">Trading</span></span>
             </div>
 
             <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item active">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/>
+                <a href="home.html" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                        <path d="M9 22V12h6v10"/>
                     </svg>
-                    <span>Dashboard</span>
+                    <span>Home</span>
+                </a>
+                <a href="markets.html" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3v18h18M18 9l-4 4-3-3-4 4"/>
+                    </svg>
+                    <span>Markets</span>
                 </a>
                 <a href="trade.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M3 12h18M12 3v18M16 8l4 4-4 4M8 8l-4 4 4 4" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12h18M12 3v18M16 8l4 4-4 4M8 8l-4 4 4 4"/>
                     </svg>
-                    <span>Trade</span>
+                    <span>Trades</span>
                 </a>
-                <a href="deposit.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 1v22M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6" stroke="currentColor" stroke-width="2" fill="none"/>
+                <a href="profile.html" class="nav-item active">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/>
                     </svg>
-                    <span>Deposit</span>
-                </a>
-                <a href="withdraw.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 23V1M7 19h10M7 5h10" stroke="currentColor" stroke-width="2" fill="none"/>
-                    </svg>
-                    <span>Withdraw</span>
-                </a>
-                <a href="profile.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" stroke-width="2" fill="none"/>
-                    </svg>
-                    <span>Profile</span>
+                    <span>My Profile</span>
                 </a>
             </nav>
 
-            <button class="logout-btn" onclick="logout()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l4-4-4-4M20 13H9" stroke="currentColor" stroke-width="2" fill="none"/>
-                </svg>
-                <span>Logout</span>
-            </button>
+            <div class="user-menu-dropdown" id="userMenu">
+                <div class="user-name-display">
+                    <span>👤</span>
+                    <span id="userNameText">Guest</span>
+                    <span>▼</span>
+                </div>
+                <div class="dropdown-menu">
+                    <a href="profile.html" class="dropdown-item">My Profile</a>
+                    <a href="dashboard.html" class="dropdown-item">Dashboard</a>
+                    <hr>
+                    <button class="dropdown-item" onclick="handleLogout()" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; color: var(--danger);">Logout</button>
+                </div>
+            </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <!-- Top Bar -->
             <div class="top-bar">
                 <div class="welcome-message">
                     <h1>Welcome back, <span id="userName">Trader</span>!</h1>
@@ -71,8 +767,8 @@
                 </div>
                 <div class="user-menu">
                     <div class="notification-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
                         </svg>
                     </div>
                     <div class="avatar">
@@ -112,44 +808,44 @@
                 <div class="stat-card">
                     <div class="stat-header">
                         <span>Total Balance</span>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="2"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
                         </svg>
                     </div>
-                    <div class="stat-value">$<span id="totalBalance">12,450.50</span></div>
-                    <div class="stat-change positive" id="balanceChange">+2.4% from last month</div>
+                    <div class="stat-value">$<span id="totalBalance">0.00</span></div>
+                    <div class="stat-change positive" id="balanceChange">0% from start</div>
                 </div>
 
                 <div class="stat-card">
                     <div class="stat-header">
                         <span>24h Volume</span>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9h-4m-7 9A9 9 0 013 12m9 9v-4M3 12a9 9 0 019-9m-9 9h4m7-9a9 9 0 00-9 9" stroke="currentColor" stroke-width="2"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9h-4m-7 9A9 9 0 013 12m9 9v-4M3 12a9 9 0 019-9m-9 9h4m7-9a9 9 0 00-9 9"/>
                         </svg>
                     </div>
-                    <div class="stat-value">$<span id="dailyVolume">3,245.80</span></div>
-                    <div class="stat-change positive">+18.2%</div>
+                    <div class="stat-value">$<span id="dailyVolume">0.00</span></div>
+                    <div class="stat-change positive">+0%</div>
                 </div>
 
                 <div class="stat-card">
                     <div class="stat-header">
                         <span>Total Profit/Loss</span>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <path d="M3 17v2h6v-2M3 7v2h6V7M13 5v2h6V5M13 11v2h6v-2M13 17v2h6v-2" stroke="currentColor" stroke-width="2"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 17v2h6v-2M3 7v2h6V7M13 5v2h6V5M13 11v2h6v-2M13 17v2h6v-2"/>
                         </svg>
                     </div>
-                    <div class="stat-value positive">+$<span id="totalProfit">1,245.30</span></div>
-                    <div class="stat-change positive">+12.5%</div>
+                    <div class="stat-value" id="totalProfit">$0.00</div>
+                    <div class="stat-change positive">+0%</div>
                 </div>
 
                 <div class="stat-card">
                     <div class="stat-header">
                         <span>Active Trades</span>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <path d="M9 12h6M12 9v6M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke="currentColor" stroke-width="2"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 12h6M12 9v6M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
                         </svg>
                     </div>
-                    <div class="stat-value"><span id="activeTrades">3</span></div>
+                    <div class="stat-value"><span id="activeTrades">0</span></div>
                     <div class="stat-change">Currently open</div>
                 </div>
             </div>
@@ -176,7 +872,7 @@
                         <h2>Top Cryptocurrencies</h2>
                     </div>
                     <div class="crypto-list" id="cryptoList">
-                        <!-- Crypto items will be populated by JavaScript -->
+                        Loading...
                     </div>
                 </div>
             </div>
@@ -185,7 +881,7 @@
             <div class="transactions-section">
                 <div class="section-header">
                     <h2>Recent Transactions</h2>
-                    <a href="#" class="view-all">View All</a>
+                    <a href="#" class="view-all" style="color: var(--primary); text-decoration: none;">View All</a>
                 </div>
                 <div class="transactions-table">
                     <table>
@@ -198,7 +894,9 @@
                             </tr>
                         </thead>
                         <tbody id="transactionsList">
-                            <!-- Transactions will be populated by JavaScript -->
+                            <tr>
+                                <td colspan="4" style="text-align: center; padding: 2rem;">No transactions yet</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -214,10 +912,10 @@
                 <button class="modal-close" onclick="closeModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <p>Minimum deposit: <strong>$100</strong></p>
-                <div class="input-group">
+                <p style="margin-bottom: 1rem;">Minimum deposit: <strong>$100</strong></p>
+                <div class="form-group" style="margin-bottom: 1rem;">
                     <label>Deposit Amount (USD)</label>
-                    <input type="number" id="depositAmount" min="100" placeholder="Enter amount">
+                    <input type="number" id="depositAmount" min="100" max="100000" placeholder="Enter amount" style="width: 100%; padding: 12px; background: var(--darker-bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary);">
                 </div>
                 <div class="payment-methods">
                     <h4>Select Payment Method</h4>
@@ -237,13 +935,12 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-                <button class="btn-primary" onclick="processUpgrade()">Create Account & Deposit</button>
+                <button class="btn-primary" onclick="processUpgrade()" style="background: var(--primary); color: white; padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer;">Create Account & Deposit</button>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="js/auth.js"></script>
     <script src="js/dashboard.js"></script>
 </body>
 </html>
