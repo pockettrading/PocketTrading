@@ -4,61 +4,167 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pocket Trading - Deposit</title>
-    <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* Deposit Page Specific Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #F7931A;
+            --primary-dark: #e67e22;
+            --primary-light: #f8b45a;
+            --dark-bg: #0A0E17;
+            --darker-bg: #06090F;
+            --card-bg: #151E2C;
+            --card-hover: #1A2535;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0AAB5;
+            --text-tertiary: #6B7A8A;
+            --success: #00D897;
+            --danger: #FF4757;
+            --warning: #FFA502;
+            --border: #2A3545;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--darker-bg);
+            border-right: 1px solid var(--border);
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-logo span {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 1rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: var(--card-bg);
+            color: var(--primary);
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 1rem;
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.3s;
+            margin-top: auto;
+            width: 100%;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 71, 87, 0.1);
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
+
+        /* Deposit Container */
         .deposit-container {
             max-width: 800px;
             margin: 0 auto;
         }
-        
+
         .deposit-header {
             margin-bottom: 2rem;
         }
-        
+
         .deposit-header h1 {
             font-size: 2rem;
             margin-bottom: 0.5rem;
         }
-        
+
         .deposit-header p {
             color: var(--text-secondary);
         }
-        
+
         /* Alert Messages */
         .alert {
             padding: 1rem;
             border-radius: 12px;
             margin-bottom: 1.5rem;
         }
-        
+
         .alert-info {
             background: rgba(247, 147, 26, 0.1);
             border-left: 3px solid var(--primary);
             color: var(--primary);
         }
-        
+
         .alert-warning {
             background: rgba(255, 71, 87, 0.1);
             border-left: 3px solid var(--danger);
             color: var(--danger);
         }
-        
-        .alert-success {
-            background: rgba(0, 216, 151, 0.1);
-            border-left: 3px solid var(--success);
-            color: var(--success);
-        }
-        
+
         /* Crypto Cards */
         .crypto-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
-        
+
         .crypto-card {
             background: var(--card-bg);
             border: 2px solid var(--border);
@@ -66,20 +172,21 @@
             padding: 1.5rem;
             cursor: pointer;
             transition: all 0.3s;
+            text-align: center;
             position: relative;
         }
-        
+
         .crypto-card:hover {
             transform: translateY(-4px);
             border-color: var(--primary);
             box-shadow: var(--shadow);
         }
-        
+
         .crypto-card.active {
             border-color: var(--primary);
             background: rgba(247, 147, 26, 0.1);
         }
-        
+
         .crypto-card.active::before {
             content: '✓';
             position: absolute;
@@ -95,42 +202,42 @@
             justify-content: center;
             font-size: 14px;
         }
-        
+
         .crypto-icon {
             font-size: 3rem;
             margin-bottom: 1rem;
         }
-        
+
         .crypto-name {
             font-size: 1.25rem;
             font-weight: 600;
             margin-bottom: 0.25rem;
         }
-        
+
         .crypto-symbol {
             color: var(--text-secondary);
             font-size: 0.85rem;
             margin-bottom: 1rem;
         }
-        
+
         .crypto-limits {
             font-size: 0.8rem;
             color: var(--text-tertiary);
             padding-top: 0.5rem;
             border-top: 1px solid var(--border);
         }
-        
+
         /* Deposit Form */
         .deposit-form-container {
             background: var(--card-bg);
             border-radius: 16px;
             padding: 2rem;
         }
-        
+
         .form-group {
             margin-bottom: 1.5rem;
         }
-        
+
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
@@ -138,7 +245,7 @@
             color: var(--text-secondary);
             font-size: 0.9rem;
         }
-        
+
         .amount-input {
             width: 100%;
             padding: 14px;
@@ -149,21 +256,22 @@
             font-size: 1rem;
             font-weight: 600;
         }
-        
+
         .amount-input:focus {
             outline: none;
             border-color: var(--primary);
         }
-        
+
         .quick-amounts {
             display: flex;
             gap: 0.75rem;
             margin-top: 0.75rem;
             flex-wrap: wrap;
         }
-        
+
         .quick-amount {
-            padding: 8px 16px;
+            flex: 1;
+            padding: 8px;
             background: var(--darker-bg);
             border: 1px solid var(--border);
             border-radius: 8px;
@@ -172,35 +280,35 @@
             transition: all 0.3s;
             font-size: 0.85rem;
         }
-        
+
         .quick-amount:hover {
             border-color: var(--primary);
             color: var(--primary);
         }
-        
+
         .limit-info {
             background: var(--darker-bg);
             border-radius: 12px;
             padding: 1rem;
             margin-bottom: 1.5rem;
         }
-        
+
         .limit-row {
             display: flex;
             justify-content: space-between;
             margin-bottom: 0.5rem;
             font-size: 0.85rem;
         }
-        
+
         .limit-label {
             color: var(--text-secondary);
         }
-        
+
         .limit-value {
             font-weight: 600;
             color: var(--text-primary);
         }
-        
+
         /* Address Box */
         .address-box {
             background: var(--darker-bg);
@@ -208,13 +316,13 @@
             padding: 1rem;
             margin-bottom: 1.5rem;
         }
-        
+
         .address-label {
             font-size: 0.85rem;
             color: var(--text-secondary);
             margin-bottom: 0.5rem;
         }
-        
+
         .address-value {
             font-family: monospace;
             font-size: 0.85rem;
@@ -224,7 +332,7 @@
             border-radius: 8px;
             margin-bottom: 0.75rem;
         }
-        
+
         .copy-btn {
             background: var(--primary);
             color: white;
@@ -235,13 +343,13 @@
             font-size: 0.85rem;
             transition: all 0.3s;
         }
-        
+
         .copy-btn:hover {
             background: var(--primary-dark);
             transform: translateY(-2px);
         }
-        
-        /* Screenshot Upload */
+
+        /* Upload Area */
         .upload-area {
             border: 2px dashed var(--border);
             border-radius: 12px;
@@ -251,22 +359,22 @@
             transition: all 0.3s;
             margin-bottom: 1.5rem;
         }
-        
+
         .upload-area:hover {
             border-color: var(--primary);
             background: rgba(247, 147, 26, 0.05);
         }
-        
+
         .upload-icon {
             font-size: 2rem;
             margin-bottom: 0.5rem;
         }
-        
+
         .upload-text {
             color: var(--text-secondary);
             font-size: 0.9rem;
         }
-        
+
         .file-info {
             background: var(--success);
             color: white;
@@ -275,7 +383,7 @@
             font-size: 0.85rem;
             margin-top: 0.5rem;
         }
-        
+
         /* Submit Button */
         .btn-deposit {
             background: linear-gradient(135deg, var(--success), #00b894);
@@ -289,17 +397,17 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-        
+
         .btn-deposit:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 216, 151, 0.3);
         }
-        
+
         .btn-deposit:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
-        
+
         /* Note */
         .deposit-note {
             margin-top: 1.5rem;
@@ -307,31 +415,84 @@
             background: rgba(255, 165, 2, 0.1);
             border-radius: 12px;
         }
-        
+
         .deposit-note p {
             color: var(--warning);
             font-size: 0.85rem;
             margin: 0;
         }
-        
+
+        /* User Menu */
+        .user-menu-dropdown {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .user-name-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--card-bg);
+            border-radius: 40px;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.5rem;
+            min-width: 150px;
+            display: none;
+            z-index: 100;
+            margin-top: 0.5rem;
+        }
+
+        .user-menu-dropdown:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px 16px;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s;
+            border-radius: 8px;
+        }
+
+        .dropdown-item:hover {
+            background: var(--card-hover);
+            color: var(--primary);
+        }
+
+        hr {
+            border-color: var(--border);
+            margin: 0.5rem 0;
+        }
+
         @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                z-index: 100;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
             .crypto-cards {
                 grid-template-columns: 1fr;
-            }
-            
-            .deposit-form-container {
-                padding: 1.5rem;
-            }
-            
-            .quick-amounts {
-                flex-wrap: wrap;
             }
         }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="sidebar-logo">
                 <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
@@ -339,51 +500,52 @@
                     <path d="M20 10L25 15L20 20L15 15L20 10Z" fill="white"/>
                     <path d="M20 20L25 25L20 30L15 25L20 20Z" fill="white"/>
                 </svg>
-                <span>Pocket<span>Trading</span></span>
+                <span>Pocket<span style="color: var(--primary);">Trading</span></span>
             </div>
 
             <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/>
+                <a href="home.html" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                        <path d="M9 22V12h6v10"/>
                     </svg>
-                    <span>Dashboard</span>
+                    <span>Home</span>
+                </a>
+                <a href="markets.html" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3v18h18M18 9l-4 4-3-3-4 4"/>
+                    </svg>
+                    <span>Markets</span>
                 </a>
                 <a href="trade.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M3 12h18M12 3v18M16 8l4 4-4 4M8 8l-4 4 4 4" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12h18M12 3v18M16 8l4 4-4 4M8 8l-4 4 4 4"/>
                     </svg>
-                    <span>Trade</span>
-                </a>
-                <a href="deposit.html" class="nav-item active">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 1v22M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6" stroke="currentColor" stroke-width="2" fill="none"/>
-                    </svg>
-                    <span>Deposit</span>
-                </a>
-                <a href="withdraw.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 23V1M7 19h10M7 5h10" stroke="currentColor" stroke-width="2" fill="none"/>
-                    </svg>
-                    <span>Withdraw</span>
+                    <span>Trades</span>
                 </a>
                 <a href="profile.html" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/>
                     </svg>
-                    <span>Profile</span>
+                    <span>My Profile</span>
                 </a>
             </nav>
 
-            <button class="logout-btn" onclick="handleLogout()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l4-4-4-4M20 13H9" stroke="currentColor" stroke-width="2" fill="none"/>
-                </svg>
-                <span>Logout</span>
-            </button>
+            <div class="user-menu-dropdown" id="userMenu">
+                <div class="user-name-display">
+                    <span>👤</span>
+                    <span id="userNameText">Guest</span>
+                    <span>▼</span>
+                </div>
+                <div class="dropdown-menu">
+                    <a href="profile.html" class="dropdown-item">My Profile</a>
+                    <a href="dashboard.html" class="dropdown-item">Dashboard</a>
+                    <hr>
+                    <button class="dropdown-item" onclick="handleLogout()" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; color: var(--danger);">Logout</button>
+                </div>
+            </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
             <div class="deposit-container">
                 <div class="deposit-header">
@@ -392,30 +554,25 @@
                 </div>
 
                 <!-- Alert for Demo Account Users -->
-                <div class="alert alert-info" id="demoAlert" style="display: none;">
-                    <strong>📢 Demo Mode Active</strong><br>
-                    You are currently using a Demo Account. To make real deposits, please switch to Real Account mode from your Dashboard.
+                <div id="demoAlert" class="alert alert-warning" style="display: none;">
+                    <strong>⚠️ Real Account Required</strong><br>
+                    You are currently using a Demo Account. To make real deposits, please go to your Dashboard and click "Create Real Account" first.
                 </div>
 
                 <!-- Cryptocurrency Selection -->
-                <div class="crypto-cards" id="cryptoCards">
-                    <!-- ETH -->
+                <div class="crypto-cards">
                     <div class="crypto-card" data-crypto="ETH">
                         <div class="crypto-icon">⟠</div>
                         <div class="crypto-name">Ethereum</div>
-                        <div class="crypto-symbol">ETH</div>
+                        <div class="crypto-symbol">ETH (ERC-20)</div>
                         <div class="crypto-limits">Min: $100 | Max: $10,000</div>
                     </div>
-
-                    <!-- USDT -->
                     <div class="crypto-card" data-crypto="USDT">
                         <div class="crypto-icon">₮</div>
                         <div class="crypto-name">Tether</div>
                         <div class="crypto-symbol">USDT (ERC-20)</div>
                         <div class="crypto-limits">Min: $100 | Max: $10,000</div>
                     </div>
-
-                    <!-- BTC -->
                     <div class="crypto-card" data-crypto="BTC">
                         <div class="crypto-icon">₿</div>
                         <div class="crypto-name">Bitcoin</div>
@@ -427,7 +584,6 @@
                 <!-- Deposit Form -->
                 <div class="deposit-form-container" id="depositForm">
                     <form id="depositFormElement">
-                        <!-- Amount Input -->
                         <div class="form-group">
                             <label>Deposit Amount (USD)</label>
                             <input type="number" id="depositAmount" class="amount-input" placeholder="Enter amount between $100 - $10,000" min="100" max="10000" step="10">
@@ -440,7 +596,6 @@
                             </div>
                         </div>
 
-                        <!-- Limit Info -->
                         <div class="limit-info">
                             <div class="limit-row">
                                 <span class="limit-label">Minimum Deposit:</span>
@@ -456,31 +611,27 @@
                             </div>
                         </div>
 
-                        <!-- Wallet Address -->
-                        <div class="address-box" id="addressBox">
+                        <div class="address-box">
                             <div class="address-label">Send funds to this address:</div>
                             <div class="address-value" id="walletAddress">0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0</div>
                             <button type="button" class="copy-btn" onclick="copyAddress()">📋 Copy Address</button>
                         </div>
 
-                        <!-- Screenshot Upload -->
                         <div class="form-group">
                             <label>Upload Payment Screenshot</label>
-                            <div class="upload-area" id="uploadArea" onclick="document.getElementById('screenshot').click()">
+                            <div class="upload-area" onclick="document.getElementById('screenshot').click()">
                                 <div class="upload-icon">📸</div>
                                 <div class="upload-text">Click to upload screenshot of your payment</div>
                                 <div class="upload-text" style="font-size: 0.75rem; margin-top: 0.5rem;">Supported: JPG, PNG (Max 5MB)</div>
                             </div>
-                            <input type="file" id="screenshot" accept="image/jpeg,image/png" style="display: none;" onchange="handleFileUpload(this)">
+                            <input type="file" id="screenshot" accept="image/jpeg,image/png" style="display: none;">
                             <div id="fileInfo" class="file-info" style="display: none;"></div>
                         </div>
 
-                        <!-- Deposit Button -->
-                        <button type="button" class="btn-deposit" id="depositBtn" disabled>
+                        <button type="submit" class="btn-deposit" id="depositBtn" disabled>
                             Submit Deposit Request
                         </button>
 
-                        <!-- Important Note -->
                         <div class="deposit-note">
                             <p>⚠️ Important: After sending the cryptocurrency, please upload a screenshot of your transaction. Our admin will verify and credit your account within 24 hours.</p>
                         </div>
