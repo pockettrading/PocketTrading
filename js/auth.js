@@ -18,24 +18,42 @@ class AuthManager {
             this.setupRegister();
         }
         
-        // Only redirect to login if on protected pages and not logged in
-        const protectedPages = ['dashboard.html', 'trade.html', 'profile.html', 'deposit.html', 'withdraw.html'];
-        const currentPage = window.location.pathname.split('/').pop();
+        // Get current page name
+        const currentPage = window.location.pathname.split('/').pop() || 'home.html';
         
-        if (protectedPages.includes(currentPage) && !this.currentUser) {
+        // PUBLIC PAGES - No login required (anyone can access)
+        const publicPages = ['home.html', 'markets.html', 'index.html', '', '#', null];
+        
+        // PROTECTED PAGES - Login required
+        const protectedPages = ['dashboard.html', 'trade.html', 'profile.html', 'deposit.html', 'withdraw.html', 'admin.html'];
+        
+        // Check if current page is public
+        const isPublicPage = publicPages.includes(currentPage);
+        
+        // Check if current page is protected
+        const isProtectedPage = protectedPages.includes(currentPage);
+        
+        // If user is NOT logged in and trying to access protected page -> redirect to login
+        if (!this.currentUser && isProtectedPage) {
+            console.log('Redirecting to login: Protected page accessed without login');
             window.location.href = 'login.html';
-        }
-        
-        // Don't redirect on home.html or markets.html (public pages)
-        if (currentPage === 'home.html' || currentPage === 'markets.html' || currentPage === '') {
-            // Allow public access
             return;
         }
         
-        // If logged in and on login/register page, redirect to home
+        // If user IS logged in and trying to access login/register page -> redirect to home
         if (this.currentUser && (currentPage === 'login.html' || currentPage === 'register.html')) {
+            console.log('Redirecting to home: Already logged in');
             window.location.href = 'home.html';
+            return;
         }
+        
+        // For public pages, do nothing - allow access
+        if (isPublicPage) {
+            console.log('Public page accessed:', currentPage);
+            return;
+        }
+        
+        console.log('Current page:', currentPage, 'Logged in:', !!this.currentUser);
     }
 
     setupPasswordStrength() {
@@ -154,8 +172,10 @@ class AuthManager {
             
             if (rememberMe) {
                 localStorage.setItem('pocket_user', JSON.stringify(user));
+                sessionStorage.removeItem('pocket_user');
             } else {
                 sessionStorage.setItem('pocket_user', JSON.stringify(user));
+                localStorage.removeItem('pocket_user');
             }
             this.currentUser = user;
             
@@ -343,7 +363,7 @@ class AuthManager {
             user.transactions.unshift(transaction);
             
             if (!user.stats) user.stats = {};
-            if (transaction.type === 'trade') {
+            if (transaction.type === 'trade' || transaction.type === 'buy' || transaction.type === 'sell') {
                 user.stats.totalTrades = (user.stats.totalTrades || 0) + 1;
                 user.stats.totalVolume = (user.stats.totalVolume || 0) + (transaction.amount || 0);
                 if (transaction.pnl) {
@@ -447,7 +467,7 @@ style.textContent = `
     .strength-bar-container {
         margin-top: 8px;
         height: 4px;
-        background: var(--border, #2A3545);
+        background: #2A3545;
         border-radius: 2px;
         overflow: hidden;
     }
@@ -462,7 +482,8 @@ style.textContent = `
         color: #FF4757;
     }
     
-    .strength-weak ~ .strength-bar-container .strength-bar {
+    .strength-weak ~ .strength-bar-container .strength-bar,
+    .strength-weak + .strength-bar-container .strength-bar {
         background: #FF4757;
     }
     
@@ -470,7 +491,8 @@ style.textContent = `
         color: #FFA502;
     }
     
-    .strength-medium ~ .strength-bar-container .strength-bar {
+    .strength-medium ~ .strength-bar-container .strength-bar,
+    .strength-medium + .strength-bar-container .strength-bar {
         background: #FFA502;
     }
     
@@ -478,7 +500,8 @@ style.textContent = `
         color: #00D897;
     }
     
-    .strength-strong ~ .strength-bar-container .strength-bar {
+    .strength-strong ~ .strength-bar-container .strength-bar,
+    .strength-strong + .strength-bar-container .strength-bar {
         background: #00D897;
     }
 `;
