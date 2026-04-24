@@ -1,17 +1,17 @@
-// Home page functionality
+// Home page functionality - No redirect issues
 
 let currentUser = null;
-let cryptoPrices = {
-    BTC: { price: 43250.00, change: 2.5, volume: '32.5B', icon: '₿', name: 'Bitcoin' },
-    ETH: { price: 2250.80, change: 1.8, volume: '15.2B', icon: 'Ξ', name: 'Ethereum' },
-    BNB: { price: 305.60, change: -0.5, volume: '2.1B', icon: 'B', name: 'Binance Coin' },
-    SOL: { price: 98.40, change: 5.2, volume: '1.8B', icon: 'S', name: 'Solana' },
-    XRP: { price: 0.62, change: 0.3, volume: '1.2B', icon: 'X', name: 'Ripple' },
-    ADA: { price: 0.48, change: -1.2, volume: '0.8B', icon: 'A', name: 'Cardano' },
-    DOGE: { price: 0.12, change: 3.2, volume: '0.9B', icon: 'Ð', name: 'Dogecoin' },
-    DOT: { price: 6.85, change: -0.8, volume: '0.5B', icon: '●', name: 'Polkadot' }
-};
 let priceUpdateInterval = null;
+
+// Cryptocurrency data for market overview
+let cryptoData = [
+    { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 75730.97, change: -3.0, marketCap: 1520000000000 },
+    { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2357.44, change: 1.4, marketCap: 284440000000 },
+    { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 305.60, change: -0.5, marketCap: 52000000000 },
+    { symbol: 'SOL', name: 'Solana', icon: 'S', price: 98.40, change: 5.2, marketCap: 45000000000 },
+    { symbol: 'XRP', name: 'Ripple', icon: 'X', price: 0.62, change: 0.3, marketCap: 34000000000 },
+    { symbol: 'ADA', name: 'Cardano', icon: 'A', price: 0.48, change: -1.2, marketCap: 17000000000 }
+];
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
@@ -24,12 +24,17 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadUser() {
-    const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
-    if (storedUser) {
-        currentUser = JSON.parse(storedUser);
-        console.log('User logged in:', currentUser.email);
-    } else {
-        console.log('No user logged in - guest mode');
+    try {
+        const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
+        if (storedUser) {
+            currentUser = JSON.parse(storedUser);
+            console.log('User logged in:', currentUser.email);
+        } else {
+            console.log('No user logged in - guest mode');
+        }
+    } catch(e) {
+        console.log('Error loading user:', e);
+        currentUser = null;
     }
 }
 
@@ -48,16 +53,22 @@ function updateUserDisplay() {
 function loadUserStats() {
     if (!currentUser) {
         // Guest mode - show placeholder stats
-        document.getElementById('userBalance').textContent = '$0';
-        document.getElementById('totalTrades').textContent = '0';
-        document.getElementById('winRate').textContent = '0%';
-        document.getElementById('totalProfit').textContent = '$0';
+        const balanceElem = document.getElementById('userBalance');
+        const tradesElem = document.getElementById('totalTrades');
+        const winRateElem = document.getElementById('winRate');
+        const profitElem = document.getElementById('totalProfit');
+        
+        if (balanceElem) balanceElem.textContent = '$0';
+        if (tradesElem) tradesElem.textContent = '0';
+        if (winRateElem) winRateElem.textContent = '0%';
+        if (profitElem) profitElem.textContent = '$0';
         return;
     }
     
     // Get current balance
     const currentBalance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
-    document.getElementById('userBalance').textContent = `$${currentBalance.toFixed(2)}`;
+    const balanceElem = document.getElementById('userBalance');
+    if (balanceElem) balanceElem.textContent = `$${currentBalance.toFixed(2)}`;
     
     // Calculate trading stats
     const transactions = currentUser.transactions || [];
@@ -77,40 +88,60 @@ function loadUserStats() {
     
     const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100).toFixed(1) : 0;
     
-    document.getElementById('totalTrades').textContent = totalTrades;
-    document.getElementById('winRate').textContent = `${winRate}%`;
-    
+    const tradesElem = document.getElementById('totalTrades');
+    const winRateElem = document.getElementById('winRate');
     const profitElem = document.getElementById('totalProfit');
-    const profitSign = totalProfit >= 0 ? '+' : '';
-    profitElem.textContent = `${profitSign}$${totalProfit.toFixed(2)}`;
-    profitElem.style.color = totalProfit >= 0 ? 'var(--success)' : 'var(--danger)';
+    
+    if (tradesElem) tradesElem.textContent = totalTrades;
+    if (winRateElem) winRateElem.textContent = `${winRate}%`;
+    if (profitElem) {
+        const sign = totalProfit >= 0 ? '+' : '';
+        profitElem.textContent = `${sign}$${totalProfit.toFixed(2)}`;
+        profitElem.className = `stat-hero-value ${totalProfit >= 0 ? 'positive' : 'negative'}`;
+    }
 }
 
 function loadMarketData() {
     const tbody = document.getElementById('marketTableBody');
     if (!tbody) return;
     
-    tbody.innerHTML = Object.entries(cryptoPrices).map(([symbol, data]) => {
-        const changeClass = data.change >= 0 ? 'positive' : 'negative';
-        const changeSign = data.change >= 0 ? '+' : '';
+    // Show only top 6 cryptocurrencies on home page
+    const topCoins = cryptoData.slice(0, 6);
+    
+    tbody.innerHTML = topCoins.map(crypto => {
+        const changeClass = crypto.change >= 0 ? 'positive' : 'negative';
+        const changeSign = crypto.change >= 0 ? '+' : '';
         
         return `
-            <tr onclick="window.location.href='trade.html?crypto=${symbol}'" style="cursor: pointer;">
+            <tr onclick="goToTrade('${crypto.symbol}')" style="cursor: pointer;">
                 <td>
-                    <div class="market-crypto">
-                        <span class="market-icon">${data.icon}</span>
+                    <div class="crypto-info">
+                        <div class="crypto-icon">${crypto.icon}</div>
                         <div>
-                            <div><strong>${symbol}</strong></div>
-                            <div style="font-size: 0.7rem; color: var(--text-tertiary);">${data.name}</div>
+                            <div class="crypto-name">${crypto.name}</div>
+                            <div class="crypto-symbol">${crypto.symbol}</div>
                         </div>
                     </div>
                 </td>
-                <td>$${data.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                <td class="${changeClass}">${changeSign}${data.change.toFixed(2)}%</td>
-                <td>$${data.volume}</td>
+                <td>$${formatPrice(crypto.price, crypto.symbol)}</td>
+                <td><span class="price-change ${changeClass}">${changeSign}${crypto.change.toFixed(2)}%</span></td>
+                <td>${formatMarketCap(crypto.marketCap)}</td>
             </tr>
         `;
     }).join('');
+}
+
+function formatPrice(price, symbol) {
+    if (symbol === 'SHIB' || symbol === 'PEPE') return price.toFixed(8);
+    if (price < 1) return price.toFixed(4);
+    return price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+function formatMarketCap(marketCap) {
+    if (marketCap >= 1e12) return `$${(marketCap / 1e12).toFixed(2)}T`;
+    if (marketCap >= 1e9) return `$${(marketCap / 1e9).toFixed(2)}B`;
+    if (marketCap >= 1e6) return `$${(marketCap / 1e6).toFixed(2)}M`;
+    return `$${marketCap.toFixed(0)}`;
 }
 
 function startPriceUpdates() {
@@ -119,28 +150,36 @@ function startPriceUpdates() {
     }
     
     priceUpdateInterval = setInterval(function() {
-        // Update crypto prices
-        Object.keys(cryptoPrices).forEach(symbol => {
-            const change = (Math.random() - 0.5) * 100;
-            const newPrice = Math.max(0.01, cryptoPrices[symbol].price + change);
-            const percentChange = ((newPrice - cryptoPrices[symbol].price) / cryptoPrices[symbol].price) * 100;
+        // Update crypto prices with random changes
+        cryptoData = cryptoData.map(crypto => {
+            const volatility = (crypto.symbol === 'SHIB' || crypto.symbol === 'PEPE') ? 0.03 : 0.005;
+            const change = (Math.random() - 0.5) * 100 * volatility;
+            const newPrice = Math.max(0.000001, crypto.price * (1 + change / 100));
+            const percentChange = ((newPrice - crypto.price) / crypto.price) * 100;
+            const newMarketCap = crypto.marketCap * (newPrice / crypto.price);
             
-            cryptoPrices[symbol] = {
-                ...cryptoPrices[symbol],
-                price: newPrice,
-                change: percentChange
-            };
+            return { ...crypto, price: newPrice, change: percentChange, marketCap: newMarketCap };
         });
         
         loadMarketData();
+        
+        // Update user stats if logged in
+        if (currentUser) {
+            loadUserStats();
+        }
     }, 10000); // Update every 10 seconds
+}
+
+function goToTrade(symbol) {
+    window.location.href = `trade.html?crypto=${symbol}`;
 }
 
 function handleLogout() {
     localStorage.removeItem('pocket_user');
     sessionStorage.removeItem('pocket_user');
-    window.location.href = 'login.html';
+    window.location.href = 'home.html';
 }
 
 // Make functions global
+window.goToTrade = goToTrade;
 window.handleLogout = handleLogout;
