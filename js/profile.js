@@ -110,6 +110,12 @@ function loadUserProfile() {
     
     const kycFullName = document.getElementById('kycFullName');
     if (kycFullName) kycFullName.value = fullName;
+    
+    // Set country if exists
+    const updateCountry = document.getElementById('updateCountry');
+    if (updateCountry && currentUser.country) {
+        updateCountry.value = currentUser.country;
+    }
 }
 
 function calculateDailyProfitLoss() {
@@ -176,7 +182,7 @@ function loadTradeHistory() {
     const trades = (currentUser.transactions || []).filter(t => t.type === 'trade' || t.type === 'buy' || t.type === 'sell').slice(0, 20);
     
     if (trades.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No trades yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No trades yet</td--</tr>';
         return;
     }
     
@@ -282,6 +288,7 @@ function submitKYC() {
     }
     
     document.getElementById('kycForm').reset();
+    if (kycFullName) kycFullName.value = fullName;
 }
 
 function sendSupportMessage() {
