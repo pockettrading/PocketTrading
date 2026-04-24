@@ -72,6 +72,7 @@ class AuthManager {
         let strength = 0;
         let message = '';
         let className = '';
+        let percentage = 0;
         
         if (password.length >= 8) strength++;
         if (password.match(/[a-z]+/)) strength++;
@@ -84,23 +85,26 @@ class AuthManager {
             case 1:
                 message = 'Weak';
                 className = 'strength-weak';
+                percentage = 20;
                 break;
             case 2:
             case 3:
                 message = 'Medium';
                 className = 'strength-medium';
+                percentage = 60;
                 break;
             case 4:
             case 5:
                 message = 'Strong';
                 className = 'strength-strong';
+                percentage = 100;
                 break;
         }
         
         if (password.length > 0) {
             strengthDiv.innerHTML = `
                 <div class="strength-bar-container">
-                    <div class="strength-bar" style="width: ${strength * 20}%"></div>
+                    <div class="strength-bar" style="width: ${percentage}%"></div>
                 </div>
                 <span class="${className}">${message} Password</span>
             `;
@@ -210,6 +214,7 @@ class AuthManager {
             transactions: [],
             withdrawals: [],
             deposits: [],
+            pendingDeposits: [],
             portfolio: {},
             stats: {
                 totalTrades: 0,
@@ -425,6 +430,7 @@ class AuthManager {
             animation: slideIn 0.3s ease-out;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             font-weight: 500;
+            max-width: 350px;
         `;
         
         document.body.appendChild(notification);
