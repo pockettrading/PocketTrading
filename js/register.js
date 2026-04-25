@@ -1,4 +1,4 @@
-// Register page functionality - Real Account Only with Full Name
+// Register page functionality - Social login removed
 
 class RegisterManager {
     constructor() {
@@ -24,20 +24,6 @@ class RegisterManager {
             registerForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 this.handleRegister();
-            });
-        }
-
-        const googleRegister = document.getElementById('googleRegister');
-        if (googleRegister) {
-            googleRegister.addEventListener('click', () => {
-                this.handleSocialRegister('Google');
-            });
-        }
-
-        const appleRegister = document.getElementById('appleRegister');
-        if (appleRegister) {
-            appleRegister.addEventListener('click', () => {
-                this.handleSocialRegister('Apple');
             });
         }
     }
@@ -106,13 +92,11 @@ class RegisterManager {
         const confirmPassword = document.getElementById('confirmPassword').value;
         const termsAgree = document.getElementById('termsAgree').checked;
 
-        // Validation
         if (!fullName || !email || !password || !confirmPassword) {
             this.showNotification('Please fill in all fields', 'error');
             return;
         }
 
-        // Full Name validation (at least 2 words)
         const nameParts = fullName.trim().split(' ');
         if (nameParts.length < 2) {
             this.showNotification('Please enter your full name (first and last name)', 'error');
@@ -140,7 +124,6 @@ class RegisterManager {
             return;
         }
 
-        // Get existing users
         const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
         
         if (users.find(u => u.email === email)) {
@@ -148,12 +131,10 @@ class RegisterManager {
             return;
         }
 
-        // Format full name properly
         const formattedName = fullName.trim().split(' ').map(word => 
             word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
         ).join(' ');
 
-        // Create new user with REAL account only (balance starts at $0)
         const newUser = {
             id: Date.now(),
             name: formattedName,
@@ -182,17 +163,12 @@ class RegisterManager {
 
         this.showNotification(`Welcome ${formattedName}! Your account has been created successfully. Make a deposit to start trading.`, 'success');
 
-        // Auto login after registration
         sessionStorage.setItem('pocket_user', JSON.stringify(newUser));
         localStorage.removeItem('pocket_user');
 
         setTimeout(() => {
             window.location.href = 'home.html';
         }, 2000);
-    }
-
-    handleSocialRegister(provider) {
-        this.showNotification(`Sign up with ${provider} coming soon!`, 'success');
     }
 
     showNotification(message, type) {
