@@ -90,6 +90,66 @@
             color: var(--primary);
         }
 
+        /* User Dropdown */
+        .user-dropdown {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .user-name-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--card-bg);
+            border-radius: 40px;
+            transition: all 0.3s;
+        }
+
+        .user-name-display:hover {
+            background: var(--card-hover);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.5rem;
+            min-width: 160px;
+            display: none;
+            z-index: 100;
+            margin-top: 0.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .user-dropdown:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px 16px;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .dropdown-item:hover {
+            background: var(--card-hover);
+            color: var(--primary);
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 0.5rem 0;
+        }
+
         .signup-btn {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
@@ -116,7 +176,7 @@
             gap: 2rem;
         }
 
-        /* Order Form Section */
+        /* Order Section */
         .order-section {
             background: var(--card-bg);
             border-radius: 20px;
@@ -515,7 +575,7 @@
                 <a href="markets.html" class="nav-link">Markets</a>
                 <a href="trade.html" class="nav-link" style="color: var(--primary);">Trades</a>
             </div>
-            <a href="register.html" class="signup-btn">Sign Up</a>
+            <div id="userSection"></div>
         </div>
 
         <!-- Trading Interface -->
@@ -560,8 +620,8 @@
                 <!-- Current Price -->
                 <div class="current-price">
                     <div>
-                        <span class="price-value" id="currentPrice">$43,203.07</span>
-                        <span class="price-change negative" id="priceChange">-0.11%</span>
+                        <span class="price-value" id="currentPrice">$43,238.25</span>
+                        <span class="price-change positive" id="priceChange">+0.08%</span>
                     </div>
                 </div>
 
@@ -617,7 +677,7 @@
             </div>
 
             <!-- Right: Market Data -->
-            <div>
+            <div class="market-data-section">
                 <!-- Market Prices -->
                 <div class="market-card">
                     <div class="market-header">
