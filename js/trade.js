@@ -8,19 +8,20 @@ let openOrders = [];
 
 // Cryptocurrency data
 let cryptoPrices = {
-    BTC: { price: 43203.07, change: -0.11, icon: '₿', name: 'Bitcoin' },
-    ETH: { price: 2256.04, change: 0.23, icon: 'Ξ', name: 'Ethereum' },
-    BNB: { price: 259.61, change: -15.05, icon: 'B', name: 'Binance Coin' },
-    SOL: { price: 141.40, change: 43.70, icon: 'S', name: 'Solana' }
+    BTC: { price: 43238.25, change: 0.08, icon: '₿', name: 'Bitcoin' },
+    ETH: { price: 2234.98, change: -0.93, icon: 'Ξ', name: 'Ethereum' },
+    BNB: { price: 261.41, change: 0.69, icon: 'B', name: 'Binance Coin' },
+    SOL: { price: 141.57, change: 0.12, icon: 'S', name: 'Solana' }
 };
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Trade page loaded');
     loadUser();
+    renderUserSection();
     if (!currentUser) {
-        window.location.href = 'login.html';
-        return;
+        // Show guest mode, but don't redirect
+        console.log('Guest mode - limited functionality');
     }
     initTradePage();
     loadOpenOrders();
@@ -31,6 +32,34 @@ function loadUser() {
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
         console.log('User loaded:', currentUser.email);
+    }
+}
+
+function renderUserSection() {
+    const userSection = document.getElementById('userSection');
+    if (!userSection) return;
+    
+    if (currentUser) {
+        const displayName = currentUser.name || currentUser.email.split('@')[0];
+        userSection.innerHTML = `
+            <div class="user-dropdown">
+                <div class="user-name-display">
+                    <span>👤</span>
+                    <span>${displayName}</span>
+                    <span>▼</span>
+                </div>
+                <div class="dropdown-menu">
+                    <a href="profile.html" class="dropdown-item">📋 My Profile</a>
+                    <a href="dashboard.html" class="dropdown-item">📊 Dashboard</a>
+                    <a href="deposit.html" class="dropdown-item">💰 Deposit</a>
+                    <a href="withdraw.html" class="dropdown-item">💸 Withdraw</a>
+                    <div class="dropdown-divider"></div>
+                    <span class="dropdown-item" onclick="handleLogout()" style="cursor: pointer; color: var(--danger);">🚪 Logout</span>
+                </div>
+            </div>
+        `;
+    } else {
+        userSection.innerHTML = `<a href="register.html" class="signup-btn">Sign Up</a>`;
     }
 }
 
@@ -117,6 +146,10 @@ function setupEventListeners() {
 }
 
 function showCryptoDropdown() {
+    // Remove existing dropdown if any
+    const existingDropdown = document.querySelector('.crypto-dropdown');
+    if (existingDropdown) existingDropdown.remove();
+    
     const dropdown = document.createElement('div');
     dropdown.className = 'crypto-dropdown';
     dropdown.style.cssText = `
@@ -196,7 +229,10 @@ function setOrderType(type) {
 }
 
 function setQuickAmount(percent) {
-    if (!currentUser) return;
+    if (!currentUser) {
+        showNotification('Please login to trade', 'error');
+        return;
+    }
     
     const currentBalance = currentUser.balance || 0;
     const currentPrice = cryptoPrices[selectedCrypto]?.price || 0;
@@ -470,6 +506,13 @@ function showNotification(message, type) {
     }, 3000);
 }
 
+function handleLogout() {
+    localStorage.removeItem('pocket_user');
+    sessionStorage.removeItem('pocket_user');
+    window.location.href = 'home.html';
+}
+
 // Make functions global
 window.changeCrypto = changeCrypto;
 window.cancelOrder = cancelOrder;
+window.handleLogout = handleLogout;
