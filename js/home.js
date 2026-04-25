@@ -1,4 +1,4 @@
-// Home page functionality - Shows user balance after auto-login
+// Home page functionality - Shows user dropdown when logged in
 
 let currentUser = null;
 
@@ -6,6 +6,7 @@ let currentUser = null;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Home page loaded');
     loadUser();
+    renderUserSection();
     loadUserStats();
 });
 
@@ -15,7 +16,6 @@ function loadUser() {
         if (storedUser) {
             currentUser = JSON.parse(storedUser);
             console.log('User logged in:', currentUser.email);
-            console.log('User balance:', currentUser.balance);
         } else {
             console.log('No user logged in - guest mode');
             currentUser = null;
@@ -23,6 +23,37 @@ function loadUser() {
     } catch(e) {
         console.log('Error loading user:', e);
         currentUser = null;
+    }
+}
+
+function renderUserSection() {
+    const userSection = document.getElementById('userSection');
+    if (!userSection) return;
+    
+    if (currentUser) {
+        // Show user dropdown for logged-in users
+        const displayName = currentUser.name || currentUser.email.split('@')[0];
+        
+        userSection.innerHTML = `
+            <div class="user-dropdown">
+                <div class="user-name-display">
+                    <span>👤</span>
+                    <span>${displayName}</span>
+                    <span>▼</span>
+                </div>
+                <div class="dropdown-menu">
+                    <a href="profile.html" class="dropdown-item">📋 My Profile</a>
+                    <a href="dashboard.html" class="dropdown-item">📊 Dashboard</a>
+                    <a href="deposit.html" class="dropdown-item">💰 Deposit</a>
+                    <a href="withdraw.html" class="dropdown-item">💸 Withdraw</a>
+                    <div class="dropdown-divider"></div>
+                    <span class="dropdown-item" onclick="handleLogout()" style="cursor: pointer; color: var(--danger);">🚪 Logout</span>
+                </div>
+            </div>
+        `;
+    } else {
+        // Show Sign Up button for guests
+        userSection.innerHTML = `<a href="register.html" class="signup-btn">Sign Up</a>`;
     }
 }
 
@@ -89,17 +120,12 @@ function loadUserStats() {
     let winningTrades = 0;
     let totalProfit = currentUser.stats?.totalProfit || 0;
     
-    // If stats not available, calculate from trades
-    if (totalProfit === 0 && trades.length > 0) {
-        trades.forEach(trade => {
-            if (trade.pnl) {
-                totalProfit += trade.pnl;
-                if (trade.pnl > 0) winningTrades++;
-            }
-        });
-    } else {
-        winningTrades = currentUser.stats?.winningTrades || 0;
-    }
+    // Calculate winning trades from transactions if stats not available
+    trades.forEach(trade => {
+        if (trade.pnl && trade.pnl > 0) {
+            winningTrades++;
+        }
+    });
     
     const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100).toFixed(1) : 0;
     
@@ -117,4 +143,10 @@ function loadUserStats() {
         profitElem.textContent = `${sign}$${Math.abs(totalProfit).toFixed(2)}`;
         profitElem.className = `stat-value ${totalProfit >= 0 ? 'positive' : 'negative'}`;
     }
+}
+
+function handleLogout() {
+    localStorage.removeItem('pocket_user');
+    sessionStorage.removeItem('pocket_user');
+    window.location.href = 'home.html';
 }
