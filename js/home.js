@@ -1,4 +1,4 @@
-// Home page functionality - No dropdown, simple navigation
+// Home page functionality - Simple navigation with Sign Up button
 
 let currentUser = null;
 
@@ -56,7 +56,6 @@ function loadUserStats() {
     
     // Get current balance
     const currentBalance = currentUser.balance || 0;
-    const initialBalance = 0; // Real account starts at 0
     
     const balanceElem = document.getElementById('userBalance');
     const balanceChangeElem = document.getElementById('balanceChange');
