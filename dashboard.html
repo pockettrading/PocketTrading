@@ -562,6 +562,13 @@
             text-decoration: underline;
         }
 
+        /* Loading State */
+        .loading-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-tertiary);
+        }
+
         @media (max-width: 968px) {
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -737,7 +744,7 @@
                     <h2>Top Cryptocurrencies</h2>
                 </div>
                 <div class="crypto-list" id="cryptoList">
-                    <div style="text-align: center; padding: 2rem; color: var(--text-tertiary);">Loading...</div>
+                    <div class="loading-state">Loading market data...</div>
                 </div>
             </div>
         </div>
@@ -760,7 +767,7 @@
                     </thead>
                     <tbody id="transactionsList">
                         <tr>
-                            <td colspan="4" style="text-align: center; padding: 2rem;">No transactions yet</td>
+                            <td colspan="4" style="text-align: center; padding: 2rem;">No transactions yet</td--</tr>
                         </tr>
                     </tbody>
                 </table>
