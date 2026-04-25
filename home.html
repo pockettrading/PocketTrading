@@ -90,7 +90,66 @@
             color: var(--primary);
         }
 
-        /* Sign Up Button */
+        /* User Dropdown */
+        .user-dropdown {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .user-name-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--card-bg);
+            border-radius: 40px;
+            transition: all 0.3s;
+        }
+
+        .user-name-display:hover {
+            background: var(--card-hover);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.5rem;
+            min-width: 160px;
+            display: none;
+            z-index: 100;
+            margin-top: 0.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .user-dropdown:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px 16px;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .dropdown-item:hover {
+            background: var(--card-hover);
+            color: var(--primary);
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 0.5rem 0;
+        }
+
         .signup-btn {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
@@ -345,7 +404,7 @@
 </head>
 <body>
     <div class="container">
-        <!-- Top Navigation Bar: Logo | Home Markets Trades | Sign Up -->
+        <!-- Top Navigation Bar -->
         <div class="top-nav">
             <div class="logo">
                 <svg viewBox="0 0 40 40" fill="none">
@@ -360,7 +419,7 @@
                 <a href="markets.html" class="nav-link">Markets</a>
                 <a href="trade.html" class="nav-link">Trades</a>
             </div>
-            <a href="register.html" class="signup-btn">Sign Up</a>
+            <div id="userSection"></div>
         </div>
 
         <!-- Hero Section -->
@@ -379,8 +438,8 @@
                         <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
                     </svg>
                 </div>
-                <div class="stat-value" id="userBalance">$0</div>
-                <div class="stat-change" id="balanceChange">0% from start</div>
+                <div class="stat-value" id="userBalance">$0.00</div>
+                <div class="stat-change" id="balanceChange">Make a deposit to start</div>
             </div>
             <div class="stat-card">
                 <div class="stat-header">
@@ -409,7 +468,7 @@
                         <path d="M3 17v2h6v-2M3 7v2h6V7M13 5v2h6V5M13 11v2h6v-2M13 17v2h6v-2"/>
                     </svg>
                 </div>
-                <div class="stat-value" id="totalProfit">$0</div>
+                <div class="stat-value" id="totalProfit">$0.00</div>
                 <div class="stat-change">Total P&L</div>
             </div>
         </div>
