@@ -1,13 +1,12 @@
 // Markets page functionality - Complete working version
 
-let currentUser = null;
 let currentFilter = 'all';
 let searchQuery = '';
 let priceUpdateInterval = null;
 
 // Cryptocurrency data
 let cryptoData = [
-    { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 75730.97, change: -3.0, marketCap: 1520000000000, volume: 32500000000, category: 'large' },
+    { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 75716.19, change: 0.01, marketCap: 1520000000000, volume: 32500000000, category: 'large' },
     { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2357.44, change: 1.4, marketCap: 284440000000, volume: 15200000000, category: 'large' },
     { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 305.60, change: -0.5, marketCap: 52000000000, volume: 2100000000, category: 'large' },
     { symbol: 'SOL', name: 'Solana', icon: 'S', price: 98.40, change: 5.2, marketCap: 45000000000, volume: 1800000000, category: 'large' },
@@ -27,47 +26,11 @@ let cryptoData = [
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Markets page loaded');
-    loadUser();
-    updateUserDisplay();
     loadMarketStats();
     loadMarketTable();
     setupEventListeners();
     startPriceUpdates();
 });
-
-function loadUser() {
-    try {
-        const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
-        if (storedUser) {
-            currentUser = JSON.parse(storedUser);
-            console.log('User logged in:', currentUser.email);
-        } else {
-            currentUser = null;
-        }
-    } catch(e) {
-        currentUser = null;
-    }
-}
-
-function updateUserDisplay() {
-    const userNameSpan = document.getElementById('userNameDisplay');
-    const authButtonSpan = document.getElementById('authButton');
-    
-    if (userNameSpan) {
-        if (currentUser) {
-            const displayName = currentUser.name || currentUser.email.split('@')[0];
-            userNameSpan.textContent = displayName;
-            if (authButtonSpan) {
-                authButtonSpan.innerHTML = '<span class="logout-link" onclick="handleLogout()">Logout</span>';
-            }
-        } else {
-            userNameSpan.textContent = 'Guest';
-            if (authButtonSpan) {
-                authButtonSpan.innerHTML = '<a href="register.html" class="auth-link">Sign Up</a>';
-            }
-        }
-    }
-}
 
 function loadMarketStats() {
     const totalMarketCap = cryptoData.reduce((sum, crypto) => sum + crypto.marketCap, 0);
@@ -79,6 +42,22 @@ function loadMarketStats() {
     document.getElementById('totalVolume').textContent = formatVolume(totalVolume);
     document.getElementById('btcDominance').textContent = `${btcDominance}%`;
     document.getElementById('activeCoins').textContent = cryptoData.length;
+    
+    // Random changes for display
+    const marketCapChange = ((Math.random() - 0.5) * 5).toFixed(1);
+    const marketCapChangeElem = document.getElementById('marketCapChange');
+    marketCapChangeElem.textContent = `${marketCapChange >= 0 ? '+' : ''}${marketCapChange}%`;
+    marketCapChangeElem.className = `stat-change ${marketCapChange >= 0 ? 'positive' : 'negative'}`;
+    
+    const volumeChange = ((Math.random() - 0.5) * 8).toFixed(1);
+    const volumeChangeElem = document.getElementById('volumeChange');
+    volumeChangeElem.textContent = `${volumeChange >= 0 ? '+' : ''}${volumeChange}%`;
+    volumeChangeElem.className = `stat-change ${volumeChange >= 0 ? 'positive' : 'negative'}`;
+    
+    const dominanceChange = ((Math.random() - 0.5) * 2).toFixed(1);
+    const dominanceChangeElem = document.getElementById('dominanceChange');
+    dominanceChangeElem.textContent = `${dominanceChange >= 0 ? '+' : ''}${dominanceChange}%`;
+    dominanceChangeElem.className = `stat-change ${dominanceChange >= 0 ? 'positive' : 'negative'}`;
 }
 
 function loadMarketTable() {
@@ -100,7 +79,7 @@ function loadMarketTable() {
     }
     
     if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="loading-state">No cryptocurrencies found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="loading-state">No cryptocurrencies found</td--</tr>';
         return;
     }
     
@@ -109,7 +88,7 @@ function loadMarketTable() {
         const changeSign = crypto.change >= 0 ? '+' : '';
         
         return `
-            <tr onclick="goToTrade('${crypto.symbol}')">
+            <tr>
                 <td>
                     <div class="crypto-info">
                         <div class="crypto-icon">${crypto.icon}</div>
@@ -120,9 +99,19 @@ function loadMarketTable() {
                     </div>
                 </td>
                 <td>$${formatPrice(crypto.price, crypto.symbol)}</td>
-                <td><span class="price-change ${changeClass}">${changeSign}${crypto.change.toFixed(2)}%</span></td>
+                <td>
+                    <span class="price-change ${changeClass}">
+                        ${changeSign}${crypto.change.toFixed(2)}%
+                    </span>
+                </td>
                 <td>${formatMarketCap(crypto.marketCap)}</td>
-                <td><button class="btn-details" onclick="event.stopPropagation(); goToTrade('${crypto.symbol}')">Trade ${crypto.symbol}</button></td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-icon" onclick="event.stopPropagation(); viewDetails('${crypto.symbol}')" title="View Details">🔍</button>
+                        <button class="action-icon" onclick="event.stopPropagation(); goToTrade('${crypto.symbol}')" title="Trade">📊</button>
+                        <button class="action-icon" onclick="event.stopPropagation(); addToWatchlist('${crypto.symbol}')" title="Add to Watchlist">⭐</button>
+                    </div>
+                </td>
             </tr>
         `;
     }).join('');
@@ -148,9 +137,10 @@ function formatVolume(volume) {
 }
 
 function setupEventListeners() {
-    document.querySelectorAll('.filter-tab').forEach(tab => {
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    filterTabs.forEach(tab => {
         tab.addEventListener('click', function() {
-            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            filterTabs.forEach(t => t.classList.remove('active'));
             this.classList.add('active');
             currentFilter = this.dataset.filter;
             loadMarketTable();
@@ -189,12 +179,24 @@ function goToTrade(symbol) {
     window.location.href = `trade.html?crypto=${symbol}`;
 }
 
-function handleLogout() {
-    localStorage.removeItem('pocket_user');
-    sessionStorage.removeItem('pocket_user');
-    window.location.href = 'home.html';
+function viewDetails(symbol) {
+    alert(`Viewing details for ${symbol}\n\nThis feature is coming soon!`);
+}
+
+function addToWatchlist(symbol) {
+    // Get existing watchlist from localStorage
+    let watchlist = JSON.parse(localStorage.getItem('crypto_watchlist') || '[]');
+    
+    if (watchlist.includes(symbol)) {
+        alert(`${symbol} is already in your watchlist!`);
+    } else {
+        watchlist.push(symbol);
+        localStorage.setItem('crypto_watchlist', JSON.stringify(watchlist));
+        alert(`${symbol} added to your watchlist!`);
+    }
 }
 
 // Make functions global
 window.goToTrade = goToTrade;
-window.handleLogout = handleLogout;
+window.viewDetails = viewDetails;
+window.addToWatchlist = addToWatchlist;
