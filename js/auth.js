@@ -229,6 +229,7 @@ class AuthManager {
         
         this.showSuccess(`Welcome ${formattedName}! Your account has been created successfully. Make a deposit to start trading.`);
         
+        // Auto-login after registration
         setTimeout(() => {
             this.login(email, password, true);
         }, 1500);
@@ -347,7 +348,7 @@ class AuthManager {
         setTimeout(() => {
             notification.style.animation = 'slideOut 0.3s ease-out';
             setTimeout(() => notification.remove(), 300);
-        }, 4000);
+        }, 3000);
     }
 
     logout() {
