@@ -90,41 +90,23 @@
             color: var(--primary);
         }
 
-        .user-section {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .user-name {
-            color: var(--text-primary);
-            font-weight: 500;
-        }
-
-        .auth-link {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-            padding: 8px 20px;
-            background: rgba(247, 147, 26, 0.1);
-            border-radius: 8px;
-            transition: all 0.3s;
-        }
-
-        .auth-link:hover {
-            background: var(--primary);
+        .signup-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
-        }
-
-        .logout-link {
-            color: var(--danger);
-            text-decoration: none;
-            font-weight: 500;
+            padding: 8px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
             cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
         }
 
-        .logout-link:hover {
-            text-decoration: underline;
+        .signup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
         }
 
         /* Markets Header */
@@ -168,7 +150,7 @@
         }
 
         .stat-value {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: 700;
             color: var(--primary);
         }
@@ -312,22 +294,30 @@
             color: var(--danger);
         }
 
-        /* Details Button */
-        .btn-details {
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             background: var(--darker-bg);
             border: 1px solid var(--border);
-            color: var(--text-secondary);
-            padding: 6px 16px;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s;
-            font-size: 0.8rem;
+            font-size: 1rem;
         }
 
-        .btn-details:hover {
+        .action-icon:hover {
             background: var(--primary);
             border-color: var(--primary);
-            color: white;
+            transform: scale(1.05);
         }
 
         /* Loading State */
@@ -347,6 +337,18 @@
             }
         }
 
+        @media (max-width: 768px) {
+            .top-nav {
+                flex-direction: column;
+                justify-content: center;
+                text-align: center;
+            }
+            
+            .nav-links {
+                justify-content: center;
+            }
+        }
+
         @media (max-width: 480px) {
             .stats-cards {
                 grid-template-columns: 1fr;
@@ -357,13 +359,20 @@
                 flex-wrap: nowrap;
             }
             
-            .nav-links {
-                gap: 1rem;
+            .market-table th,
+            .market-table td {
+                padding: 0.75rem;
+                font-size: 0.75rem;
             }
             
-            .top-nav {
-                flex-direction: column;
-                text-align: center;
+            .action-buttons {
+                gap: 0.25rem;
+            }
+            
+            .action-icon {
+                width: 28px;
+                height: 28px;
+                font-size: 0.8rem;
             }
         }
     </style>
@@ -384,12 +393,8 @@
                 <a href="home.html" class="nav-link">Home</a>
                 <a href="markets.html" class="nav-link" style="color: var(--primary);">Markets</a>
                 <a href="trade.html" class="nav-link">Trades</a>
-                <a href="profile.html" class="nav-link">My Profile</a>
             </div>
-            <div class="user-section">
-                <span class="user-name" id="userNameDisplay">Guest</span>
-                <span id="authButton"></span>
-            </div>
+            <a href="register.html" class="signup-btn">Sign Up</a>
         </div>
 
         <!-- Markets Header -->
@@ -398,26 +403,26 @@
             <p>Track live cryptocurrency prices and market data</p>
         </div>
 
-        <!-- Stats Cards -->
+        <!-- Market Stats Cards -->
         <div class="stats-cards">
             <div class="stat-card">
                 <div class="stat-label">Total Market Cap</div>
-                <div class="stat-value" id="totalMarketCap">$2.34T</div>
+                <div class="stat-value" id="totalMarketCap">$2.03T</div>
                 <div class="stat-change positive" id="marketCapChange">+2.5%</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">24h Volume</div>
-                <div class="stat-value" id="totalVolume">$103.18B</div>
+                <div class="stat-value" id="totalVolume">$57.77B</div>
                 <div class="stat-change positive" id="volumeChange">+5.2%</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">BTC Dominance</div>
-                <div class="stat-value" id="btcDominance">65.0%</div>
-                <div class="stat-change" id="dominanceChange">-0.3%</div>
+                <div class="stat-value" id="btcDominance">74.8%</div>
+                <div class="stat-change negative" id="dominanceChange">-0.3%</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Active Coins</div>
-                <div class="stat-value" id="activeCoins">24</div>
+                <div class="stat-value" id="activeCoins">18</div>
                 <div class="stat-change">+2 this week</div>
             </div>
         </div>
