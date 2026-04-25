@@ -6,9 +6,8 @@ let currentSymbol = 'BTC';
 let currentInterval = '1h';
 let priceUpdateInterval = null;
 let candlestickSeries = null;
-let volumeSeries = null;
 
-// API endpoints
+// Binance API endpoints
 const BINANCE_BASE_URL = 'https://api.binance.com/api/v3';
 
 // Cryptocurrency data for top list
@@ -31,7 +30,7 @@ const binanceSymbols = {
     ADA: 'ADAUSDT'
 };
 
-// Interval mapping for Binance
+// Interval mapping
 const intervalMap = {
     '1m': '1m',
     '5m': '5m',
@@ -92,19 +91,13 @@ function renderUserSection() {
 
 async function initDashboard() {
     updateBalanceDisplay();
-    loadCryptoList();
     loadTransactions();
     updateStats();
     setupEventListeners();
-    
-    // Initialize chart
     await initChart();
-    
-    // Fetch initial chart data
     await fetchCandlestickData();
     await fetchCurrentPrice();
-    
-    // Start real-time price updates
+    await loadCryptoList();
     startRealTimeUpdates();
 }
 
@@ -117,11 +110,7 @@ function updateBalanceDisplay() {
     
     if (totalBalanceElem) {
         totalBalanceElem.textContent = `$${currentBalance.toFixed(2)}`;
-        if (currentBalance > 0) {
-            totalBalanceElem.className = 'stat-value positive';
-        } else {
-            totalBalanceElem.className = 'stat-value';
-        }
+        totalBalanceElem.className = currentBalance > 0 ? 'stat-value positive' : 'stat-value';
     }
     
     if (demoBalanceElem) {
@@ -132,68 +121,39 @@ function updateBalanceDisplay() {
 function updateStats() {
     if (!currentUser) return;
     
-    // Calculate daily volume from transactions
     const today = new Date().toDateString();
     const todayTransactions = (currentUser.transactions || []).filter(t => 
         new Date(t.date).toDateString() === today && (t.type === 'trade' || t.type === 'buy' || t.type === 'sell')
     );
     const dailyVolume = todayTransactions.reduce((sum, t) => sum + (t.amount || t.total || 0), 0);
-    const dailyVolumeElem = document.getElementById('dailyVolume');
-    if (dailyVolumeElem) dailyVolumeElem.textContent = `$${dailyVolume.toFixed(2)}`;
+    document.getElementById('dailyVolume').textContent = `$${dailyVolume.toFixed(2)}`;
     
-    // Calculate profit/loss
     const trades = (currentUser.transactions || []).filter(t => t.type === 'trade' || t.type === 'buy' || t.type === 'sell');
     let totalProfit = currentUser.stats?.totalProfit || 0;
-    
-    trades.forEach(trade => {
-        if (trade.pnl) {
-            totalProfit += trade.pnl;
-        }
-    });
+    trades.forEach(trade => { if (trade.pnl) totalProfit += trade.pnl; });
     
     const profitElem = document.getElementById('totalProfit');
-    if (profitElem) {
-        const sign = totalProfit >= 0 ? '+' : '';
-        profitElem.textContent = `${sign}$${totalProfit.toFixed(2)}`;
-        profitElem.style.color = totalProfit >= 0 ? 'var(--success)' : 'var(--danger)';
-    }
+    profitElem.textContent = `${totalProfit >= 0 ? '+' : ''}$${totalProfit.toFixed(2)}`;
+    profitElem.style.color = totalProfit >= 0 ? 'var(--success)' : 'var(--danger)';
     
-    // Count active trades
     const activeTrades = (currentUser.transactions || []).filter(t => t.status === 'open').length;
-    const tradesElem = document.getElementById('activeTrades');
-    if (tradesElem) tradesElem.textContent = activeTrades;
+    document.getElementById('activeTrades').textContent = activeTrades;
 }
 
 async function initChart() {
     const chartElement = document.getElementById('chart');
     if (!chartElement) return;
     
-    // Create Lightweight Chart
     chart = LightweightCharts.createChart(chartElement, {
         width: chartElement.clientWidth,
         height: 450,
-        layout: {
-            background: { color: 'transparent' },
-            textColor: '#A0AAB5',
-        },
-        grid: {
-            vertLines: { color: '#2A3545' },
-            horzLines: { color: '#2A3545' },
-        },
-        crosshair: {
-            mode: LightweightCharts.CrosshairMode.Normal,
-        },
-        rightPriceScale: {
-            borderColor: '#2A3545',
-        },
-        timeScale: {
-            borderColor: '#2A3545',
-            timeVisible: true,
-            secondsVisible: false,
-        },
+        layout: { background: { color: 'transparent' }, textColor: '#A0AAB5' },
+        grid: { vertLines: { color: '#2A3545' }, horzLines: { color: '#2A3545' } },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        rightPriceScale: { borderColor: '#2A3545' },
+        timeScale: { borderColor: '#2A3545', timeVisible: true, secondsVisible: false },
     });
     
-    // Add candlestick series
     candlestickSeries = chart.addCandlestickSeries({
         upColor: '#00D897',
         downColor: '#FF4757',
@@ -203,10 +163,7 @@ async function initChart() {
         wickUpColor: '#00D897',
     });
     
-    // Handle resize
-    window.addEventListener('resize', () => {
-        chart.applyOptions({ width: chartElement.clientWidth });
-    });
+    window.addEventListener('resize', () => chart.applyOptions({ width: chartElement.clientWidth }));
 }
 
 async function fetchCandlestickData() {
@@ -226,19 +183,14 @@ async function fetchCandlestickData() {
         }));
         
         candlestickSeries.setData(candlestickData);
-        
-        // Fit content
         chart.timeScale().fitContent();
-        
-        console.log(`Loaded ${candlestickData.length} candles for ${symbol}`);
     } catch (error) {
         console.error('Error fetching candlestick data:', error);
-        // Fallback demo data
-        generateDemoCandlestickData();
+        generateDemoData();
     }
 }
 
-function generateDemoCandlestickData() {
+function generateDemoData() {
     const candlestickData = [];
     let basePrice = currentSymbol === 'BTC' ? 43000 : (currentSymbol === 'ETH' ? 2200 : 300);
     const now = Math.floor(Date.now() / 1000);
@@ -252,14 +204,7 @@ function generateDemoCandlestickData() {
         const high = Math.max(open, close) + Math.random() * 50;
         const low = Math.min(open, close) - Math.random() * 50;
         
-        candlestickData.push({
-            time: time,
-            open: open,
-            high: high,
-            low: low,
-            close: close,
-        });
-        
+        candlestickData.push({ time, open, high, low, close });
         basePrice = close;
     }
     
@@ -271,15 +216,14 @@ async function fetchCurrentPrice() {
     const symbol = binanceSymbols[currentSymbol];
     
     try {
-        // Get 24hr ticker for stats
-        const tickerResponse = await fetch(`${BINANCE_BASE_URL}/ticker/24hr?symbol=${symbol}`);
-        const tickerData = await tickerResponse.json();
+        const response = await fetch(`${BINANCE_BASE_URL}/ticker/24hr?symbol=${symbol}`);
+        const data = await response.json();
         
-        const price = parseFloat(tickerData.lastPrice);
-        const change = parseFloat(tickerData.priceChangePercent);
-        const high = parseFloat(tickerData.highPrice);
-        const low = parseFloat(tickerData.lowPrice);
-        const volume = parseFloat(tickerData.volume) * price;
+        const price = parseFloat(data.lastPrice);
+        const change = parseFloat(data.priceChangePercent);
+        const high = parseFloat(data.highPrice);
+        const low = parseFloat(data.lowPrice);
+        const volume = parseFloat(data.volume) * price;
         
         document.getElementById('currentPrice').textContent = `$${price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         
@@ -291,50 +235,32 @@ async function fetchCurrentPrice() {
         document.getElementById('low24h').textContent = `$${low.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         document.getElementById('volume24h').textContent = `$${volume.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
         
-        // Update chart symbol title
         document.getElementById('chartSymbol').textContent = `${currentSymbol}/USD`;
-        
-        // Update current price in crypto list
-        await updateCryptoPrices();
-        
     } catch (error) {
-        console.error('Error fetching current price:', error);
-        // Use demo price
+        console.error('Error fetching price:', error);
         const demoPrice = currentSymbol === 'BTC' ? 43000 + (Math.random() - 0.5) * 500 : 
                          (currentSymbol === 'ETH' ? 2200 + (Math.random() - 0.5) * 50 : 300 + (Math.random() - 0.5) * 10);
         document.getElementById('currentPrice').textContent = `$${demoPrice.toFixed(2)}`;
     }
 }
 
-async function updateCryptoPrices() {
+async function loadCryptoList() {
     const container = document.getElementById('cryptoList');
     if (!container) return;
     
-    const updatedCryptoData = await Promise.all(cryptoData.map(async (crypto) => {
+    const updatedData = await Promise.all(cryptoData.map(async (crypto) => {
         try {
-            const symbol = binanceSymbols[crypto.symbol];
-            const response = await fetch(`${BINANCE_BASE_URL}/ticker/24hr?symbol=${symbol}`);
+            const response = await fetch(`${BINANCE_BASE_URL}/ticker/24hr?symbol=${binanceSymbols[crypto.symbol]}`);
             const data = await response.json();
-            
-            return {
-                ...crypto,
-                price: parseFloat(data.lastPrice),
-                change: parseFloat(data.priceChangePercent)
-            };
-        } catch (error) {
-            // Demo data
-            return {
-                ...crypto,
-                price: crypto.symbol === 'BTC' ? 43000 : (crypto.symbol === 'ETH' ? 2200 : 300),
-                change: (Math.random() - 0.5) * 5
-            };
+            return { ...crypto, price: parseFloat(data.lastPrice), change: parseFloat(data.priceChangePercent) };
+        } catch {
+            return { ...crypto, price: 0, change: 0 };
         }
     }));
     
-    container.innerHTML = updatedCryptoData.map(crypto => {
+    container.innerHTML = updatedData.map(crypto => {
         const changeClass = crypto.change >= 0 ? 'positive' : 'negative';
         const changeSign = crypto.change >= 0 ? '+' : '';
-        
         return `
             <div class="crypto-item" onclick="changeChartSymbol('${crypto.symbol}')">
                 <div class="crypto-info">
@@ -346,9 +272,7 @@ async function updateCryptoPrices() {
                 </div>
                 <div class="crypto-price">
                     <div class="crypto-price-value">$${crypto.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                    <div class="crypto-change ${changeClass}">
-                        ${changeSign}${crypto.change.toFixed(2)}%
-                    </div>
+                    <div class="crypto-change ${changeClass}">${changeSign}${crypto.change.toFixed(2)}%</div>
                 </div>
             </div>
         `;
@@ -359,54 +283,29 @@ function loadTransactions() {
     const tbody = document.getElementById('transactionsList');
     if (!tbody) return;
     
-    const userTransactions = currentUser.transactions || [];
-    const recentTransactions = userTransactions.slice(-5).reverse();
-    
-    if (recentTransactions.length === 0) {
+    const transactions = (currentUser.transactions || []).slice(-5).reverse();
+    if (transactions.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">No transactions yet</td--</tr>';
         return;
     }
     
-    tbody.innerHTML = recentTransactions.map(transaction => {
-        let typeDisplay = transaction.type;
-        let amountDisplay = `$${transaction.amount.toFixed(2)}`;
-        let typeClass = '';
-        
-        if (transaction.type === 'buy') {
-            typeDisplay = 'Buy';
-            amountDisplay = `+ $${transaction.amount.toFixed(2)}`;
-            typeClass = 'buy';
-        } else if (transaction.type === 'sell') {
-            typeDisplay = 'Sell';
-            amountDisplay = `- $${transaction.amount.toFixed(2)}`;
-            typeClass = 'sell';
-        } else if (transaction.type === 'deposit') {
-            typeDisplay = 'Deposit';
-            amountDisplay = `+ $${transaction.amount.toFixed(2)}`;
-            typeClass = 'deposit';
-        } else if (transaction.type === 'withdraw') {
-            typeDisplay = 'Withdraw';
-            amountDisplay = `- $${transaction.amount.toFixed(2)}`;
-            typeClass = 'withdraw';
-        }
-        
+    tbody.innerHTML = transactions.map(t => {
+        const isPositive = t.type === 'deposit' || t.type === 'buy';
         return `
             <tr>
-                <td><span class="transaction-type ${typeClass}">${typeDisplay}</span></td>
-                <td class="${transaction.type === 'deposit' || transaction.type === 'buy' ? 'positive-amount' : 'negative-amount'}">${amountDisplay}</td>
-                <td><span class="status-badge status-${transaction.status}">${transaction.status}</span></td>
-                <td>${new Date(transaction.date).toLocaleDateString()}</td>
-            </tr>
+                <td><span class="transaction-type ${t.type}">${t.type.charAt(0).toUpperCase() + t.type.slice(1)}</span></td>
+                <td class="${isPositive ? 'positive-amount' : 'negative-amount'}">${isPositive ? '+' : '-'}$${Math.abs(t.amount).toFixed(2)}</td>
+                <td><span class="status-badge status-${t.status}">${t.status}</span></td>
+                <td>${new Date(t.date).toLocaleDateString()}</td>
+            </table>
         `;
     }).join('');
 }
 
 function setupEventListeners() {
-    // Symbol selector buttons
-    const symbolBtns = document.querySelectorAll('.symbol-btn');
-    symbolBtns.forEach(btn => {
+    document.querySelectorAll('.symbol-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
-            symbolBtns.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.symbol-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentSymbol = btn.dataset.symbol;
             await fetchCandlestickData();
@@ -414,11 +313,9 @@ function setupEventListeners() {
         });
     });
     
-    // Timeframe selector buttons
-    const timeframeBtns = document.querySelectorAll('.timeframe-btn');
-    timeframeBtns.forEach(btn => {
+    document.querySelectorAll('.timeframe-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
-            timeframeBtns.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentInterval = btn.dataset.interval;
             await fetchCandlestickData();
@@ -428,24 +325,17 @@ function setupEventListeners() {
 
 function startRealTimeUpdates() {
     if (priceUpdateInterval) clearInterval(priceUpdateInterval);
-    
-    // Update price every 5 seconds
     priceUpdateInterval = setInterval(async () => {
         await fetchCurrentPrice();
-    }, 5000);
+        await loadCryptoList();
+    }, 10000);
 }
 
 async function changeChartSymbol(symbol) {
-    // Update active symbol button
-    const symbolBtns = document.querySelectorAll('.symbol-btn');
-    symbolBtns.forEach(btn => {
-        if (btn.dataset.symbol === symbol) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
+    document.querySelectorAll('.symbol-btn').forEach(btn => {
+        if (btn.dataset.symbol === symbol) btn.classList.add('active');
+        else btn.classList.remove('active');
     });
-    
     currentSymbol = symbol;
     await fetchCandlestickData();
     await fetchCurrentPrice();
@@ -457,6 +347,5 @@ function handleLogout() {
     window.location.href = 'home.html';
 }
 
-// Make functions global
 window.changeChartSymbol = changeChartSymbol;
 window.handleLogout = handleLogout;
