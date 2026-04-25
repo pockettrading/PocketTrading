@@ -1,4 +1,4 @@
-// Login page functionality - Complete working version
+// Login page functionality - Social login removed
 
 class LoginManager {
     constructor() {
@@ -31,20 +31,6 @@ class LoginManager {
             forgotPasswordLink.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.handleForgotPassword();
-            });
-        }
-
-        const googleLogin = document.getElementById('googleLogin');
-        if (googleLogin) {
-            googleLogin.addEventListener('click', () => {
-                this.handleSocialLogin('Google');
-            });
-        }
-
-        const appleLogin = document.getElementById('appleLogin');
-        if (appleLogin) {
-            appleLogin.addEventListener('click', () => {
-                this.handleSocialLogin('Apple');
             });
         }
     }
@@ -106,10 +92,6 @@ class LoginManager {
         } else {
             this.showNotification('Email address not found', 'error');
         }
-    }
-
-    handleSocialLogin(provider) {
-        this.showNotification(`Login with ${provider} coming soon!`, 'success');
     }
 
     showNotification(message, type) {
