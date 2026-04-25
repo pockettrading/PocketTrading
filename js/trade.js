@@ -1,19 +1,20 @@
-// Trade page functionality - Fixed for fractional amounts
+// Trading functionality - Complete working version
 
 let currentUser = null;
 let currentOrderType = 'buy';
 let selectedCrypto = 'BTC';
 let priceUpdateInterval = null;
 let openOrders = [];
-let tradeHistory = [];
 
+// Cryptocurrency data
 let cryptoPrices = {
-    BTC: { price: 43250.00, change: 2.5, icon: '₿', name: 'Bitcoin', minAmount: 0.0001 },
-    ETH: { price: 2250.80, change: 1.8, icon: 'Ξ', name: 'Ethereum', minAmount: 0.001 },
-    BNB: { price: 305.60, change: -0.5, icon: 'B', name: 'Binance Coin', minAmount: 0.01 },
-    SOL: { price: 98.40, change: 5.2, icon: 'S', name: 'Solana', minAmount: 0.01 }
+    BTC: { price: 43203.07, change: -0.11, icon: '₿', name: 'Bitcoin' },
+    ETH: { price: 2256.04, change: 0.23, icon: 'Ξ', name: 'Ethereum' },
+    BNB: { price: 259.61, change: -15.05, icon: 'B', name: 'Binance Coin' },
+    SOL: { price: 141.40, change: 43.70, icon: 'S', name: 'Solana' }
 };
 
+// Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Trade page loaded');
     loadUser();
@@ -21,12 +22,8 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = 'login.html';
         return;
     }
-    
-    // Fix corrupted balance if needed
-    fixCorruptedBalance();
-    
-    updateUserDisplay();
     initTradePage();
+    loadOpenOrders();
 });
 
 function loadUser() {
@@ -34,48 +31,6 @@ function loadUser() {
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
         console.log('User loaded:', currentUser.email);
-        console.log('Account mode:', currentUser.accountMode);
-        console.log('Demo balance:', currentUser.demoBalance);
-    }
-}
-
-function fixCorruptedBalance() {
-    // Fix demo balance if it's corrupted
-    if (currentUser.accountMode === 'demo') {
-        if (currentUser.demoBalance > 100000 || currentUser.demoBalance < 0) {
-            console.log('Fixing corrupted demo balance...');
-            currentUser.demoBalance = 10000;
-            showNotification('Balance was reset to $10,000', 'warning');
-            saveUserData();
-        }
-    }
-}
-
-function updateUserDisplay() {
-    const userNameSpan = document.getElementById('userNameDisplay');
-    const authButtonSpan = document.getElementById('authButton');
-    if (userNameSpan && currentUser) {
-        userNameSpan.textContent = currentUser.name || currentUser.email.split('@')[0];
-        if (authButtonSpan) {
-            authButtonSpan.innerHTML = '<span class="logout-link" onclick="handleLogout()">Logout</span>';
-        }
-    }
-    updateBalance();
-}
-
-function updateBalance() {
-    if (!currentUser) return;
-    const balance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
-    const balanceElem = document.getElementById('availableBalance');
-    const badgeElem = document.getElementById('accountBadge');
-    
-    if (balanceElem) {
-        balanceElem.textContent = `$${balance.toFixed(2)}`;
-    }
-    
-    if (badgeElem) {
-        badgeElem.textContent = currentUser.accountMode === 'demo' ? 'Demo' : 'Real';
-        badgeElem.className = `account-badge ${currentUser.accountMode === 'demo' ? 'demo' : 'real'}`;
     }
 }
 
@@ -84,94 +39,191 @@ function initTradePage() {
     updateCurrentPrice();
     setupEventListeners();
     startPriceUpdates();
-    loadTradeHistory();
     
+    // Check URL for crypto parameter
     const urlParams = new URLSearchParams(window.location.search);
     const cryptoParam = urlParams.get('crypto');
     if (cryptoParam && cryptoPrices[cryptoParam]) {
-        changeCrypto(cryptoParam, cryptoPrices[cryptoParam].name, cryptoPrices[cryptoParam].icon);
+        changeCrypto(cryptoParam);
     }
 }
 
 function setupEventListeners() {
-    document.getElementById('buyTab')?.addEventListener('click', () => setOrderType('buy'));
-    document.getElementById('sellTab')?.addEventListener('click', () => setOrderType('sell'));
+    // Buy/Sell tabs
+    const buyTab = document.getElementById('buyTab');
+    const sellTab = document.getElementById('sellTab');
     
-    document.querySelectorAll('input[name="orderType"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            document.getElementById('limitPriceGroup').style.display = e.target.value === 'limit' ? 'block' : 'none';
+    if (buyTab) {
+        buyTab.addEventListener('click', () => setOrderType('buy'));
+    }
+    if (sellTab) {
+        sellTab.addEventListener('click', () => setOrderType('sell'));
+    }
+    
+    // Order type radio buttons
+    const marketRadio = document.querySelector('input[value="market"]');
+    const limitRadio = document.querySelector('input[value="limit"]');
+    
+    if (marketRadio) {
+        marketRadio.addEventListener('change', () => {
+            document.getElementById('limitPriceGroup').style.display = 'none';
             calculateTotal();
         });
-    });
+    }
+    if (limitRadio) {
+        limitRadio.addEventListener('change', () => {
+            document.getElementById('limitPriceGroup').style.display = 'block';
+            calculateTotal();
+        });
+    }
     
-    document.getElementById('amount')?.addEventListener('input', () => calculateTotal());
-    document.getElementById('limitPrice')?.addEventListener('input', () => calculateTotal());
+    // Amount input
+    const amountInput = document.getElementById('amount');
+    if (amountInput) {
+        amountInput.addEventListener('input', calculateTotal);
+    }
     
+    // Limit price input
+    const limitPrice = document.getElementById('limitPrice');
+    if (limitPrice) {
+        limitPrice.addEventListener('input', calculateTotal);
+    }
+    
+    // Quick amount buttons
     document.querySelectorAll('.quick-amount').forEach(btn => {
-        btn.addEventListener('click', function() { setQuickAmount(parseInt(this.dataset.percent)); });
-    });
-    
-    const selectedDiv = document.getElementById('selectedCrypto');
-    const dropdown = document.getElementById('cryptoDropdown');
-    selectedDiv?.addEventListener('click', (e) => { e.stopPropagation(); dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none'; });
-    
-    document.querySelectorAll('.crypto-option').forEach(opt => {
-        opt.addEventListener('click', (e) => {
-            e.stopPropagation();
-            changeCrypto(opt.dataset.symbol, opt.dataset.name, opt.dataset.icon);
-            dropdown.style.display = 'none';
+        btn.addEventListener('click', () => {
+            const percent = parseInt(btn.dataset.percent);
+            setQuickAmount(percent);
         });
     });
     
-    document.addEventListener('click', () => { if (dropdown) dropdown.style.display = 'none'; });
-    document.getElementById('tradeForm')?.addEventListener('submit', (e) => { e.preventDefault(); placeOrder(); });
-    document.getElementById('clearOrdersBtn')?.addEventListener('click', clearAllOrders);
+    // Crypto selector
+    const cryptoSelector = document.getElementById('cryptoSelector');
+    if (cryptoSelector) {
+        cryptoSelector.addEventListener('click', showCryptoDropdown);
+    }
+    
+    // Trade button
+    const tradeBtn = document.getElementById('tradeBtn');
+    if (tradeBtn) {
+        tradeBtn.addEventListener('click', placeOrder);
+    }
+    
+    // Clear orders button
+    const clearBtn = document.getElementById('clearOrdersBtn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', clearAllOrders);
+    }
+}
+
+function showCryptoDropdown() {
+    const dropdown = document.createElement('div');
+    dropdown.className = 'crypto-dropdown';
+    dropdown.style.cssText = `
+        position: absolute;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        width: 200px;
+        z-index: 100;
+        margin-top: 4px;
+    `;
+    
+    Object.entries(cryptoPrices).forEach(([symbol, data]) => {
+        const option = document.createElement('div');
+        option.style.cssText = `
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        `;
+        option.innerHTML = `
+            <span class="crypto-icon">${data.icon}</span>
+            <div>
+                <div class="crypto-symbol">${symbol}</div>
+                <div class="crypto-name">${data.name}</div>
+            </div>
+        `;
+        option.onmouseover = () => option.style.background = 'var(--card-hover)';
+        option.onmouseout = () => option.style.background = '';
+        option.onclick = () => {
+            changeCrypto(symbol);
+            dropdown.remove();
+        };
+        dropdown.appendChild(option);
+    });
+    
+    const rect = document.getElementById('cryptoSelector').getBoundingClientRect();
+    dropdown.style.position = 'absolute';
+    dropdown.style.top = `${rect.bottom + window.scrollY}px`;
+    dropdown.style.left = `${rect.left + window.scrollX}px`;
+    
+    document.body.appendChild(dropdown);
+    
+    // Remove dropdown when clicking outside
+    setTimeout(() => {
+        document.addEventListener('click', function removeDropdown(e) {
+            if (!dropdown.contains(e.target) && e.target !== document.getElementById('cryptoSelector')) {
+                dropdown.remove();
+                document.removeEventListener('click', removeDropdown);
+            }
+        });
+    }, 0);
 }
 
 function setOrderType(type) {
     currentOrderType = type;
+    
     const buyTab = document.getElementById('buyTab');
     const sellTab = document.getElementById('sellTab');
-    if (type === 'buy') { 
-        buyTab?.classList.add('active'); 
-        sellTab?.classList.remove('active'); 
-    } else { 
-        sellTab?.classList.add('active'); 
-        buyTab?.classList.remove('active'); 
+    const tradeBtn = document.getElementById('tradeBtn');
+    
+    if (type === 'buy') {
+        buyTab.classList.add('active');
+        sellTab.classList.remove('active');
+        tradeBtn.textContent = `Buy ${selectedCrypto} (${cryptoPrices[selectedCrypto].name})`;
+        tradeBtn.className = 'btn-trade buy';
+    } else {
+        sellTab.classList.add('active');
+        buyTab.classList.remove('active');
+        tradeBtn.textContent = `Sell ${selectedCrypto} (${cryptoPrices[selectedCrypto].name})`;
+        tradeBtn.className = 'btn-trade sell';
     }
     
-    const placeBtn = document.getElementById('placeOrderBtn');
-    const cryptoName = cryptoPrices[selectedCrypto]?.name || selectedCrypto;
-    if (placeBtn) {
-        placeBtn.textContent = type === 'buy' ? `Buy ${cryptoName} (${selectedCrypto})` : `Sell ${cryptoName} (${selectedCrypto})`;
-        placeBtn.className = type === 'buy' ? 'btn-buy' : 'btn-sell';
-    }
     calculateTotal();
 }
 
 function setQuickAmount(percent) {
     if (!currentUser) return;
-    const balance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
-    const price = cryptoPrices[selectedCrypto]?.price || 0;
-    const maxAmount = balance / price;
+    
+    const currentBalance = currentUser.balance || 0;
+    const currentPrice = cryptoPrices[selectedCrypto]?.price || 0;
+    const maxAmount = currentBalance / currentPrice;
     const amount = maxAmount * (percent / 100);
+    
     const amountInput = document.getElementById('amount');
     if (amountInput) {
         amountInput.value = amount.toFixed(6);
+        calculateTotal();
     }
-    calculateTotal();
 }
 
 function calculateTotal() {
     const amount = parseFloat(document.getElementById('amount')?.value || 0);
-    const price = cryptoPrices[selectedCrypto]?.price || 0;
+    const currentPrice = cryptoPrices[selectedCrypto]?.price || 0;
     const isLimit = document.querySelector('input[name="orderType"]:checked')?.value === 'limit';
-    let execPrice = price;
+    
+    let price = currentPrice;
     if (isLimit) {
         const limitPrice = parseFloat(document.getElementById('limitPrice')?.value || 0);
-        if (limitPrice > 0) execPrice = limitPrice;
+        if (limitPrice && limitPrice > 0) {
+            price = limitPrice;
+        }
     }
-    const total = amount * execPrice;
+    
+    const total = amount * price;
     const fee = total * 0.001;
     const totalCost = currentOrderType === 'buy' ? total + fee : total - fee;
     
@@ -180,42 +232,56 @@ function calculateTotal() {
     document.getElementById('totalCost').textContent = `$${totalCost.toFixed(2)}`;
 }
 
-function changeCrypto(symbol, name, icon) {
+function changeCrypto(symbol) {
     selectedCrypto = symbol;
+    const crypto = cryptoPrices[symbol];
+    
     const selectedDiv = document.getElementById('selectedCrypto');
-    if (selectedDiv) {
-        selectedDiv.innerHTML = `<span class="crypto-icon">${icon}</span><span class="crypto-symbol">${symbol}</span><span class="crypto-name">${name}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>`;
-    }
+    selectedDiv.innerHTML = `
+        <span class="crypto-icon">${crypto.icon}</span>
+        <div>
+            <div class="crypto-symbol">${symbol}</div>
+            <div class="crypto-name">${crypto.name}</div>
+        </div>
+    `;
+    
     updateCurrentPrice();
     calculateTotal();
-    const placeBtn = document.getElementById('placeOrderBtn');
-    if (placeBtn) {
-        placeBtn.textContent = `${currentOrderType === 'buy' ? 'Buy' : 'Sell'} ${name} (${symbol})`;
+    
+    const tradeBtn = document.getElementById('tradeBtn');
+    if (currentOrderType === 'buy') {
+        tradeBtn.textContent = `Buy ${symbol} (${crypto.name})`;
+    } else {
+        tradeBtn.textContent = `Sell ${symbol} (${crypto.name})`;
     }
 }
 
 function updateCurrentPrice() {
     const crypto = cryptoPrices[selectedCrypto];
-    if (!crypto) return;
-    document.getElementById('currentPrice').textContent = `$${crypto.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    const priceElem = document.getElementById('currentPrice');
     const changeElem = document.getElementById('priceChange');
+    
+    priceElem.textContent = `$${crypto.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    
+    const changeClass = crypto.change >= 0 ? 'positive' : 'negative';
     changeElem.textContent = `${crypto.change >= 0 ? '+' : ''}${crypto.change.toFixed(2)}%`;
-    changeElem.className = `price-change ${crypto.change >= 0 ? 'positive' : 'negative'}`;
+    changeElem.className = `price-change ${changeClass}`;
 }
 
 function loadMarketPrices() {
     const container = document.getElementById('marketPrices');
     if (!container) return;
+    
     container.innerHTML = Object.entries(cryptoPrices).map(([symbol, data]) => `
-        <div class="market-item ${symbol === selectedCrypto ? 'active' : ''}" onclick="changeCrypto('${symbol}', '${data.name}', '${data.icon}')">
+        <div class="market-item" onclick="window.changeCrypto('${symbol}')">
             <div class="market-item-info">
-                <span class="market-icon">${data.icon}</span>
+                <span class="crypto-icon">${data.icon}</span>
                 <div>
                     <div class="market-symbol">${symbol}</div>
-                    <div class="market-name">${data.name}</div>
+                    <div class="crypto-name">${data.name}</div>
                 </div>
             </div>
-            <div class="market-item-price">
+            <div>
                 <div class="market-price">$${data.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                 <div class="market-change ${data.change >= 0 ? 'positive' : 'negative'}">
                     ${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)}%
@@ -226,143 +292,81 @@ function loadMarketPrices() {
 }
 
 function placeOrder() {
-    if (!currentUser) { 
-        showNotification('Please login to trade', 'error'); 
-        window.location.href = 'login.html'; 
-        return; 
+    if (!currentUser) {
+        showNotification('Please login to trade', 'error');
+        window.location.href = 'login.html';
+        return;
     }
     
     const amount = parseFloat(document.getElementById('amount')?.value || 0);
-    if (!amount || amount <= 0) { 
-        showNotification('Please enter a valid amount', 'error'); 
-        return; 
+    const isLimit = document.querySelector('input[name="orderType"]:checked')?.value === 'limit';
+    
+    if (!amount || amount <= 0) {
+        showNotification('Please enter a valid amount', 'error');
+        return;
     }
     
-    const price = cryptoPrices[selectedCrypto]?.price || 0;
+    const currentPrice = cryptoPrices[selectedCrypto]?.price || 0;
+    let price = currentPrice;
+    
+    if (isLimit) {
+        const limitPrice = parseFloat(document.getElementById('limitPrice')?.value || 0);
+        if (!limitPrice || limitPrice <= 0) {
+            showNotification('Please enter a valid limit price', 'error');
+            return;
+        }
+        price = limitPrice;
+    }
+    
     const total = amount * price;
     const fee = total * 0.001;
     const totalCost = currentOrderType === 'buy' ? total + fee : total - fee;
     
-    let currentBalance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
-    
-    console.log('=== TRADE DETAILS ===');
-    console.log('Crypto:', selectedCrypto);
-    console.log('Amount:', amount);
-    console.log('Price:', price);
-    console.log('Total:', total);
-    console.log('Fee:', fee);
-    console.log('Total Cost:', totalCost);
-    console.log('Balance:', currentBalance);
-    console.log('Order Type:', currentOrderType);
+    const currentBalance = currentUser.balance || 0;
     
     if (currentOrderType === 'buy') {
-        if (totalCost > currentBalance) { 
-            showNotification(`Insufficient balance! You have $${currentBalance.toFixed(2)} but need $${totalCost.toFixed(2)}. Try buying a smaller amount.`, 'error'); 
-            return; 
+        if (totalCost > currentBalance) {
+            showNotification('Insufficient balance', 'error');
+            return;
         }
         
-        const newBalance = currentBalance - totalCost;
-        if (currentUser.accountMode === 'demo') {
-            currentUser.demoBalance = newBalance;
-        } else {
-            currentUser.realBalance = newBalance;
-        }
-        
+        currentUser.balance -= totalCost;
         addTransaction('buy', amount, price, total, fee);
         saveUserData();
-        showNotification(`✅ Successfully bought ${amount.toFixed(6)} ${selectedCrypto} at $${price.toFixed(2)}`, 'success');
+        showNotification(`Successfully bought ${amount.toFixed(6)} ${selectedCrypto} at $${price.toFixed(2)}`, 'success');
     } else {
-        // Sell order - check if user has enough crypto (simplified)
-        const newBalance = currentBalance + totalCost;
-        if (currentUser.accountMode === 'demo') {
-            currentUser.demoBalance = newBalance;
-        } else {
-            currentUser.realBalance = newBalance;
-        }
-        
+        currentUser.balance += totalCost;
         addTransaction('sell', amount, price, total, fee);
         saveUserData();
-        showNotification(`✅ Successfully sold ${amount.toFixed(6)} ${selectedCrypto} at $${price.toFixed(2)}`, 'success');
+        showNotification(`Successfully sold ${amount.toFixed(6)} ${selectedCrypto} at $${price.toFixed(2)}`, 'success');
     }
     
     // Reset form
     document.getElementById('amount').value = '';
-    if (document.getElementById('limitPrice')) {
-        document.getElementById('limitPrice').value = '';
-    }
-    
-    updateBalance();
+    document.getElementById('limitPrice').value = '';
     calculateTotal();
-    loadTradeHistory();
-    refreshUserData();
 }
 
 function addTransaction(type, amount, price, total, fee) {
-    const transaction = { 
-        id: Date.now(), 
-        type: type, 
-        crypto: selectedCrypto, 
-        amount: amount, 
-        price: price, 
-        total: total, 
-        fee: fee, 
-        accountMode: currentUser.accountMode, 
-        status: 'completed', 
-        date: new Date().toISOString(),
-        pnl: type === 'sell' ? total - fee : 0
+    const transaction = {
+        id: Date.now(),
+        type: type,
+        crypto: selectedCrypto,
+        amount: amount,
+        price: price,
+        total: total,
+        fee: fee,
+        status: 'completed',
+        date: new Date().toISOString()
     };
     
     if (!currentUser.transactions) currentUser.transactions = [];
     currentUser.transactions.unshift(transaction);
     
-    tradeHistory.unshift(transaction);
-    localStorage.setItem('pocket_trade_history', JSON.stringify(tradeHistory.slice(0, 50)));
-    
+    // Update stats
     if (!currentUser.stats) currentUser.stats = {};
     currentUser.stats.totalTrades = (currentUser.stats.totalTrades || 0) + 1;
     currentUser.stats.totalVolume = (currentUser.stats.totalVolume || 0) + total;
-}
-
-function loadTradeHistory() {
-    const container = document.getElementById('tradeHistory');
-    if (!container || !currentUser) return;
-    const userTrades = (currentUser.transactions || []).filter(t => t.type === 'buy' || t.type === 'sell').slice(0, 10);
-    if (userTrades.length === 0) { 
-        container.innerHTML = '<div class="empty-state">No recent trades</div>'; 
-        return; 
-    }
-    container.innerHTML = userTrades.map(trade => `
-        <div class="trade-item">
-            <div class="trade-info">
-                <span class="trade-type ${trade.type}">${trade.type}</span>
-                <span class="trade-crypto">${trade.crypto}</span>
-                <span class="trade-amount">${trade.amount.toFixed(6)} @ $${trade.price.toFixed(2)}</span>
-            </div>
-            <div class="trade-total">$${trade.total.toFixed(2)}</div>
-            <div class="trade-time">${new Date(trade.date).toLocaleTimeString()}</div>
-        </div>
-    `).join('');
-}
-
-function clearAllOrders() { 
-    showNotification('All orders cleared', 'success'); 
-}
-
-function startPriceUpdates() {
-    if (priceUpdateInterval) clearInterval(priceUpdateInterval);
-    priceUpdateInterval = setInterval(() => {
-        Object.keys(cryptoPrices).forEach(symbol => {
-            const change = (Math.random() - 0.5) * 100;
-            const newPrice = Math.max(0.01, cryptoPrices[symbol].price + change);
-            const percentChange = ((newPrice - cryptoPrices[symbol].price) / cryptoPrices[symbol].price) * 100;
-            cryptoPrices[symbol] = { ...cryptoPrices[symbol], price: newPrice, change: percentChange };
-        });
-        loadMarketPrices();
-        updateCurrentPrice();
-        calculateTotal();
-        const lastUpdated = document.getElementById('lastUpdated');
-        if (lastUpdated) lastUpdated.textContent = new Date().toLocaleTimeString();
-    }, 5000);
 }
 
 function saveUserData() {
@@ -372,6 +376,7 @@ function saveUserData() {
         users[userIndex] = currentUser;
         localStorage.setItem('pocket_users', JSON.stringify(users));
     }
+    
     if (localStorage.getItem('pocket_user')) {
         localStorage.setItem('pocket_user', JSON.stringify(currentUser));
     }
@@ -380,33 +385,91 @@ function saveUserData() {
     }
 }
 
-function refreshUserData() {
-    const refreshedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
-    if (refreshedUser) {
-        currentUser = JSON.parse(refreshedUser);
-        updateBalance();
+function loadOpenOrders() {
+    const container = document.getElementById('openOrdersList');
+    if (!container) return;
+    
+    if (openOrders.length === 0) {
+        container.innerHTML = '<div class="empty-state">No open orders</div>';
+        return;
     }
+    
+    container.innerHTML = openOrders.map(order => `
+        <div class="order-item">
+            <div>
+                <span class="order-type ${order.type}">${order.type}</span>
+                <span> ${order.crypto}</span>
+                <div class="crypto-name">${order.amount} @ $${order.price}</div>
+            </div>
+            <button class="order-cancel" onclick="cancelOrder(${order.id})">Cancel</button>
+        </div>
+    `).join('');
+}
+
+function clearAllOrders() {
+    openOrders = [];
+    localStorage.setItem('pocket_orders', JSON.stringify(openOrders));
+    loadOpenOrders();
+    showNotification('All orders cleared', 'success');
+}
+
+function cancelOrder(orderId) {
+    openOrders = openOrders.filter(o => o.id !== orderId);
+    localStorage.setItem('pocket_orders', JSON.stringify(openOrders));
+    loadOpenOrders();
+    showNotification('Order cancelled', 'success');
+}
+
+function startPriceUpdates() {
+    if (priceUpdateInterval) clearInterval(priceUpdateInterval);
+    
+    priceUpdateInterval = setInterval(() => {
+        Object.keys(cryptoPrices).forEach(symbol => {
+            const change = (Math.random() - 0.5) * 2;
+            const newPrice = Math.max(0.01, cryptoPrices[symbol].price * (1 + change / 100));
+            const percentChange = ((newPrice - cryptoPrices[symbol].price) / cryptoPrices[symbol].price) * 100;
+            
+            cryptoPrices[symbol] = {
+                ...cryptoPrices[symbol],
+                price: newPrice,
+                change: percentChange
+            };
+        });
+        
+        loadMarketPrices();
+        updateCurrentPrice();
+        calculateTotal();
+        
+        document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+    }, 5000);
 }
 
 function showNotification(message, type) {
-    const existing = document.querySelector('.trade-notification');
-    if (existing) existing.remove();
     const notification = document.createElement('div');
     notification.textContent = message;
-    const bgColor = type === 'error' ? '#FF4757' : (type === 'warning' ? '#FFA502' : '#00D897');
-    notification.style.cssText = `position:fixed;top:20px;right:20px;background:${bgColor};color:white;padding:12px 20px;border-radius:12px;font-size:14px;z-index:10000;animation:slideIn 0.3s ease-out;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-width:350px;`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'error' ? '#FF4757' : '#00D897'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-size: 14px;
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        max-width: 350px;
+    `;
+    
     document.body.appendChild(notification);
-    setTimeout(() => { 
-        notification.style.animation = 'slideOut 0.3s ease-out'; 
-        setTimeout(() => notification.remove(), 300); 
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
 
-function handleLogout() { 
-    localStorage.removeItem('pocket_user'); 
-    sessionStorage.removeItem('pocket_user'); 
-    window.location.href = 'home.html'; 
-}
-
+// Make functions global
 window.changeCrypto = changeCrypto;
-window.handleLogout = handleLogout;
+window.cancelOrder = cancelOrder;
