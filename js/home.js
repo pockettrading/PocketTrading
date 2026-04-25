@@ -1,4 +1,4 @@
-// Home page functionality - With username dropdown
+// Home page functionality - No dropdown, simple navigation
 
 let currentUser = null;
 
@@ -6,7 +6,6 @@ let currentUser = null;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Home page loaded');
     loadUser();
-    renderUserSection();
     loadUserStats();
 });
 
@@ -23,33 +22,6 @@ function loadUser() {
     } catch(e) {
         console.log('Error loading user:', e);
         currentUser = null;
-    }
-}
-
-function renderUserSection() {
-    const userSection = document.getElementById('userSection');
-    if (!userSection) return;
-    
-    if (currentUser) {
-        const displayName = currentUser.name || currentUser.email.split('@')[0];
-        
-        userSection.innerHTML = `
-            <div class="user-dropdown">
-                <div class="user-name-display">
-                    <span>👤</span>
-                    <span>${displayName}</span>
-                    <span>▼</span>
-                </div>
-                <div class="dropdown-menu">
-                    <a href="profile.html" class="dropdown-item">My Profile</a>
-                    <a href="dashboard.html" class="dropdown-item">Dashboard</a>
-                    <div class="dropdown-divider"></div>
-                    <span class="dropdown-item" onclick="handleLogout()" style="cursor: pointer; color: var(--danger);">Logout</span>
-                </div>
-            </div>
-        `;
-    } else {
-        userSection.innerHTML = `<a href="register.html" class="auth-link">Sign Up</a>`;
     }
 }
 
@@ -83,28 +55,32 @@ function loadUserStats() {
     }
     
     // Get current balance
-    const currentBalance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
-    const initialBalance = currentUser.accountMode === 'demo' ? 10000 : (currentUser.realBalance - (currentUser.stats?.totalProfit || 0));
+    const currentBalance = currentUser.balance || 0;
+    const initialBalance = 0; // Real account starts at 0
     
     const balanceElem = document.getElementById('userBalance');
     const balanceChangeElem = document.getElementById('balanceChange');
     
     if (balanceElem) {
         balanceElem.textContent = `$${currentBalance.toFixed(2)}`;
-        if (currentBalance >= 0) {
+        if (currentBalance > 0) {
             balanceElem.className = 'stat-value positive';
-        } else {
+        } else if (currentBalance < 0) {
             balanceElem.className = 'stat-value negative';
+        } else {
+            balanceElem.className = 'stat-value';
         }
     }
     
-    if (balanceChangeElem && initialBalance > 0) {
-        const changePercent = ((currentBalance - initialBalance) / initialBalance * 100).toFixed(1);
-        if (changePercent >= 0) {
-            balanceChangeElem.innerHTML = `+${changePercent}% from start`;
+    if (balanceChangeElem) {
+        if (currentBalance > 0) {
+            balanceChangeElem.innerHTML = 'Active balance';
             balanceChangeElem.className = 'stat-change positive';
+        } else if (currentBalance === 0) {
+            balanceChangeElem.innerHTML = 'Make a deposit to start';
+            balanceChangeElem.className = 'stat-change';
         } else {
-            balanceChangeElem.innerHTML = `${changePercent}% from start`;
+            balanceChangeElem.innerHTML = 'Negative balance';
             balanceChangeElem.className = 'stat-change negative';
         }
     }
@@ -116,13 +92,10 @@ function loadUserStats() {
     const totalTrades = trades.length;
     
     let winningTrades = 0;
-    let totalProfit = 0;
+    let totalProfit = currentUser.stats?.totalProfit || 0;
     
     trades.forEach(trade => {
-        if (trade.pnl) {
-            totalProfit += trade.pnl;
-            if (trade.pnl > 0) winningTrades++;
-        }
+        if (trade.pnl && trade.pnl > 0) winningTrades++;
     });
     
     const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100).toFixed(1) : 0;
@@ -138,16 +111,7 @@ function loadUserStats() {
     }
     if (profitElem) {
         const sign = totalProfit >= 0 ? '+' : '';
-        profitElem.textContent = `${sign}$${totalProfit.toFixed(2)}`;
+        profitElem.textContent = `${sign}$${Math.abs(totalProfit).toFixed(2)}`;
         profitElem.className = `stat-value ${totalProfit >= 0 ? 'positive' : 'negative'}`;
     }
 }
-
-function handleLogout() {
-    localStorage.removeItem('pocket_user');
-    sessionStorage.removeItem('pocket_user');
-    window.location.href = 'home.html';
-}
-
-// Make functions global
-window.handleLogout = handleLogout;
