@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pocket Trading - Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Lightweight Charts CSS/JS -->
+    <!-- Lightweight Charts -->
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.js"></script>
     <style>
         * {
@@ -30,8 +30,6 @@
             --warning: #FFA502;
             --border: #2A3545;
             --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-            --chart-up: #00D897;
-            --chart-down: #FF4757;
         }
 
         body {
@@ -294,6 +292,7 @@
             cursor: pointer;
             transition: all 0.3s;
             font-size: 0.85rem;
+            font-weight: 500;
         }
 
         .symbol-btn:hover {
@@ -323,6 +322,7 @@
             cursor: pointer;
             transition: all 0.3s;
             font-size: 0.75rem;
+            font-weight: 500;
         }
 
         .timeframe-btn:hover {
@@ -345,7 +345,7 @@
             height: 450px;
         }
 
-        /* Current Price Info */
+        /* Price Info */
         .price-info {
             display: flex;
             align-items: baseline;
@@ -355,12 +355,12 @@
         }
 
         .current-price {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 700;
         }
 
         .price-change {
-            font-size: 1rem;
+            font-size: 0.9rem;
             padding: 4px 12px;
             border-radius: 20px;
         }
@@ -405,8 +405,22 @@
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
-            max-height: 400px;
+            max-height: 450px;
             overflow-y: auto;
+        }
+
+        .crypto-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .crypto-list::-webkit-scrollbar-track {
+            background: var(--darker-bg);
+            border-radius: 4px;
+        }
+
+        .crypto-list::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
         }
 
         .crypto-item {
@@ -497,6 +511,57 @@
             font-size: 0.85rem;
         }
 
+        .transaction-type {
+            text-transform: capitalize;
+            font-weight: 500;
+        }
+
+        .transaction-type.buy,
+        .transaction-type.deposit {
+            color: var(--success);
+        }
+
+        .transaction-type.sell,
+        .transaction-type.withdraw {
+            color: var(--danger);
+        }
+
+        .positive-amount {
+            color: var(--success);
+        }
+
+        .negative-amount {
+            color: var(--danger);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-completed {
+            background: rgba(0, 216, 151, 0.1);
+            color: var(--success);
+        }
+
+        .status-pending {
+            background: rgba(255, 165, 2, 0.1);
+            color: var(--warning);
+        }
+
+        .view-all {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+
+        .view-all:hover {
+            text-decoration: underline;
+        }
+
         @media (max-width: 968px) {
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -531,6 +596,11 @@
             .stats-grid {
                 grid-template-columns: 1fr;
             }
+            
+            .market-stats {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
         }
     </style>
 </head>
@@ -550,7 +620,7 @@
                 <a href="home.html" class="nav-link">Home</a>
                 <a href="markets.html" class="nav-link">Markets</a>
                 <a href="trade.html" class="nav-link">Trades</a>
-                <a href="profile.html" class="nav-link" style="color: var(--primary);">My Profile</a>
+                <a href="profile.html" class="nav-link">My Profile</a>
             </div>
             <div id="userSection"></div>
         </div>
@@ -667,7 +737,7 @@
                     <h2>Top Cryptocurrencies</h2>
                 </div>
                 <div class="crypto-list" id="cryptoList">
-                    Loading...
+                    <div style="text-align: center; padding: 2rem; color: var(--text-tertiary);">Loading...</div>
                 </div>
             </div>
         </div>
@@ -676,7 +746,7 @@
         <div class="transactions-section">
             <div class="section-header">
                 <h2>Recent Transactions</h2>
-                <a href="#" class="view-all" style="color: var(--primary); text-decoration: none; font-size: 0.8rem;">View All</a>
+                <a href="#" class="view-all">View All</a>
             </div>
             <div class="transactions-table">
                 <table>
@@ -698,7 +768,6 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/dashboard.js"></script>
 </body>
 </html>
