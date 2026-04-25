@@ -1,4 +1,4 @@
-// Register page functionality - Social login removed
+// Register page functionality - Auto-login after registration
 
 class RegisterManager {
     constructor() {
@@ -92,6 +92,7 @@ class RegisterManager {
         const confirmPassword = document.getElementById('confirmPassword').value;
         const termsAgree = document.getElementById('termsAgree').checked;
 
+        // Validation
         if (!fullName || !email || !password || !confirmPassword) {
             this.showNotification('Please fill in all fields', 'error');
             return;
@@ -124,6 +125,7 @@ class RegisterManager {
             return;
         }
 
+        // Get existing users
         const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
         
         if (users.find(u => u.email === email)) {
@@ -131,10 +133,12 @@ class RegisterManager {
             return;
         }
 
+        // Format full name properly
         const formattedName = fullName.trim().split(' ').map(word => 
             word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
         ).join(' ');
 
+        // Create new user with REAL account only (balance starts at $0)
         const newUser = {
             id: Date.now(),
             name: formattedName,
@@ -161,17 +165,20 @@ class RegisterManager {
         users.push(newUser);
         localStorage.setItem('pocket_users', JSON.stringify(users));
 
-        this.showNotification(`Welcome ${formattedName}! Your account has been created successfully. Make a deposit to start trading.`, 'success');
-
+        // Auto-login - store user session
         sessionStorage.setItem('pocket_user', JSON.stringify(newUser));
         localStorage.removeItem('pocket_user');
 
+        this.showNotification(`Welcome ${formattedName}! Your account has been created successfully. Redirecting...`, 'success');
+
+        // Redirect to home page after 1.5 seconds
         setTimeout(() => {
             window.location.href = 'home.html';
-        }, 2000);
+        }, 1500);
     }
 
     showNotification(message, type) {
+        // Remove existing notification
         const existing = document.querySelector('.auth-notification');
         if (existing) existing.remove();
 
@@ -186,8 +193,9 @@ class RegisterManager {
         setTimeout(() => {
             notification.style.animation = 'slideOut 0.3s ease-out';
             setTimeout(() => notification.remove(), 300);
-        }, 4000);
+        }, 2000);
     }
 }
 
+// Initialize register page
 const registerManager = new RegisterManager();
