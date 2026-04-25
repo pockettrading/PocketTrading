@@ -1,4 +1,4 @@
-// Home page functionality - Simple navigation with Sign Up button
+// Home page functionality - Shows user balance after auto-login
 
 let currentUser = null;
 
@@ -15,6 +15,7 @@ function loadUser() {
         if (storedUser) {
             currentUser = JSON.parse(storedUser);
             console.log('User logged in:', currentUser.email);
+            console.log('User balance:', currentUser.balance);
         } else {
             console.log('No user logged in - guest mode');
             currentUser = null;
@@ -35,11 +36,11 @@ function loadUserStats() {
         const profitElem = document.getElementById('totalProfit');
         
         if (balanceElem) {
-            balanceElem.textContent = '$0';
+            balanceElem.textContent = '$0.00';
             balanceElem.className = 'stat-value';
         }
         if (balanceChangeElem) {
-            balanceChangeElem.textContent = '0% from start';
+            balanceChangeElem.textContent = 'Make a deposit to start';
             balanceChangeElem.className = 'stat-change';
         }
         if (tradesElem) tradesElem.textContent = '0';
@@ -48,13 +49,13 @@ function loadUserStats() {
             winRateElem.className = 'stat-value';
         }
         if (profitElem) {
-            profitElem.textContent = '$0';
+            profitElem.textContent = '$0.00';
             profitElem.className = 'stat-value';
         }
         return;
     }
     
-    // Get current balance
+    // Logged in user - show real stats
     const currentBalance = currentUser.balance || 0;
     
     const balanceElem = document.getElementById('userBalance');
@@ -64,8 +65,6 @@ function loadUserStats() {
         balanceElem.textContent = `$${currentBalance.toFixed(2)}`;
         if (currentBalance > 0) {
             balanceElem.className = 'stat-value positive';
-        } else if (currentBalance < 0) {
-            balanceElem.className = 'stat-value negative';
         } else {
             balanceElem.className = 'stat-value';
         }
@@ -75,16 +74,13 @@ function loadUserStats() {
         if (currentBalance > 0) {
             balanceChangeElem.innerHTML = 'Active balance';
             balanceChangeElem.className = 'stat-change positive';
-        } else if (currentBalance === 0) {
+        } else {
             balanceChangeElem.innerHTML = 'Make a deposit to start';
             balanceChangeElem.className = 'stat-change';
-        } else {
-            balanceChangeElem.innerHTML = 'Negative balance';
-            balanceChangeElem.className = 'stat-change negative';
         }
     }
     
-    // Calculate trading stats
+    // Calculate trading stats from transactions
     const transactions = currentUser.transactions || [];
     const trades = transactions.filter(t => t.type === 'trade' || t.type === 'buy' || t.type === 'sell');
     
@@ -93,9 +89,17 @@ function loadUserStats() {
     let winningTrades = 0;
     let totalProfit = currentUser.stats?.totalProfit || 0;
     
-    trades.forEach(trade => {
-        if (trade.pnl && trade.pnl > 0) winningTrades++;
-    });
+    // If stats not available, calculate from trades
+    if (totalProfit === 0 && trades.length > 0) {
+        trades.forEach(trade => {
+            if (trade.pnl) {
+                totalProfit += trade.pnl;
+                if (trade.pnl > 0) winningTrades++;
+            }
+        });
+    } else {
+        winningTrades = currentUser.stats?.winningTrades || 0;
+    }
     
     const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100).toFixed(1) : 0;
     
@@ -106,7 +110,7 @@ function loadUserStats() {
     if (tradesElem) tradesElem.textContent = totalTrades;
     if (winRateElem) {
         winRateElem.textContent = `${winRate}%`;
-        winRateElem.className = `stat-value`;
+        winRateElem.className = 'stat-value';
     }
     if (profitElem) {
         const sign = totalProfit >= 0 ? '+' : '';
