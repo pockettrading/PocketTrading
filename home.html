@@ -90,15 +90,64 @@
             color: var(--primary);
         }
 
-        .user-section {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
+        /* User Dropdown */
+        .user-dropdown {
+            position: relative;
+            cursor: pointer;
         }
 
-        .user-name {
+        .user-name-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--card-bg);
+            border-radius: 40px;
+            transition: all 0.3s;
+        }
+
+        .user-name-display:hover {
+            background: var(--card-hover);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.5rem;
+            min-width: 160px;
+            display: none;
+            z-index: 100;
+            margin-top: 0.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .user-dropdown:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px 16px;
             color: var(--text-primary);
-            font-weight: 500;
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .dropdown-item:hover {
+            background: var(--card-hover);
+            color: var(--primary);
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 0.5rem 0;
         }
 
         .auth-link {
@@ -114,17 +163,6 @@
         .auth-link:hover {
             background: var(--primary);
             color: white;
-        }
-
-        .logout-link {
-            color: var(--danger);
-            text-decoration: none;
-            font-weight: 500;
-            cursor: pointer;
-        }
-
-        .logout-link:hover {
-            text-decoration: underline;
         }
 
         /* Hero Section */
@@ -172,7 +210,7 @@
             box-shadow: 0 8px 20px rgba(247, 147, 26, 0.3);
         }
 
-        /* Stats Cards - Dashboard Style */
+        /* Stats Cards */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -371,9 +409,8 @@
                 <a href="trade.html" class="nav-link">Trades</a>
                 <a href="profile.html" class="nav-link">My Profile</a>
             </div>
-            <div class="user-section">
-                <span class="user-name" id="userNameDisplay">Guest</span>
-                <span id="authButton"></span>
+            <div class="user-section" id="userSection">
+                <!-- Dynamic content will be inserted here by JavaScript -->
             </div>
         </div>
 
@@ -384,7 +421,7 @@
             <a href="trade.html" class="btn-start">Start Trading →</a>
         </div>
 
-        <!-- Stats Cards - Dashboard Style -->
+        <!-- Stats Cards -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-header">
