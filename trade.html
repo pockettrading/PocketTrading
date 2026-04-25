@@ -90,118 +90,50 @@
             color: var(--primary);
         }
 
-        .user-section {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .user-name {
-            color: var(--text-primary);
-            font-weight: 500;
-        }
-
-        .auth-link {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-            padding: 8px 20px;
-            background: rgba(247, 147, 26, 0.1);
-            border-radius: 8px;
-            transition: all 0.3s;
-        }
-
-        .auth-link:hover {
-            background: var(--primary);
+        .signup-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
-        }
-
-        .logout-link {
-            color: var(--danger);
-            text-decoration: none;
-            font-weight: 500;
-            cursor: pointer;
-        }
-
-        .logout-link:hover {
-            text-decoration: underline;
-        }
-
-        /* Balance Display */
-        .balance-display {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: var(--darker-bg);
-            padding: 8px 16px;
-            border-radius: 12px;
-        }
-
-        .balance-label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .balance-amount {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .account-badge {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
+            padding: 8px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
             font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
         }
 
-        .account-badge.demo {
-            background: rgba(247, 147, 26, 0.2);
-            color: var(--primary);
+        .signup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
         }
 
-        .account-badge.real {
-            background: rgba(0, 216, 151, 0.2);
-            color: var(--success);
-        }
-
-        /* Trading Grid */
+        /* Trade Container */
         .trade-container {
-            margin-top: 1rem;
-        }
-
-        .trade-grid {
             display: grid;
             grid-template-columns: 1fr 0.8fr;
-            gap: 1.5rem;
+            gap: 2rem;
         }
 
-        /* Cards */
-        .card {
+        /* Order Form Section */
+        .order-section {
             background: var(--card-bg);
-            border-radius: 16px;
-            overflow: hidden;
+            border-radius: 20px;
+            padding: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
             margin-bottom: 1.5rem;
         }
 
-        .card-header {
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .card-header h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
         /* Order Type Tabs */
-        .order-type-tabs {
+        .order-tabs {
             display: flex;
             gap: 0.5rem;
-            padding: 1.5rem 1.5rem 0 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
         .order-tab {
@@ -226,11 +158,7 @@
             color: var(--primary);
         }
 
-        /* Trade Form */
-        .trade-form {
-            padding: 1.5rem;
-        }
-
+        /* Form Groups */
         .form-group {
             margin-bottom: 1.25rem;
         }
@@ -244,53 +172,29 @@
 
         /* Crypto Selector */
         .crypto-selector {
-            position: relative;
+            background: var(--darker-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s;
+        }
+
+        .crypto-selector:hover {
+            border-color: var(--primary);
         }
 
         .selected-crypto {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px;
-            background: var(--darker-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .selected-crypto:hover {
-            border-color: var(--primary);
-        }
-
-        .crypto-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            margin-top: 4px;
-            z-index: 10;
-            overflow: hidden;
-        }
-
-        .crypto-option {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .crypto-option:hover {
-            background: var(--card-hover);
         }
 
         .crypto-icon {
-            font-size: 1.2rem;
+            font-size: 1.5rem;
         }
 
         .crypto-symbol {
@@ -298,48 +202,44 @@
         }
 
         .crypto-name {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--text-tertiary);
         }
 
         /* Current Price */
         .current-price {
             background: var(--darker-bg);
-            padding: 12px;
+            padding: 1rem;
             border-radius: 12px;
             margin-bottom: 1.25rem;
-        }
-
-        .price-display {
-            display: flex;
-            align-items: baseline;
-            gap: 12px;
+            text-align: center;
         }
 
         .price-value {
-            font-size: 1.5rem;
+            font-size: 2rem;
             font-weight: 700;
         }
 
         .price-change {
             font-size: 0.85rem;
-            font-weight: 500;
             padding: 4px 8px;
             border-radius: 8px;
+            display: inline-block;
+            margin-left: 8px;
         }
 
         .price-change.positive {
-            color: var(--success);
             background: rgba(0, 216, 151, 0.1);
+            color: var(--success);
         }
 
         .price-change.negative {
-            color: var(--danger);
             background: rgba(255, 71, 87, 0.1);
+            color: var(--danger);
         }
 
-        /* Order Type Selector */
-        .order-type-selector {
+        /* Order Type Radio */
+        .order-type-group {
             display: flex;
             gap: 1rem;
         }
@@ -353,7 +253,7 @@
         }
 
         /* Amount Input */
-        .amount-input-wrapper input {
+        .amount-input {
             width: 100%;
             padding: 12px;
             background: var(--darker-bg);
@@ -361,6 +261,11 @@
             border-radius: 12px;
             color: var(--text-primary);
             font-size: 1rem;
+        }
+
+        .amount-input:focus {
+            outline: none;
+            border-color: var(--primary);
         }
 
         .quick-amounts {
@@ -409,8 +314,9 @@
             font-weight: 700;
         }
 
-        /* Trade Buttons */
-        .btn-buy, .btn-sell {
+        /* Trade Button */
+        .btn-trade {
+            width: 100%;
             padding: 14px;
             border: none;
             border-radius: 12px;
@@ -418,34 +324,65 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
-            width: 100%;
         }
 
-        .btn-buy {
+        .btn-trade.buy {
             background: linear-gradient(135deg, var(--success), #00b894);
             color: white;
         }
 
-        .btn-sell {
+        .btn-trade.sell {
             background: linear-gradient(135deg, var(--danger), #ff6b6b);
             color: white;
         }
 
-        .btn-buy:hover, .btn-sell:hover {
+        .btn-trade:hover {
             transform: translateY(-2px);
             filter: brightness(1.05);
         }
 
-        /* Market Data */
-        .market-prices {
-            padding: 0.5rem;
+        /* Market Data Section */
+        .market-data-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .market-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.5rem;
+        }
+
+        .market-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .market-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .last-updated {
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+        }
+
+        .market-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
         }
 
         .market-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem;
+            padding: 0.75rem;
+            background: var(--darker-bg);
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s;
@@ -453,39 +390,23 @@
 
         .market-item:hover {
             background: var(--card-hover);
-        }
-
-        .market-item.active {
-            background: rgba(247, 147, 26, 0.1);
-            border: 1px solid var(--primary);
+            transform: translateX(4px);
         }
 
         .market-item-info {
             display: flex;
             align-items: center;
-            gap: 12px;
-        }
-
-        .market-icon {
-            font-size: 1.2rem;
+            gap: 10px;
         }
 
         .market-symbol {
             font-weight: 600;
-        }
-
-        .market-name {
-            font-size: 0.7rem;
-            color: var(--text-tertiary);
-        }
-
-        .market-item-price {
-            text-align: right;
+            font-size: 0.85rem;
         }
 
         .market-price {
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         .market-change {
@@ -500,10 +421,43 @@
             color: var(--danger);
         }
 
-        /* Open Orders & Trade History */
-        .open-orders-list, .trade-history {
-            max-height: 300px;
+        /* Open Orders */
+        .orders-list {
+            max-height: 250px;
             overflow-y: auto;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .order-type {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .order-type.buy {
+            background: rgba(0, 216, 151, 0.2);
+            color: var(--success);
+        }
+
+        .order-type.sell {
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--danger);
+        }
+
+        .order-cancel {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 0.75rem;
         }
 
         .empty-state {
@@ -512,88 +466,18 @@
             color: var(--text-tertiary);
         }
 
-        .order-item, .trade-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .order-info, .trade-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .order-type, .trade-type {
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .order-type.buy, .trade-type.buy {
-            background: rgba(0, 216, 151, 0.2);
-            color: var(--success);
-        }
-
-        .order-type.sell, .trade-type.sell {
-            background: rgba(255, 71, 87, 0.2);
-            color: var(--danger);
-        }
-
-        .order-cancel {
-            padding: 4px 12px;
-            background: rgba(255, 71, 87, 0.1);
-            border: none;
-            border-radius: 6px;
-            color: var(--danger);
-            cursor: pointer;
-            font-size: 0.75rem;
-            transition: all 0.3s;
-        }
-
-        .order-cancel:hover {
-            background: var(--danger);
-            color: white;
-        }
-
-        .trade-total {
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
-
-        .trade-time {
-            font-size: 0.7rem;
-            color: var(--text-tertiary);
-        }
-
-        .btn-small {
-            padding: 6px 12px;
+        .btn-clear {
             background: var(--darker-bg);
             border: 1px solid var(--border);
-            border-radius: 8px;
             color: var(--text-secondary);
+            padding: 4px 12px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 0.75rem;
-            transition: all 0.3s;
-        }
-
-        .btn-small:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        .last-updated {
             font-size: 0.7rem;
-            color: var(--text-tertiary);
         }
 
         @media (max-width: 968px) {
-            .trade-grid {
+            .trade-container {
                 grid-template-columns: 1fr;
             }
             
@@ -602,18 +486,14 @@
             }
         }
 
-        @media (max-width: 480px) {
-            .quick-amounts {
-                flex-wrap: wrap;
-            }
-            
-            .nav-links {
-                gap: 1rem;
-            }
-            
+        @media (max-width: 768px) {
             .top-nav {
                 flex-direction: column;
                 text-align: center;
+            }
+            
+            .nav-links {
+                justify-content: center;
             }
         }
     </style>
@@ -634,132 +514,129 @@
                 <a href="home.html" class="nav-link">Home</a>
                 <a href="markets.html" class="nav-link">Markets</a>
                 <a href="trade.html" class="nav-link" style="color: var(--primary);">Trades</a>
-                <a href="profile.html" class="nav-link">My Profile</a>
             </div>
-            <div class="user-section">
-                <div class="balance-display">
-                    <span class="balance-label">Available Balance</span>
-                    <span class="balance-amount" id="availableBalance">$0.00</span>
-                    <span class="account-badge demo" id="accountBadge">Demo</span>
-                </div>
-                <span class="user-name" id="userNameDisplay">Guest</span>
-                <span id="authButton"></span>
-            </div>
+            <a href="register.html" class="signup-btn">Sign Up</a>
         </div>
 
+        <!-- Trading Interface -->
         <div class="trade-container">
-            <div class="trade-grid">
-                <!-- Order Form Section -->
-                <div class="order-form-section">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Place Order</h3>
+            <!-- Left: Order Form -->
+            <div class="order-section">
+                <h2 class="section-title">Place Order</h2>
+                
+                <!-- Buy/Sell Tabs -->
+                <div class="order-tabs">
+                    <button class="order-tab active" id="buyTab">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M7 10l5-5 5 5"/>
+                        </svg>
+                        Buy
+                    </button>
+                    <button class="order-tab" id="sellTab">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 19V5M7 14l5 5 5-5"/>
+                        </svg>
+                        Sell
+                    </button>
+                </div>
+
+                <!-- Cryptocurrency Selector -->
+                <div class="form-group">
+                    <label>Cryptocurrency</label>
+                    <div class="crypto-selector" id="cryptoSelector">
+                        <div class="selected-crypto" id="selectedCrypto">
+                            <span class="crypto-icon">₿</span>
+                            <div>
+                                <div class="crypto-symbol">BTC</div>
+                                <div class="crypto-name">Bitcoin</div>
+                            </div>
                         </div>
-                        
-                        <div class="order-type-tabs">
-                            <button class="order-tab active" id="buyTab">Buy</button>
-                            <button class="order-tab" id="sellTab">Sell</button>
-                        </div>
-
-                        <form id="tradeForm" class="trade-form">
-                            <div class="form-group">
-                                <label>Cryptocurrency</label>
-                                <div class="crypto-selector" id="cryptoSelector">
-                                    <div class="selected-crypto" id="selectedCrypto">
-                                        <span class="crypto-icon">₿</span>
-                                        <span class="crypto-symbol">BTC</span>
-                                        <span class="crypto-name">Bitcoin</span>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M6 9l6 6 6-6"/>
-                                        </svg>
-                                    </div>
-                                    <div class="crypto-dropdown" id="cryptoDropdown" style="display: none;">
-                                        <div class="crypto-option" data-symbol="BTC" data-name="Bitcoin" data-icon="₿">
-                                            <span class="crypto-icon">₿</span>
-                                            <div><div class="crypto-symbol">BTC</div><div class="crypto-name">Bitcoin</div></div>
-                                        </div>
-                                        <div class="crypto-option" data-symbol="ETH" data-name="Ethereum" data-icon="Ξ">
-                                            <span class="crypto-icon">Ξ</span>
-                                            <div><div class="crypto-symbol">ETH</div><div class="crypto-name">Ethereum</div></div>
-                                        </div>
-                                        <div class="crypto-option" data-symbol="BNB" data-name="Binance Coin" data-icon="B">
-                                            <span class="crypto-icon">B</span>
-                                            <div><div class="crypto-symbol">BNB</div><div class="crypto-name">Binance Coin</div></div>
-                                        </div>
-                                        <div class="crypto-option" data-symbol="SOL" data-name="Solana" data-icon="S">
-                                            <span class="crypto-icon">S</span>
-                                            <div><div class="crypto-symbol">SOL</div><div class="crypto-name">Solana</div></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="current-price">
-                                <label>Current Price</label>
-                                <div class="price-display">
-                                    <span class="price-value" id="currentPrice">$43,250.00</span>
-                                    <span class="price-change positive" id="priceChange">+2.5%</span>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Order Type</label>
-                                <div class="order-type-selector">
-                                    <label class="radio-label"><input type="radio" name="orderType" value="market" checked> <span>Market</span></label>
-                                    <label class="radio-label"><input type="radio" name="orderType" value="limit"> <span>Limit</span></label>
-                                </div>
-                            </div>
-
-                            <div class="form-group" id="limitPriceGroup" style="display: none;">
-                                <label>Limit Price (USD)</label>
-                                <input type="number" id="limitPrice" placeholder="Enter limit price" step="0.01">
-                            </div>
-
-                            <div class="form-group">
-                                <label>Amount</label>
-                                <div class="amount-input-wrapper">
-                                    <input type="number" id="amount" placeholder="Enter amount" step="0.0001">
-                                    <div class="quick-amounts">
-                                        <button type="button" class="quick-amount" data-percent="25">25%</button>
-                                        <button type="button" class="quick-amount" data-percent="50">50%</button>
-                                        <button type="button" class="quick-amount" data-percent="75">75%</button>
-                                        <button type="button" class="quick-amount" data-percent="100">100%</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="order-summary">
-                                <div class="summary-row"><span>Total:</span><strong id="totalValue">$0.00</strong></div>
-                                <div class="summary-row"><span>Fee (0.1%):</span><strong id="feeAmount">$0.00</strong></div>
-                                <div class="summary-row total"><span>Total Cost:</span><strong id="totalCost">$0.00</strong></div>
-                            </div>
-
-                            <button type="submit" class="btn-buy" id="placeOrderBtn">Buy Bitcoin (BTC)</button>
-                        </form>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 9l6 6 6-6"/>
+                        </svg>
                     </div>
                 </div>
 
-                <!-- Market Data Section -->
-                <div class="market-data-section">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Market Prices</h3>
-                            <span class="last-updated" id="lastUpdated">Live</span>
-                        </div>
-                        <div class="market-prices" id="marketPrices">Loading...</div>
+                <!-- Current Price -->
+                <div class="current-price">
+                    <div>
+                        <span class="price-value" id="currentPrice">$43,203.07</span>
+                        <span class="price-change negative" id="priceChange">-0.11%</span>
                     </div>
+                </div>
 
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Open Orders</h3>
-                            <button class="btn-small" id="clearOrdersBtn">Clear All</button>
-                        </div>
-                        <div class="open-orders-list" id="openOrdersList"><div class="empty-state">No open orders</div></div>
+                <!-- Order Type -->
+                <div class="form-group">
+                    <label>Order Type</label>
+                    <div class="order-type-group">
+                        <label class="radio-label">
+                            <input type="radio" name="orderType" value="market" checked> Market
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="orderType" value="limit"> Limit
+                        </label>
                     </div>
+                </div>
 
-                    <div class="card">
-                        <div class="card-header"><h3>Trade History</h3></div>
-                        <div class="trade-history" id="tradeHistory"><div class="empty-state">No recent trades</div></div>
+                <!-- Limit Price (hidden by default) -->
+                <div class="form-group" id="limitPriceGroup" style="display: none;">
+                    <label>Limit Price (USD)</label>
+                    <input type="number" id="limitPrice" class="amount-input" placeholder="Enter limit price" step="0.01">
+                </div>
+
+                <!-- Amount -->
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="amount" class="amount-input" placeholder="Enter amount" step="0.0001">
+                    <div class="quick-amounts">
+                        <button type="button" class="quick-amount" data-percent="25">25%</button>
+                        <button type="button" class="quick-amount" data-percent="50">50%</button>
+                        <button type="button" class="quick-amount" data-percent="75">75%</button>
+                        <button type="button" class="quick-amount" data-percent="100">100%</button>
+                    </div>
+                </div>
+
+                <!-- Order Summary -->
+                <div class="order-summary">
+                    <div class="summary-row">
+                        <span>Total:</span>
+                        <strong id="totalValue">$0.00</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Fee (0.1%):</span>
+                        <strong id="feeAmount">$0.00</strong>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total Cost:</span>
+                        <strong id="totalCost">$0.00</strong>
+                    </div>
+                </div>
+
+                <!-- Trade Button -->
+                <button class="btn-trade buy" id="tradeBtn">Buy Bitcoin (BTC)</button>
+            </div>
+
+            <!-- Right: Market Data -->
+            <div>
+                <!-- Market Prices -->
+                <div class="market-card">
+                    <div class="market-header">
+                        <h3>Market Prices</h3>
+                        <span class="last-updated" id="lastUpdated">Live</span>
+                    </div>
+                    <div class="market-list" id="marketPrices">
+                        Loading...
+                    </div>
+                </div>
+
+                <!-- Open Orders -->
+                <div class="market-card">
+                    <div class="market-header">
+                        <h3>Open Orders</h3>
+                        <button class="btn-clear" id="clearOrdersBtn">Clear All</button>
+                    </div>
+                    <div class="orders-list" id="openOrdersList">
+                        <div class="empty-state">No open orders</div>
                     </div>
                 </div>
             </div>
