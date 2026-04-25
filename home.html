@@ -90,6 +90,26 @@
             color: var(--primary);
         }
 
+        /* Sign Up Button */
+        .signup-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 8px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .signup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
+        }
+
         /* Hero Section */
         .hero-section {
             margin-bottom: 3rem;
@@ -296,6 +316,18 @@
             }
         }
 
+        @media (max-width: 768px) {
+            .top-nav {
+                flex-direction: column;
+                justify-content: center;
+                text-align: center;
+            }
+            
+            .nav-links {
+                justify-content: center;
+            }
+        }
+
         @media (max-width: 480px) {
             .stats-grid {
                 grid-template-columns: 1fr;
@@ -308,17 +340,12 @@
             .hero-title {
                 font-size: 2rem;
             }
-            
-            .top-nav {
-                flex-direction: column;
-                text-align: center;
-            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Top Navigation Bar - Only Home, Markets, Trades -->
+        <!-- Top Navigation Bar: Logo | Home Markets Trades | Sign Up -->
         <div class="top-nav">
             <div class="logo">
                 <svg viewBox="0 0 40 40" fill="none">
@@ -333,6 +360,7 @@
                 <a href="markets.html" class="nav-link">Markets</a>
                 <a href="trade.html" class="nav-link">Trades</a>
             </div>
+            <a href="register.html" class="signup-btn">Sign Up</a>
         </div>
 
         <!-- Hero Section -->
@@ -417,7 +445,7 @@
         <div class="cta-section">
             <h3 class="cta-title">Ready to Start Trading?</h3>
             <p class="cta-description">Join Pocket Trading today and start your trading journey with real funds.</p>
-            <a href="register.html" class="btn-cta">Create Free Account</a>
+            <a href="register.html" class="btn-cta">Create Account</a>
         </div>
     </div>
 
