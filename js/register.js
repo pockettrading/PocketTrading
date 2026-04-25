@@ -1,4 +1,4 @@
-// Register page functionality - Real Account Only (No Demo)
+// Register page functionality - Real Account Only with Full Name
 
 class RegisterManager {
     constructor() {
@@ -100,14 +100,22 @@ class RegisterManager {
     }
 
     handleRegister() {
+        const fullName = document.getElementById('fullName').value;
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
         const termsAgree = document.getElementById('termsAgree').checked;
 
         // Validation
-        if (!email || !password || !confirmPassword) {
+        if (!fullName || !email || !password || !confirmPassword) {
             this.showNotification('Please fill in all fields', 'error');
+            return;
+        }
+
+        // Full Name validation (at least 2 words)
+        const nameParts = fullName.trim().split(' ');
+        if (nameParts.length < 2) {
+            this.showNotification('Please enter your full name (first and last name)', 'error');
             return;
         }
 
@@ -140,10 +148,15 @@ class RegisterManager {
             return;
         }
 
+        // Format full name properly
+        const formattedName = fullName.trim().split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join(' ');
+
         // Create new user with REAL account only (balance starts at $0)
         const newUser = {
             id: Date.now(),
-            name: email.split('@')[0],
+            name: formattedName,
             email: email,
             password: password,
             balance: 0,
@@ -167,7 +180,7 @@ class RegisterManager {
         users.push(newUser);
         localStorage.setItem('pocket_users', JSON.stringify(users));
 
-        this.showNotification('Account created successfully! You can now deposit funds to start trading.', 'success');
+        this.showNotification(`Welcome ${formattedName}! Your account has been created successfully. Make a deposit to start trading.`, 'success');
 
         // Auto login after registration
         sessionStorage.setItem('pocket_user', JSON.stringify(newUser));
@@ -175,7 +188,7 @@ class RegisterManager {
 
         setTimeout(() => {
             window.location.href = 'home.html';
-        }, 1500);
+        }, 2000);
     }
 
     handleSocialRegister(provider) {
@@ -197,7 +210,7 @@ class RegisterManager {
         setTimeout(() => {
             notification.style.animation = 'slideOut 0.3s ease-out';
             setTimeout(() => notification.remove(), 300);
-        }, 3000);
+        }, 4000);
     }
 }
 
