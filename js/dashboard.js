@@ -1,4 +1,4 @@
-// Dashboard functionality with Candlestick Chart and Real Binance API
+// Dashboard functionality with Candlestick Chart - Binance API Only, No Fallbacks
 
 let currentUser = null;
 let chart = null;
@@ -11,7 +11,7 @@ let candlestickSeries = null;
 const BINANCE_BASE_URL = 'https://api.binance.com/api/v3';
 
 // Cryptocurrency data for top list
-let cryptoData = [
+const cryptoData = [
     { symbol: 'BTC', name: 'Bitcoin', icon: '₿' },
     { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ' },
     { symbol: 'BNB', name: 'Binance Coin', icon: 'B' },
@@ -184,32 +184,11 @@ async function fetchCandlestickData() {
         
         candlestickSeries.setData(candlestickData);
         chart.timeScale().fitContent();
+        console.log(`Loaded ${candlestickData.length} candles for ${symbol}`);
     } catch (error) {
         console.error('Error fetching candlestick data:', error);
-        generateDemoData();
+        document.getElementById('chartSymbol').innerHTML = `${currentSymbol}/USD <span style="color: var(--danger); font-size: 0.8rem;">(API Error)</span>`;
     }
-}
-
-function generateDemoData() {
-    const candlestickData = [];
-    let basePrice = currentSymbol === 'BTC' ? 43000 : (currentSymbol === 'ETH' ? 2200 : 300);
-    const now = Math.floor(Date.now() / 1000);
-    const intervalSeconds = currentInterval === '1h' ? 3600 : (currentInterval === '1m' ? 60 : 86400);
-    
-    for (let i = 200; i > 0; i--) {
-        const time = now - (i * intervalSeconds);
-        const change = (Math.random() - 0.5) * 100;
-        const open = basePrice;
-        const close = basePrice + change;
-        const high = Math.max(open, close) + Math.random() * 50;
-        const low = Math.min(open, close) - Math.random() * 50;
-        
-        candlestickData.push({ time, open, high, low, close });
-        basePrice = close;
-    }
-    
-    candlestickSeries.setData(candlestickData);
-    chart.timeScale().fitContent();
 }
 
 async function fetchCurrentPrice() {
@@ -235,12 +214,10 @@ async function fetchCurrentPrice() {
         document.getElementById('low24h').textContent = `$${low.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         document.getElementById('volume24h').textContent = `$${volume.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
         
-        document.getElementById('chartSymbol').textContent = `${currentSymbol}/USD`;
+        document.getElementById('chartSymbol').innerHTML = `${currentSymbol}/USD`;
     } catch (error) {
         console.error('Error fetching price:', error);
-        const demoPrice = currentSymbol === 'BTC' ? 43000 + (Math.random() - 0.5) * 500 : 
-                         (currentSymbol === 'ETH' ? 2200 + (Math.random() - 0.5) * 50 : 300 + (Math.random() - 0.5) * 10);
-        document.getElementById('currentPrice').textContent = `$${demoPrice.toFixed(2)}`;
+        document.getElementById('chartSymbol').innerHTML = `${currentSymbol}/USD <span style="color: var(--danger); font-size: 0.8rem;">(API Error)</span>`;
     }
 }
 
@@ -248,35 +225,48 @@ async function loadCryptoList() {
     const container = document.getElementById('cryptoList');
     if (!container) return;
     
-    const updatedData = await Promise.all(cryptoData.map(async (crypto) => {
-        try {
-            const response = await fetch(`${BINANCE_BASE_URL}/ticker/24hr?symbol=${binanceSymbols[crypto.symbol]}`);
-            const data = await response.json();
-            return { ...crypto, price: parseFloat(data.lastPrice), change: parseFloat(data.priceChangePercent) };
-        } catch {
-            return { ...crypto, price: 0, change: 0 };
-        }
-    }));
-    
-    container.innerHTML = updatedData.map(crypto => {
-        const changeClass = crypto.change >= 0 ? 'positive' : 'negative';
-        const changeSign = crypto.change >= 0 ? '+' : '';
-        return `
-            <div class="crypto-item" onclick="changeChartSymbol('${crypto.symbol}')">
-                <div class="crypto-info">
-                    <div class="crypto-icon">${crypto.icon}</div>
-                    <div>
-                        <div class="crypto-symbol">${crypto.symbol}</div>
-                        <div class="crypto-name">${crypto.name}</div>
+    try {
+        const fetchPromises = cryptoData.map(async (crypto) => {
+            try {
+                const response = await fetch(`${BINANCE_BASE_URL}/ticker/24hr?symbol=${binanceSymbols[crypto.symbol]}`);
+                const data = await response.json();
+                return {
+                    ...crypto,
+                    price: parseFloat(data.lastPrice),
+                    change: parseFloat(data.priceChangePercent)
+                };
+            } catch {
+                return { ...crypto, price: 0, change: 0 };
+            }
+        });
+        
+        const updatedData = await Promise.all(fetchPromises);
+        
+        container.innerHTML = updatedData.map(crypto => {
+            const changeClass = crypto.change >= 0 ? 'positive' : 'negative';
+            const changeSign = crypto.change >= 0 ? '+' : '';
+            const priceDisplay = crypto.price > 0 ? `$${crypto.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : 'Loading...';
+            
+            return `
+                <div class="crypto-item" onclick="changeChartSymbol('${crypto.symbol}')">
+                    <div class="crypto-info">
+                        <div class="crypto-icon">${crypto.icon}</div>
+                        <div>
+                            <div class="crypto-symbol">${crypto.symbol}</div>
+                            <div class="crypto-name">${crypto.name}</div>
+                        </div>
+                    </div>
+                    <div class="crypto-price">
+                        <div class="crypto-price-value">${priceDisplay}</div>
+                        ${crypto.price > 0 ? `<div class="crypto-change ${changeClass}">${changeSign}${crypto.change.toFixed(2)}%</div>` : ''}
                     </div>
                 </div>
-                <div class="crypto-price">
-                    <div class="crypto-price-value">$${crypto.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                    <div class="crypto-change ${changeClass}">${changeSign}${crypto.change.toFixed(2)}%</div>
-                </div>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading crypto list:', error);
+        container.innerHTML = '<div class="loading-state">Failed to load market data</div>';
+    }
 }
 
 function loadTransactions() {
@@ -297,7 +287,7 @@ function loadTransactions() {
                 <td class="${isPositive ? 'positive-amount' : 'negative-amount'}">${isPositive ? '+' : '-'}$${Math.abs(t.amount).toFixed(2)}</td>
                 <td><span class="status-badge status-${t.status}">${t.status}</span></td>
                 <td>${new Date(t.date).toLocaleDateString()}</td>
-            </table>
+            </tr>
         `;
     }).join('');
 }
@@ -347,5 +337,6 @@ function handleLogout() {
     window.location.href = 'home.html';
 }
 
+// Make functions global
 window.changeChartSymbol = changeChartSymbol;
 window.handleLogout = handleLogout;
