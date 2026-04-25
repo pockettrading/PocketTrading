@@ -1,4 +1,4 @@
-// Authentication and user management - Real Account Only with Full Name
+// Authentication and user management - Real Account Only with Full Name (No Social Login)
 
 class AuthManager {
     constructor() {
@@ -366,7 +366,7 @@ class AuthManager {
     }
 }
 
-// Add CSS animations
+// Add CSS animations and password strength styles
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
@@ -394,22 +394,42 @@ style.textContent = `
     }
     
     .strength-weak { color: #FF4757; }
-    .strength-weak ~ .strength-bar-container .strength-bar { background: #FF4757; }
+    .strength-weak ~ .strength-bar-container .strength-bar,
+    .strength-weak + .strength-bar-container .strength-bar {
+        background: #FF4757;
+    }
     
     .strength-medium { color: #FFA502; }
-    .strength-medium ~ .strength-bar-container .strength-bar { background: #FFA502; }
+    .strength-medium ~ .strength-bar-container .strength-bar,
+    .strength-medium + .strength-bar-container .strength-bar {
+        background: #FFA502;
+    }
     
     .strength-strong { color: #00D897; }
-    .strength-strong ~ .strength-bar-container .strength-bar { background: #00D897; }
+    .strength-strong ~ .strength-bar-container .strength-bar,
+    .strength-strong + .strength-bar-container .strength-bar {
+        background: #00D897;
+    }
 `;
 document.head.appendChild(style);
 
+// Initialize auth
 const auth = new AuthManager();
 
-function logout() { auth.logout(); }
-function isLoggedIn() { return auth.isLoggedIn(); }
-function getCurrentUser() { return auth.getUser(); }
+// Global functions
+function logout() {
+    auth.logout();
+}
 
+function isLoggedIn() {
+    return auth.isLoggedIn();
+}
+
+function getCurrentUser() {
+    return auth.getUser();
+}
+
+// Make auth available globally
 window.auth = auth;
 window.logout = logout;
 window.isLoggedIn = isLoggedIn;
