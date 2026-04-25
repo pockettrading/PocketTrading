@@ -1,4 +1,4 @@
-// Home page functionality - Dashboard style with no sidebar
+// Home page functionality - With username dropdown
 
 let currentUser = null;
 
@@ -6,7 +6,7 @@ let currentUser = null;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Home page loaded');
     loadUser();
-    updateUserDisplay();
+    renderUserSection();
     loadUserStats();
 });
 
@@ -26,33 +26,36 @@ function loadUser() {
     }
 }
 
-function updateUserDisplay() {
-    const userNameSpan = document.getElementById('userNameDisplay');
-    const authButtonSpan = document.getElementById('authButton');
+function renderUserSection() {
+    const userSection = document.getElementById('userSection');
+    if (!userSection) return;
     
-    if (userNameSpan) {
-        if (currentUser) {
-            const displayName = currentUser.name || currentUser.email.split('@')[0];
-            userNameSpan.textContent = displayName;
-            
-            // Show Logout button for logged-in users
-            if (authButtonSpan) {
-                authButtonSpan.innerHTML = '<span class="logout-link" onclick="handleLogout()">Logout</span>';
-            }
-        } else {
-            userNameSpan.textContent = 'Guest';
-            
-            // Show Sign Up button for guest users
-            if (authButtonSpan) {
-                authButtonSpan.innerHTML = '<a href="register.html" class="auth-link">Sign Up</a>';
-            }
-        }
+    if (currentUser) {
+        const displayName = currentUser.name || currentUser.email.split('@')[0];
+        
+        userSection.innerHTML = `
+            <div class="user-dropdown">
+                <div class="user-name-display">
+                    <span>👤</span>
+                    <span>${displayName}</span>
+                    <span>▼</span>
+                </div>
+                <div class="dropdown-menu">
+                    <a href="profile.html" class="dropdown-item">My Profile</a>
+                    <a href="dashboard.html" class="dropdown-item">Dashboard</a>
+                    <div class="dropdown-divider"></div>
+                    <span class="dropdown-item" onclick="handleLogout()" style="cursor: pointer; color: var(--danger);">Logout</span>
+                </div>
+            </div>
+        `;
+    } else {
+        userSection.innerHTML = `<a href="register.html" class="auth-link">Sign Up</a>`;
     }
 }
 
 function loadUserStats() {
     if (!currentUser) {
-        // Guest mode - show placeholder stats with 0%
+        // Guest mode - show placeholder stats
         const balanceElem = document.getElementById('userBalance');
         const balanceChangeElem = document.getElementById('balanceChange');
         const tradesElem = document.getElementById('totalTrades');
@@ -81,7 +84,7 @@ function loadUserStats() {
     
     // Get current balance
     const currentBalance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
-    const initialBalance = currentUser.accountMode === 'demo' ? 10000 : currentUser.realBalance;
+    const initialBalance = currentUser.accountMode === 'demo' ? 10000 : (currentUser.realBalance - (currentUser.stats?.totalProfit || 0));
     
     const balanceElem = document.getElementById('userBalance');
     const balanceChangeElem = document.getElementById('balanceChange');
@@ -95,7 +98,7 @@ function loadUserStats() {
         }
     }
     
-    if (balanceChangeElem) {
+    if (balanceChangeElem && initialBalance > 0) {
         const changePercent = ((currentBalance - initialBalance) / initialBalance * 100).toFixed(1);
         if (changePercent >= 0) {
             balanceChangeElem.innerHTML = `+${changePercent}% from start`;
@@ -131,7 +134,7 @@ function loadUserStats() {
     if (tradesElem) tradesElem.textContent = totalTrades;
     if (winRateElem) {
         winRateElem.textContent = `${winRate}%`;
-        winRateElem.className = 'stat-value';
+        winRateElem.className = `stat-value`;
     }
     if (profitElem) {
         const sign = totalProfit >= 0 ? '+' : '';
