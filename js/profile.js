@@ -1,7 +1,8 @@
-// Profile page functionality - Complete working version
+// Profile functionality - Complete working version
 
 let currentUser = null;
 
+// Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Profile page loaded');
     loadUser();
@@ -9,7 +10,6 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = 'login.html';
         return;
     }
-    updateUserDisplay();
     initProfilePage();
 });
 
@@ -21,62 +21,24 @@ function loadUser() {
     }
 }
 
-function updateUserDisplay() {
-    const userNameSpan = document.getElementById('userNameDisplay');
-    if (userNameSpan && currentUser) {
-        userNameSpan.textContent = currentUser.name || currentUser.email.split('@')[0];
-    }
-}
-
 function initProfilePage() {
-    setupTabs();
+    updateUserDisplay();
     loadUserProfile();
     loadTradingStats();
     loadTradeHistory();
+    setupMenuNavigation();
     setupForms();
-    updateAvatar();
 }
 
-function setupTabs() {
-    const tabs = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
+function updateUserDisplay() {
+    if (!currentUser) return;
     
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function(e) {
-            e.preventDefault();
-            const tabId = this.dataset.tab;
-            
-            tabs.forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            
-            tabContents.forEach(content => content.style.display = 'none');
-            
-            const selectedTab = document.getElementById(`${tabId}Tab`);
-            if (selectedTab) {
-                selectedTab.style.display = 'block';
-            }
-        });
-    });
-}
-
-function switchTab(tabName) {
-    const tabs = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
+    const displayName = currentUser.name || currentUser.email.split('@')[0];
+    const avatarInitials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
     
-    tabs.forEach(tab => {
-        if (tab.dataset.tab === tabName) {
-            tab.classList.add('active');
-        } else {
-            tab.classList.remove('active');
-        }
-    });
-    
-    tabContents.forEach(content => content.style.display = 'none');
-    
-    const selectedTab = document.getElementById(`${tabName}Tab`);
-    if (selectedTab) {
-        selectedTab.style.display = 'block';
-    }
+    document.getElementById('userAvatar').textContent = avatarInitials;
+    document.getElementById('sidebarUserName').textContent = displayName;
+    document.getElementById('sidebarUserEmail').textContent = currentUser.email;
 }
 
 function loadUserProfile() {
@@ -85,63 +47,26 @@ function loadUserProfile() {
     const fullName = currentUser.name || currentUser.email.split('@')[0];
     const email = currentUser.email;
     const memberSince = currentUser.created ? new Date(currentUser.created).toLocaleDateString() : new Date().toLocaleDateString();
-    const currentBalance = currentUser.accountMode === 'demo' ? currentUser.demoBalance : currentUser.realBalance;
+    const currentBalance = currentUser.balance || 0;
+    const kycStatus = currentUser.kycStatus || 'pending';
     
     document.getElementById('profileFullName').textContent = fullName;
     document.getElementById('profileEmail').textContent = email;
-    document.getElementById('infoFullName').textContent = fullName;
-    document.getElementById('infoEmail').textContent = email;
     document.getElementById('memberSince').textContent = memberSince;
     document.getElementById('accountBalance').textContent = `$${currentBalance.toFixed(2)}`;
     
-    const kycStatus = currentUser.kycStatus || 'pending';
-    const kycStatusSpan = document.getElementById('kycStatus');
-    if (kycStatusSpan) {
-        kycStatusSpan.textContent = kycStatus;
-        kycStatusSpan.className = `kyc-status kyc-${kycStatus}`;
-    }
+    const kycBadge = document.getElementById('kycStatusBadge');
+    kycBadge.textContent = kycStatus;
+    kycBadge.className = `kyc-status kyc-${kycStatus}`;
     
-    calculateDailyProfitLoss();
-    
+    // Update form fields
     const updateFullName = document.getElementById('updateFullName');
     const updateEmail = document.getElementById('updateEmail');
+    const kycFullName = document.getElementById('kycFullName');
+    
     if (updateFullName) updateFullName.value = fullName;
     if (updateEmail) updateEmail.value = email;
-    
-    const kycFullName = document.getElementById('kycFullName');
     if (kycFullName) kycFullName.value = fullName;
-    
-    // Set country if exists
-    const updateCountry = document.getElementById('updateCountry');
-    if (updateCountry && currentUser.country) {
-        updateCountry.value = currentUser.country;
-    }
-}
-
-function calculateDailyProfitLoss() {
-    const today = new Date().toDateString();
-    const todayTrades = (currentUser.transactions || []).filter(t => 
-        (t.type === 'trade' || t.type === 'buy' || t.type === 'sell') && 
-        new Date(t.date).toDateString() === today
-    );
-    
-    let dailyProfit = 0;
-    todayTrades.forEach(trade => {
-        if (trade.pnl) {
-            dailyProfit += trade.pnl;
-        } else if (trade.type === 'sell') {
-            dailyProfit += (trade.total || 0);
-        } else if (trade.type === 'buy') {
-            dailyProfit -= (trade.total || 0);
-        }
-    });
-    
-    const profitLossElem = document.getElementById('dailyProfitLoss');
-    if (profitLossElem) {
-        const sign = dailyProfit >= 0 ? '+' : '';
-        profitLossElem.innerHTML = `${sign}$${dailyProfit.toFixed(2)} USDT`;
-        profitLossElem.style.color = dailyProfit >= 0 ? 'var(--success)' : 'var(--danger)';
-    }
 }
 
 function loadTradingStats() {
@@ -151,15 +76,12 @@ function loadTradingStats() {
     const trades = transactions.filter(t => t.type === 'trade' || t.type === 'buy' || t.type === 'sell');
     
     const totalTrades = trades.length;
+    
     let winningTrades = 0;
-    let totalVolume = 0;
-    let totalProfit = 0;
+    let totalProfit = currentUser.stats?.totalProfit || 0;
     
     trades.forEach(trade => {
-        totalVolume += trade.total || 0;
-        
         if (trade.pnl) {
-            totalProfit += trade.pnl;
             if (trade.pnl > 0) winningTrades++;
         }
     });
@@ -168,10 +90,10 @@ function loadTradingStats() {
     
     document.getElementById('totalTrades').textContent = totalTrades;
     document.getElementById('winRate').textContent = `${winRate}%`;
-    document.getElementById('totalVolume').textContent = `$${totalVolume.toFixed(2)}`;
     
     const profitElem = document.getElementById('totalProfit');
-    profitElem.textContent = `${totalProfit >= 0 ? '+' : ''}$${totalProfit.toFixed(2)}`;
+    const sign = totalProfit >= 0 ? '+' : '';
+    profitElem.textContent = `${sign}$${Math.abs(totalProfit).toFixed(2)}`;
     profitElem.className = `stat-value ${totalProfit >= 0 ? 'positive' : 'negative'}`;
 }
 
@@ -179,7 +101,8 @@ function loadTradeHistory() {
     const tbody = document.getElementById('tradeHistoryBody');
     if (!tbody) return;
     
-    const trades = (currentUser.transactions || []).filter(t => t.type === 'trade' || t.type === 'buy' || t.type === 'sell').slice(0, 20);
+    const transactions = currentUser.transactions || [];
+    const trades = transactions.filter(t => t.type === 'trade' || t.type === 'buy' || t.type === 'sell').slice(0, 20);
     
     if (trades.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No trades yet</td--</tr>';
@@ -198,29 +121,71 @@ function loadTradeHistory() {
     `).join('');
 }
 
+function setupMenuNavigation() {
+    const menuItems = document.querySelectorAll('.menu-item');
+    const pages = ['profilePage', 'historyPage', 'kycPage', 'updatePage', 'supportPage'];
+    
+    menuItems.forEach((item, index) => {
+        item.addEventListener('click', () => {
+            // Update active state
+            menuItems.forEach(mi => mi.classList.remove('active'));
+            item.classList.add('active');
+            
+            // Hide all pages
+            pages.forEach(page => {
+                const pageElem = document.getElementById(page);
+                if (pageElem) pageElem.style.display = 'none';
+            });
+            
+            // Show selected page
+            const selectedPage = document.getElementById(pages[index]);
+            if (selectedPage) selectedPage.style.display = 'block';
+        });
+    });
+}
+
 function setupForms() {
+    // Update Profile Form
     const updateForm = document.getElementById('updateProfileForm');
     if (updateForm) {
-        updateForm.addEventListener('submit', function(e) {
+        updateForm.addEventListener('submit', (e) => {
             e.preventDefault();
             updateProfile();
         });
     }
     
+    // KYC Form
     const kycForm = document.getElementById('kycForm');
     if (kycForm) {
-        kycForm.addEventListener('submit', function(e) {
+        kycForm.addEventListener('submit', (e) => {
             e.preventDefault();
             submitKYC();
         });
     }
     
+    // Support Form
     const supportForm = document.getElementById('supportForm');
     if (supportForm) {
-        supportForm.addEventListener('submit', function(e) {
+        supportForm.addEventListener('submit', (e) => {
             e.preventDefault();
             sendSupportMessage();
         });
+    }
+    
+    // File upload handlers
+    const idFront = document.getElementById('idFront');
+    if (idFront) {
+        idFront.addEventListener('change', (e) => handleFileUpload(e.target.files[0], 'ID Front'));
+    }
+    
+    const idBack = document.getElementById('idBack');
+    if (idBack) {
+        idBack.addEventListener('change', (e) => handleFileUpload(e.target.files[0], 'ID Back'));
+    }
+    
+    const selfie = document.getElementById('selfie');
+    if (selfie) {
+        selfie.addEventListener('change', (e) => handleFileUpload(e.target.files[0], 'Selfie'));
     }
 }
 
@@ -232,7 +197,9 @@ function updateProfile() {
     const newPassword = document.getElementById('newPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     
-    if (newName) currentUser.name = newName;
+    if (newName) {
+        currentUser.name = newName;
+    }
     
     if (newEmail && newEmail !== currentUser.email) {
         const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
@@ -243,8 +210,13 @@ function updateProfile() {
         currentUser.email = newEmail;
     }
     
-    if (newPhone) currentUser.phone = newPhone;
-    if (newCountry) currentUser.country = newCountry;
+    if (newPhone) {
+        currentUser.phone = newPhone;
+    }
+    
+    if (newCountry) {
+        currentUser.country = newCountry;
+    }
     
     if (newPassword) {
         if (newPassword.length < 8) {
@@ -261,7 +233,7 @@ function updateProfile() {
     saveUserData();
     showNotification('Profile updated successfully!', 'success');
     loadUserProfile();
-    updateAvatar();
+    updateUserDisplay();
 }
 
 function submitKYC() {
@@ -274,21 +246,34 @@ function submitKYC() {
         return;
     }
     
+    // Check if files were uploaded
+    const hasIdFront = document.getElementById('idFront').files.length > 0;
+    const hasIdBack = document.getElementById('idBack').files.length > 0;
+    const hasSelfie = document.getElementById('selfie').files.length > 0;
+    
+    if (!hasIdFront || !hasIdBack || !hasSelfie) {
+        showNotification('Please upload all required documents', 'error');
+        return;
+    }
+    
     currentUser.kycStatus = 'pending';
     currentUser.kycSubmitted = new Date().toISOString();
-    currentUser.kycDetails = { fullName, dob, idType, submitted: new Date().toISOString() };
+    currentUser.kycDetails = {
+        fullName: fullName,
+        dob: dob,
+        idType: idType,
+        submitted: new Date().toISOString()
+    };
     
     saveUserData();
     showNotification('KYC documents submitted successfully! We will verify within 24-48 hours.', 'success');
     
-    const kycStatusSpan = document.getElementById('kycStatus');
-    if (kycStatusSpan) {
-        kycStatusSpan.textContent = 'pending';
-        kycStatusSpan.className = 'kyc-status kyc-pending';
-    }
+    // Update KYC status display
+    const kycBadge = document.getElementById('kycStatusBadge');
+    kycBadge.textContent = 'pending';
+    kycBadge.className = 'kyc-status kyc-pending';
     
     document.getElementById('kycForm').reset();
-    if (kycFullName) kycFullName.value = fullName;
 }
 
 function sendSupportMessage() {
@@ -321,13 +306,22 @@ function sendSupportMessage() {
     document.getElementById('supportAttachment').value = '';
 }
 
-function updateAvatar() {
-    const avatarDiv = document.getElementById('userAvatar');
-    if (avatarDiv && currentUser) {
-        const name = currentUser.name || currentUser.email.split('@')[0];
-        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-        avatarDiv.textContent = initials;
+function handleFileUpload(file, type) {
+    if (file) {
+        if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+            showNotification(`${type} must be JPG or PNG`, 'error');
+            return false;
+        }
+        
+        if (file.size > 5 * 1024 * 1024) {
+            showNotification(`${type} must be less than 5MB`, 'error');
+            return false;
+        }
+        
+        showNotification(`${type} uploaded successfully!`, 'success');
+        return true;
     }
+    return false;
 }
 
 function saveUserData() {
@@ -338,8 +332,12 @@ function saveUserData() {
         localStorage.setItem('pocket_users', JSON.stringify(users));
     }
     
-    if (localStorage.getItem('pocket_user')) localStorage.setItem('pocket_user', JSON.stringify(currentUser));
-    if (sessionStorage.getItem('pocket_user')) sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
+    if (localStorage.getItem('pocket_user')) {
+        localStorage.setItem('pocket_user', JSON.stringify(currentUser));
+    }
+    if (sessionStorage.getItem('pocket_user')) {
+        sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
+    }
 }
 
 function showNotification(message, type) {
@@ -370,12 +368,3 @@ function showNotification(message, type) {
         setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
-
-function handleLogout() {
-    localStorage.removeItem('pocket_user');
-    sessionStorage.removeItem('pocket_user');
-    window.location.href = 'home.html';
-}
-
-window.switchTab = switchTab;
-window.handleLogout = handleLogout;
