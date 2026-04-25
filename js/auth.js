@@ -1,4 +1,4 @@
-// Authentication and user management - Real Account Only
+// Authentication and user management - Real Account Only with Full Name
 
 class AuthManager {
     constructor() {
@@ -120,13 +120,20 @@ class AuthManager {
         if (form) {
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
+                const fullName = document.getElementById('fullName')?.value;
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirmPassword').value;
                 const termsAgree = document.getElementById('termsAgree')?.checked || false;
                 
-                if (!email || !password || !confirmPassword) {
+                if (!fullName || !email || !password || !confirmPassword) {
                     this.showError('Please fill in all fields');
+                    return;
+                }
+                
+                const nameParts = fullName.trim().split(' ');
+                if (nameParts.length < 2) {
+                    this.showError('Please enter your full name (first and last name)');
                     return;
                 }
                 
@@ -151,7 +158,7 @@ class AuthManager {
                     return;
                 }
                 
-                this.register(email, password);
+                this.register(fullName, email, password);
             });
         }
     }
@@ -182,16 +189,21 @@ class AuthManager {
         }
     }
 
-    register(email, password) {
+    register(fullName, email, password) {
         if (this.users.find(u => u.email === email)) {
             this.showError('Email already exists');
             return;
         }
         
+        // Format full name properly
+        const formattedName = fullName.trim().split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join(' ');
+        
         // Create new user with REAL account only (balance starts at $0)
         const newUser = {
             id: Date.now(),
-            name: email.split('@')[0],
+            name: formattedName,
             email: email,
             password: password,
             balance: 0,
@@ -215,11 +227,11 @@ class AuthManager {
         this.users.push(newUser);
         localStorage.setItem('pocket_users', JSON.stringify(this.users));
         
-        this.showSuccess('Account created successfully! You can now deposit funds to start trading.');
+        this.showSuccess(`Welcome ${formattedName}! Your account has been created successfully. Make a deposit to start trading.`);
         
         setTimeout(() => {
             this.login(email, password, true);
-        }, 1000);
+        }, 1500);
     }
 
     addTransaction(userId, transaction) {
@@ -335,7 +347,7 @@ class AuthManager {
         setTimeout(() => {
             notification.style.animation = 'slideOut 0.3s ease-out';
             setTimeout(() => notification.remove(), 300);
-        }, 3000);
+        }, 4000);
     }
 
     logout() {
@@ -382,16 +394,13 @@ style.textContent = `
     }
     
     .strength-weak { color: #FF4757; }
-    .strength-weak ~ .strength-bar-container .strength-bar,
-    .strength-weak + .strength-bar-container .strength-bar { background: #FF4757; }
+    .strength-weak ~ .strength-bar-container .strength-bar { background: #FF4757; }
     
     .strength-medium { color: #FFA502; }
-    .strength-medium ~ .strength-bar-container .strength-bar,
-    .strength-medium + .strength-bar-container .strength-bar { background: #FFA502; }
+    .strength-medium ~ .strength-bar-container .strength-bar { background: #FFA502; }
     
     .strength-strong { color: #00D897; }
-    .strength-strong ~ .strength-bar-container .strength-bar,
-    .strength-strong + .strength-bar-container .strength-bar { background: #00D897; }
+    .strength-strong ~ .strength-bar-container .strength-bar { background: #00D897; }
 `;
 document.head.appendChild(style);
 
