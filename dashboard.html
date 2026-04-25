@@ -90,108 +90,67 @@
             color: var(--primary);
         }
 
-        .user-section {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .user-name {
-            color: var(--text-primary);
-            font-weight: 500;
-        }
-
-        .logout-link {
-            color: var(--danger);
-            text-decoration: none;
-            font-weight: 500;
+        /* User Dropdown */
+        .user-dropdown {
+            position: relative;
             cursor: pointer;
         }
 
-        .logout-link:hover {
-            text-decoration: underline;
-        }
-
-        /* Account Mode Switcher */
-        .account-mode-section {
+        .user-name-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
             background: var(--card-bg);
-            border-radius: 16px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .mode-switcher {
-            display: flex;
-            gap: 1rem;
-            flex: 1;
-        }
-
-        .mode-btn {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 1rem;
-            background: var(--darker-bg);
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            cursor: pointer;
+            border-radius: 40px;
             transition: all 0.3s;
-            text-align: left;
         }
 
-        .mode-btn.active {
-            border-color: var(--primary);
-            background: rgba(247, 147, 26, 0.1);
+        .user-name-display:hover {
+            background: var(--card-hover);
         }
 
-        .mode-btn:hover:not(.active) {
-            border-color: var(--primary-light);
-            transform: translateY(-2px);
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.5rem;
+            min-width: 160px;
+            display: none;
+            z-index: 100;
+            margin-top: 0.5rem;
+            box-shadow: var(--shadow);
         }
 
-        .mode-icon {
-            font-size: 2rem;
+        .user-dropdown:hover .dropdown-menu {
+            display: block;
         }
 
-        .mode-info {
-            flex: 1;
+        .dropdown-item {
+            padding: 10px 16px;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s;
+            border-radius: 8px;
+            font-size: 0.85rem;
         }
 
-        .mode-name {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .mode-balance {
-            font-size: 1.25rem;
-            font-weight: 700;
+        .dropdown-item:hover {
+            background: var(--card-hover);
             color: var(--primary);
         }
 
-        .btn-upgrade {
-            background: linear-gradient(135deg, var(--success), #00b894);
-            color: white;
-            padding: 1rem 1.5rem;
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            white-space: nowrap;
+        .dropdown-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 0.5rem 0;
         }
 
-        .btn-upgrade:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 216, 151, 0.3);
-        }
-
-        /* Stats Cards */
+        /* Stats Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -219,6 +178,10 @@
             color: var(--text-secondary);
         }
 
+        .stat-label {
+            font-size: 0.85rem;
+        }
+
         .stat-value {
             font-size: 2rem;
             font-weight: 700;
@@ -226,8 +189,16 @@
         }
 
         .stat-change {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             color: var(--text-tertiary);
+        }
+
+        .stat-value.positive {
+            color: var(--success);
+        }
+
+        .stat-value.negative {
+            color: var(--danger);
         }
 
         .stat-change.positive {
@@ -238,6 +209,40 @@
             color: var(--danger);
         }
 
+        /* Top Trading Section */
+        .top-trading {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .top-trading h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .demo-account {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: var(--darker-bg);
+            border-radius: 12px;
+        }
+
+        .demo-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .demo-balance {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
         /* Trading Section */
         .trading-section {
             display: grid;
@@ -246,7 +251,8 @@
             margin-bottom: 2rem;
         }
 
-        .chart-container, .market-data {
+        .chart-container,
+        .market-data {
             background: var(--card-bg);
             border-radius: 16px;
             padding: 1.5rem;
@@ -260,7 +266,8 @@
         }
 
         .section-header h2 {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
+            font-weight: 600;
         }
 
         .timeframe-select {
@@ -270,10 +277,15 @@
             padding: 6px 12px;
             border-radius: 8px;
             cursor: pointer;
+            font-size: 0.8rem;
         }
 
         .chart-placeholder {
             min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
         }
 
         canvas {
@@ -319,7 +331,7 @@
         }
 
         .crypto-name {
-            font-size: 0.85rem;
+            font-size: 0.7rem;
             color: var(--text-tertiary);
         }
 
@@ -332,7 +344,7 @@
         }
 
         .crypto-change {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
         }
 
         .crypto-change.positive {
@@ -341,21 +353,6 @@
 
         .crypto-change.negative {
             color: var(--danger);
-        }
-
-        .crypto-volume {
-            text-align: right;
-            min-width: 80px;
-        }
-
-        .crypto-volume-label {
-            font-size: 0.7rem;
-            color: var(--text-tertiary);
-        }
-
-        .crypto-volume-value {
-            font-size: 0.85rem;
-            font-weight: 500;
         }
 
         /* Transactions Section */
@@ -379,12 +376,14 @@
             padding: 1rem;
             color: var(--text-secondary);
             font-weight: 500;
+            font-size: 0.8rem;
             border-bottom: 1px solid var(--border);
         }
 
         td {
             padding: 1rem;
             border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
         }
 
         .transaction-type {
@@ -392,11 +391,13 @@
             font-weight: 500;
         }
 
-        .transaction-type.buy, .transaction-type.deposit {
+        .transaction-type.buy,
+        .transaction-type.deposit {
             color: var(--success);
         }
 
-        .transaction-type.sell, .transaction-type.withdraw {
+        .transaction-type.sell,
+        .transaction-type.withdraw {
             color: var(--danger);
         }
 
@@ -412,7 +413,7 @@
             display: inline-block;
             padding: 4px 12px;
             border-radius: 20px;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             font-weight: 500;
         }
 
@@ -426,163 +427,34 @@
             color: var(--warning);
         }
 
-        /* Modal */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-content {
-            background: var(--card-bg);
-            border-radius: 24px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            animation: modalSlideIn 0.3s ease-out;
-        }
-
-        @keyframes modalSlideIn {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .modal-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h2 {
-            font-size: 1.5rem;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 2rem;
-            cursor: pointer;
-            line-height: 1;
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
-        .modal-footer {
-            padding: 1.5rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-        }
-
-        .payment-methods {
-            margin-top: 1rem;
-            padding: 1rem;
-            background: var(--darker-bg);
-            border-radius: 12px;
-        }
-
-        .payment-methods h4 {
-            margin-bottom: 0.75rem;
-        }
-
-        .payment-option {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .payment-option input[type="radio"] {
-            width: auto;
-            accent-color: var(--primary);
-        }
-
-        .btn-secondary {
-            background: var(--darker-bg);
-            color: var(--text-primary);
-            padding: 10px 20px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-secondary:hover {
-            background: var(--card-hover);
-        }
-
-        .btn-primary-modal {
-            background: var(--primary);
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-primary-modal:hover {
-            background: var(--primary-dark);
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-
         @media (max-width: 968px) {
-            .trading-section {
-                grid-template-columns: 1fr;
-            }
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+            
+            .trading-section {
+                grid-template-columns: 1fr;
+            }
+            
             .container {
                 padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-nav {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .nav-links {
+                justify-content: center;
             }
         }
 
         @media (max-width: 480px) {
             .stats-grid {
                 grid-template-columns: 1fr;
-            }
-            .account-mode-section {
-                flex-direction: column;
-            }
-            .mode-switcher {
-                width: 100%;
-                flex-direction: column;
-            }
-            .btn-upgrade {
-                width: 100%;
-                text-align: center;
-            }
-            .nav-links {
-                gap: 1rem;
-            }
-            .top-nav {
-                flex-direction: column;
-                text-align: center;
             }
         }
     </style>
@@ -605,33 +477,7 @@
                 <a href="trade.html" class="nav-link">Trades</a>
                 <a href="profile.html" class="nav-link" style="color: var(--primary);">My Profile</a>
             </div>
-            <div class="user-section">
-                <span class="user-name" id="userNameDisplay">Guest</span>
-                <span class="logout-link" onclick="handleLogout()">Logout</span>
-            </div>
-        </div>
-
-        <!-- Account Mode Switcher -->
-        <div class="account-mode-section">
-            <div class="mode-switcher">
-                <button class="mode-btn active" data-mode="demo" onclick="switchAccountMode('demo')">
-                    <span class="mode-icon">📊</span>
-                    <div class="mode-info">
-                        <div class="mode-name">Demo Account</div>
-                        <div class="mode-balance" id="demoBalance">$10,000.00</div>
-                    </div>
-                </button>
-                <button class="mode-btn" data-mode="real" onclick="switchAccountMode('real')">
-                    <span class="mode-icon">💰</span>
-                    <div class="mode-info">
-                        <div class="mode-name">Real Account</div>
-                        <div class="mode-balance" id="realBalance">$0.00</div>
-                    </div>
-                </button>
-            </div>
-            <div id="upgradeSection" style="display: none;">
-                <button class="btn-upgrade" onclick="showUpgradeModal()">Create Real Account</button>
-            </div>
+            <div id="userSection"></div>
         </div>
 
         <!-- Stats Cards -->
@@ -643,8 +489,8 @@
                         <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
                     </svg>
                 </div>
-                <div class="stat-value">$<span id="totalBalance">0.00</span></div>
-                <div class="stat-change positive" id="balanceChange">0% from start</div>
+                <div class="stat-value" id="totalBalance">$0.00</div>
+                <div class="stat-change" id="balanceChange">0% from start</div>
             </div>
             <div class="stat-card">
                 <div class="stat-header">
@@ -653,8 +499,8 @@
                         <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9h-4m-7 9A9 9 0 013 12m9 9v-4M3 12a9 9 0 019-9m-9 9h4m7-9a9 9 0 00-9 9"/>
                     </svg>
                 </div>
-                <div class="stat-value">$<span id="dailyVolume">0.00</span></div>
-                <div class="stat-change positive">+0%</div>
+                <div class="stat-value" id="dailyVolume">$0.00</div>
+                <div class="stat-change positive" id="volumeChange">+0%</div>
             </div>
             <div class="stat-card">
                 <div class="stat-header">
@@ -664,7 +510,7 @@
                     </svg>
                 </div>
                 <div class="stat-value" id="totalProfit">$0.00</div>
-                <div class="stat-change positive">+0%</div>
+                <div class="stat-change positive" id="profitChange">+0%</div>
             </div>
             <div class="stat-card">
                 <div class="stat-header">
@@ -673,8 +519,17 @@
                         <path d="M9 12h6M12 9v6M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
                     </svg>
                 </div>
-                <div class="stat-value"><span id="activeTrades">0</span></div>
+                <div class="stat-value" id="activeTrades">0</div>
                 <div class="stat-change">Currently open</div>
+            </div>
+        </div>
+
+        <!-- Top Trading Section -->
+        <div class="top-trading">
+            <h3>Top Trading</h3>
+            <div class="demo-account">
+                <span class="demo-label">Demo Account</span>
+                <span class="demo-balance" id="demoBalance">$10,000.00</span>
             </div>
         </div>
 
@@ -694,11 +549,14 @@
                     <canvas id="priceChart"></canvas>
                 </div>
             </div>
+
             <div class="market-data">
                 <div class="section-header">
                     <h2>Top Cryptocurrencies</h2>
                 </div>
-                <div class="crypto-list" id="cryptoList">Loading...</div>
+                <div class="crypto-list" id="cryptoList">
+                    Loading...
+                </div>
             </div>
         </div>
 
@@ -706,42 +564,24 @@
         <div class="transactions-section">
             <div class="section-header">
                 <h2>Recent Transactions</h2>
-                <a href="#" class="view-all" style="color: var(--primary); text-decoration: none;">View All</a>
+                <a href="#" class="view-all" style="color: var(--primary); text-decoration: none; font-size: 0.8rem;">View All</a>
             </div>
             <div class="transactions-table">
                 <table>
                     <thead>
-                        <tr><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+                        <tr>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
                     </thead>
-                    <tbody id="transactionsList"><tr><td colspan="4" style="text-align: center; padding: 2rem;">No transactions yet</td></tr></tbody>
+                    <tbody id="transactionsList">
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 2rem;">No transactions yet</td>
+                        </tr>
+                    </tbody>
                 </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Upgrade Modal -->
-    <div id="upgradeModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Create Real Account</h2>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p style="margin-bottom: 1rem;">Minimum deposit: <strong>$100</strong></p>
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label>Deposit Amount (USD)</label>
-                    <input type="number" id="depositAmount" min="100" max="100000" placeholder="Enter amount" style="width: 100%; padding: 12px; background: var(--darker-bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary);">
-                </div>
-                <div class="payment-methods">
-                    <h4>Select Payment Method</h4>
-                    <div class="payment-option"><input type="radio" name="payment" id="card" checked> <label for="card">Credit/Debit Card</label></div>
-                    <div class="payment-option"><input type="radio" name="payment" id="crypto"> <label for="crypto">Cryptocurrency</label></div>
-                    <div class="payment-option"><input type="radio" name="payment" id="bank"> <label for="bank">Bank Transfer</label></div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-                <button class="btn-primary-modal" onclick="processUpgrade()">Create Account & Deposit</button>
             </div>
         </div>
     </div>
