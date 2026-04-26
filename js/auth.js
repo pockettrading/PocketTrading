@@ -22,7 +22,7 @@ class AuthManager {
         const currentPage = window.location.pathname.split('/').pop() || 'home.html';
         
         // PUBLIC PAGES - No login required (anyone can access)
-        const publicPages = ['home.html', 'markets.html', 'index.html', 'trading-view.html', '', '#', null];
+        const publicPages = ['home.html', 'markets.html', 'trading-view.html', 'index.html', '', '#', null];
         
         // PROTECTED PAGES - Login required
         const protectedPages = ['dashboard.html', 'trade.html', 'profile.html', 'deposit.html', 'withdraw.html', 'admin.html'];
