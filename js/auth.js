@@ -21,8 +21,8 @@ class AuthManager {
         // Get current page name
         const currentPage = window.location.pathname.split('/').pop() || 'home.html';
         
-        // PUBLIC PAGES - No login required
-        const publicPages = ['home.html', 'markets.html', 'index.html', '', '#', null];
+        // PUBLIC PAGES - No login required (anyone can access)
+        const publicPages = ['home.html', 'markets.html', 'index.html', 'trading-view.html', '', '#', null];
         
         // PROTECTED PAGES - Login required
         const protectedPages = ['dashboard.html', 'trade.html', 'profile.html', 'deposit.html', 'withdraw.html', 'admin.html'];
@@ -30,19 +30,27 @@ class AuthManager {
         const isPublicPage = publicPages.includes(currentPage);
         const isProtectedPage = protectedPages.includes(currentPage);
         
+        // If user is NOT logged in and trying to access protected page -> redirect to login
         if (!this.currentUser && isProtectedPage) {
+            console.log('Redirecting to login: Protected page accessed without login');
             window.location.href = 'login.html';
             return;
         }
         
+        // If user IS logged in and trying to access login/register page -> redirect to home
         if (this.currentUser && (currentPage === 'login.html' || currentPage === 'register.html')) {
+            console.log('Redirecting to home: Already logged in');
             window.location.href = 'home.html';
             return;
         }
         
+        // For public pages, do nothing - allow access
         if (isPublicPage) {
+            console.log('Public page accessed:', currentPage);
             return;
         }
+        
+        console.log('Current page:', currentPage, 'Logged in:', !!this.currentUser);
     }
 
     setupPasswordStrength() {
