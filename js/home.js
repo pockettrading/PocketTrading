@@ -1,4 +1,4 @@
-// Home page functionality - Shows user dropdown when logged in
+// Home page functionality - Shows Login + Sign Up buttons for guests
 
 let currentUser = null;
 
@@ -52,8 +52,13 @@ function renderUserSection() {
             </div>
         `;
     } else {
-        // Show Sign Up button for guests
-        userSection.innerHTML = `<a href="register.html" class="signup-btn">Sign Up</a>`;
+        // Show Login + Sign Up buttons for guests
+        userSection.innerHTML = `
+            <div class="auth-buttons">
+                <a href="login.html" class="login-btn">Login</a>
+                <a href="register.html" class="signup-btn">Sign Up</a>
+            </div>
+        `;
     }
 }
 
@@ -120,11 +125,8 @@ function loadUserStats() {
     let winningTrades = 0;
     let totalProfit = currentUser.stats?.totalProfit || 0;
     
-    // Calculate winning trades from transactions if stats not available
     trades.forEach(trade => {
-        if (trade.pnl && trade.pnl > 0) {
-            winningTrades++;
-        }
+        if (trade.pnl && trade.pnl > 0) winningTrades++;
     });
     
     const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100).toFixed(1) : 0;
