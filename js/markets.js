@@ -1,4 +1,4 @@
-// Markets page functionality - With TradingView button
+// Markets page functionality - With TradingView button linking to trading-view page
 
 let currentUser = null;
 let currentFilter = 'all';
@@ -6,8 +6,27 @@ let searchQuery = '';
 let priceUpdateInterval = null;
 let allCryptoData = [];
 
-// CoinGecko API
+// CoinGecko API (CORS enabled, no API key needed)
 const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
+
+// Symbol to ID mapping for trading-view page
+const symbolToIdMap = {
+    'BTC': 'bitcoin',
+    'ETH': 'ethereum',
+    'BNB': 'binancecoin',
+    'SOL': 'solana',
+    'XRP': 'ripple',
+    'ADA': 'cardano',
+    'DOGE': 'dogecoin',
+    'DOT': 'polkadot',
+    'LINK': 'chainlink',
+    'UNI': 'uniswap',
+    'AAVE': 'aave',
+    'SHIB': 'shiba-inu',
+    'AVAX': 'avalanche-2',
+    'MATIC': 'matic-network',
+    'PEPE': 'pepe'
+};
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
@@ -131,7 +150,7 @@ function renderMarketTable() {
     }
     
     if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="loading-state">No cryptocurrencies found</td--</tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="loading-state">No cryptocurrencies found</td--<tr>';
         return;
     }
     
@@ -288,28 +307,16 @@ function startPriceUpdates() {
 }
 
 function openTradingView(symbol) {
-    // Map symbol to CoinGecko ID if needed
-    const symbolMap = {
-        'BTC': 'bitcoin',
-        'ETH': 'ethereum',
-        'BNB': 'binancecoin',
-        'SOL': 'solana',
-        'XRP': 'ripple',
-        'ADA': 'cardano',
-        'DOGE': 'dogecoin',
-        'DOT': 'polkadot',
-        'LINK': 'chainlink',
-        'UNI': 'uniswap',
-        'AAVE': 'aave',
-        'SHIB': 'shiba-inu',
-        'AVAX': 'avalanche-2',
-        'MATIC': 'matic-network',
-        'PEPE': 'pepe'
-    };
+    // Get the coin ID from symbol mapping
+    const coinId = symbolToIdMap[symbol];
     
-    const coinId = symbolMap[symbol] || symbol.toLowerCase();
-    // Open trading-view.html with the selected symbol
-    window.location.href = `trading-view.html?symbol=${coinId}`;
+    if (coinId) {
+        // Navigate to trading-view page with the symbol parameter
+        window.location.href = `trading-view.html?symbol=${coinId}`;
+    } else {
+        // Fallback: try lowercase symbol
+        window.location.href = `trading-view.html?symbol=${symbol.toLowerCase()}`;
+    }
 }
 
 function handleLogout() {
