@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pocket Trading - Advanced Trading View</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Lightweight Charts -->
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.js"></script>
     <style>
         * {
@@ -197,7 +196,7 @@
             box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
         }
 
-        /* Main Trading Grid - Luno Style */
+        /* Main Trading Grid */
         .trading-grid {
             display: grid;
             grid-template-columns: 1fr 320px 320px;
@@ -450,6 +449,11 @@
             font-size: 1rem;
         }
 
+        .amount-input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .quick-amounts {
             display: flex;
             gap: 0.5rem;
@@ -468,7 +472,12 @@
             transition: all 0.3s;
         }
 
-        .quick-amount:hover {
+        .quick-amount:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .quick-amount:hover:not(:disabled) {
             border-color: var(--primary);
             color: var(--primary);
         }
@@ -515,9 +524,28 @@
             color: white;
         }
 
-        .trade-btn:hover {
+        .trade-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .trade-btn:hover:not(:disabled) {
             transform: translateY(-2px);
             filter: brightness(1.05);
+        }
+
+        .login-prompt {
+            text-align: center;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: rgba(247, 147, 26, 0.1);
+            border-radius: 8px;
+        }
+
+        .login-prompt a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
         }
 
         /* Price Alerts Section */
@@ -550,7 +578,12 @@
             transition: all 0.3s;
         }
 
-        .add-alert-btn:hover {
+        .add-alert-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .add-alert-btn:hover:not(:disabled) {
             background: var(--primary);
             color: white;
         }
@@ -642,7 +675,7 @@
             <div id="userSection"></div>
         </div>
 
-        <!-- Trading Grid - Luno Style -->
+        <!-- Trading Grid -->
         <div class="trading-grid">
             <!-- Left: Chart Section -->
             <div class="chart-section">
@@ -704,51 +737,10 @@
                 </div>
             </div>
 
-            <!-- Right: Trading Panel + Price Alerts -->
-            <div class="trading-panel">
-                <div class="trade-tabs">
-                    <button class="trade-tab buy active" data-trade="buy">BUY</button>
-                    <button class="trade-tab sell" data-trade="sell">SELL</button>
-                </div>
-                
-                <div class="input-group">
-                    <label>Amount (USDT)</label>
-                    <input type="number" id="tradeAmount" class="amount-input" placeholder="0.00" value="0">
-                    <div class="quick-amounts">
-                        <button class="quick-amount" data-percent="25">25%</button>
-                        <button class="quick-amount" data-percent="50">50%</button>
-                        <button class="quick-amount" data-percent="75">75%</button>
-                        <button class="quick-amount" data-percent="100">100%</button>
-                    </div>
-                </div>
-                
-                <div class="order-summary">
-                    <div class="summary-row">
-                        <span>Price (USDT)</span>
-                        <strong id="orderPrice">$0.00</strong>
-                    </div>
-                    <div class="summary-row">
-                        <span>Amount</span>
-                        <strong id="orderAmount">0.0000 BTC</strong>
-                    </div>
-                    <div class="summary-row total">
-                        <span>Total</span>
-                        <strong id="orderTotal">$0.00</strong>
-                    </div>
-                </div>
-                
-                <button class="trade-btn buy" id="executeTradeBtn">BUY BTC</button>
-                
-                <!-- Price Alerts -->
-                <div class="alerts-section">
-                    <div class="alerts-header">
-                        <span class="alerts-title">Price Alerts</span>
-                        <button class="add-alert-btn" id="addAlertBtn">+ Add</button>
-                    </div>
-                    <div class="alerts-list" id="alertsList">
-                        <div class="no-alerts">No alerts</div>
-                    </div>
-                </div>
+            <!-- Right: Trading Panel -->
+            <div class="trading-panel" id="tradingPanel">
+                <!-- Content will be populated by JavaScript based on login status -->
+                <div class="loading">Loading trading panel...</div>
             </div>
         </div>
     </div>
