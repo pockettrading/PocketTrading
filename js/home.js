@@ -1,4 +1,5 @@
 // Home page functionality - Shows Login + Sign Up buttons for guests
+// My Profile link only appears when logged in
 
 let currentUser = null;
 
@@ -6,6 +7,7 @@ let currentUser = null;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Home page loaded');
     loadUser();
+    renderNavLinks();
     renderUserSection();
     loadUserStats();
 });
@@ -23,6 +25,28 @@ function loadUser() {
     } catch(e) {
         console.log('Error loading user:', e);
         currentUser = null;
+    }
+}
+
+function renderNavLinks() {
+    const navLinks = document.getElementById('navLinks');
+    if (!navLinks) return;
+    
+    // Clear existing links except Home, Markets, Trades
+    const existingLinks = navLinks.querySelectorAll('.nav-link');
+    existingLinks.forEach(link => {
+        if (link.textContent !== 'Home' && link.textContent !== 'Markets' && link.textContent !== 'Trades') {
+            link.remove();
+        }
+    });
+    
+    // Add My Profile link only if user is logged in
+    if (currentUser) {
+        const profileLink = document.createElement('a');
+        profileLink.href = 'profile.html';
+        profileLink.className = 'nav-link';
+        profileLink.textContent = 'My Profile';
+        navLinks.appendChild(profileLink);
     }
 }
 
