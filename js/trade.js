@@ -1,17 +1,37 @@
-// Trading functionality - Complete working version
+// Trade page functionality - Luno Style (Registered users only, redirects guests to login)
 
 let currentUser = null;
-let currentOrderType = 'buy';
-let selectedCrypto = 'BTC';
+let currentTradeType = 'buy';
+let currentCrypto = 'BTC';
+let currentDuration = 60;
 let priceUpdateInterval = null;
-let openOrders = [];
+let currentPrice = 0;
+
+// Profit percentages based on duration
+const profitRates = {
+    30: 12,
+    60: 18,
+    90: 25,
+    180: 32,
+    300: 45
+};
+
+// Minimum amounts based on duration
+const minAmounts = {
+    30: 100,
+    60: 15000,
+    90: 50000,
+    180: 200000,
+    300: 500000
+};
 
 // Cryptocurrency data
-let cryptoPrices = {
-    BTC: { price: 43238.25, change: 0.08, icon: '₿', name: 'Bitcoin' },
-    ETH: { price: 2234.98, change: -0.93, icon: 'Ξ', name: 'Ethereum' },
-    BNB: { price: 261.41, change: 0.69, icon: 'B', name: 'Binance Coin' },
-    SOL: { price: 141.57, change: 0.12, icon: 'S', name: 'Solana' }
+const cryptoData = {
+    BTC: { name: 'Bitcoin', icon: '₿', binanceSymbol: 'BTCUSDT' },
+    ETH: { name: 'Ethereum', icon: 'Ξ', binanceSymbol: 'ETHUSDT' },
+    BNB: { name: 'Binance Coin', icon: 'B', binanceSymbol: 'BNBUSDT' },
+    SOL: { name: 'Solana', icon: 'S', binanceSymbol: 'SOLUSDT' },
+    XRP: { name: 'Ripple', icon: 'X', binanceSymbol: 'XRPUSDT' }
 };
 
 // Initialize when page loads
@@ -19,19 +39,24 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Trade page loaded');
     loadUser();
     renderUserSection();
+    
     if (!currentUser) {
-        // Show guest mode, but don't redirect
-        console.log('Guest mode - limited functionality');
+        // Guest user - show login prompt
+        renderLoginPrompt();
+    } else {
+        // Registered user - show trade interface
+        initTradePage();
     }
-    initTradePage();
-    loadOpenOrders();
 });
 
 function loadUser() {
     const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
-        console.log('User loaded:', currentUser.email);
+        console.log('User logged in:', currentUser.email);
+    } else {
+        currentUser = null;
+        console.log('Guest mode - redirecting to login');
     }
 }
 
@@ -59,72 +84,189 @@ function renderUserSection() {
             </div>
         `;
     } else {
-        userSection.innerHTML = `<a href="register.html" class="signup-btn">Sign Up</a>`;
+        userSection.innerHTML = `
+            <div class="auth-buttons">
+                <a href="login.html" class="login-btn">Login</a>
+                <a href="register.html" class="signup-btn">Sign Up</a>
+            </div>
+        `;
     }
 }
 
-function initTradePage() {
-    loadMarketPrices();
-    updateCurrentPrice();
-    setupEventListeners();
+function renderLoginPrompt() {
+    const container = document.getElementById('tradeContent');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="login-prompt">
+            <h3>🔒 Login Required</h3>
+            <p>Please login or create an account to start trading</p>
+            <div class="login-buttons">
+                <a href="login.html" class="btn-login">Login</a>
+                <a href="register.html" class="btn-signup">Sign Up</a>
+            </div>
+        </div>
+    `;
+}
+
+async function initTradePage() {
+    const container = document.getElementById('tradeContent');
+    if (!container) return;
+    
+    // Render trade interface HTML
+    container.innerHTML = `
+        <div class="trade-container">
+            <div class="trade-header">
+                <h1>Confirm Your Trade</h1>
+                <p>Review your trade details before confirming</p>
+            </div>
+            
+            <div class="trade-card">
+                <!-- Order Type Tabs -->
+                <div class="order-tabs">
+                    <button class="order-tab buy active" data-trade="buy">BUY</button>
+                    <button class="order-tab sell" data-trade="sell">SELL</button>
+                </div>
+                
+                <!-- Cryptocurrency Selector -->
+                <div class="crypto-selector" id="cryptoSelector">
+                    <div class="selected-crypto" id="selectedCrypto">
+                        <span class="crypto-icon">₿</span>
+                        <div>
+                            <div class="crypto-symbol">BTC</div>
+                            <div class="crypto-name">Bitcoin</div>
+                        </div>
+                    </div>
+                    <div class="current-price-display">
+                        <div class="price-value" id="currentPrice">$0.00</div>
+                        <div class="price-change positive" id="priceChange">0.00%</div>
+                    </div>
+                </div>
+                
+                <!-- Amount Input -->
+                <div class="amount-section">
+                    <div class="amount-label">
+                        <span>Amount (USDT)</span>
+                        <span id="minAmountLabel">Min $100</span>
+                    </div>
+                    <input type="number" id="amount" class="amount-input" placeholder="Enter amount to trade" value="100">
+                </div>
+                
+                <!-- Duration Selector -->
+                <div class="duration-section">
+                    <div class="duration-label">Select Duration</div>
+                    <div class="duration-buttons" id="durationButtons">
+                        <button class="duration-btn" data-duration="30">
+                            30s
+                            <div class="duration-profit positive">+12%</div>
+                        </button>
+                        <button class="duration-btn active" data-duration="60">
+                            60s
+                            <div class="duration-profit positive">+18%</div>
+                        </button>
+                        <button class="duration-btn" data-duration="90">
+                            90s
+                            <div class="duration-profit positive">+25%</div>
+                        </button>
+                        <button class="duration-btn" data-duration="180">
+                            180s
+                            <div class="duration-profit positive">+32%</div>
+                        </button>
+                        <button class="duration-btn" data-duration="300">
+                            300s
+                            <div class="duration-profit positive">+45%</div>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Info Rows -->
+                <div class="info-row">
+                    <span class="info-label">Available Amount:</span>
+                    <span class="info-value" id="availableAmount">0 USDT</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Expected Return:</span>
+                    <span class="info-value positive" id="expectedReturn">0.00 USDT</span>
+                </div>
+                
+                <!-- Trade Button -->
+                <button class="trade-btn buy" id="tradeBtn">BUY BTC</button>
+            </div>
+        </div>
+    `;
+    
+    // Initialize trade functionality
+    await fetchCurrentPrice();
+    setupTradeEventListeners();
     startPriceUpdates();
+    updateAvailableBalance();
+    calculateExpectedReturn();
+}
+
+async function fetchCurrentPrice() {
+    const symbol = cryptoData[currentCrypto].binanceSymbol;
     
-    // Check URL for crypto parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const cryptoParam = urlParams.get('crypto');
-    if (cryptoParam && cryptoPrices[cryptoParam]) {
-        changeCrypto(cryptoParam);
+    try {
+        const response = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`);
+        const data = await response.json();
+        
+        currentPrice = parseFloat(data.lastPrice);
+        const change = parseFloat(data.priceChangePercent);
+        
+        const priceElem = document.getElementById('currentPrice');
+        const changeElem = document.getElementById('priceChange');
+        
+        if (priceElem) priceElem.textContent = `$${currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        if (changeElem) {
+            changeElem.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+            changeElem.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
+        }
+    } catch (error) {
+        console.error('Error fetching price:', error);
+        // Fallback demo price
+        currentPrice = currentCrypto === 'BTC' ? 65000 : (currentCrypto === 'ETH' ? 3200 : 500);
+        document.getElementById('currentPrice').textContent = `$${currentPrice.toLocaleString()}`;
     }
 }
 
-function setupEventListeners() {
-    // Buy/Sell tabs
-    const buyTab = document.getElementById('buyTab');
-    const sellTab = document.getElementById('sellTab');
-    
-    if (buyTab) {
-        buyTab.addEventListener('click', () => setOrderType('buy'));
-    }
-    if (sellTab) {
-        sellTab.addEventListener('click', () => setOrderType('sell'));
-    }
-    
-    // Order type radio buttons
-    const marketRadio = document.querySelector('input[value="market"]');
-    const limitRadio = document.querySelector('input[value="limit"]');
-    
-    if (marketRadio) {
-        marketRadio.addEventListener('change', () => {
-            document.getElementById('limitPriceGroup').style.display = 'none';
-            calculateTotal();
+function setupTradeEventListeners() {
+    // Order type tabs
+    document.querySelectorAll('.order-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.order-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentTradeType = tab.dataset.trade;
+            
+            const tradeBtn = document.getElementById('tradeBtn');
+            if (currentTradeType === 'buy') {
+                tradeBtn.textContent = `BUY ${currentCrypto}`;
+                tradeBtn.className = 'trade-btn buy';
+            } else {
+                tradeBtn.textContent = `SELL ${currentCrypto}`;
+                tradeBtn.className = 'trade-btn sell';
+            }
         });
-    }
-    if (limitRadio) {
-        limitRadio.addEventListener('change', () => {
-            document.getElementById('limitPriceGroup').style.display = 'block';
-            calculateTotal();
+    });
+    
+    // Duration buttons
+    document.querySelectorAll('.duration-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentDuration = parseInt(btn.dataset.duration);
+            updateMinAmountLabel();
+            calculateExpectedReturn();
         });
-    }
+    });
     
     // Amount input
     const amountInput = document.getElementById('amount');
     if (amountInput) {
-        amountInput.addEventListener('input', calculateTotal);
-    }
-    
-    // Limit price input
-    const limitPrice = document.getElementById('limitPrice');
-    if (limitPrice) {
-        limitPrice.addEventListener('input', calculateTotal);
-    }
-    
-    // Quick amount buttons
-    document.querySelectorAll('.quick-amount').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const percent = parseInt(btn.dataset.percent);
-            setQuickAmount(percent);
+        amountInput.addEventListener('input', () => {
+            validateAmount();
+            calculateExpectedReturn();
         });
-    });
+    }
     
     // Crypto selector
     const cryptoSelector = document.getElementById('cryptoSelector');
@@ -135,55 +277,40 @@ function setupEventListeners() {
     // Trade button
     const tradeBtn = document.getElementById('tradeBtn');
     if (tradeBtn) {
-        tradeBtn.addEventListener('click', placeOrder);
-    }
-    
-    // Clear orders button
-    const clearBtn = document.getElementById('clearOrdersBtn');
-    if (clearBtn) {
-        clearBtn.addEventListener('click', clearAllOrders);
+        tradeBtn.addEventListener('click', executeTrade);
     }
 }
 
 function showCryptoDropdown() {
-    // Remove existing dropdown if any
-    const existingDropdown = document.querySelector('.crypto-dropdown');
-    if (existingDropdown) existingDropdown.remove();
+    // Remove existing dropdown
+    const existing = document.querySelector('.crypto-dropdown');
+    if (existing) existing.remove();
     
     const dropdown = document.createElement('div');
     dropdown.className = 'crypto-dropdown';
-    dropdown.style.cssText = `
-        position: absolute;
-        background: var(--card-bg);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        width: 200px;
-        z-index: 100;
-        margin-top: 4px;
-    `;
     
-    Object.entries(cryptoPrices).forEach(([symbol, data]) => {
+    Object.entries(cryptoData).forEach(([symbol, data]) => {
         const option = document.createElement('div');
-        option.style.cssText = `
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-        `;
+        option.className = 'crypto-option';
         option.innerHTML = `
-            <span class="crypto-icon">${data.icon}</span>
-            <div>
-                <div class="crypto-symbol">${symbol}</div>
-                <div class="crypto-name">${data.name}</div>
+            <div class="crypto-option-info">
+                <span class="crypto-icon">${data.icon}</span>
+                <div>
+                    <div class="crypto-symbol">${symbol}</div>
+                    <div class="crypto-name">${data.name}</div>
+                </div>
+            </div>
+            <div class="crypto-option-price">
+                <div class="price-value" id="price_${symbol}">$${currentCrypto === symbol ? currentPrice.toLocaleString() : '...'}</div>
             </div>
         `;
-        option.onmouseover = () => option.style.background = 'var(--card-hover)';
-        option.onmouseout = () => option.style.background = '';
         option.onclick = () => {
-            changeCrypto(symbol);
+            currentCrypto = symbol;
+            updateSelectedCrypto();
             dropdown.remove();
+            fetchCurrentPrice();
+            updateMinAmountLabel();
+            calculateExpectedReturn();
         };
         dropdown.appendChild(option);
     });
@@ -195,7 +322,6 @@ function showCryptoDropdown() {
     
     document.body.appendChild(dropdown);
     
-    // Remove dropdown when clicking outside
     setTimeout(() => {
         document.addEventListener('click', function removeDropdown(e) {
             if (!dropdown.contains(e.target) && e.target !== document.getElementById('cryptoSelector')) {
@@ -206,203 +332,118 @@ function showCryptoDropdown() {
     }, 0);
 }
 
-function setOrderType(type) {
-    currentOrderType = type;
-    
-    const buyTab = document.getElementById('buyTab');
-    const sellTab = document.getElementById('sellTab');
-    const tradeBtn = document.getElementById('tradeBtn');
-    
-    if (type === 'buy') {
-        buyTab.classList.add('active');
-        sellTab.classList.remove('active');
-        tradeBtn.textContent = `Buy ${selectedCrypto} (${cryptoPrices[selectedCrypto].name})`;
-        tradeBtn.className = 'btn-trade buy';
-    } else {
-        sellTab.classList.add('active');
-        buyTab.classList.remove('active');
-        tradeBtn.textContent = `Sell ${selectedCrypto} (${cryptoPrices[selectedCrypto].name})`;
-        tradeBtn.className = 'btn-trade sell';
-    }
-    
-    calculateTotal();
-}
-
-function setQuickAmount(percent) {
-    if (!currentUser) {
-        showNotification('Please login to trade', 'error');
-        return;
-    }
-    
-    const currentBalance = currentUser.balance || 0;
-    const currentPrice = cryptoPrices[selectedCrypto]?.price || 0;
-    const maxAmount = currentBalance / currentPrice;
-    const amount = maxAmount * (percent / 100);
-    
-    const amountInput = document.getElementById('amount');
-    if (amountInput) {
-        amountInput.value = amount.toFixed(6);
-        calculateTotal();
-    }
-}
-
-function calculateTotal() {
-    const amount = parseFloat(document.getElementById('amount')?.value || 0);
-    const currentPrice = cryptoPrices[selectedCrypto]?.price || 0;
-    const isLimit = document.querySelector('input[name="orderType"]:checked')?.value === 'limit';
-    
-    let price = currentPrice;
-    if (isLimit) {
-        const limitPrice = parseFloat(document.getElementById('limitPrice')?.value || 0);
-        if (limitPrice && limitPrice > 0) {
-            price = limitPrice;
-        }
-    }
-    
-    const total = amount * price;
-    const fee = total * 0.001;
-    const totalCost = currentOrderType === 'buy' ? total + fee : total - fee;
-    
-    document.getElementById('totalValue').textContent = `$${total.toFixed(2)}`;
-    document.getElementById('feeAmount').textContent = `$${fee.toFixed(2)}`;
-    document.getElementById('totalCost').textContent = `$${totalCost.toFixed(2)}`;
-}
-
-function changeCrypto(symbol) {
-    selectedCrypto = symbol;
-    const crypto = cryptoPrices[symbol];
-    
+function updateSelectedCrypto() {
     const selectedDiv = document.getElementById('selectedCrypto');
+    const crypto = cryptoData[currentCrypto];
+    
     selectedDiv.innerHTML = `
         <span class="crypto-icon">${crypto.icon}</span>
         <div>
-            <div class="crypto-symbol">${symbol}</div>
+            <div class="crypto-symbol">${currentCrypto}</div>
             <div class="crypto-name">${crypto.name}</div>
         </div>
     `;
     
-    updateCurrentPrice();
-    calculateTotal();
-    
     const tradeBtn = document.getElementById('tradeBtn');
-    if (currentOrderType === 'buy') {
-        tradeBtn.textContent = `Buy ${symbol} (${crypto.name})`;
-    } else {
-        tradeBtn.textContent = `Sell ${symbol} (${crypto.name})`;
+    if (tradeBtn) {
+        if (currentTradeType === 'buy') {
+            tradeBtn.textContent = `BUY ${currentCrypto}`;
+        } else {
+            tradeBtn.textContent = `SELL ${currentCrypto}`;
+        }
     }
 }
 
-function updateCurrentPrice() {
-    const crypto = cryptoPrices[selectedCrypto];
-    const priceElem = document.getElementById('currentPrice');
-    const changeElem = document.getElementById('priceChange');
-    
-    priceElem.textContent = `$${crypto.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    
-    const changeClass = crypto.change >= 0 ? 'positive' : 'negative';
-    changeElem.textContent = `${crypto.change >= 0 ? '+' : ''}${crypto.change.toFixed(2)}%`;
-    changeElem.className = `price-change ${changeClass}`;
+function updateAvailableBalance() {
+    const availableSpan = document.getElementById('availableAmount');
+    if (availableSpan && currentUser) {
+        availableSpan.textContent = `${currentUser.balance?.toFixed(2) || 0} USDT`;
+    }
 }
 
-function loadMarketPrices() {
-    const container = document.getElementById('marketPrices');
-    if (!container) return;
-    
-    container.innerHTML = Object.entries(cryptoPrices).map(([symbol, data]) => `
-        <div class="market-item" onclick="window.changeCrypto('${symbol}')">
-            <div class="market-item-info">
-                <span class="crypto-icon">${data.icon}</span>
-                <div>
-                    <div class="market-symbol">${symbol}</div>
-                    <div class="crypto-name">${data.name}</div>
-                </div>
-            </div>
-            <div>
-                <div class="market-price">$${data.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                <div class="market-change ${data.change >= 0 ? 'positive' : 'negative'}">
-                    ${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)}%
-                </div>
-            </div>
-        </div>
-    `).join('');
+function updateMinAmountLabel() {
+    const minAmount = minAmounts[currentDuration];
+    const labelSpan = document.getElementById('minAmountLabel');
+    if (labelSpan) {
+        labelSpan.textContent = `Min $${minAmount.toLocaleString()}`;
+    }
 }
 
-function placeOrder() {
+function validateAmount() {
+    const amount = parseFloat(document.getElementById('amount').value) || 0;
+    const minAmount = minAmounts[currentDuration];
+    const balance = currentUser?.balance || 0;
+    const amountInput = document.getElementById('amount');
+    
+    if (amount < minAmount && amount > 0) {
+        if (amountInput) amountInput.style.borderColor = 'var(--danger)';
+        return false;
+    } else if (currentTradeType === 'buy' && amount > balance) {
+        if (amountInput) amountInput.style.borderColor = 'var(--danger)';
+        return false;
+    } else {
+        if (amountInput) amountInput.style.borderColor = '';
+        return true;
+    }
+}
+
+function calculateExpectedReturn() {
+    const amount = parseFloat(document.getElementById('amount').value) || 0;
+    const profitRate = profitRates[currentDuration];
+    const expectedReturn = amount * (1 + profitRate / 100);
+    
+    const returnSpan = document.getElementById('expectedReturn');
+    if (returnSpan) {
+        returnSpan.textContent = `${expectedReturn.toFixed(2)} USDT`;
+    }
+}
+
+function executeTrade() {
     if (!currentUser) {
-        showNotification('Please login to trade', 'error');
         window.location.href = 'login.html';
         return;
     }
     
-    const amount = parseFloat(document.getElementById('amount')?.value || 0);
-    const isLimit = document.querySelector('input[name="orderType"]:checked')?.value === 'limit';
+    const amount = parseFloat(document.getElementById('amount').value) || 0;
+    const minAmount = minAmounts[currentDuration];
     
-    if (!amount || amount <= 0) {
-        showNotification('Please enter a valid amount', 'error');
+    if (amount < minAmount) {
+        alert(`Minimum amount for ${currentDuration}s duration is $${minAmount.toLocaleString()}`);
         return;
     }
     
-    const currentPrice = cryptoPrices[selectedCrypto]?.price || 0;
-    let price = currentPrice;
+    const balance = currentUser.balance || 0;
     
-    if (isLimit) {
-        const limitPrice = parseFloat(document.getElementById('limitPrice')?.value || 0);
-        if (!limitPrice || limitPrice <= 0) {
-            showNotification('Please enter a valid limit price', 'error');
-            return;
-        }
-        price = limitPrice;
-    }
-    
-    const total = amount * price;
-    const fee = total * 0.001;
-    const totalCost = currentOrderType === 'buy' ? total + fee : total - fee;
-    
-    const currentBalance = currentUser.balance || 0;
-    
-    if (currentOrderType === 'buy') {
-        if (totalCost > currentBalance) {
-            showNotification('Insufficient balance', 'error');
+    if (currentTradeType === 'buy') {
+        if (amount > balance) {
+            alert('Insufficient balance');
             return;
         }
         
-        currentUser.balance -= totalCost;
-        addTransaction('buy', amount, price, total, fee);
+        currentUser.balance -= amount;
+        
+        // Add transaction
+        if (!currentUser.transactions) currentUser.transactions = [];
+        currentUser.transactions.unshift({
+            id: Date.now(),
+            type: 'trade',
+            tradeType: 'buy',
+            amount: amount,
+            crypto: currentCrypto,
+            price: currentPrice,
+            duration: currentDuration,
+            expectedReturn: amount * (1 + profitRates[currentDuration] / 100),
+            status: 'pending',
+            date: new Date().toISOString()
+        });
+        
         saveUserData();
-        showNotification(`Successfully bought ${amount.toFixed(6)} ${selectedCrypto} at $${price.toFixed(2)}`, 'success');
-    } else {
-        currentUser.balance += totalCost;
-        addTransaction('sell', amount, price, total, fee);
-        saveUserData();
-        showNotification(`Successfully sold ${amount.toFixed(6)} ${selectedCrypto} at $${price.toFixed(2)}`, 'success');
+        alert(`Trade placed! Bought ${currentCrypto} with $${amount.toLocaleString()}. Duration: ${currentDuration}s. Expected return: ${profitRates[currentDuration]}%`);
+        
+        updateAvailableBalance();
+        document.getElementById('amount').value = minAmounts[currentDuration];
+        calculateExpectedReturn();
     }
-    
-    // Reset form
-    document.getElementById('amount').value = '';
-    document.getElementById('limitPrice').value = '';
-    calculateTotal();
-}
-
-function addTransaction(type, amount, price, total, fee) {
-    const transaction = {
-        id: Date.now(),
-        type: type,
-        crypto: selectedCrypto,
-        amount: amount,
-        price: price,
-        total: total,
-        fee: fee,
-        status: 'completed',
-        date: new Date().toISOString()
-    };
-    
-    if (!currentUser.transactions) currentUser.transactions = [];
-    currentUser.transactions.unshift(transaction);
-    
-    // Update stats
-    if (!currentUser.stats) currentUser.stats = {};
-    currentUser.stats.totalTrades = (currentUser.stats.totalTrades || 0) + 1;
-    currentUser.stats.totalVolume = (currentUser.stats.totalVolume || 0) + total;
 }
 
 function saveUserData() {
@@ -421,89 +462,12 @@ function saveUserData() {
     }
 }
 
-function loadOpenOrders() {
-    const container = document.getElementById('openOrdersList');
-    if (!container) return;
-    
-    if (openOrders.length === 0) {
-        container.innerHTML = '<div class="empty-state">No open orders</div>';
-        return;
-    }
-    
-    container.innerHTML = openOrders.map(order => `
-        <div class="order-item">
-            <div>
-                <span class="order-type ${order.type}">${order.type}</span>
-                <span> ${order.crypto}</span>
-                <div class="crypto-name">${order.amount} @ $${order.price}</div>
-            </div>
-            <button class="order-cancel" onclick="cancelOrder(${order.id})">Cancel</button>
-        </div>
-    `).join('');
-}
-
-function clearAllOrders() {
-    openOrders = [];
-    localStorage.setItem('pocket_orders', JSON.stringify(openOrders));
-    loadOpenOrders();
-    showNotification('All orders cleared', 'success');
-}
-
-function cancelOrder(orderId) {
-    openOrders = openOrders.filter(o => o.id !== orderId);
-    localStorage.setItem('pocket_orders', JSON.stringify(openOrders));
-    loadOpenOrders();
-    showNotification('Order cancelled', 'success');
-}
-
 function startPriceUpdates() {
     if (priceUpdateInterval) clearInterval(priceUpdateInterval);
     
-    priceUpdateInterval = setInterval(() => {
-        Object.keys(cryptoPrices).forEach(symbol => {
-            const change = (Math.random() - 0.5) * 2;
-            const newPrice = Math.max(0.01, cryptoPrices[symbol].price * (1 + change / 100));
-            const percentChange = ((newPrice - cryptoPrices[symbol].price) / cryptoPrices[symbol].price) * 100;
-            
-            cryptoPrices[symbol] = {
-                ...cryptoPrices[symbol],
-                price: newPrice,
-                change: percentChange
-            };
-        });
-        
-        loadMarketPrices();
-        updateCurrentPrice();
-        calculateTotal();
-        
-        document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
-    }, 5000);
-}
-
-function showNotification(message, type) {
-    const notification = document.createElement('div');
-    notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${type === 'error' ? '#FF4757' : '#00D897'};
-        color: white;
-        padding: 12px 20px;
-        border-radius: 12px;
-        font-size: 14px;
-        z-index: 10000;
-        animation: slideIn 0.3s ease-out;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        max-width: 350px;
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease-out';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
+    priceUpdateInterval = setInterval(async () => {
+        await fetchCurrentPrice();
+    }, 10000);
 }
 
 function handleLogout() {
@@ -513,6 +477,4 @@ function handleLogout() {
 }
 
 // Make functions global
-window.changeCrypto = changeCrypto;
-window.cancelOrder = cancelOrder;
 window.handleLogout = handleLogout;
