@@ -39,7 +39,7 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
         }
@@ -150,92 +150,79 @@
             margin: 0.5rem 0;
         }
 
-        .signup-btn {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            padding: 8px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .signup-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
-        }
-
         /* Trade Container */
         .trade-container {
-            display: grid;
-            grid-template-columns: 1fr 0.8fr;
-            gap: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
         }
 
-        /* Order Section */
-        .order-section {
+        .trade-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .trade-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .trade-header p {
+            color: var(--text-secondary);
+        }
+
+        /* Trade Card */
+        .trade-card {
             background: var(--card-bg);
-            border-radius: 20px;
-            padding: 1.5rem;
-        }
-
-        .section-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
+            border-radius: 24px;
+            padding: 2rem;
         }
 
         /* Order Type Tabs */
         .order-tabs {
             display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
         }
 
         .order-tab {
             flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
             padding: 12px;
-            background: var(--darker-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
+            background: transparent;
+            border: none;
             color: var(--text-secondary);
             cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
             transition: all 0.3s;
-            font-weight: 500;
+            position: relative;
         }
 
-        .order-tab.active {
-            background: rgba(247, 147, 26, 0.1);
-            border-color: var(--primary);
-            color: var(--primary);
+        .order-tab.buy.active {
+            color: var(--success);
         }
 
-        /* Form Groups */
-        .form-group {
-            margin-bottom: 1.25rem;
+        .order-tab.sell.active {
+            color: var(--danger);
         }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
+        .order-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: currentColor;
         }
 
         /* Crypto Selector */
         .crypto-selector {
             background: var(--darker-bg);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px;
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -254,73 +241,101 @@
         }
 
         .crypto-icon {
-            font-size: 1.5rem;
+            font-size: 2rem;
         }
 
         .crypto-symbol {
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 1.1rem;
         }
 
         .crypto-name {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             color: var(--text-tertiary);
         }
 
-        /* Current Price */
-        .current-price {
-            background: var(--darker-bg);
-            padding: 1rem;
-            border-radius: 12px;
-            margin-bottom: 1.25rem;
-            text-align: center;
+        .current-price-display {
+            text-align: right;
         }
 
         .price-value {
-            font-size: 2rem;
+            font-size: 1.2rem;
             font-weight: 700;
         }
 
         .price-change {
-            font-size: 0.85rem;
-            padding: 4px 8px;
-            border-radius: 8px;
-            display: inline-block;
-            margin-left: 8px;
+            font-size: 0.7rem;
         }
 
         .price-change.positive {
-            background: rgba(0, 216, 151, 0.1);
             color: var(--success);
         }
 
         .price-change.negative {
-            background: rgba(255, 71, 87, 0.1);
             color: var(--danger);
         }
 
-        /* Order Type Radio */
-        .order-type-group {
-            display: flex;
-            gap: 1rem;
+        /* Crypto Dropdown */
+        .crypto-dropdown {
+            position: absolute;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 300px;
+            z-index: 100;
+            margin-top: 4px;
+            overflow: hidden;
         }
 
-        .radio-label {
+        .crypto-option {
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: space-between;
+            padding: 12px 16px;
             cursor: pointer;
-            color: var(--text-secondary);
+            transition: all 0.3s;
+        }
+
+        .crypto-option:hover {
+            background: var(--card-hover);
+        }
+
+        .crypto-option-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .crypto-option-price {
+            text-align: right;
+        }
+
+        .crypto-option-change {
+            font-size: 0.7rem;
         }
 
         /* Amount Input */
+        .amount-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .amount-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
         .amount-input {
             width: 100%;
-            padding: 12px;
+            padding: 16px;
             background: var(--darker-bg);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 16px;
             color: var(--text-primary);
-            font-size: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
         }
 
         .amount-input:focus {
@@ -328,225 +343,168 @@
             border-color: var(--primary);
         }
 
-        .quick-amounts {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
+        /* Duration Selector */
+        .duration-section {
+            margin-bottom: 1.5rem;
         }
 
-        .quick-amount {
-            flex: 1;
-            padding: 6px;
+        .duration-label {
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .duration-buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.5rem;
+        }
+
+        .duration-btn {
+            padding: 12px 8px;
             background: var(--darker-bg);
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 12px;
             color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.3s;
-            font-size: 0.75rem;
+            text-align: center;
+            font-weight: 600;
         }
 
-        .quick-amount:hover {
+        .duration-btn:hover {
             border-color: var(--primary);
             color: var(--primary);
         }
 
-        /* Order Summary */
-        .order-summary {
-            background: var(--darker-bg);
-            padding: 1rem;
-            border-radius: 12px;
-            margin-bottom: 1.25rem;
+        .duration-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
         }
 
-        .summary-row {
+        .duration-profit {
+            font-size: 0.7rem;
+            margin-top: 4px;
+        }
+
+        .duration-profit.positive {
+            color: var(--success);
+        }
+
+        /* Info Rows */
+        .info-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: var(--text-secondary);
             font-size: 0.85rem;
         }
 
-        .summary-row.total {
-            margin-top: 8px;
-            padding-top: 8px;
-            border-top: 1px solid var(--border);
-            font-size: 1rem;
-            font-weight: 700;
+        .info-value {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .info-value.positive {
+            color: var(--success);
         }
 
         /* Trade Button */
-        .btn-trade {
+        .trade-btn {
             width: 100%;
-            padding: 14px;
+            padding: 16px;
             border: none;
-            border-radius: 12px;
+            border-radius: 16px;
             font-size: 1rem;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
+            margin-top: 1rem;
         }
 
-        .btn-trade.buy {
+        .trade-btn.buy {
             background: linear-gradient(135deg, var(--success), #00b894);
             color: white;
         }
 
-        .btn-trade.sell {
+        .trade-btn.sell {
             background: linear-gradient(135deg, var(--danger), #ff6b6b);
             color: white;
         }
 
-        .btn-trade:hover {
+        .trade-btn:hover {
             transform: translateY(-2px);
             filter: brightness(1.05);
         }
 
-        /* Market Data Section */
-        .market-data-section {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .market-card {
+        /* Login Prompt */
+        .login-prompt {
+            text-align: center;
+            padding: 3rem;
             background: var(--card-bg);
-            border-radius: 20px;
-            padding: 1.5rem;
+            border-radius: 24px;
         }
 
-        .market-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .login-prompt h3 {
             margin-bottom: 1rem;
         }
 
-        .market-header h3 {
-            font-size: 1rem;
-            font-weight: 600;
+        .login-prompt p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
         }
 
-        .last-updated {
-            font-size: 0.7rem;
-            color: var(--text-tertiary);
-        }
-
-        .market-list {
+        .login-buttons {
             display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
+            gap: 1rem;
+            justify-content: center;
         }
 
-        .market-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem;
-            background: var(--darker-bg);
+        .btn-login {
+            background: transparent;
+            color: var(--primary);
+            padding: 12px 24px;
+            border: 1px solid var(--primary);
             border-radius: 12px;
-            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
             transition: all 0.3s;
         }
 
-        .market-item:hover {
-            background: var(--card-hover);
-            transform: translateX(4px);
+        .btn-login:hover {
+            background: rgba(247, 147, 26, 0.1);
         }
 
-        .market-item-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .market-symbol {
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
-
-        .market-price {
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
-
-        .market-change {
-            font-size: 0.75rem;
-        }
-
-        .market-change.positive {
-            color: var(--success);
-        }
-
-        .market-change.negative {
-            color: var(--danger);
-        }
-
-        /* Open Orders */
-        .orders-list {
-            max-height: 250px;
-            overflow-y: auto;
-        }
-
-        .order-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .order-type {
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-
-        .order-type.buy {
-            background: rgba(0, 216, 151, 0.2);
-            color: var(--success);
-        }
-
-        .order-type.sell {
-            background: rgba(255, 71, 87, 0.2);
-            color: var(--danger);
-        }
-
-        .order-cancel {
-            background: none;
+        .btn-signup {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 12px 24px;
             border: none;
-            color: var(--danger);
-            cursor: pointer;
-            font-size: 0.75rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 2rem;
-            color: var(--text-tertiary);
-        }
-
-        .btn-clear {
-            background: var(--darker-bg);
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            padding: 4px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.7rem;
-        }
-
-        @media (max-width: 968px) {
-            .trade-container {
-                grid-template-columns: 1fr;
-            }
-            
-            .container {
-                padding: 1.5rem;
-            }
+        .btn-signup:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
         }
 
         @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
             .top-nav {
                 flex-direction: column;
                 text-align: center;
@@ -554,6 +512,24 @@
             
             .nav-links {
                 justify-content: center;
+            }
+            
+            .duration-buttons {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .trade-card {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .duration-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .login-buttons {
+                flex-direction: column;
             }
         }
     </style>
@@ -574,132 +550,13 @@
                 <a href="home.html" class="nav-link">Home</a>
                 <a href="markets.html" class="nav-link">Markets</a>
                 <a href="trade.html" class="nav-link" style="color: var(--primary);">Trades</a>
+                <a href="profile.html" class="nav-link">My Profile</a>
             </div>
             <div id="userSection"></div>
         </div>
 
-        <!-- Trading Interface -->
-        <div class="trade-container">
-            <!-- Left: Order Form -->
-            <div class="order-section">
-                <h2 class="section-title">Place Order</h2>
-                
-                <!-- Buy/Sell Tabs -->
-                <div class="order-tabs">
-                    <button class="order-tab active" id="buyTab">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 5v14M7 10l5-5 5 5"/>
-                        </svg>
-                        Buy
-                    </button>
-                    <button class="order-tab" id="sellTab">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 19V5M7 14l5 5 5-5"/>
-                        </svg>
-                        Sell
-                    </button>
-                </div>
-
-                <!-- Cryptocurrency Selector -->
-                <div class="form-group">
-                    <label>Cryptocurrency</label>
-                    <div class="crypto-selector" id="cryptoSelector">
-                        <div class="selected-crypto" id="selectedCrypto">
-                            <span class="crypto-icon">₿</span>
-                            <div>
-                                <div class="crypto-symbol">BTC</div>
-                                <div class="crypto-name">Bitcoin</div>
-                            </div>
-                        </div>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M6 9l6 6 6-6"/>
-                        </svg>
-                    </div>
-                </div>
-
-                <!-- Current Price -->
-                <div class="current-price">
-                    <div>
-                        <span class="price-value" id="currentPrice">$43,238.25</span>
-                        <span class="price-change positive" id="priceChange">+0.08%</span>
-                    </div>
-                </div>
-
-                <!-- Order Type -->
-                <div class="form-group">
-                    <label>Order Type</label>
-                    <div class="order-type-group">
-                        <label class="radio-label">
-                            <input type="radio" name="orderType" value="market" checked> Market
-                        </label>
-                        <label class="radio-label">
-                            <input type="radio" name="orderType" value="limit"> Limit
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Limit Price (hidden by default) -->
-                <div class="form-group" id="limitPriceGroup" style="display: none;">
-                    <label>Limit Price (USD)</label>
-                    <input type="number" id="limitPrice" class="amount-input" placeholder="Enter limit price" step="0.01">
-                </div>
-
-                <!-- Amount -->
-                <div class="form-group">
-                    <label>Amount</label>
-                    <input type="number" id="amount" class="amount-input" placeholder="Enter amount" step="0.0001">
-                    <div class="quick-amounts">
-                        <button type="button" class="quick-amount" data-percent="25">25%</button>
-                        <button type="button" class="quick-amount" data-percent="50">50%</button>
-                        <button type="button" class="quick-amount" data-percent="75">75%</button>
-                        <button type="button" class="quick-amount" data-percent="100">100%</button>
-                    </div>
-                </div>
-
-                <!-- Order Summary -->
-                <div class="order-summary">
-                    <div class="summary-row">
-                        <span>Total:</span>
-                        <strong id="totalValue">$0.00</strong>
-                    </div>
-                    <div class="summary-row">
-                        <span>Fee (0.1%):</span>
-                        <strong id="feeAmount">$0.00</strong>
-                    </div>
-                    <div class="summary-row total">
-                        <span>Total Cost:</span>
-                        <strong id="totalCost">$0.00</strong>
-                    </div>
-                </div>
-
-                <!-- Trade Button -->
-                <button class="btn-trade buy" id="tradeBtn">Buy Bitcoin (BTC)</button>
-            </div>
-
-            <!-- Right: Market Data -->
-            <div class="market-data-section">
-                <!-- Market Prices -->
-                <div class="market-card">
-                    <div class="market-header">
-                        <h3>Market Prices</h3>
-                        <span class="last-updated" id="lastUpdated">Live</span>
-                    </div>
-                    <div class="market-list" id="marketPrices">
-                        Loading...
-                    </div>
-                </div>
-
-                <!-- Open Orders -->
-                <div class="market-card">
-                    <div class="market-header">
-                        <h3>Open Orders</h3>
-                        <button class="btn-clear" id="clearOrdersBtn">Clear All</button>
-                    </div>
-                    <div class="orders-list" id="openOrdersList">
-                        <div class="empty-state">No open orders</div>
-                    </div>
-                </div>
-            </div>
+        <div id="tradeContent">
+            <!-- Content will be populated by JavaScript based on login status -->
         </div>
     </div>
 
