@@ -1,17 +1,17 @@
-// Advanced Trading View - Real Binance API
-// Layout: Chart (Left) | Trading Panel + Order Book (Right Stacked)
+// Advanced Trading View - Luno Style with Real Binance API
 
 let currentUser = null;
 let chart = null;
-let currentSymbol = 'SOL';
-let currentBinanceSymbol = 'SOLUSDT';
-let currentCoinName = 'Solana';
+let currentSymbol = 'BTC';
+let currentBinanceSymbol = 'BTCUSDT';
+let currentCoinName = 'Bitcoin';
 let currentInterval = '1h';
 let priceUpdateInterval = null;
 let orderBookInterval = null;
 let candlestickSeries = null;
 let currentPrice = 0;
 let currentTradeType = 'buy';
+let priceAlerts = [];
 
 // Binance API
 const BINANCE_BASE_URL = 'https://api.binance.com/api/v3';
@@ -25,9 +25,7 @@ const symbolMap = {
     'ripple': { symbol: 'XRP', binanceSymbol: 'XRPUSDT', name: 'Ripple' },
     'cardano': { symbol: 'ADA', binanceSymbol: 'ADAUSDT', name: 'Cardano' },
     'dogecoin': { symbol: 'DOGE', binanceSymbol: 'DOGEUSDT', name: 'Dogecoin' },
-    'polkadot': { symbol: 'DOT', binanceSymbol: 'DOTUSDT', name: 'Polkadot' },
-    'chainlink': { symbol: 'LINK', binanceSymbol: 'LINKUSDT', name: 'Chainlink' },
-    'uniswap': { symbol: 'UNI', binanceSymbol: 'UNIUSDT', name: 'Uniswap' }
+    'polkadot': { symbol: 'DOT', binanceSymbol: 'DOTUSDT', name: 'Polkadot' }
 };
 
 // Interval mapping for Binance
@@ -52,6 +50,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.log('Trading View page loaded');
     loadUser();
     renderUserSection();
+    loadPriceAlerts();
     
     // Get symbol from URL
     const urlSymbol = getUrlParameter('symbol');
@@ -97,8 +96,75 @@ function renderUserSection() {
             </div>
         `;
     } else {
-        userSection.innerHTML = `<a href="register.html" class="signup-btn">Sign Up</a>`;
+        userSection.innerHTML = `
+            <div class="auth-buttons">
+                <a href="login.html" class="login-btn">Login</a>
+                <a href="register.html" class="signup-btn">Sign Up</a>
+            </div>
+        `;
     }
+}
+
+function loadPriceAlerts() {
+    const saved = localStorage.getItem('price_alerts');
+    if (saved) {
+        priceAlerts = JSON.parse(saved);
+    }
+    renderAlerts();
+}
+
+function savePriceAlerts() {
+    localStorage.setItem('price_alerts', JSON.stringify(priceAlerts));
+    renderAlerts();
+}
+
+function renderAlerts() {
+    const alertsContainer = document.getElementById('alertsList');
+    if (!alertsContainer) return;
+    
+    if (priceAlerts.length === 0) {
+        alertsContainer.innerHTML = '<div class="no-alerts">No alerts</div>';
+        return;
+    }
+    
+    alertsContainer.innerHTML = priceAlerts.map(alert => `
+        <div class="alert-item">
+            <span>When price reaches</span>
+            <span class="alert-price">$${alert.price.toFixed(2)}</span>
+            <button class="remove-alert" onclick="removeAlert(${alert.id})">✕</button>
+        </div>
+    `).join('');
+}
+
+function addAlert() {
+    const price = currentPrice;
+    const newAlert = {
+        id: Date.now(),
+        price: price,
+        symbol: currentSymbol,
+        triggered: false
+    };
+    priceAlerts.push(newAlert);
+    savePriceAlerts();
+    checkAlerts();
+}
+
+function removeAlert(id) {
+    priceAlerts = priceAlerts.filter(a => a.id !== id);
+    savePriceAlerts();
+}
+
+function checkAlerts() {
+    priceAlerts.forEach(alert => {
+        if (!alert.triggered) {
+            if ((alert.price >= currentPrice && alert.price - 10 <= currentPrice) ||
+                (alert.price <= currentPrice && alert.price + 10 >= currentPrice)) {
+                alert.triggered = true;
+                showNotification(`⚠️ Price Alert! ${currentSymbol} reached $${currentPrice.toFixed(2)}`, 'warning');
+            }
+        }
+    });
+    savePriceAlerts();
 }
 
 async function initTradingView() {
@@ -137,7 +203,6 @@ async function initChart() {
 
 async function fetchMarketData() {
     try {
-        // Fetch 24hr ticker
         const tickerResponse = await fetch(`${BINANCE_BASE_URL}/ticker/24hr?symbol=${currentBinanceSymbol}`);
         const tickerData = await tickerResponse.json();
         
@@ -158,8 +223,18 @@ async function fetchMarketData() {
         document.getElementById('volume24h').textContent = `$${quoteVolume.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
         document.getElementById('orderPrice').textContent = `$${currentPrice.toFixed(2)}`;
         
-        // Fetch candlestick data
+        // Fetch market cap from CoinGecko
+        try {
+            const geckoResponse = await fetch(`https://api.coingecko.com/api/v3/coins/${currentSymbol.toLowerCase()}`);
+            const geckoData = await geckoResponse.json();
+            const marketCap = geckoData.market_data?.market_cap?.usd || 0;
+            document.getElementById('marketCap').textContent = `$${marketCap.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+        } catch (e) {
+            document.getElementById('marketCap').textContent = 'N/A';
+        }
+        
         await fetchCandlestickData();
+        checkAlerts();
         
     } catch (error) {
         console.error('Error fetching market data:', error);
@@ -195,14 +270,12 @@ async function fetchOrderBook() {
         const response = await fetch(`${BINANCE_BASE_URL}/depth?symbol=${currentBinanceSymbol}&limit=15`);
         const data = await response.json();
         
-        // Process asks (sell orders) - displayed above spread
         const asks = data.asks.slice(0, 10).map(ask => ({
             price: parseFloat(ask[0]),
             amount: parseFloat(ask[1]),
             total: parseFloat(ask[0]) * parseFloat(ask[1])
         }));
         
-        // Process bids (buy orders) - displayed below spread
         const bids = data.bids.slice(0, 10).map(bid => ({
             price: parseFloat(bid[0]),
             amount: parseFloat(bid[1]),
@@ -211,7 +284,6 @@ async function fetchOrderBook() {
         
         renderOrderBook(bids, asks);
         
-        // Calculate spread
         const bestBid = bids[0]?.price || 0;
         const bestAsk = asks[0]?.price || 0;
         const spread = bestAsk - bestBid;
@@ -224,7 +296,6 @@ async function fetchOrderBook() {
 }
 
 function renderOrderBook(bids, asks) {
-    // Render asks (sell orders) - RED color
     const asksContainer = document.getElementById('asksContainer');
     if (asksContainer && asks.length > 0) {
         asksContainer.innerHTML = asks.map(order => `
@@ -238,7 +309,6 @@ function renderOrderBook(bids, asks) {
         asksContainer.innerHTML = '<div class="loading">No asks available</div>';
     }
     
-    // Render bids (buy orders) - GREEN color
     const bidsContainer = document.getElementById('bidsContainer');
     if (bidsContainer && bids.length > 0) {
         bidsContainer.innerHTML = bids.map(order => `
@@ -269,7 +339,6 @@ function calculateOrderTotal() {
 }
 
 function setupEventListeners() {
-    // Trade tabs
     document.querySelectorAll('.trade-tab').forEach(tab => {
         tab.addEventListener('click', () => {
             document.querySelectorAll('.trade-tab').forEach(t => t.classList.remove('active'));
@@ -287,7 +356,6 @@ function setupEventListeners() {
         });
     });
     
-    // Timeframe buttons
     document.querySelectorAll('.timeframe-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             document.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active'));
@@ -297,7 +365,6 @@ function setupEventListeners() {
         });
     });
     
-    // Quick amount buttons
     document.querySelectorAll('.quick-amount').forEach(btn => {
         btn.addEventListener('click', () => {
             if (!currentUser) {
@@ -312,16 +379,19 @@ function setupEventListeners() {
         });
     });
     
-    // Amount input
     const amountInput = document.getElementById('tradeAmount');
     if (amountInput) {
         amountInput.addEventListener('input', calculateOrderTotal);
     }
     
-    // Trade button
     const tradeBtn = document.getElementById('executeTradeBtn');
     if (tradeBtn) {
         tradeBtn.addEventListener('click', executeTrade);
+    }
+    
+    const addAlertBtn = document.getElementById('addAlertBtn');
+    if (addAlertBtn) {
+        addAlertBtn.addEventListener('click', () => addAlert());
     }
 }
 
@@ -402,14 +472,38 @@ function startRealTimeUpdates() {
     if (priceUpdateInterval) clearInterval(priceUpdateInterval);
     if (orderBookInterval) clearInterval(orderBookInterval);
     
-    // Update price every 5 seconds
     priceUpdateInterval = setInterval(async () => {
         await fetchMarketData();
     }, 5000);
     
-    // Update order book every 3 seconds
     orderBookInterval = setInterval(async () => {
         await fetchOrderBook();
+    }, 3000);
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'error' ? '#FF4757' : (type === 'warning' ? '#FFA502' : '#00D897')};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-size: 14px;
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        max-width: 350px;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
 
@@ -421,4 +515,6 @@ function handleLogout() {
 
 // Make functions global
 window.setOrderPrice = setOrderPrice;
+window.removeAlert = removeAlert;
+window.addAlert = addAlert;
 window.handleLogout = handleLogout;
