@@ -417,6 +417,11 @@
                 padding: 0.75rem;
                 font-size: 0.75rem;
             }
+            
+            .btn-tradingview {
+                padding: 4px 8px;
+                font-size: 0.7rem;
+            }
         }
     </style>
 </head>
@@ -452,17 +457,17 @@
             <div class="stat-card">
                 <div class="stat-label">Total Market Cap</div>
                 <div class="stat-value" id="totalMarketCap">$2.03T</div>
-                <div class="stat-change negative" id="marketCapChange">-0.6%</div>
+                <div class="stat-change" id="marketCapChange">-0.6%</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">24h Volume</div>
                 <div class="stat-value" id="totalVolume">$57.77B</div>
-                <div class="stat-change negative" id="volumeChange">-2.5%</div>
+                <div class="stat-change" id="volumeChange">-2.5%</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">BTC Dominance</div>
                 <div class="stat-value" id="btcDominance">74.7%</div>
-                <div class="stat-change negative" id="dominanceChange">-0.1%</div>
+                <div class="stat-change" id="dominanceChange">-0.1%</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Active Coins</div>
@@ -499,10 +504,10 @@
                 </thead>
                 <tbody id="marketTableBody">
                     <tr>
-                        <td colspan="5" class="loading-state">Loading market data...</td--</tr>
-                    </tbody>
-                </table>
-            </div>
+                        <td colspan="5" class="loading-state">Loading market data...</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
