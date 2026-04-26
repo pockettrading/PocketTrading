@@ -1,9 +1,11 @@
 // Advanced Trading View - Real Binance API
+// Layout: Chart (Left) | Trading Panel + Order Book (Right Stacked)
 
 let currentUser = null;
 let chart = null;
-let currentSymbol = 'BTC';
-let currentBinanceSymbol = 'BTCUSDT';
+let currentSymbol = 'SOL';
+let currentBinanceSymbol = 'SOLUSDT';
+let currentCoinName = 'Solana';
 let currentInterval = '1h';
 let priceUpdateInterval = null;
 let orderBookInterval = null;
@@ -25,8 +27,7 @@ const symbolMap = {
     'dogecoin': { symbol: 'DOGE', binanceSymbol: 'DOGEUSDT', name: 'Dogecoin' },
     'polkadot': { symbol: 'DOT', binanceSymbol: 'DOTUSDT', name: 'Polkadot' },
     'chainlink': { symbol: 'LINK', binanceSymbol: 'LINKUSDT', name: 'Chainlink' },
-    'uniswap': { symbol: 'UNI', binanceSymbol: 'UNIUSDT', name: 'Uniswap' },
-    'avalanche-2': { symbol: 'AVAX', binanceSymbol: 'AVAXUSDT', name: 'Avalanche' }
+    'uniswap': { symbol: 'UNI', binanceSymbol: 'UNIUSDT', name: 'Uniswap' }
 };
 
 // Interval mapping for Binance
@@ -57,10 +58,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (urlSymbol && symbolMap[urlSymbol]) {
         currentSymbol = symbolMap[urlSymbol].symbol;
         currentBinanceSymbol = symbolMap[urlSymbol].binanceSymbol;
+        currentCoinName = symbolMap[urlSymbol].name;
         document.getElementById('symbolName').textContent = `${currentSymbol}/USDT`;
-    } else {
-        currentSymbol = 'BTC';
-        currentBinanceSymbol = 'BTCUSDT';
     }
     
     await initTradingView();
@@ -116,7 +115,7 @@ async function initChart() {
     
     chart = LightweightCharts.createChart(chartElement, {
         width: chartElement.clientWidth,
-        height: 400,
+        height: 450,
         layout: { background: { color: 'transparent' }, textColor: '#A0AAB5' },
         grid: { vertLines: { color: '#2A3545' }, horzLines: { color: '#2A3545' } },
         crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
@@ -146,7 +145,6 @@ async function fetchMarketData() {
         const change = parseFloat(tickerData.priceChangePercent);
         const high = parseFloat(tickerData.highPrice);
         const low = parseFloat(tickerData.lowPrice);
-        const volume = parseFloat(tickerData.volume);
         const quoteVolume = parseFloat(tickerData.quoteVolume);
         
         document.getElementById('currentPrice').textContent = `$${currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
@@ -159,16 +157,6 @@ async function fetchMarketData() {
         document.getElementById('low24h').textContent = `$${low.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         document.getElementById('volume24h').textContent = `$${quoteVolume.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
         document.getElementById('orderPrice').textContent = `$${currentPrice.toFixed(2)}`;
-        
-        // Fetch market cap from CoinGecko (Binance doesn't provide market cap)
-        try {
-            const geckoResponse = await fetch(`https://api.coingecko.com/api/v3/coins/${currentSymbol.toLowerCase()}`);
-            const geckoData = await geckoResponse.json();
-            const marketCap = geckoData.market_data?.market_cap?.usd || 0;
-            document.getElementById('marketCap').textContent = `$${marketCap.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-        } catch (e) {
-            document.getElementById('marketCap').textContent = 'N/A';
-        }
         
         // Fetch candlestick data
         await fetchCandlestickData();
@@ -207,21 +195,20 @@ async function fetchOrderBook() {
         const response = await fetch(`${BINANCE_BASE_URL}/depth?symbol=${currentBinanceSymbol}&limit=15`);
         const data = await response.json();
         
-        // Process bids (buy orders) - each bid is [price, quantity]
-        const bids = data.bids.map(bid => ({
-            price: parseFloat(bid[0]),
-            amount: parseFloat(bid[1]),
-            total: parseFloat(bid[0]) * parseFloat(bid[1])
-        })).slice(0, 10);
-        
-        // Process asks (sell orders)
-        const asks = data.asks.map(ask => ({
+        // Process asks (sell orders) - displayed above spread
+        const asks = data.asks.slice(0, 10).map(ask => ({
             price: parseFloat(ask[0]),
             amount: parseFloat(ask[1]),
             total: parseFloat(ask[0]) * parseFloat(ask[1])
-        })).slice(0, 10);
+        }));
         
-        // Render order book
+        // Process bids (buy orders) - displayed below spread
+        const bids = data.bids.slice(0, 10).map(bid => ({
+            price: parseFloat(bid[0]),
+            amount: parseFloat(bid[1]),
+            total: parseFloat(bid[0]) * parseFloat(bid[1])
+        }));
+        
         renderOrderBook(bids, asks);
         
         // Calculate spread
@@ -237,7 +224,7 @@ async function fetchOrderBook() {
 }
 
 function renderOrderBook(bids, asks) {
-    // Render asks (sell orders) - displayed above spread
+    // Render asks (sell orders) - RED color
     const asksContainer = document.getElementById('asksContainer');
     if (asksContainer && asks.length > 0) {
         asksContainer.innerHTML = asks.map(order => `
@@ -251,7 +238,7 @@ function renderOrderBook(bids, asks) {
         asksContainer.innerHTML = '<div class="loading">No asks available</div>';
     }
     
-    // Render bids (buy orders) - displayed below spread
+    // Render bids (buy orders) - GREEN color
     const bidsContainer = document.getElementById('bidsContainer');
     if (bidsContainer && bids.length > 0) {
         bidsContainer.innerHTML = bids.map(order => `
