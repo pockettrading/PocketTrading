@@ -1,4 +1,4 @@
-// Markets page functionality - Luno Style with TradingView button
+// Markets page functionality - Luno Style with Working TradingView Button
 
 let currentUser = null;
 let currentFilter = 'all';
@@ -8,7 +8,6 @@ let allCryptoData = [];
 
 // CoinGecko API
 const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
-const BINANCE_BASE_URL = 'https://api.binance.com/api/v3';
 
 // Symbol mapping for TradingView
 const symbolToIdMap = {
@@ -29,7 +28,8 @@ const symbolToIdMap = {
     'PEPE': 'pepe',
     'USDC': 'usd-coin',
     'TRX': 'tron',
-    'WBTC': 'wrapped-bitcoin'
+    'WBTC': 'wrapped-bitcoin',
+    'USDT': 'tether'
 };
 
 // Icon mapping
@@ -51,7 +51,8 @@ const iconMap = {
     'PEPE': '🐸',
     'USDC': '💵',
     'TRX': 'T',
-    'WBTC': '₿'
+    'WBTC': '₿',
+    'USDT': '₮'
 };
 
 // Initialize when page loads
@@ -126,7 +127,7 @@ async function loadMarketStats() {
             document.getElementById('totalVolume').textContent = formatVolume(totalVolume);
             document.getElementById('btcDominance').textContent = `${btcDominance.toFixed(1)}%`;
             
-            // Random changes for display
+            // Simulate changes
             const marketCapChange = ((Math.random() - 0.5) * 2).toFixed(1);
             const volumeChange = ((Math.random() - 0.5) * 3).toFixed(1);
             const dominanceChange = ((Math.random() - 0.5) * 0.5).toFixed(1);
@@ -210,7 +211,7 @@ function renderMarketTable() {
         const icon = iconMap[crypto.symbol] || '📈';
         
         return `
-            <tr onclick="openTradingView('${crypto.symbol}')">
+            <tr>
                 <td>
                     <div class="crypto-info">
                         <div class="crypto-icon">${icon}</div>
@@ -219,20 +220,20 @@ function renderMarketTable() {
                             <div class="crypto-symbol">${crypto.symbol}</div>
                         </div>
                     </div>
-                </td
-                <td>$${formatPrice(crypto.current_price)}</td
+                </td>
+                <td>$${formatPrice(crypto.current_price)}</td>
                 <td>
                     <span class="price-change ${changeClass}">
                         ${changeSign}${crypto.price_change_percentage_24h?.toFixed(2) || '0'}%
                     </span>
-                </td
-                <td>${formatMarketCap(crypto.market_cap)}</td
+                </td>
+                <td>${formatMarketCap(crypto.market_cap)}</td>
                 <td>
-                    <button class="btn-tradingview" onclick="event.stopPropagation(); openTradingView('${crypto.symbol}')">
+                    <button class="btn-tradingview" onclick="openTradingView('${crypto.symbol}')">
                         📊 TradingView
                     </button>
-                </td
-            比
+                </td>
+            </tr>
         `;
     }).join('');
 }
@@ -261,16 +262,16 @@ function formatVolume(volume) {
 
 function renderFallbackData() {
     const fallbackData = [
-        { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 78491.00, change: 1.24, marketCap: 1571000000000 },
+        { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 78200.00, change: 0.80, marketCap: 1570000000000 },
         { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2368.71, change: 2.25, marketCap: 285620000000 },
-        { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 580.20, change: 0.89, marketCap: 89000000000 },
+        { symbol: 'USDT', name: 'Tether', icon: '₮', price: 1.00, change: 0.01, marketCap: 112000000000 },
+        { symbol: 'XRP', name: 'XRP', icon: 'X', price: 0.6153, change: 0.03, marketCap: 33740000000 },
+        { symbol: 'BNB', name: 'BNB', icon: 'B', price: 580.20, change: 0.89, marketCap: 89000000000 },
+        { symbol: 'USDC', name: 'USDC', icon: '💵', price: 1.00, change: 0.00, marketCap: 32000000000 },
         { symbol: 'SOL', name: 'Solana', icon: 'S', price: 141.40, change: 43.70, marketCap: 44690000000 },
-        { symbol: 'XRP', name: 'Ripple', icon: 'X', price: 0.6153, change: 0.03, marketCap: 33740000000 },
-        { symbol: 'ADA', name: 'Cardano', icon: 'A', price: 0.4815, change: 0.15, marketCap: 17050000000 },
+        { symbol: 'TRX', name: 'TRON', icon: 'T', price: 0.12, change: 1.20, marketCap: 10500000000 },
         { symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð', price: 0.1198, change: 0.24, marketCap: 17470000000 },
-        { symbol: 'DOT', name: 'Polkadot', icon: '●', price: 6.83, change: 0.25, marketCap: 9770000000 },
-        { symbol: 'LINK', name: 'Chainlink', icon: 'L', price: 14.32, change: 2.10, marketCap: 8500000000 },
-        { symbol: 'UNI', name: 'Uniswap', icon: 'U', price: 7.85, change: -1.50, marketCap: 5900000000 }
+        { symbol: 'ADA', name: 'Cardano', icon: 'A', price: 0.4815, change: 0.15, marketCap: 17050000000 }
     ];
     
     const tbody = document.getElementById('marketTableBody');
@@ -289,20 +290,20 @@ function renderFallbackData() {
                                 <div class="crypto-symbol">${crypto.symbol}</div>
                             </div>
                         </div>
-                    </td
-                    <td>$${formatPrice(crypto.price)}</td
+                    </td>
+                    <td>$${formatPrice(crypto.price)}</td>
                     <td>
                         <span class="price-change ${changeClass}">
                             ${changeSign}${crypto.change.toFixed(2)}%
                         </span>
-                    </td
-                    <td>${formatMarketCap(crypto.marketCap)}</td
+                    </td>
+                    <td>${formatMarketCap(crypto.marketCap)}</td>
                     <td>
                         <button class="btn-tradingview" onclick="openTradingView('${crypto.symbol}')">
                             📊 TradingView
                         </button>
-                    </td
-                比
+                    </td>
+                </tr>
             `;
         }).join('');
     }
@@ -338,6 +339,7 @@ function startPriceUpdates() {
 }
 
 function openTradingView(symbol) {
+    console.log('Opening TradingView for symbol:', symbol);
     const coinId = symbolToIdMap[symbol];
     
     if (coinId) {
