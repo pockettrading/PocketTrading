@@ -1,4 +1,4 @@
-// Trade page functionality - Luno Style (Registered users only, redirects guests to login)
+// Trade page functionality - Luno Style (Registered users only, guests see login prompt)
 
 let currentUser = null;
 let currentTradeType = 'buy';
@@ -56,7 +56,7 @@ function loadUser() {
         console.log('User logged in:', currentUser.email);
     } else {
         currentUser = null;
-        console.log('Guest mode - redirecting to login');
+        console.log('Guest mode - showing login prompt');
     }
 }
 
@@ -65,6 +65,7 @@ function renderUserSection() {
     if (!userSection) return;
     
     if (currentUser) {
+        // Show user dropdown for logged-in users
         const displayName = currentUser.name || currentUser.email.split('@')[0];
         userSection.innerHTML = `
             <div class="user-dropdown">
@@ -84,12 +85,8 @@ function renderUserSection() {
             </div>
         `;
     } else {
-        userSection.innerHTML = `
-            <div class="auth-buttons">
-                <a href="login.html" class="login-btn">Login</a>
-                <a href="register.html" class="signup-btn">Sign Up</a>
-            </div>
-        `;
+        // No Login/Sign Up buttons in top bar - empty
+        userSection.innerHTML = '';
     }
 }
 
@@ -301,7 +298,7 @@ function showCryptoDropdown() {
                 </div>
             </div>
             <div class="crypto-option-price">
-                <div class="price-value" id="price_${symbol}">$${currentCrypto === symbol ? currentPrice.toLocaleString() : '...'}</div>
+                <div class="price-value" id="price_${symbol}">${currentCrypto === symbol ? `$${currentPrice.toLocaleString()}` : '...'}</div>
             </div>
         `;
         option.onclick = () => {
