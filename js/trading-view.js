@@ -1,4 +1,4 @@
-// Advanced Trading View - Luno Style with Real Binance API
+// Advanced Trading View - Working Chart + Guest/Registered Access Control
 
 let currentUser = null;
 let chart = null;
@@ -28,7 +28,7 @@ const symbolMap = {
     'polkadot': { symbol: 'DOT', binanceSymbol: 'DOTUSDT', name: 'Polkadot' }
 };
 
-// Interval mapping for Binance
+// Interval mapping
 const intervalMap = {
     '1m': '1m',
     '5m': '5m',
@@ -52,7 +52,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     renderUserSection();
     loadPriceAlerts();
     
-    // Get symbol from URL
     const urlSymbol = getUrlParameter('symbol');
     if (urlSymbol && symbolMap[urlSymbol]) {
         currentSymbol = symbolMap[urlSymbol].symbol;
@@ -62,13 +61,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     await initTradingView();
+    renderTradingPanel();
 });
 
 function loadUser() {
     const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
-        console.log('User loaded:', currentUser.email);
+        console.log('User logged in:', currentUser.email);
+    } else {
+        currentUser = null;
+        console.log('Guest mode - trading disabled');
     }
 }
 
@@ -105,17 +108,171 @@ function renderUserSection() {
     }
 }
 
+function renderTradingPanel() {
+    const panel = document.getElementById('tradingPanel');
+    if (!panel) return;
+    
+    if (currentUser) {
+        // Logged in user - Full trading panel
+        panel.innerHTML = `
+            <div class="trade-tabs">
+                <button class="trade-tab buy active" data-trade="buy">BUY</button>
+                <button class="trade-tab sell" data-trade="sell">SELL</button>
+            </div>
+            
+            <div class="input-group">
+                <label>Amount (USDT)</label>
+                <input type="number" id="tradeAmount" class="amount-input" placeholder="0.00" value="0">
+                <div class="quick-amounts">
+                    <button class="quick-amount" data-percent="25">25%</button>
+                    <button class="quick-amount" data-percent="50">50%</button>
+                    <button class="quick-amount" data-percent="75">75%</button>
+                    <button class="quick-amount" data-percent="100">100%</button>
+                </div>
+            </div>
+            
+            <div class="order-summary">
+                <div class="summary-row">
+                    <span>Price (USDT)</span>
+                    <strong id="orderPrice">$0.00</strong>
+                </div>
+                <div class="summary-row">
+                    <span>Amount</span>
+                    <strong id="orderAmount">0.0000 BTC</strong>
+                </div>
+                <div class="summary-row total">
+                    <span>Total</span>
+                    <strong id="orderTotal">$0.00</strong>
+                </div>
+            </div>
+            
+            <button class="trade-btn buy" id="executeTradeBtn">BUY BTC</button>
+            
+            <div class="alerts-section">
+                <div class="alerts-header">
+                    <span class="alerts-title">Price Alerts</span>
+                    <button class="add-alert-btn" id="addAlertBtn">+ Add</button>
+                </div>
+                <div class="alerts-list" id="alertsList">
+                    <div class="no-alerts">No alerts</div>
+                </div>
+            </div>
+        `;
+        
+        // Re-attach event listeners for trading panel
+        setupTradingEventListeners();
+        renderAlerts();
+    } else {
+        // Guest user - Show login prompt, disable trading
+        panel.innerHTML = `
+            <div class="trade-tabs">
+                <button class="trade-tab buy active" disabled style="opacity:0.5">BUY</button>
+                <button class="trade-tab sell" disabled style="opacity:0.5">SELL</button>
+            </div>
+            
+            <div class="input-group">
+                <label>Amount (USDT)</label>
+                <input type="number" id="tradeAmount" class="amount-input" placeholder="Login to trade" value="0" disabled>
+                <div class="quick-amounts">
+                    <button class="quick-amount" disabled>25%</button>
+                    <button class="quick-amount" disabled>50%</button>
+                    <button class="quick-amount" disabled>75%</button>
+                    <button class="quick-amount" disabled>100%</button>
+                </div>
+            </div>
+            
+            <div class="order-summary">
+                <div class="summary-row">
+                    <span>Price (USDT)</span>
+                    <strong id="orderPrice">$0.00</strong>
+                </div>
+                <div class="summary-row">
+                    <span>Amount</span>
+                    <strong id="orderAmount">0.0000 BTC</strong>
+                </div>
+                <div class="summary-row total">
+                    <span>Total</span>
+                    <strong id="orderTotal">$0.00</strong>
+                </div>
+            </div>
+            
+            <button class="trade-btn buy" id="executeTradeBtn" disabled style="opacity:0.5">Login to Trade</button>
+            
+            <div class="login-prompt">
+                🔒 <a href="login.html">Login</a> or <a href="register.html">Sign Up</a> to start trading
+            </div>
+            
+            <div class="alerts-section">
+                <div class="alerts-header">
+                    <span class="alerts-title">Price Alerts</span>
+                    <button class="add-alert-btn" id="addAlertBtn" disabled>+ Add</button>
+                </div>
+                <div class="alerts-list" id="alertsList">
+                    <div class="no-alerts">Login to set alerts</div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function setupTradingEventListeners() {
+    // Trade tabs
+    document.querySelectorAll('.trade-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.trade-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentTradeType = tab.dataset.trade;
+            
+            const tradeBtn = document.getElementById('executeTradeBtn');
+            if (currentTradeType === 'buy') {
+                tradeBtn.textContent = `BUY ${currentSymbol}`;
+                tradeBtn.className = 'trade-btn buy';
+            } else {
+                tradeBtn.textContent = `SELL ${currentSymbol}`;
+                tradeBtn.className = 'trade-btn sell';
+            }
+        });
+    });
+    
+    // Quick amount buttons
+    document.querySelectorAll('.quick-amount').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const percent = parseInt(btn.dataset.percent);
+            const balance = currentUser?.balance || 0;
+            const amount = balance * (percent / 100);
+            document.getElementById('tradeAmount').value = amount.toFixed(2);
+            calculateOrderTotal();
+        });
+    });
+    
+    // Amount input
+    const amountInput = document.getElementById('tradeAmount');
+    if (amountInput) {
+        amountInput.addEventListener('input', calculateOrderTotal);
+    }
+    
+    // Trade button
+    const tradeBtn = document.getElementById('executeTradeBtn');
+    if (tradeBtn) {
+        tradeBtn.addEventListener('click', executeTrade);
+    }
+    
+    // Add alert button
+    const addAlertBtn = document.getElementById('addAlertBtn');
+    if (addAlertBtn) {
+        addAlertBtn.addEventListener('click', () => addAlert());
+    }
+}
+
 function loadPriceAlerts() {
     const saved = localStorage.getItem('price_alerts');
     if (saved) {
         priceAlerts = JSON.parse(saved);
     }
-    renderAlerts();
 }
 
 function savePriceAlerts() {
     localStorage.setItem('price_alerts', JSON.stringify(priceAlerts));
-    renderAlerts();
 }
 
 function renderAlerts() {
@@ -137,6 +294,11 @@ function renderAlerts() {
 }
 
 function addAlert() {
+    if (!currentUser) {
+        alert('Please login to set price alerts');
+        return;
+    }
+    
     const price = currentPrice;
     const newAlert = {
         id: Date.now(),
@@ -146,12 +308,13 @@ function addAlert() {
     };
     priceAlerts.push(newAlert);
     savePriceAlerts();
-    checkAlerts();
+    renderAlerts();
 }
 
 function removeAlert(id) {
     priceAlerts = priceAlerts.filter(a => a.id !== id);
     savePriceAlerts();
+    renderAlerts();
 }
 
 function checkAlerts() {
@@ -165,13 +328,14 @@ function checkAlerts() {
         }
     });
     savePriceAlerts();
+    renderAlerts();
 }
 
 async function initTradingView() {
     await initChart();
     await fetchMarketData();
     await fetchOrderBook();
-    setupEventListeners();
+    setupChartEventListeners();
     startRealTimeUpdates();
 }
 
@@ -203,16 +367,17 @@ async function initChart() {
 
 async function fetchMarketData() {
     try {
-        const tickerResponse = await fetch(`${BINANCE_BASE_URL}/ticker/24hr?symbol=${currentBinanceSymbol}`);
-        const tickerData = await tickerResponse.json();
+        const response = await fetch(`${BINANCE_BASE_URL}/ticker/24hr?symbol=${currentBinanceSymbol}`);
+        const data = await response.json();
         
-        currentPrice = parseFloat(tickerData.lastPrice);
-        const change = parseFloat(tickerData.priceChangePercent);
-        const high = parseFloat(tickerData.highPrice);
-        const low = parseFloat(tickerData.lowPrice);
-        const quoteVolume = parseFloat(tickerData.quoteVolume);
+        currentPrice = parseFloat(data.lastPrice);
+        const change = parseFloat(data.priceChangePercent);
+        const high = parseFloat(data.highPrice);
+        const low = parseFloat(data.lowPrice);
+        const quoteVolume = parseFloat(data.quoteVolume);
         
         document.getElementById('currentPrice').textContent = `$${currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        document.getElementById('orderPrice').textContent = `$${currentPrice.toFixed(2)}`;
         
         const changeElem = document.getElementById('priceChange');
         changeElem.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
@@ -221,20 +386,10 @@ async function fetchMarketData() {
         document.getElementById('high24h').textContent = `$${high.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         document.getElementById('low24h').textContent = `$${low.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         document.getElementById('volume24h').textContent = `$${quoteVolume.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-        document.getElementById('orderPrice').textContent = `$${currentPrice.toFixed(2)}`;
-        
-        // Fetch market cap from CoinGecko
-        try {
-            const geckoResponse = await fetch(`https://api.coingecko.com/api/v3/coins/${currentSymbol.toLowerCase()}`);
-            const geckoData = await geckoResponse.json();
-            const marketCap = geckoData.market_data?.market_cap?.usd || 0;
-            document.getElementById('marketCap').textContent = `$${marketCap.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-        } catch (e) {
-            document.getElementById('marketCap').textContent = 'N/A';
-        }
         
         await fetchCandlestickData();
-        checkAlerts();
+        if (currentUser) checkAlerts();
+        calculateOrderTotal();
         
     } catch (error) {
         console.error('Error fetching market data:', error);
@@ -259,6 +414,7 @@ async function fetchCandlestickData() {
             
             candlestickSeries.setData(candlestickData);
             chart.timeScale().fitContent();
+            console.log(`Loaded ${candlestickData.length} candles`);
         }
     } catch (error) {
         console.error('Error fetching candlestick data:', error);
@@ -329,33 +485,19 @@ function setOrderPrice(price) {
 }
 
 function calculateOrderTotal() {
-    const amount = parseFloat(document.getElementById('tradeAmount').value) || 0;
+    const amount = parseFloat(document.getElementById('tradeAmount')?.value || 0);
     const price = currentPrice;
     const total = amount;
     const cryptoAmount = amount / price;
     
-    document.getElementById('orderAmount').textContent = `${cryptoAmount.toFixed(6)} ${currentSymbol}`;
-    document.getElementById('orderTotal').textContent = `$${total.toFixed(2)}`;
+    const orderAmountElem = document.getElementById('orderAmount');
+    const orderTotalElem = document.getElementById('orderTotal');
+    
+    if (orderAmountElem) orderAmountElem.textContent = `${cryptoAmount.toFixed(6)} ${currentSymbol}`;
+    if (orderTotalElem) orderTotalElem.textContent = `$${total.toFixed(2)}`;
 }
 
-function setupEventListeners() {
-    document.querySelectorAll('.trade-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.trade-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            currentTradeType = tab.dataset.trade;
-            
-            const tradeBtn = document.getElementById('executeTradeBtn');
-            if (currentTradeType === 'buy') {
-                tradeBtn.textContent = `BUY ${currentSymbol}`;
-                tradeBtn.className = 'trade-btn buy';
-            } else {
-                tradeBtn.textContent = `SELL ${currentSymbol}`;
-                tradeBtn.className = 'trade-btn sell';
-            }
-        });
-    });
-    
+function setupChartEventListeners() {
     document.querySelectorAll('.timeframe-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             document.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active'));
@@ -364,35 +506,6 @@ function setupEventListeners() {
             await fetchCandlestickData();
         });
     });
-    
-    document.querySelectorAll('.quick-amount').forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (!currentUser) {
-                alert('Please login to trade');
-                return;
-            }
-            const percent = parseInt(btn.dataset.percent);
-            const balance = currentUser?.balance || 0;
-            const amount = balance * (percent / 100);
-            document.getElementById('tradeAmount').value = amount.toFixed(2);
-            calculateOrderTotal();
-        });
-    });
-    
-    const amountInput = document.getElementById('tradeAmount');
-    if (amountInput) {
-        amountInput.addEventListener('input', calculateOrderTotal);
-    }
-    
-    const tradeBtn = document.getElementById('executeTradeBtn');
-    if (tradeBtn) {
-        tradeBtn.addEventListener('click', executeTrade);
-    }
-    
-    const addAlertBtn = document.getElementById('addAlertBtn');
-    if (addAlertBtn) {
-        addAlertBtn.addEventListener('click', () => addAlert());
-    }
 }
 
 function executeTrade() {
@@ -430,7 +543,7 @@ function executeTrade() {
             date: new Date().toISOString()
         });
         
-        alert(`Successfully bought ${(amount / currentPrice).toFixed(6)} ${currentSymbol} at $${currentPrice.toFixed(2)}`);
+        showNotification(`Successfully bought ${(amount / currentPrice).toFixed(6)} ${currentSymbol} at $${currentPrice.toFixed(2)}`, 'success');
     } else {
         currentUser.balance += amount;
         
@@ -444,12 +557,13 @@ function executeTrade() {
             date: new Date().toISOString()
         });
         
-        alert(`Successfully sold ${(amount / currentPrice).toFixed(6)} ${currentSymbol} at $${currentPrice.toFixed(2)}`);
+        showNotification(`Successfully sold ${(amount / currentPrice).toFixed(6)} ${currentSymbol} at $${currentPrice.toFixed(2)}`, 'success');
     }
     
     saveUserData();
     document.getElementById('tradeAmount').value = '';
     calculateOrderTotal();
+    updateBalanceDisplay();
 }
 
 function saveUserData() {
@@ -466,6 +580,10 @@ function saveUserData() {
     if (sessionStorage.getItem('pocket_user')) {
         sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
     }
+}
+
+function updateBalanceDisplay() {
+    // This will be called from dashboard.js when needed
 }
 
 function startRealTimeUpdates() {
@@ -516,5 +634,4 @@ function handleLogout() {
 // Make functions global
 window.setOrderPrice = setOrderPrice;
 window.removeAlert = removeAlert;
-window.addAlert = addAlert;
 window.handleLogout = handleLogout;
