@@ -90,7 +90,7 @@
             color: var(--primary);
         }
 
-        /* User Dropdown */
+        /* User Dropdown (for logged-in users) */
         .user-dropdown {
             position: relative;
             cursor: pointer;
@@ -310,10 +310,6 @@
             text-align: right;
         }
 
-        .crypto-option-change {
-            font-size: 0.7rem;
-        }
-
         /* Amount Input */
         .amount-section {
             margin-bottom: 1.5rem;
@@ -452,15 +448,18 @@
             padding: 3rem;
             background: var(--card-bg);
             border-radius: 24px;
+            max-width: 500px;
+            margin: 0 auto;
         }
 
         .login-prompt h3 {
             margin-bottom: 1rem;
+            font-size: 1.5rem;
         }
 
         .login-prompt p {
             color: var(--text-secondary);
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
         }
 
         .login-buttons {
@@ -472,7 +471,7 @@
         .btn-login {
             background: transparent;
             color: var(--primary);
-            padding: 12px 24px;
+            padding: 12px 32px;
             border: 1px solid var(--primary);
             border-radius: 12px;
             text-decoration: none;
@@ -487,7 +486,7 @@
         .btn-signup {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
-            padding: 12px 24px;
+            padding: 12px 32px;
             border: none;
             border-radius: 12px;
             text-decoration: none;
@@ -521,22 +520,23 @@
             .trade-card {
                 padding: 1.5rem;
             }
+            
+            .login-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
         }
 
         @media (max-width: 480px) {
             .duration-buttons {
                 grid-template-columns: repeat(2, 1fr);
             }
-            
-            .login-buttons {
-                flex-direction: column;
-            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Top Navigation Bar -->
+        <!-- Top Navigation Bar - No Login/Sign Up buttons here -->
         <div class="top-nav">
             <div class="logo">
                 <svg viewBox="0 0 40 40" fill="none">
