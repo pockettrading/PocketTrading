@@ -181,6 +181,7 @@
             display: flex;
             align-items: baseline;
             gap: 1rem;
+            flex-wrap: wrap;
         }
 
         .symbol-name {
@@ -273,6 +274,8 @@
             background: var(--card-bg);
             border-radius: 16px;
             padding: 1rem;
+            display: flex;
+            flex-direction: column;
         }
 
         .section-title {
@@ -281,6 +284,7 @@
             margin-bottom: 1rem;
             padding-bottom: 0.5rem;
             border-bottom: 1px solid var(--border);
+            text-align: center;
         }
 
         .orderbook-header {
@@ -291,6 +295,23 @@
             color: var(--text-tertiary);
             margin-bottom: 0.5rem;
             padding: 0.5rem;
+            text-align: right;
+        }
+
+        .orderbook-header span:first-child {
+            text-align: left;
+        }
+
+        .orderbook-asks {
+            max-height: 200px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        .orderbook-bids {
+            max-height: 200px;
+            overflow-y: auto;
         }
 
         .orderbook-row {
@@ -301,6 +322,11 @@
             padding: 4px 8px;
             border-radius: 4px;
             cursor: pointer;
+            text-align: right;
+        }
+
+        .orderbook-row span:first-child {
+            text-align: left;
         }
 
         .orderbook-row:hover {
@@ -449,6 +475,12 @@
             filter: brightness(1.05);
         }
 
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-tertiary);
+        }
+
         @media (max-width: 1200px) {
             .trading-grid {
                 grid-template-columns: 1fr;
@@ -547,11 +579,15 @@
                     <span>Amount</span>
                     <span>Total</span>
                 </div>
-                <div id="asksContainer"></div>
+                <div class="orderbook-asks" id="asksContainer">
+                    <div class="loading">Loading asks...</div>
+                </div>
                 <div class="orderbook-spread" id="orderbookSpread">
                     Spread: $0.00 (0.00%)
                 </div>
-                <div id="bidsContainer"></div>
+                <div class="orderbook-bids" id="bidsContainer">
+                    <div class="loading">Loading bids...</div>
+                </div>
             </div>
 
             <!-- Right: Trading Panel -->
