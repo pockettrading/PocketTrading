@@ -1,70 +1,122 @@
-// Markets page functionality - Complete working version
+// Markets page functionality - With TradingView button
 
+let currentUser = null;
 let currentFilter = 'all';
 let searchQuery = '';
 let priceUpdateInterval = null;
+let allCryptoData = [];
 
-// Cryptocurrency data
-let cryptoData = [
-    { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 75716.19, change: 0.01, marketCap: 1520000000000, volume: 32500000000, category: 'large' },
-    { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2357.44, change: 1.4, marketCap: 284440000000, volume: 15200000000, category: 'large' },
-    { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 305.60, change: -0.5, marketCap: 52000000000, volume: 2100000000, category: 'large' },
-    { symbol: 'SOL', name: 'Solana', icon: 'S', price: 98.40, change: 5.2, marketCap: 45000000000, volume: 1800000000, category: 'large' },
-    { symbol: 'XRP', name: 'Ripple', icon: 'X', price: 0.62, change: 0.3, marketCap: 34000000000, volume: 1200000000, category: 'mid' },
-    { symbol: 'ADA', name: 'Cardano', icon: 'A', price: 0.48, change: -1.2, marketCap: 17000000000, volume: 800000000, category: 'mid' },
-    { symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð', price: 0.12, change: 3.2, marketCap: 17500000000, volume: 900000000, category: 'meme' },
-    { symbol: 'DOT', name: 'Polkadot', icon: '●', price: 6.85, change: -0.8, marketCap: 9800000000, volume: 500000000, category: 'mid' },
-    { symbol: 'LINK', name: 'Chainlink', icon: 'L', price: 14.32, change: 2.1, marketCap: 8500000000, volume: 450000000, category: 'mid' },
-    { symbol: 'UNI', name: 'Uniswap', icon: 'U', price: 7.85, change: -1.5, marketCap: 5900000000, volume: 250000000, category: 'defi' },
-    { symbol: 'AAVE', name: 'Aave', icon: 'A', price: 98.50, change: 3.8, marketCap: 1450000000, volume: 150000000, category: 'defi' },
-    { symbol: 'SHIB', name: 'Shiba Inu', icon: '🐕', price: 0.000021, change: -2.3, marketCap: 12400000000, volume: 600000000, category: 'meme' },
-    { symbol: 'AVAX', name: 'Avalanche', icon: 'A', price: 35.20, change: 4.5, marketCap: 13200000000, volume: 550000000, category: 'mid' },
-    { symbol: 'MATIC', name: 'Polygon', icon: 'M', price: 0.72, change: 1.2, marketCap: 7200000000, volume: 350000000, category: 'mid' },
-    { symbol: 'PEPE', name: 'Pepe', icon: '🐸', price: 0.000012, change: 8.5, marketCap: 5100000000, volume: 420000000, category: 'meme' }
-];
+// CoinGecko API
+const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Markets page loaded');
-    loadMarketStats();
-    loadMarketTable();
-    setupEventListeners();
-    startPriceUpdates();
+    loadUser();
+    renderUserSection();
+    initMarketsPage();
 });
 
-function loadMarketStats() {
-    const totalMarketCap = cryptoData.reduce((sum, crypto) => sum + crypto.marketCap, 0);
-    const totalVolume = cryptoData.reduce((sum, crypto) => sum + crypto.volume, 0);
-    const btcMarketCap = cryptoData.find(c => c.symbol === 'BTC')?.marketCap || 0;
-    const btcDominance = (btcMarketCap / totalMarketCap * 100).toFixed(1);
-    
-    document.getElementById('totalMarketCap').textContent = formatMarketCap(totalMarketCap);
-    document.getElementById('totalVolume').textContent = formatVolume(totalVolume);
-    document.getElementById('btcDominance').textContent = `${btcDominance}%`;
-    document.getElementById('activeCoins').textContent = cryptoData.length;
-    
-    // Random changes for display
-    const marketCapChange = ((Math.random() - 0.5) * 5).toFixed(1);
-    const marketCapChangeElem = document.getElementById('marketCapChange');
-    marketCapChangeElem.textContent = `${marketCapChange >= 0 ? '+' : ''}${marketCapChange}%`;
-    marketCapChangeElem.className = `stat-change ${marketCapChange >= 0 ? 'positive' : 'negative'}`;
-    
-    const volumeChange = ((Math.random() - 0.5) * 8).toFixed(1);
-    const volumeChangeElem = document.getElementById('volumeChange');
-    volumeChangeElem.textContent = `${volumeChange >= 0 ? '+' : ''}${volumeChange}%`;
-    volumeChangeElem.className = `stat-change ${volumeChange >= 0 ? 'positive' : 'negative'}`;
-    
-    const dominanceChange = ((Math.random() - 0.5) * 2).toFixed(1);
-    const dominanceChangeElem = document.getElementById('dominanceChange');
-    dominanceChangeElem.textContent = `${dominanceChange >= 0 ? '+' : ''}${dominanceChange}%`;
-    dominanceChangeElem.className = `stat-change ${dominanceChange >= 0 ? 'positive' : 'negative'}`;
+function loadUser() {
+    const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
+    if (storedUser) {
+        currentUser = JSON.parse(storedUser);
+        console.log('User loaded:', currentUser.email);
+    }
 }
 
-function loadMarketTable() {
+function renderUserSection() {
+    const userSection = document.getElementById('userSection');
+    if (!userSection) return;
+    
+    if (currentUser) {
+        const displayName = currentUser.name || currentUser.email.split('@')[0];
+        userSection.innerHTML = `
+            <div class="user-dropdown">
+                <div class="user-name-display">
+                    <span>👤</span>
+                    <span>${displayName}</span>
+                    <span>▼</span>
+                </div>
+                <div class="dropdown-menu">
+                    <a href="profile.html" class="dropdown-item">📋 My Profile</a>
+                    <a href="dashboard.html" class="dropdown-item">📊 Dashboard</a>
+                    <a href="deposit.html" class="dropdown-item">💰 Deposit</a>
+                    <a href="withdraw.html" class="dropdown-item">💸 Withdraw</a>
+                    <div class="dropdown-divider"></div>
+                    <span class="dropdown-item" onclick="handleLogout()" style="cursor: pointer; color: var(--danger);">🚪 Logout</span>
+                </div>
+            </div>
+        `;
+    } else {
+        userSection.innerHTML = `<a href="register.html" class="signup-btn">Sign Up</a>`;
+    }
+}
+
+async function initMarketsPage() {
+    await loadMarketStats();
+    await loadMarketData();
+    setupEventListeners();
+    startPriceUpdates();
+}
+
+async function loadMarketStats() {
+    try {
+        const response = await fetch(`${COINGECKO_BASE_URL}/global`);
+        const data = await response.json();
+        
+        if (data && data.data) {
+            const totalMarketCap = data.data.total_market_cap?.usd || 0;
+            const totalVolume = data.data.total_volume?.usd || 0;
+            const btcDominance = data.data.market_cap_percentage?.btc || 0;
+            
+            document.getElementById('totalMarketCap').textContent = formatMarketCap(totalMarketCap);
+            document.getElementById('totalVolume').textContent = formatVolume(totalVolume);
+            document.getElementById('btcDominance').textContent = `${btcDominance.toFixed(1)}%`;
+        }
+    } catch (error) {
+        console.error('Error loading market stats:', error);
+    }
+}
+
+async function loadMarketData() {
+    try {
+        const response = await fetch(`${COINGECKO_BASE_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=24h`);
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+            allCryptoData = data.map(coin => ({
+                id: coin.id,
+                symbol: coin.symbol.toUpperCase(),
+                name: coin.name,
+                image: coin.image,
+                current_price: coin.current_price,
+                price_change_percentage_24h: coin.price_change_percentage_24h || 0,
+                market_cap: coin.market_cap,
+                total_volume: coin.total_volume,
+                category: getCategoryByMarketCap(coin.market_cap)
+            }));
+            
+            document.getElementById('activeCoins').textContent = allCryptoData.length;
+            renderMarketTable();
+        }
+    } catch (error) {
+        console.error('Error loading market data:', error);
+        renderFallbackData();
+    }
+}
+
+function getCategoryByMarketCap(marketCap) {
+    if (marketCap >= 10000000000) return 'large';
+    if (marketCap >= 1000000000) return 'mid';
+    return 'small';
+}
+
+function renderMarketTable() {
     const tbody = document.getElementById('marketTableBody');
     if (!tbody) return;
     
-    let filteredData = [...cryptoData];
+    let filteredData = [...allCryptoData];
     
     if (currentFilter !== 'all') {
         filteredData = filteredData.filter(crypto => crypto.category === currentFilter);
@@ -84,46 +136,47 @@ function loadMarketTable() {
     }
     
     tbody.innerHTML = filteredData.map(crypto => {
-        const changeClass = crypto.change >= 0 ? 'positive' : 'negative';
-        const changeSign = crypto.change >= 0 ? '+' : '';
+        const changeClass = crypto.price_change_percentage_24h >= 0 ? 'positive' : 'negative';
+        const changeSign = crypto.price_change_percentage_24h >= 0 ? '+' : '';
+        const icon = getIconForSymbol(crypto.symbol);
         
         return `
             <tr>
                 <td>
                     <div class="crypto-info">
-                        <div class="crypto-icon">${crypto.icon}</div>
+                        <div class="crypto-icon">${icon}</div>
                         <div>
                             <div class="crypto-name">${crypto.name}</div>
                             <div class="crypto-symbol">${crypto.symbol}</div>
                         </div>
                     </div>
                 </td>
-                <td>$${formatPrice(crypto.price, crypto.symbol)}</td>
+                <td>$${formatPrice(crypto.current_price)}</td>
                 <td>
                     <span class="price-change ${changeClass}">
-                        ${changeSign}${crypto.change.toFixed(2)}%
+                        ${changeSign}${crypto.price_change_percentage_24h?.toFixed(2) || '0'}%
                     </span>
                 </td>
-                <td>${formatMarketCap(crypto.marketCap)}</td>
+                <td>${formatMarketCap(crypto.market_cap)}</td>
                 <td>
-                    <div class="action-buttons">
-                        <button class="action-icon" onclick="event.stopPropagation(); viewDetails('${crypto.symbol}')" title="View Details">🔍</button>
-                        <button class="action-icon" onclick="event.stopPropagation(); goToTrade('${crypto.symbol}')" title="Trade">📊</button>
-                        <button class="action-icon" onclick="event.stopPropagation(); addToWatchlist('${crypto.symbol}')" title="Add to Watchlist">⭐</button>
-                    </div>
+                    <button class="btn-tradingview" onclick="openTradingView('${crypto.symbol}')">
+                        📊 TradingView
+                    </button>
                 </td>
             </tr>
         `;
     }).join('');
 }
 
-function formatPrice(price, symbol) {
-    if (symbol === 'SHIB' || symbol === 'PEPE') return price.toFixed(8);
+function formatPrice(price) {
+    if (!price) return '0.00';
+    if (price < 0.01) return price.toFixed(6);
     if (price < 1) return price.toFixed(4);
     return price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
 
 function formatMarketCap(marketCap) {
+    if (!marketCap) return '$0';
     if (marketCap >= 1e12) return `$${(marketCap / 1e12).toFixed(2)}T`;
     if (marketCap >= 1e9) return `$${(marketCap / 1e9).toFixed(2)}B`;
     if (marketCap >= 1e6) return `$${(marketCap / 1e6).toFixed(2)}M`;
@@ -131,9 +184,78 @@ function formatMarketCap(marketCap) {
 }
 
 function formatVolume(volume) {
+    if (volume >= 1e12) return `$${(volume / 1e12).toFixed(2)}T`;
     if (volume >= 1e9) return `$${(volume / 1e9).toFixed(2)}B`;
     if (volume >= 1e6) return `$${(volume / 1e6).toFixed(2)}M`;
     return `$${volume.toFixed(0)}`;
+}
+
+function getIconForSymbol(symbol) {
+    const icons = {
+        'BTC': '₿',
+        'ETH': 'Ξ',
+        'BNB': 'B',
+        'SOL': 'S',
+        'XRP': 'X',
+        'ADA': 'A',
+        'DOGE': 'Ð',
+        'DOT': '●',
+        'LINK': 'L',
+        'UNI': 'U',
+        'AAVE': 'A',
+        'SHIB': '🐕',
+        'AVAX': 'A',
+        'MATIC': 'M',
+        'PEPE': '🐸'
+    };
+    return icons[symbol] || '📈';
+}
+
+function renderFallbackData() {
+    const fallbackData = [
+        { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 75773.87, change: 0.02, marketCap: 1520000000000 },
+        { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2352.73, change: 0.06, marketCap: 283870000000 },
+        { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 304.29, change: 0.07, marketCap: 51780000000 },
+        { symbol: 'SOL', name: 'Solana', icon: 'S', price: 97.72, change: 0.21, marketCap: 44690000000 },
+        { symbol: 'XRP', name: 'Ripple', icon: 'X', price: 0.6153, change: 0.03, marketCap: 33740000000 },
+        { symbol: 'ADA', name: 'Cardano', icon: 'A', price: 0.4815, change: 0.15, marketCap: 17050000000 },
+        { symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð', price: 0.1198, change: 0.24, marketCap: 17470000000 },
+        { symbol: 'DOT', name: 'Polkadot', icon: '●', price: 6.83, change: 0.25, marketCap: 9770000000 }
+    ];
+    
+    const tbody = document.getElementById('marketTableBody');
+    if (tbody) {
+        tbody.innerHTML = fallbackData.map(crypto => {
+            const changeClass = crypto.change >= 0 ? 'positive' : 'negative';
+            const changeSign = crypto.change >= 0 ? '+' : '';
+            
+            return `
+                <tr>
+                    <td>
+                        <div class="crypto-info">
+                            <div class="crypto-icon">${crypto.icon}</div>
+                            <div>
+                                <div class="crypto-name">${crypto.name}</div>
+                                <div class="crypto-symbol">${crypto.symbol}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>$${formatPrice(crypto.price)}</td>
+                    <td>
+                        <span class="price-change ${changeClass}">
+                            ${changeSign}${crypto.change.toFixed(2)}%
+                        </span>
+                    </td>
+                    <td>${formatMarketCap(crypto.marketCap)}</td>
+                    <td>
+                        <button class="btn-tradingview" onclick="openTradingView('${crypto.symbol}')">
+                            📊 TradingView
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
 }
 
 function setupEventListeners() {
@@ -143,7 +265,7 @@ function setupEventListeners() {
             filterTabs.forEach(t => t.classList.remove('active'));
             this.classList.add('active');
             currentFilter = this.dataset.filter;
-            loadMarketTable();
+            renderMarketTable();
         });
     });
     
@@ -151,7 +273,7 @@ function setupEventListeners() {
     if (searchInput) {
         searchInput.addEventListener('input', function() {
             searchQuery = this.value;
-            loadMarketTable();
+            renderMarketTable();
         });
     }
 }
@@ -159,44 +281,43 @@ function setupEventListeners() {
 function startPriceUpdates() {
     if (priceUpdateInterval) clearInterval(priceUpdateInterval);
     
-    priceUpdateInterval = setInterval(function() {
-        cryptoData = cryptoData.map(crypto => {
-            const volatility = (crypto.symbol === 'SHIB' || crypto.symbol === 'PEPE') ? 0.03 : 0.005;
-            const change = (Math.random() - 0.5) * 100 * volatility;
-            const newPrice = Math.max(0.000001, crypto.price * (1 + change / 100));
-            const percentChange = ((newPrice - crypto.price) / crypto.price) * 100;
-            const newMarketCap = crypto.marketCap * (newPrice / crypto.price);
-            
-            return { ...crypto, price: newPrice, change: percentChange, marketCap: newMarketCap };
-        });
-        
-        loadMarketStats();
-        loadMarketTable();
-    }, 10000);
+    priceUpdateInterval = setInterval(async () => {
+        await loadMarketStats();
+        await loadMarketData();
+    }, 60000);
 }
 
-function goToTrade(symbol) {
-    window.location.href = `trade.html?crypto=${symbol}`;
-}
-
-function viewDetails(symbol) {
-    alert(`Viewing details for ${symbol}\n\nThis feature is coming soon!`);
-}
-
-function addToWatchlist(symbol) {
-    // Get existing watchlist from localStorage
-    let watchlist = JSON.parse(localStorage.getItem('crypto_watchlist') || '[]');
+function openTradingView(symbol) {
+    // Map symbol to CoinGecko ID if needed
+    const symbolMap = {
+        'BTC': 'bitcoin',
+        'ETH': 'ethereum',
+        'BNB': 'binancecoin',
+        'SOL': 'solana',
+        'XRP': 'ripple',
+        'ADA': 'cardano',
+        'DOGE': 'dogecoin',
+        'DOT': 'polkadot',
+        'LINK': 'chainlink',
+        'UNI': 'uniswap',
+        'AAVE': 'aave',
+        'SHIB': 'shiba-inu',
+        'AVAX': 'avalanche-2',
+        'MATIC': 'matic-network',
+        'PEPE': 'pepe'
+    };
     
-    if (watchlist.includes(symbol)) {
-        alert(`${symbol} is already in your watchlist!`);
-    } else {
-        watchlist.push(symbol);
-        localStorage.setItem('crypto_watchlist', JSON.stringify(watchlist));
-        alert(`${symbol} added to your watchlist!`);
-    }
+    const coinId = symbolMap[symbol] || symbol.toLowerCase();
+    // Open trading-view.html with the selected symbol
+    window.location.href = `trading-view.html?symbol=${coinId}`;
+}
+
+function handleLogout() {
+    localStorage.removeItem('pocket_user');
+    sessionStorage.removeItem('pocket_user');
+    window.location.href = 'home.html';
 }
 
 // Make functions global
-window.goToTrade = goToTrade;
-window.viewDetails = viewDetails;
-window.addToWatchlist = addToWatchlist;
+window.openTradingView = openTradingView;
+window.handleLogout = handleLogout;
