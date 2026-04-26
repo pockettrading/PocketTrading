@@ -229,20 +229,21 @@
         }
 
         .stat-label {
-            font-size: 0.85rem;
+            font-size: 0.7rem;
             color: var(--text-secondary);
             margin-bottom: 0.5rem;
+            letter-spacing: 0.5px;
         }
 
         .stat-value {
             font-size: 1.8rem;
             font-weight: 700;
-            color: var(--primary);
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
         }
 
         .stat-change {
-            font-size: 0.75rem;
-            margin-top: 0.5rem;
+            font-size: 0.7rem;
         }
 
         .stat-change.positive {
@@ -256,32 +257,40 @@
         /* Filter Tabs */
         .filter-tabs {
             display: flex;
-            gap: 0.5rem;
+            gap: 1rem;
             margin-bottom: 1.5rem;
             flex-wrap: wrap;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1rem;
         }
 
         .filter-tab {
-            padding: 8px 20px;
+            padding: 6px 0;
             background: transparent;
             border: none;
             color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.3s;
-            border-radius: 20px;
             font-weight: 500;
+            font-size: 0.85rem;
+            position: relative;
         }
 
         .filter-tab:hover {
             color: var(--primary);
-            background: rgba(247, 147, 26, 0.1);
         }
 
         .filter-tab.active {
             color: var(--primary);
-            background: rgba(247, 147, 26, 0.1);
+        }
+
+        .filter-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+            border-radius: 2px;
         }
 
         /* Search Bar */
@@ -305,6 +314,10 @@
             border-color: var(--primary);
         }
 
+        .search-input::placeholder {
+            color: var(--text-tertiary);
+        }
+
         /* Market Table */
         .market-table-container {
             background: var(--card-bg);
@@ -322,8 +335,9 @@
             padding: 1rem;
             color: var(--text-secondary);
             font-weight: 500;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             border-bottom: 1px solid var(--border);
+            letter-spacing: 0.5px;
         }
 
         .market-table td {
@@ -334,6 +348,7 @@
 
         .market-table tbody tr {
             transition: all 0.3s;
+            cursor: pointer;
         }
 
         .market-table tbody tr:hover {
@@ -353,10 +368,11 @@
 
         .crypto-name {
             font-weight: 600;
+            font-size: 0.9rem;
         }
 
         .crypto-symbol {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--text-tertiary);
         }
 
@@ -366,6 +382,7 @@
             padding: 4px 8px;
             border-radius: 8px;
             font-weight: 500;
+            font-size: 0.8rem;
         }
 
         .price-change.positive {
@@ -387,7 +404,7 @@
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             display: inline-flex;
             align-items: center;
             gap: 6px;
@@ -403,7 +420,7 @@
         .loading-state {
             text-align: center;
             padding: 3rem;
-            color: var(--text-secondary);
+            color: var(--text-tertiary);
         }
 
         @media (max-width: 968px) {
@@ -429,6 +446,10 @@
             .auth-buttons {
                 justify-content: center;
             }
+            
+            .filter-tabs {
+                justify-content: center;
+            }
         }
 
         @media (max-width: 480px) {
@@ -437,8 +458,11 @@
             }
             
             .filter-tabs {
-                overflow-x: auto;
-                flex-wrap: nowrap;
+                gap: 0.75rem;
+            }
+            
+            .filter-tab {
+                font-size: 0.75rem;
             }
             
             .market-table th,
@@ -448,8 +472,8 @@
             }
             
             .btn-tradingview {
-                padding: 4px 8px;
-                font-size: 0.7rem;
+                padding: 4px 10px;
+                font-size: 0.65rem;
             }
         }
     </style>
@@ -466,7 +490,7 @@
                 </svg>
                 <span>Pocket<span style="color: var(--primary);">Trading</span></span>
             </div>
-            <div class="nav-links" id="navLinks">
+            <div class="nav-links">
                 <a href="home.html" class="nav-link">Home</a>
                 <a href="markets.html" class="nav-link" style="color: var(--primary);">Markets</a>
                 <a href="trade.html" class="nav-link">Trades</a>
@@ -477,29 +501,29 @@
         <!-- Markets Header -->
         <div class="markets-header">
             <h1>Cryptocurrency Prices</h1>
-            <p>Track live cryptocurrency prices and market data</p>
+            <p>Live real-time prices from Binance & CoinGecko API</p>
         </div>
 
         <!-- Market Stats Cards -->
         <div class="stats-cards">
             <div class="stat-card">
-                <div class="stat-label">Total Market Cap</div>
-                <div class="stat-value" id="totalMarketCap">$2.69T</div>
-                <div class="stat-change negative" id="marketCapChange">-0.6%</div>
+                <div class="stat-label">TOTAL MARKET CAP</div>
+                <div class="stat-value" id="totalMarketCap">$2.45T</div>
+                <div class="stat-change" id="marketCapChange"></div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">24h Volume</div>
-                <div class="stat-value" id="totalVolume">$53.05B</div>
-                <div class="stat-change negative" id="volumeChange">-2.5%</div>
+                <div class="stat-label">24H VOLUME</div>
+                <div class="stat-value" id="totalVolume">$68.5B</div>
+                <div class="stat-change" id="volumeChange"></div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">BTC Dominance</div>
-                <div class="stat-value" id="btcDominance">58.1%</div>
-                <div class="stat-change negative" id="dominanceChange">-0.1%</div>
+                <div class="stat-label">BTC DOMINANCE</div>
+                <div class="stat-value" id="btcDominance">48.7%</div>
+                <div class="stat-change" id="dominanceChange"></div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Active Coins</div>
-                <div class="stat-value" id="activeCoins">100</div>
+                <div class="stat-label">ACTIVE COINS</div>
+                <div class="stat-value" id="activeCoins">12</div>
                 <div class="stat-change">+2 this week</div>
             </div>
         </div>
@@ -523,19 +547,19 @@
             <table class="market-table">
                 <thead>
                     <tr>
-                        <th>Coin</th>
-                        <th>Price</th>
-                        <th>24h Change</th>
-                        <th>Market Cap</th>
-                        <th>Action</th>
+                        <th>COIN</th>
+                        <th>PRICE</th>
+                        <th>24H CHANGE</th>
+                        <th>MARKET CAP</th>
+                        <th>ACTION</th>
                     </tr>
                 </thead>
                 <tbody id="marketTableBody">
                     <tr>
-                        <td colspan="5" class="loading-state">Loading market data...</td--</td>
+                        <td colspan="5" class="loading-state">Loading market data...</td--<tr>
                     </tbody>
-                </table>
-            </div>
+                </tbody>
+            </table>
         </div>
     </div>
 
