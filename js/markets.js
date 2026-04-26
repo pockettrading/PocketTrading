@@ -1,4 +1,4 @@
-// Markets page functionality - With TradingView button linking to trading-view page
+// Markets page functionality - No My Profile link, Login/Sign Up buttons for guests
 
 let currentUser = null;
 let currentFilter = 'all';
@@ -32,6 +32,7 @@ const symbolToIdMap = {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Markets page loaded');
     loadUser();
+    renderNavLinks();
     renderUserSection();
     initMarketsPage();
 });
@@ -41,7 +42,24 @@ function loadUser() {
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
         console.log('User loaded:', currentUser.email);
+    } else {
+        currentUser = null;
     }
+}
+
+function renderNavLinks() {
+    const navLinks = document.getElementById('navLinks');
+    if (!navLinks) return;
+    
+    // Keep only Home, Markets, Trades
+    // No My Profile link for anyone - it's removed from markets page
+    
+    // Ensure the links are correct
+    navLinks.innerHTML = `
+        <a href="home.html" class="nav-link">Home</a>
+        <a href="markets.html" class="nav-link" style="color: var(--primary);">Markets</a>
+        <a href="trade.html" class="nav-link">Trades</a>
+    `;
 }
 
 function renderUserSection() {
@@ -49,7 +67,9 @@ function renderUserSection() {
     if (!userSection) return;
     
     if (currentUser) {
+        // Show user dropdown for logged-in users
         const displayName = currentUser.name || currentUser.email.split('@')[0];
+        
         userSection.innerHTML = `
             <div class="user-dropdown">
                 <div class="user-name-display">
@@ -68,7 +88,13 @@ function renderUserSection() {
             </div>
         `;
     } else {
-        userSection.innerHTML = `<a href="register.html" class="signup-btn">Sign Up</a>`;
+        // Show Login + Sign Up buttons for guests
+        userSection.innerHTML = `
+            <div class="auth-buttons">
+                <a href="login.html" class="login-btn">Login</a>
+                <a href="register.html" class="signup-btn">Sign Up</a>
+            </div>
+        `;
     }
 }
 
@@ -150,7 +176,7 @@ function renderMarketTable() {
     }
     
     if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="loading-state">No cryptocurrencies found</td--<tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="loading-state">No cryptocurrencies found</td--</tr>';
         return;
     }
     
@@ -169,20 +195,20 @@ function renderMarketTable() {
                             <div class="crypto-symbol">${crypto.symbol}</div>
                         </div>
                     </div>
-                </td>
-                <td>$${formatPrice(crypto.current_price)}</td>
+                </td
+                <td>$${formatPrice(crypto.current_price)}</td
                 <td>
                     <span class="price-change ${changeClass}">
                         ${changeSign}${crypto.price_change_percentage_24h?.toFixed(2) || '0'}%
                     </span>
-                </td>
-                <td>${formatMarketCap(crypto.market_cap)}</td>
+                </td
+                <td>${formatMarketCap(crypto.market_cap)}</td
                 <td>
                     <button class="btn-tradingview" onclick="openTradingView('${crypto.symbol}')">
                         📊 TradingView
                     </button>
-                </td>
-            </tr>
+                </td
+            比
         `;
     }).join('');
 }
@@ -232,7 +258,7 @@ function getIconForSymbol(symbol) {
 
 function renderFallbackData() {
     const fallbackData = [
-        { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 75773.87, change: 0.02, marketCap: 1520000000000 },
+        { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 78119.00, change: 0.80, marketCap: 1570000000000 },
         { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2352.73, change: 0.06, marketCap: 283870000000 },
         { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 304.29, change: 0.07, marketCap: 51780000000 },
         { symbol: 'SOL', name: 'Solana', icon: 'S', price: 97.72, change: 0.21, marketCap: 44690000000 },
@@ -258,20 +284,20 @@ function renderFallbackData() {
                                 <div class="crypto-symbol">${crypto.symbol}</div>
                             </div>
                         </div>
-                    </td>
-                    <td>$${formatPrice(crypto.price)}</td>
+                    </td
+                    <td>$${formatPrice(crypto.price)}</td
                     <td>
                         <span class="price-change ${changeClass}">
                             ${changeSign}${crypto.change.toFixed(2)}%
                         </span>
-                    </td>
-                    <td>${formatMarketCap(crypto.marketCap)}</td>
+                    </td
+                    <td>${formatMarketCap(crypto.marketCap)}</td
                     <td>
                         <button class="btn-tradingview" onclick="openTradingView('${crypto.symbol}')">
                             📊 TradingView
                         </button>
-                    </td>
-                </tr>
+                    </td
+                比
             `;
         }).join('');
     }
@@ -307,14 +333,11 @@ function startPriceUpdates() {
 }
 
 function openTradingView(symbol) {
-    // Get the coin ID from symbol mapping
     const coinId = symbolToIdMap[symbol];
     
     if (coinId) {
-        // Navigate to trading-view page with the symbol parameter
         window.location.href = `trading-view.html?symbol=${coinId}`;
     } else {
-        // Fallback: try lowercase symbol
         window.location.href = `trading-view.html?symbol=${symbol.toLowerCase()}`;
     }
 }
