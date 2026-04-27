@@ -119,68 +119,133 @@
         /* Profile Layout - Luno Style */
         .profile-layout {
             display: grid;
-            grid-template-columns: 320px 1fr;
+            grid-template-columns: 280px 1fr;
             gap: 2rem;
         }
 
-        /* Left Sidebar */
+        /* Left Sidebar - Menu Only */
         .profile-sidebar {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.5rem;
+            height: fit-content;
+        }
+
+        .sidebar-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .menu-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.75rem;
+            background: transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .menu-item:hover {
+            background: var(--card-hover);
+            color: var(--primary);
+        }
+
+        .menu-item.active {
+            background: rgba(247, 147, 26, 0.1);
+            color: var(--primary);
+        }
+
+        .menu-icon {
+            font-size: 1.1rem;
+        }
+
+        /* Main Content */
+        .profile-content {
             background: var(--card-bg);
             border-radius: 20px;
             padding: 1.5rem;
         }
 
-        /* User Avatar Section */
-        .user-avatar-section {
-            text-align: center;
+        .content-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Personal Information Card */
+        .info-card {
+            background: var(--darker-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
             margin-bottom: 1.5rem;
         }
 
-        .user-avatar {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border-radius: 50%;
+        .info-row {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1rem;
-            font-size: 2rem;
-            font-weight: 600;
-            color: white;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
         }
 
-        .user-fullname {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .user-email {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-        }
-
-        /* Info Cards */
-        .info-card {
-            background: var(--darker-bg);
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 1rem;
+        .info-row:last-child {
+            border-bottom: none;
         }
 
         .info-label {
-            font-size: 0.65rem;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .info-value {
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        /* Balance and KYC Section */
+        .balance-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--darker-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .balance-item {
+            flex: 1;
+        }
+
+        .balance-label {
+            font-size: 0.7rem;
             color: var(--text-tertiary);
             margin-bottom: 0.25rem;
         }
 
-        .info-value {
-            font-size: 1rem;
-            font-weight: 600;
+        .balance-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
         }
 
-        .kyc-status {
+        .kyc-badge {
             display: inline-block;
             padding: 4px 12px;
             border-radius: 20px;
@@ -202,22 +267,22 @@
         .action-buttons {
             display: flex;
             gap: 1rem;
-            margin: 1rem 0;
+            margin-bottom: 1.5rem;
         }
 
         .btn-deposit {
             flex: 1;
             background: linear-gradient(135deg, var(--success), #00b894);
             color: white;
-            padding: 10px;
+            padding: 12px;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
             display: inline-block;
             font-weight: 600;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             transition: all 0.3s;
         }
 
@@ -225,15 +290,15 @@
             flex: 1;
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
-            padding: 10px;
+            padding: 12px;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
             display: inline-block;
             font-weight: 600;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             transition: all 0.3s;
         }
 
@@ -244,36 +309,33 @@
 
         /* Trading Statistics */
         .stats-title {
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             font-weight: 600;
             margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border);
         }
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
         }
 
         .stat-item {
             background: var(--darker-bg);
-            padding: 0.75rem;
-            border-radius: 10px;
+            padding: 1rem;
+            border-radius: 12px;
             text-align: center;
         }
 
         .stat-label {
-            font-size: 0.6rem;
+            font-size: 0.65rem;
             color: var(--text-tertiary);
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.5rem;
         }
 
         .stat-value {
-            font-size: 1rem;
-            font-weight: 600;
+            font-size: 1.1rem;
+            font-weight: 700;
         }
 
         .stat-value.positive {
@@ -282,57 +344,6 @@
 
         .stat-value.negative {
             color: var(--danger);
-        }
-
-        /* Menu Items */
-        .menu-items {
-            margin-top: 1rem;
-        }
-
-        .menu-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 0.75rem;
-            background: var(--darker-bg);
-            border-radius: 10px;
-            margin-bottom: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.85rem;
-        }
-
-        .menu-item:hover {
-            background: var(--card-hover);
-            transform: translateX(4px);
-        }
-
-        .menu-item.active {
-            background: rgba(247, 147, 26, 0.1);
-            color: var(--primary);
-        }
-
-        .menu-icon {
-            font-size: 1.1rem;
-        }
-
-        .menu-text {
-            flex: 1;
-        }
-
-        /* Main Content */
-        .profile-content {
-            background: var(--card-bg);
-            border-radius: 20px;
-            padding: 1.5rem;
-        }
-
-        .content-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid var(--border);
         }
 
         /* Trade History Table */
@@ -471,6 +482,10 @@
             .container {
                 padding: 1.5rem;
             }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 768px) {
@@ -485,6 +500,15 @@
             
             .user-info {
                 justify-content: center;
+            }
+            
+            .balance-section {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
             }
             
             .support-contact {
@@ -511,87 +535,101 @@
                 <a href="trade.html" class="nav-link">Trades</a>
                 <a href="profile.html" class="nav-link" style="color: var(--primary);">My Profile</a>
             </div>
-            <div class="user-info" id="userInfo">
-                <!-- Username and Logout will be inserted here -->
-            </div>
+            <div class="user-info" id="userInfo"></div>
         </div>
 
         <!-- Profile Layout -->
         <div class="profile-layout">
-            <!-- Left Sidebar -->
+            <!-- Left Sidebar - Menu Only -->
             <div class="profile-sidebar">
-                <div class="user-avatar-section">
-                    <div class="user-avatar" id="userAvatar">JD</div>
-                    <div class="user-fullname" id="userFullName">Loading...</div>
-                    <div class="user-email" id="userEmail">Loading...</div>
-                </div>
-
-                <div class="info-card">
-                    <div class="info-label">Member Since</div>
-                    <div class="info-value" id="memberSince">-</div>
-                </div>
-
-                <div class="info-card">
-                    <div class="info-label">Account Balance</div>
-                    <div class="info-value" id="accountBalance">$0.00</div>
-                </div>
-
-                <div class="info-card">
-                    <div class="info-label">KYC Status</div>
-                    <div class="info-value">
-                        <span class="kyc-status kyc-pending" id="kycStatus">pending</span>
-                    </div>
-                </div>
-
-                <div class="action-buttons">
-                    <a href="deposit.html" class="btn-deposit">Deposit</a>
-                    <a href="withdraw.html" class="btn-withdraw">Withdraw Funds</a>
-                </div>
-
-                <div class="stats-title">Trading Statistics</div>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-label">Total Trades</div>
-                        <div class="stat-value" id="totalTrades">0</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Win Rate</div>
-                        <div class="stat-value" id="winRate">0%</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Total Volume</div>
-                        <div class="stat-value" id="totalVolume">$0.00</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Total Profit</div>
-                        <div class="stat-value" id="totalProfit">$0.00</div>
-                    </div>
-                </div>
-
+                <div class="sidebar-title">User Profile</div>
                 <div class="menu-items">
-                    <div class="menu-item active" data-page="history">
+                    <div class="menu-item active" data-page="profile">
+                        <span class="menu-icon">👤</span>
+                        <span>Profile</span>
+                    </div>
+                    <div class="menu-item" data-page="history">
                         <span class="menu-icon">📊</span>
-                        <span class="menu-text">Trade History</span>
+                        <span>Trade History</span>
                     </div>
                     <div class="menu-item" data-page="kyc">
                         <span class="menu-icon">✓</span>
-                        <span class="menu-text">KYC Verification</span>
+                        <span>KYC Verification</span>
                     </div>
                     <div class="menu-item" data-page="update">
                         <span class="menu-icon">✎</span>
-                        <span class="menu-text">Update Profile</span>
+                        <span>Update Profile</span>
                     </div>
                     <div class="menu-item" data-page="support">
                         <span class="menu-icon">💬</span>
-                        <span class="menu-text">Customer Support</span>
+                        <span>Customer Support</span>
                     </div>
                 </div>
             </div>
 
             <!-- Main Content Area -->
             <div class="profile-content">
-                <!-- Trade History Page (Default) -->
-                <div id="historyPage" class="page-content">
+                <!-- Profile Page (Default) -->
+                <div id="profilePage" class="page-content">
+                    <h2 class="content-title">Profile</h2>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">View your personal information and account status</p>
+
+                    <!-- Personal Information Card -->
+                    <div class="info-card">
+                        <div class="info-row">
+                            <span class="info-label">Full Name</span>
+                            <span class="info-value" id="profileFullName">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Email</span>
+                            <span class="info-value" id="profileEmail">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Member Since</span>
+                            <span class="info-value" id="memberSince">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Balance and KYC Section -->
+                    <div class="balance-section">
+                        <div class="balance-item">
+                            <div class="balance-label">Account Balance</div>
+                            <div class="balance-value" id="accountBalance">$0.00</div>
+                        </div>
+                        <div class="balance-item">
+                            <div class="balance-label">KYC Status</div>
+                            <div>
+                                <span class="kyc-badge kyc-pending" id="kycStatus">pending</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <a href="deposit.html" class="btn-deposit">Deposit</a>
+                        <a href="withdraw.html" class="btn-withdraw">Withdraw Funds</a>
+                    </div>
+
+                    <!-- Trading Statistics -->
+                    <div class="stats-title">Trading Statistics</div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Trades</div>
+                            <div class="stat-value" id="totalTrades">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Win Rate</div>
+                            <div class="stat-value" id="winRate">0%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Total Volume</div>
+                            <div class="stat-value" id="totalVolume">$0.00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trade History Page -->
+                <div id="historyPage" class="page-content" style="display: none;">
                     <h2 class="content-title">Trade History</h2>
                     <div class="trade-history-table">
                         <table>
@@ -607,8 +645,7 @@
                             </thead>
                             <tbody id="tradeHistoryBody">
                                 <tr>
-                                    <td colspan="6" style="text-align: center; padding: 2rem;">No trades yet</td>
-                                </tr>
+                                    <td colspan="6" style="text-align: center; padding: 2rem;">No trades yet</td--</tr>
                             </tbody>
                         </table>
                     </div>
@@ -746,7 +783,7 @@
 
                     <div class="faq-item">
                         <div class="faq-question">How to deposit?</div>
-                        <div class="faq-answer">Go to Deposit page or click Deposit button in your profile sidebar.</div>
+                        <div class="faq-answer">Go to Deposit page or click Deposit button in your profile.</div>
                     </div>
                     <div class="faq-item">
                         <div class="faq-question">How long do withdrawals take?</div>
