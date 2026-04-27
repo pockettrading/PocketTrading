@@ -1,4 +1,4 @@
-// Advanced Trading View - Working Chart + Guest/Registered Access Control
+// Advanced Trading View - Binance API with Username + Logout in top-right
 
 let currentUser = null;
 let chart = null;
@@ -11,7 +11,7 @@ let orderBookInterval = null;
 let candlestickSeries = null;
 let currentPrice = 0;
 let currentTradeType = 'buy';
-let priceAlerts = [];
+let allCryptos = [];
 
 // Binance API
 const BINANCE_BASE_URL = 'https://api.binance.com/api/v3';
@@ -25,7 +25,9 @@ const symbolMap = {
     'ripple': { symbol: 'XRP', binanceSymbol: 'XRPUSDT', name: 'Ripple' },
     'cardano': { symbol: 'ADA', binanceSymbol: 'ADAUSDT', name: 'Cardano' },
     'dogecoin': { symbol: 'DOGE', binanceSymbol: 'DOGEUSDT', name: 'Dogecoin' },
-    'polkadot': { symbol: 'DOT', binanceSymbol: 'DOTUSDT', name: 'Polkadot' }
+    'polkadot': { symbol: 'DOT', binanceSymbol: 'DOTUSDT', name: 'Polkadot' },
+    'chainlink': { symbol: 'LINK', binanceSymbol: 'LINKUSDT', name: 'Chainlink' },
+    'uniswap': { symbol: 'UNI', binanceSymbol: 'UNIUSDT', name: 'Uniswap' }
 };
 
 // Interval mapping
@@ -45,12 +47,12 @@ function getUrlParameter(name) {
     return urlParams.get(name);
 }
 
-// Initialize
+// Initialize when page loads
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('Trading View page loaded');
     loadUser();
-    renderUserSection();
-    loadPriceAlerts();
+    renderNavLinks();
+    renderUserInfo();
     
     const urlSymbol = getUrlParameter('symbol');
     if (urlSymbol && symbolMap[urlSymbol]) {
@@ -61,7 +63,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     await initTradingView();
-    renderTradingPanel();
 });
 
 function loadUser() {
@@ -71,40 +72,38 @@ function loadUser() {
         console.log('User logged in:', currentUser.email);
     } else {
         currentUser = null;
-        console.log('Guest mode - trading disabled');
+        console.log('Guest mode');
     }
 }
 
-function renderUserSection() {
-    const userSection = document.getElementById('userSection');
-    if (!userSection) return;
+function renderNavLinks() {
+    const navLinks = document.getElementById('navLinks');
+    if (!navLinks) return;
+    
+    // Check if My Profile link already exists
+    const hasProfileLink = Array.from(navLinks.children).some(link => link.textContent === 'My Profile');
+    
+    if (currentUser && !hasProfileLink) {
+        const profileLink = document.createElement('a');
+        profileLink.href = 'profile.html';
+        profileLink.className = 'nav-link';
+        profileLink.textContent = 'My Profile';
+        navLinks.appendChild(profileLink);
+    }
+}
+
+function renderUserInfo() {
+    const userInfo = document.getElementById('userInfo');
+    if (!userInfo) return;
     
     if (currentUser) {
         const displayName = currentUser.name || currentUser.email.split('@')[0];
-        userSection.innerHTML = `
-            <div class="user-dropdown">
-                <div class="user-name-display">
-                    <span>👤</span>
-                    <span>${displayName}</span>
-                    <span>▼</span>
-                </div>
-                <div class="dropdown-menu">
-                    <a href="profile.html" class="dropdown-item">📋 My Profile</a>
-                    <a href="dashboard.html" class="dropdown-item">📊 Dashboard</a>
-                    <a href="deposit.html" class="dropdown-item">💰 Deposit</a>
-                    <a href="withdraw.html" class="dropdown-item">💸 Withdraw</a>
-                    <div class="dropdown-divider"></div>
-                    <span class="dropdown-item" onclick="handleLogout()" style="cursor: pointer; color: var(--danger);">🚪 Logout</span>
-                </div>
-            </div>
+        userInfo.innerHTML = `
+            <span class="username">${displayName}</span>
+            <span class="logout-link" onclick="handleLogout()">Logout</span>
         `;
     } else {
-        userSection.innerHTML = `
-            <div class="auth-buttons">
-                <a href="login.html" class="login-btn">Login</a>
-                <a href="register.html" class="signup-btn">Sign Up</a>
-            </div>
-        `;
+        userInfo.innerHTML = '';
     }
 }
 
@@ -113,7 +112,6 @@ function renderTradingPanel() {
     if (!panel) return;
     
     if (currentUser) {
-        // Logged in user - Full trading panel
         panel.innerHTML = `
             <div class="trade-tabs">
                 <button class="trade-tab buy active" data-trade="buy">BUY</button>
@@ -147,26 +145,14 @@ function renderTradingPanel() {
             </div>
             
             <button class="trade-btn buy" id="executeTradeBtn">BUY BTC</button>
-            
-            <div class="alerts-section">
-                <div class="alerts-header">
-                    <span class="alerts-title">Price Alerts</span>
-                    <button class="add-alert-btn" id="addAlertBtn">+ Add</button>
-                </div>
-                <div class="alerts-list" id="alertsList">
-                    <div class="no-alerts">No alerts</div>
-                </div>
-            </div>
         `;
         
-        // Re-attach event listeners for trading panel
+        // Setup trading event listeners
         setupTradingEventListeners();
-        renderAlerts();
     } else {
-        // Guest user - Show login prompt, disable trading
         panel.innerHTML = `
             <div class="trade-tabs">
-                <button class="trade-tab buy active" disabled style="opacity:0.5">BUY</button>
+                <button class="trade-tab buy" disabled style="opacity:0.5">BUY</button>
                 <button class="trade-tab sell" disabled style="opacity:0.5">SELL</button>
             </div>
             
@@ -196,27 +182,16 @@ function renderTradingPanel() {
                 </div>
             </div>
             
-            <button class="trade-btn buy" id="executeTradeBtn" disabled style="opacity:0.5">Login to Trade</button>
+            <button class="trade-btn buy" disabled style="opacity:0.5">Login to Trade</button>
             
             <div class="login-prompt">
                 🔒 <a href="login.html">Login</a> or <a href="register.html">Sign Up</a> to start trading
-            </div>
-            
-            <div class="alerts-section">
-                <div class="alerts-header">
-                    <span class="alerts-title">Price Alerts</span>
-                    <button class="add-alert-btn" id="addAlertBtn" disabled>+ Add</button>
-                </div>
-                <div class="alerts-list" id="alertsList">
-                    <div class="no-alerts">Login to set alerts</div>
-                </div>
             </div>
         `;
     }
 }
 
 function setupTradingEventListeners() {
-    // Trade tabs
     document.querySelectorAll('.trade-tab').forEach(tab => {
         tab.addEventListener('click', () => {
             document.querySelectorAll('.trade-tab').forEach(t => t.classList.remove('active'));
@@ -234,7 +209,6 @@ function setupTradingEventListeners() {
         });
     });
     
-    // Quick amount buttons
     document.querySelectorAll('.quick-amount').forEach(btn => {
         btn.addEventListener('click', () => {
             const percent = parseInt(btn.dataset.percent);
@@ -245,90 +219,106 @@ function setupTradingEventListeners() {
         });
     });
     
-    // Amount input
     const amountInput = document.getElementById('tradeAmount');
     if (amountInput) {
         amountInput.addEventListener('input', calculateOrderTotal);
     }
     
-    // Trade button
     const tradeBtn = document.getElementById('executeTradeBtn');
     if (tradeBtn) {
         tradeBtn.addEventListener('click', executeTrade);
     }
-    
-    // Add alert button
-    const addAlertBtn = document.getElementById('addAlertBtn');
-    if (addAlertBtn) {
-        addAlertBtn.addEventListener('click', () => addAlert());
-    }
 }
 
-function loadPriceAlerts() {
-    const saved = localStorage.getItem('price_alerts');
-    if (saved) {
-        priceAlerts = JSON.parse(saved);
-    }
-}
-
-function savePriceAlerts() {
-    localStorage.setItem('price_alerts', JSON.stringify(priceAlerts));
-}
-
-function renderAlerts() {
-    const alertsContainer = document.getElementById('alertsList');
-    if (!alertsContainer) return;
-    
-    if (priceAlerts.length === 0) {
-        alertsContainer.innerHTML = '<div class="no-alerts">No alerts</div>';
-        return;
-    }
-    
-    alertsContainer.innerHTML = priceAlerts.map(alert => `
-        <div class="alert-item">
-            <span>When price reaches</span>
-            <span class="alert-price">$${alert.price.toFixed(2)}</span>
-            <button class="remove-alert" onclick="removeAlert(${alert.id})">✕</button>
-        </div>
-    `).join('');
-}
-
-function addAlert() {
-    if (!currentUser) {
-        alert('Please login to set price alerts');
-        return;
-    }
-    
+function calculateOrderTotal() {
+    const amount = parseFloat(document.getElementById('tradeAmount')?.value || 0);
     const price = currentPrice;
-    const newAlert = {
-        id: Date.now(),
-        price: price,
-        symbol: currentSymbol,
-        triggered: false
-    };
-    priceAlerts.push(newAlert);
-    savePriceAlerts();
-    renderAlerts();
+    const total = amount;
+    const cryptoAmount = amount / price;
+    
+    const orderAmountElem = document.getElementById('orderAmount');
+    const orderTotalElem = document.getElementById('orderTotal');
+    
+    if (orderAmountElem) orderAmountElem.textContent = `${cryptoAmount.toFixed(6)} ${currentSymbol}`;
+    if (orderTotalElem) orderTotalElem.textContent = `$${total.toFixed(2)}`;
 }
 
-function removeAlert(id) {
-    priceAlerts = priceAlerts.filter(a => a.id !== id);
-    savePriceAlerts();
-    renderAlerts();
-}
-
-function checkAlerts() {
-    priceAlerts.forEach(alert => {
-        if (!alert.triggered) {
-            if ((alert.price >= currentPrice && alert.price - 10 <= currentPrice) ||
-                (alert.price <= currentPrice && alert.price + 10 >= currentPrice)) {
-                alert.triggered = true;
-                showNotification(`⚠️ Price Alert! ${currentSymbol} reached $${currentPrice.toFixed(2)}`, 'warning');
-            }
+function executeTrade() {
+    if (!currentUser) {
+        alert('Please login to trade');
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    const amount = parseFloat(document.getElementById('tradeAmount').value) || 0;
+    
+    if (amount <= 0) {
+        alert('Please enter a valid amount');
+        return;
+    }
+    
+    const balance = currentUser.balance || 0;
+    
+    if (currentTradeType === 'buy') {
+        if (amount > balance) {
+            alert('Insufficient balance');
+            return;
         }
-    });
-    savePriceAlerts();
-    renderAlerts();
+        
+        currentUser.balance -= amount;
+        
+        if (!currentUser.transactions) currentUser.transactions = [];
+        currentUser.transactions.unshift({
+            id: Date.now(),
+            type: 'buy',
+            amount: amount,
+            crypto: currentSymbol,
+            price: currentPrice,
+            status: 'completed',
+            date: new Date().toISOString()
+        });
+        
+        alert(`Successfully bought ${(amount / currentPrice).toFixed(6)} ${currentSymbol} at $${currentPrice.toFixed(2)}`);
+    } else {
+        currentUser.balance += amount;
+        
+        currentUser.transactions.unshift({
+            id: Date.now(),
+            type: 'sell',
+            amount: amount,
+            crypto: currentSymbol,
+            price: currentPrice,
+            status: 'completed',
+            date: new Date().toISOString()
+        });
+        
+        alert(`Successfully sold ${(amount / currentPrice).toFixed(6)} ${currentSymbol} at $${currentPrice.toFixed(2)}`);
+    }
+    
+    saveUserData();
+    document.getElementById('tradeAmount').value = '';
+    calculateOrderTotal();
+    updateBalanceDisplay();
+}
+
+function saveUserData() {
+    const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
+    const userIndex = users.findIndex(u => u.id === currentUser.id);
+    if (userIndex !== -1) {
+        users[userIndex] = currentUser;
+        localStorage.setItem('pocket_users', JSON.stringify(users));
+    }
+    
+    if (localStorage.getItem('pocket_user')) {
+        localStorage.setItem('pocket_user', JSON.stringify(currentUser));
+    }
+    if (sessionStorage.getItem('pocket_user')) {
+        sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
+    }
+}
+
+function updateBalanceDisplay() {
+    // Balance display update if needed
 }
 
 async function initTradingView() {
@@ -337,6 +327,7 @@ async function initTradingView() {
     await fetchOrderBook();
     setupChartEventListeners();
     startRealTimeUpdates();
+    renderTradingPanel();
 }
 
 async function initChart() {
@@ -387,8 +378,11 @@ async function fetchMarketData() {
         document.getElementById('low24h').textContent = `$${low.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         document.getElementById('volume24h').textContent = `$${quoteVolume.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
         
+        // Estimate market cap (simplified)
+        const marketCap = currentPrice * 19500000;
+        document.getElementById('marketCap').textContent = `$${marketCap.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+        
         await fetchCandlestickData();
-        if (currentUser) checkAlerts();
         calculateOrderTotal();
         
     } catch (error) {
@@ -484,19 +478,6 @@ function setOrderPrice(price) {
     calculateOrderTotal();
 }
 
-function calculateOrderTotal() {
-    const amount = parseFloat(document.getElementById('tradeAmount')?.value || 0);
-    const price = currentPrice;
-    const total = amount;
-    const cryptoAmount = amount / price;
-    
-    const orderAmountElem = document.getElementById('orderAmount');
-    const orderTotalElem = document.getElementById('orderTotal');
-    
-    if (orderAmountElem) orderAmountElem.textContent = `${cryptoAmount.toFixed(6)} ${currentSymbol}`;
-    if (orderTotalElem) orderTotalElem.textContent = `$${total.toFixed(2)}`;
-}
-
 function setupChartEventListeners() {
     document.querySelectorAll('.timeframe-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -506,84 +487,6 @@ function setupChartEventListeners() {
             await fetchCandlestickData();
         });
     });
-}
-
-function executeTrade() {
-    if (!currentUser) {
-        alert('Please login to trade');
-        window.location.href = 'login.html';
-        return;
-    }
-    
-    const amount = parseFloat(document.getElementById('tradeAmount').value) || 0;
-    
-    if (amount <= 0) {
-        alert('Please enter a valid amount');
-        return;
-    }
-    
-    const balance = currentUser.balance || 0;
-    
-    if (currentTradeType === 'buy') {
-        if (amount > balance) {
-            alert('Insufficient balance');
-            return;
-        }
-        
-        currentUser.balance -= amount;
-        
-        if (!currentUser.transactions) currentUser.transactions = [];
-        currentUser.transactions.unshift({
-            id: Date.now(),
-            type: 'buy',
-            amount: amount,
-            crypto: currentSymbol,
-            price: currentPrice,
-            status: 'completed',
-            date: new Date().toISOString()
-        });
-        
-        showNotification(`Successfully bought ${(amount / currentPrice).toFixed(6)} ${currentSymbol} at $${currentPrice.toFixed(2)}`, 'success');
-    } else {
-        currentUser.balance += amount;
-        
-        currentUser.transactions.unshift({
-            id: Date.now(),
-            type: 'sell',
-            amount: amount,
-            crypto: currentSymbol,
-            price: currentPrice,
-            status: 'completed',
-            date: new Date().toISOString()
-        });
-        
-        showNotification(`Successfully sold ${(amount / currentPrice).toFixed(6)} ${currentSymbol} at $${currentPrice.toFixed(2)}`, 'success');
-    }
-    
-    saveUserData();
-    document.getElementById('tradeAmount').value = '';
-    calculateOrderTotal();
-    updateBalanceDisplay();
-}
-
-function saveUserData() {
-    const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
-    const userIndex = users.findIndex(u => u.id === currentUser.id);
-    if (userIndex !== -1) {
-        users[userIndex] = currentUser;
-        localStorage.setItem('pocket_users', JSON.stringify(users));
-    }
-    
-    if (localStorage.getItem('pocket_user')) {
-        localStorage.setItem('pocket_user', JSON.stringify(currentUser));
-    }
-    if (sessionStorage.getItem('pocket_user')) {
-        sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
-    }
-}
-
-function updateBalanceDisplay() {
-    // This will be called from dashboard.js when needed
 }
 
 function startRealTimeUpdates() {
@@ -599,32 +502,6 @@ function startRealTimeUpdates() {
     }, 3000);
 }
 
-function showNotification(message, type) {
-    const notification = document.createElement('div');
-    notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${type === 'error' ? '#FF4757' : (type === 'warning' ? '#FFA502' : '#00D897')};
-        color: white;
-        padding: 12px 20px;
-        border-radius: 12px;
-        font-size: 14px;
-        z-index: 10000;
-        animation: slideIn 0.3s ease-out;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        max-width: 350px;
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease-out';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
-}
-
 function handleLogout() {
     localStorage.removeItem('pocket_user');
     sessionStorage.removeItem('pocket_user');
@@ -633,5 +510,4 @@ function handleLogout() {
 
 // Make functions global
 window.setOrderPrice = setOrderPrice;
-window.removeAlert = removeAlert;
 window.handleLogout = handleLogout;
