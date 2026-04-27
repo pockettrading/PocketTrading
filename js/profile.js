@@ -1,4 +1,4 @@
-// Profile functionality - Complete working version
+// Profile functionality - Luno Style with Sidebar
 
 let currentUser = null;
 
@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = 'login.html';
         return;
     }
+    renderUserInfo();
     initProfilePage();
 });
 
@@ -21,27 +22,27 @@ function loadUser() {
     }
 }
 
+function renderUserInfo() {
+    const userInfo = document.getElementById('userInfo');
+    if (!userInfo) return;
+    
+    const displayName = currentUser.name || currentUser.email.split('@')[0];
+    
+    userInfo.innerHTML = `
+        <span class="username">${displayName}</span>
+        <span class="logout-link" onclick="handleLogout()">Logout</span>
+    `;
+}
+
 function initProfilePage() {
-    updateUserDisplay();
-    loadUserProfile();
+    updateUserProfile();
     loadTradingStats();
     loadTradeHistory();
     setupMenuNavigation();
     setupForms();
 }
 
-function updateUserDisplay() {
-    if (!currentUser) return;
-    
-    const displayName = currentUser.name || currentUser.email.split('@')[0];
-    const avatarInitials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-    
-    document.getElementById('userAvatar').textContent = avatarInitials;
-    document.getElementById('sidebarUserName').textContent = displayName;
-    document.getElementById('sidebarUserEmail').textContent = currentUser.email;
-}
-
-function loadUserProfile() {
+function updateUserProfile() {
     if (!currentUser) return;
     
     const fullName = currentUser.name || currentUser.email.split('@')[0];
@@ -50,12 +51,15 @@ function loadUserProfile() {
     const currentBalance = currentUser.balance || 0;
     const kycStatus = currentUser.kycStatus || 'pending';
     
-    document.getElementById('profileFullName').textContent = fullName;
-    document.getElementById('profileEmail').textContent = email;
+    // Avatar initials
+    const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    document.getElementById('userAvatar').textContent = initials;
+    document.getElementById('userFullName').textContent = fullName;
+    document.getElementById('userEmail').textContent = email;
     document.getElementById('memberSince').textContent = memberSince;
     document.getElementById('accountBalance').textContent = `$${currentBalance.toFixed(2)}`;
     
-    const kycBadge = document.getElementById('kycStatusBadge');
+    const kycBadge = document.getElementById('kycStatus');
     kycBadge.textContent = kycStatus;
     kycBadge.className = `kyc-status kyc-${kycStatus}`;
     
@@ -78,18 +82,19 @@ function loadTradingStats() {
     const totalTrades = trades.length;
     
     let winningTrades = 0;
+    let totalVolume = 0;
     let totalProfit = currentUser.stats?.totalProfit || 0;
     
     trades.forEach(trade => {
-        if (trade.pnl) {
-            if (trade.pnl > 0) winningTrades++;
-        }
+        totalVolume += trade.amount || 0;
+        if (trade.pnl && trade.pnl > 0) winningTrades++;
     });
     
     const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100).toFixed(1) : 0;
     
     document.getElementById('totalTrades').textContent = totalTrades;
     document.getElementById('winRate').textContent = `${winRate}%`;
+    document.getElementById('totalVolume').textContent = `$${totalVolume.toFixed(2)}`;
     
     const profitElem = document.getElementById('totalProfit');
     const sign = totalProfit >= 0 ? '+' : '';
@@ -109,35 +114,35 @@ function loadTradeHistory() {
         return;
     }
     
-    tbody.innerHTML = trades.map(trade => `
-        <tr>
-            <td>${new Date(trade.date).toLocaleDateString()} ${new Date(trade.date).toLocaleTimeString()}</td>
-            <td class="trade-type-${trade.type}">${trade.type.toUpperCase()}</td>
-            <td>${trade.crypto || 'BTC'}</td>
-            <td>${trade.amount?.toFixed(6) || '0'}</td>
-            <td>$${trade.price?.toFixed(2) || '0'}</td>
-            <td>$${trade.total?.toFixed(2) || '0'}</td>
-        </tr>
-    `).join('');
+    tbody.innerHTML = trades.map(trade => {
+        const tradeType = trade.tradeType || trade.type;
+        return `
+            <tr>
+                <td>${new Date(trade.date).toLocaleDateString()} ${new Date(trade.date).toLocaleTimeString()}</td
+                <td class="trade-type-${tradeType}">${tradeType?.toUpperCase() || trade.type.toUpperCase()}</td
+                <td>${trade.crypto || 'BTC'}</td
+                <td>${trade.amount?.toFixed(2) || '0'}</td
+                <td>$${trade.price?.toFixed(2) || '0'}</td
+                <td>$${trade.expectedReturn?.toFixed(2) || trade.total?.toFixed(2) || '0'}</td
+            比
+        `;
+    }).join('');
 }
 
 function setupMenuNavigation() {
     const menuItems = document.querySelectorAll('.menu-item');
-    const pages = ['profilePage', 'historyPage', 'kycPage', 'updatePage', 'supportPage'];
+    const pages = ['historyPage', 'kycPage', 'updatePage', 'supportPage'];
     
     menuItems.forEach((item, index) => {
         item.addEventListener('click', () => {
-            // Update active state
             menuItems.forEach(mi => mi.classList.remove('active'));
             item.classList.add('active');
             
-            // Hide all pages
             pages.forEach(page => {
                 const pageElem = document.getElementById(page);
                 if (pageElem) pageElem.style.display = 'none';
             });
             
-            // Show selected page
             const selectedPage = document.getElementById(pages[index]);
             if (selectedPage) selectedPage.style.display = 'block';
         });
@@ -232,8 +237,7 @@ function updateProfile() {
     
     saveUserData();
     showNotification('Profile updated successfully!', 'success');
-    loadUserProfile();
-    updateUserDisplay();
+    updateUserProfile();
 }
 
 function submitKYC() {
@@ -246,7 +250,6 @@ function submitKYC() {
         return;
     }
     
-    // Check if files were uploaded
     const hasIdFront = document.getElementById('idFront').files.length > 0;
     const hasIdBack = document.getElementById('idBack').files.length > 0;
     const hasSelfie = document.getElementById('selfie').files.length > 0;
@@ -268,8 +271,7 @@ function submitKYC() {
     saveUserData();
     showNotification('KYC documents submitted successfully! We will verify within 24-48 hours.', 'success');
     
-    // Update KYC status display
-    const kycBadge = document.getElementById('kycStatusBadge');
+    const kycBadge = document.getElementById('kycStatus');
     kycBadge.textContent = 'pending';
     kycBadge.className = 'kyc-status kyc-pending';
     
@@ -368,3 +370,11 @@ function showNotification(message, type) {
         setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
+
+function handleLogout() {
+    localStorage.removeItem('pocket_user');
+    sessionStorage.removeItem('pocket_user');
+    window.location.href = 'home.html';
+}
+
+window.handleLogout = handleLogout;
