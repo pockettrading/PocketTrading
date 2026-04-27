@@ -90,7 +90,7 @@
             color: var(--primary);
         }
 
-        /* User Dropdown (for logged-in users only) */
+        /* User Dropdown */
         .user-dropdown {
             position: relative;
             cursor: pointer;
@@ -152,48 +152,50 @@
 
         /* Trade Container */
         .trade-container {
-            max-width: 800px;
+            max-width: 650px;
             margin: 0 auto;
         }
 
         .trade-header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
         .trade-header h1 {
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
         }
 
         .trade-header p {
+            font-size: 0.7rem;
             color: var(--text-secondary);
         }
 
         /* Trade Card */
         .trade-card {
             background: var(--card-bg);
-            border-radius: 24px;
-            padding: 2rem;
+            border-radius: 20px;
+            padding: 1.5rem;
         }
 
         /* Order Type Tabs */
         .order-tabs {
             display: flex;
             gap: 1rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             border-bottom: 1px solid var(--border);
         }
 
         .order-tab {
             flex: 1;
-            padding: 12px;
+            padding: 8px;
             background: transparent;
             border: none;
             color: var(--text-secondary);
             cursor: pointer;
-            font-weight: 600;
-            font-size: 1rem;
+            font-weight: 500;
+            font-size: 0.9rem;
             transition: all 0.3s;
             position: relative;
         }
@@ -220,8 +222,8 @@
         .crypto-selector {
             background: var(--darker-bg);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1rem;
+            border-radius: 12px;
+            padding: 0.75rem;
             margin-bottom: 1.5rem;
             cursor: pointer;
             display: flex;
@@ -237,20 +239,20 @@
         .selected-crypto {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .crypto-icon {
-            font-size: 2rem;
+            font-size: 1.3rem;
         }
 
         .crypto-symbol {
-            font-weight: 700;
-            font-size: 1.1rem;
+            font-weight: 500;
+            font-size: 0.9rem;
         }
 
         .crypto-name {
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             color: var(--text-tertiary);
         }
 
@@ -259,12 +261,12 @@
         }
 
         .price-value {
-            font-size: 1.2rem;
-            font-weight: 700;
+            font-size: 1rem;
+            font-weight: 500;
         }
 
         .price-change {
-            font-size: 0.7rem;
+            font-size: 0.6rem;
         }
 
         .price-change.positive {
@@ -280,18 +282,19 @@
             position: absolute;
             background: var(--card-bg);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            width: 300px;
+            border-radius: 12px;
+            width: 280px;
             z-index: 100;
             margin-top: 4px;
-            overflow: hidden;
+            overflow-y: auto;
+            max-height: 300px;
         }
 
         .crypto-option {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 16px;
+            padding: 8px 12px;
             cursor: pointer;
             transition: all 0.3s;
         }
@@ -303,11 +306,12 @@
         .crypto-option-info {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .crypto-option-price {
             text-align: right;
+            font-size: 0.75rem;
         }
 
         /* Amount Input */
@@ -319,24 +323,29 @@
             display: flex;
             justify-content: space-between;
             margin-bottom: 0.5rem;
-            font-size: 0.85rem;
+            font-size: 0.7rem;
             color: var(--text-secondary);
         }
 
         .amount-input {
             width: 100%;
-            padding: 16px;
+            padding: 12px;
             background: var(--darker-bg);
             border: 1px solid var(--border);
-            border-radius: 16px;
+            border-radius: 12px;
             color: var(--text-primary);
-            font-size: 1.2rem;
-            font-weight: 600;
+            font-size: 0.9rem;
+            font-weight: 400;
         }
 
         .amount-input:focus {
             outline: none;
             border-color: var(--primary);
+        }
+
+        .amount-input::placeholder {
+            color: var(--text-tertiary);
+            font-size: 0.75rem;
         }
 
         /* Duration Selector */
@@ -345,8 +354,8 @@
         }
 
         .duration-label {
-            margin-bottom: 1rem;
-            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.7rem;
             color: var(--text-secondary);
         }
 
@@ -357,15 +366,16 @@
         }
 
         .duration-btn {
-            padding: 12px 8px;
+            padding: 8px 4px;
             background: var(--darker-bg);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 10px;
             color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.3s;
             text-align: center;
-            font-weight: 600;
+            font-weight: 500;
+            font-size: 0.7rem;
         }
 
         .duration-btn:hover {
@@ -380,8 +390,8 @@
         }
 
         .duration-profit {
-            font-size: 0.7rem;
-            margin-top: 4px;
+            font-size: 0.6rem;
+            margin-top: 2px;
         }
 
         .duration-profit.positive {
@@ -392,7 +402,7 @@
         .info-row {
             display: flex;
             justify-content: space-between;
-            padding: 12px 0;
+            padding: 8px 0;
             border-bottom: 1px solid var(--border);
         }
 
@@ -402,12 +412,12 @@
 
         .info-label {
             color: var(--text-secondary);
-            font-size: 0.85rem;
+            font-size: 0.7rem;
         }
 
         .info-value {
-            font-weight: 600;
-            font-size: 0.85rem;
+            font-weight: 500;
+            font-size: 0.75rem;
         }
 
         .info-value.positive {
@@ -417,11 +427,11 @@
         /* Trade Button */
         .trade-btn {
             width: 100%;
-            padding: 16px;
+            padding: 12px;
             border: none;
-            border-radius: 16px;
-            font-size: 1rem;
-            font-weight: 700;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
             margin-top: 1rem;
@@ -437,7 +447,13 @@
             color: white;
         }
 
-        .trade-btn:hover {
+        .trade-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .trade-btn:hover:not(:disabled) {
             transform: translateY(-2px);
             filter: brightness(1.05);
         }
@@ -447,19 +463,21 @@
             text-align: center;
             padding: 3rem;
             background: var(--card-bg);
-            border-radius: 24px;
-            max-width: 500px;
+            border-radius: 20px;
+            max-width: 450px;
             margin: 0 auto;
         }
 
         .login-prompt h3 {
-            margin-bottom: 1rem;
-            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.3rem;
+            font-weight: 500;
         }
 
         .login-prompt p {
             color: var(--text-secondary);
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.8rem;
         }
 
         .login-buttons {
@@ -471,11 +489,12 @@
         .btn-login {
             background: transparent;
             color: var(--primary);
-            padding: 12px 32px;
+            padding: 10px 28px;
             border: 1px solid var(--primary);
-            border-radius: 12px;
+            border-radius: 10px;
             text-decoration: none;
-            font-weight: 600;
+            font-weight: 500;
+            font-size: 0.85rem;
             transition: all 0.3s;
         }
 
@@ -486,17 +505,26 @@
         .btn-signup {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
-            padding: 12px 32px;
+            padding: 10px 28px;
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             text-decoration: none;
-            font-weight: 600;
+            font-weight: 500;
+            font-size: 0.85rem;
             transition: all 0.3s;
         }
 
         .btn-signup:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
+        }
+
+        /* Cooldown Timer */
+        .cooldown-timer {
+            text-align: center;
+            margin-top: 0.75rem;
+            font-size: 0.7rem;
+            color: var(--warning);
         }
 
         @media (max-width: 768px) {
@@ -518,18 +546,18 @@
             }
             
             .trade-card {
-                padding: 1.5rem;
-            }
-            
-            .login-buttons {
-                flex-direction: column;
-                align-items: center;
+                padding: 1rem;
             }
         }
 
         @media (max-width: 480px) {
             .duration-buttons {
                 grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .login-buttons {
+                flex-direction: column;
+                align-items: center;
             }
         }
     </style>
@@ -550,7 +578,6 @@
                 <a href="home.html" class="nav-link">Home</a>
                 <a href="markets.html" class="nav-link">Markets</a>
                 <a href="trade.html" class="nav-link" style="color: var(--primary);">Trades</a>
-                <!-- My Profile link will be added by JavaScript for logged-in users only -->
             </div>
             <div id="userSection"></div>
         </div>
