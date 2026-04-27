@@ -1,4 +1,4 @@
-// Profile functionality - Luno Style (Menu only in sidebar)
+// Profile functionality - Luno Style with All Countries
 
 let currentUser = null;
 
@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     renderUserInfo();
+    renderNavLinks();
     initProfilePage();
 });
 
@@ -27,11 +28,24 @@ function renderUserInfo() {
     if (!userInfo) return;
     
     const displayName = currentUser.name || currentUser.email.split('@')[0];
-    
     userInfo.innerHTML = `
         <span class="username">${displayName}</span>
         <span class="logout-link" onclick="handleLogout()">Logout</span>
     `;
+}
+
+function renderNavLinks() {
+    const navLinks = document.getElementById('navLinks');
+    if (!navLinks) return;
+    
+    const hasProfileLink = Array.from(navLinks.children).some(link => link.textContent === 'My Profile');
+    if (!hasProfileLink) {
+        const profileLink = document.createElement('a');
+        profileLink.href = 'profile.html';
+        profileLink.className = 'nav-link';
+        profileLink.textContent = 'My Profile';
+        navLinks.appendChild(profileLink);
+    }
 }
 
 function initProfilePage() {
@@ -63,10 +77,12 @@ function updateProfileInfo() {
     // Update form fields
     const updateFullName = document.getElementById('updateFullName');
     const updateEmail = document.getElementById('updateEmail');
+    const updateCountry = document.getElementById('updateCountry');
     const kycFullName = document.getElementById('kycFullName');
     
     if (updateFullName) updateFullName.value = fullName;
     if (updateEmail) updateEmail.value = email;
+    if (updateCountry && currentUser.country) updateCountry.value = currentUser.country;
     if (kycFullName) kycFullName.value = fullName;
 }
 
@@ -80,6 +96,7 @@ function loadTradingStats() {
     
     let winningTrades = 0;
     let totalVolume = 0;
+    let totalProfit = currentUser.stats?.totalProfit || 0;
     
     trades.forEach(trade => {
         totalVolume += trade.amount || 0;
@@ -91,6 +108,13 @@ function loadTradingStats() {
     document.getElementById('totalTrades').textContent = totalTrades;
     document.getElementById('winRate').textContent = `${winRate}%`;
     document.getElementById('totalVolume').textContent = `$${totalVolume.toFixed(2)}`;
+    
+    const profitElem = document.getElementById('totalProfit');
+    if (profitElem) {
+        const sign = totalProfit >= 0 ? '+' : '';
+        profitElem.textContent = `${sign}$${Math.abs(totalProfit).toFixed(2)}`;
+        profitElem.className = `stat-value ${totalProfit >= 0 ? 'positive' : 'negative'}`;
+    }
 }
 
 function loadTradeHistory() {
