@@ -1,11 +1,14 @@
-// Trade page functionality - Luno Style (Registered users only, guests see login prompt)
+// Trade page functionality - All cryptos, minimum amounts, cooldown timer
 
 let currentUser = null;
 let currentTradeType = 'buy';
-let currentCrypto = 'BTC';
+let currentCrypto = null;
 let currentDuration = 60;
 let priceUpdateInterval = null;
 let currentPrice = 0;
+let allCryptos = [];
+let cooldownActive = false;
+let cooldownTimer = null;
 
 // Profit percentages based on duration
 const profitRates = {
@@ -19,20 +22,14 @@ const profitRates = {
 // Minimum amounts based on duration
 const minAmounts = {
     30: 100,
-    60: 15000,
-    90: 50000,
-    180: 200000,
-    300: 500000
+    60: 500,
+    90: 1000,
+    180: 2000,
+    300: 5000
 };
 
-// Cryptocurrency data
-const cryptoData = {
-    BTC: { name: 'Bitcoin', icon: '₿', binanceSymbol: 'BTCUSDT' },
-    ETH: { name: 'Ethereum', icon: 'Ξ', binanceSymbol: 'ETHUSDT' },
-    BNB: { name: 'Binance Coin', icon: 'B', binanceSymbol: 'BNBUSDT' },
-    SOL: { name: 'Solana', icon: 'S', binanceSymbol: 'SOLUSDT' },
-    XRP: { name: 'Ripple', icon: 'X', binanceSymbol: 'XRPUSDT' }
-};
+// CoinGecko API
+const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
@@ -42,11 +39,9 @@ document.addEventListener('DOMContentLoaded', function() {
     renderUserSection();
     
     if (!currentUser) {
-        // Guest user - show login prompt
         renderLoginPrompt();
     } else {
-        // Registered user - show trade interface
-        initTradePage();
+        loadCryptos();
     }
 });
 
@@ -57,7 +52,6 @@ function loadUser() {
         console.log('User logged in:', currentUser.email);
     } else {
         currentUser = null;
-        console.log('Guest mode - showing login prompt');
     }
 }
 
@@ -66,14 +60,12 @@ function renderNavLinks() {
     if (!navLinks) return;
     
     if (currentUser) {
-        // Logged-in user - show My Profile link
         const profileLink = document.createElement('a');
         profileLink.href = 'profile.html';
         profileLink.className = 'nav-link';
         profileLink.textContent = 'My Profile';
         navLinks.appendChild(profileLink);
     }
-    // Guest user - no My Profile link (only Home, Markets, Trades)
 }
 
 function renderUserSection() {
@@ -81,7 +73,6 @@ function renderUserSection() {
     if (!userSection) return;
     
     if (currentUser) {
-        // Show user dropdown for logged-in users
         const displayName = currentUser.name || currentUser.email.split('@')[0];
         userSection.innerHTML = `
             <div class="user-dropdown">
@@ -101,7 +92,6 @@ function renderUserSection() {
             </div>
         `;
     } else {
-        // Guest user - empty (no buttons)
         userSection.innerHTML = '';
     }
 }
@@ -122,11 +112,70 @@ function renderLoginPrompt() {
     `;
 }
 
+async function loadCryptos() {
+    try {
+        const response = await fetch(`${COINGECKO_BASE_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false`);
+        const data = await response.json();
+        
+        allCryptos = data.map(coin => ({
+            id: coin.id,
+            symbol: coin.symbol.toUpperCase(),
+            name: coin.name,
+            icon: getIconForSymbol(coin.symbol.toUpperCase()),
+            current_price: coin.current_price
+        }));
+        
+        // Set default crypto to BTC if available
+        const defaultCrypto = allCryptos.find(c => c.symbol === 'BTC') || allCryptos[0];
+        currentCrypto = defaultCrypto;
+        
+        await initTradePage();
+    } catch (error) {
+        console.error('Error loading cryptos:', error);
+        // Fallback cryptos
+        allCryptos = [
+            { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', icon: '₿', current_price: 65000 },
+            { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', current_price: 3200 },
+            { id: 'binancecoin', symbol: 'BNB', name: 'Binance Coin', icon: 'B', current_price: 580 },
+            { id: 'ripple', symbol: 'XRP', name: 'Ripple', icon: 'X', current_price: 0.6 },
+            { id: 'solana', symbol: 'SOL', name: 'Solana', icon: 'S', current_price: 140 },
+            { id: 'cardano', symbol: 'ADA', name: 'Cardano', icon: 'A', current_price: 0.48 },
+            { id: 'dogecoin', symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð', current_price: 0.12 },
+            { id: 'polkadot', symbol: 'DOT', name: 'Polkadot', icon: '●', current_price: 6.8 },
+            { id: 'chainlink', symbol: 'LINK', name: 'Chainlink', icon: 'L', current_price: 14 },
+            { id: 'uniswap', symbol: 'UNI', name: 'Uniswap', icon: 'U', current_price: 7.8 }
+        ];
+        currentCrypto = allCryptos[0];
+        await initTradePage();
+    }
+}
+
+function getIconForSymbol(symbol) {
+    const icons = {
+        'BTC': '₿',
+        'ETH': 'Ξ',
+        'BNB': 'B',
+        'SOL': 'S',
+        'XRP': 'X',
+        'ADA': 'A',
+        'DOGE': 'Ð',
+        'DOT': '●',
+        'LINK': 'L',
+        'UNI': 'U',
+        'AAVE': 'A',
+        'SHIB': '🐕',
+        'AVAX': 'A',
+        'MATIC': 'M',
+        'PEPE': '🐸'
+    };
+    return icons[symbol] || '📈';
+}
+
 async function initTradePage() {
     const container = document.getElementById('tradeContent');
     if (!container) return;
     
-    // Render trade interface HTML
+    // Render trade interface
     container.innerHTML = `
         <div class="trade-container">
             <div class="trade-header">
@@ -135,37 +184,33 @@ async function initTradePage() {
             </div>
             
             <div class="trade-card">
-                <!-- Order Type Tabs -->
                 <div class="order-tabs">
                     <button class="order-tab buy active" data-trade="buy">BUY</button>
                     <button class="order-tab sell" data-trade="sell">SELL</button>
                 </div>
                 
-                <!-- Cryptocurrency Selector -->
                 <div class="crypto-selector" id="cryptoSelector">
                     <div class="selected-crypto" id="selectedCrypto">
-                        <span class="crypto-icon">₿</span>
+                        <span class="crypto-icon">${currentCrypto.icon}</span>
                         <div>
-                            <div class="crypto-symbol">BTC</div>
-                            <div class="crypto-name">Bitcoin</div>
+                            <div class="crypto-symbol">${currentCrypto.symbol}</div>
+                            <div class="crypto-name">${currentCrypto.name}</div>
                         </div>
                     </div>
                     <div class="current-price-display">
-                        <div class="price-value" id="currentPrice">$0.00</div>
+                        <div class="price-value" id="currentPrice">$${currentCrypto.current_price?.toLocaleString() || '0.00'}</div>
                         <div class="price-change positive" id="priceChange">0.00%</div>
                     </div>
                 </div>
                 
-                <!-- Amount Input -->
                 <div class="amount-section">
                     <div class="amount-label">
                         <span>Amount (USDT)</span>
-                        <span id="minAmountLabel">Min $100</span>
+                        <span id="minAmountLabel">Min $${minAmounts[currentDuration]}</span>
                     </div>
-                    <input type="number" id="amount" class="amount-input" placeholder="Enter amount to trade" value="100">
+                    <input type="number" id="amount" class="amount-input" placeholder="Amount to trade" value="${minAmounts[currentDuration]}">
                 </div>
                 
-                <!-- Duration Selector -->
                 <div class="duration-section">
                     <div class="duration-label">Select Duration</div>
                     <div class="duration-buttons" id="durationButtons">
@@ -192,52 +237,50 @@ async function initTradePage() {
                     </div>
                 </div>
                 
-                <!-- Info Rows -->
                 <div class="info-row">
                     <span class="info-label">Available Amount:</span>
-                    <span class="info-value" id="availableAmount">0 USDT</span>
+                    <span class="info-value" id="availableAmount">${currentUser?.balance?.toFixed(2) || 0} USDT</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Expected Return:</span>
                     <span class="info-value positive" id="expectedReturn">0.00 USDT</span>
                 </div>
                 
-                <!-- Trade Button -->
-                <button class="trade-btn buy" id="tradeBtn">BUY BTC</button>
+                <button class="trade-btn buy" id="tradeBtn">BUY ${currentCrypto.symbol}</button>
+                <div id="cooldownMessage" class="cooldown-timer"></div>
             </div>
         </div>
     `;
     
-    // Initialize trade functionality
     await fetchCurrentPrice();
     setupTradeEventListeners();
     startPriceUpdates();
-    updateAvailableBalance();
     calculateExpectedReturn();
 }
 
 async function fetchCurrentPrice() {
-    const symbol = cryptoData[currentCrypto].binanceSymbol;
+    if (!currentCrypto) return;
     
     try {
-        const response = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`);
+        const response = await fetch(`${COINGECKO_BASE_URL}/simple/price?ids=${currentCrypto.id}&vs_currencies=usd&include_24hr_change=true`);
         const data = await response.json();
         
-        currentPrice = parseFloat(data.lastPrice);
-        const change = parseFloat(data.priceChangePercent);
-        
-        const priceElem = document.getElementById('currentPrice');
-        const changeElem = document.getElementById('priceChange');
-        
-        if (priceElem) priceElem.textContent = `$${currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        if (changeElem) {
-            changeElem.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
-            changeElem.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
+        if (data[currentCrypto.id]) {
+            currentPrice = data[currentCrypto.id].usd;
+            const change = data[currentCrypto.id].usd_24h_change || 0;
+            
+            const priceElem = document.getElementById('currentPrice');
+            const changeElem = document.getElementById('priceChange');
+            
+            if (priceElem) priceElem.textContent = `$${currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            if (changeElem) {
+                changeElem.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+                changeElem.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
+            }
         }
     } catch (error) {
         console.error('Error fetching price:', error);
-        currentPrice = currentCrypto === 'BTC' ? 65000 : (currentCrypto === 'ETH' ? 3200 : 500);
-        document.getElementById('currentPrice').textContent = `$${currentPrice.toLocaleString()}`;
+        currentPrice = currentCrypto.current_price || 0;
     }
 }
 
@@ -251,10 +294,10 @@ function setupTradeEventListeners() {
             
             const tradeBtn = document.getElementById('tradeBtn');
             if (currentTradeType === 'buy') {
-                tradeBtn.textContent = `BUY ${currentCrypto}`;
+                tradeBtn.textContent = `BUY ${currentCrypto.symbol}`;
                 tradeBtn.className = 'trade-btn buy';
             } else {
-                tradeBtn.textContent = `SELL ${currentCrypto}`;
+                tradeBtn.textContent = `SELL ${currentCrypto.symbol}`;
                 tradeBtn.className = 'trade-btn sell';
             }
         });
@@ -300,26 +343,26 @@ function showCryptoDropdown() {
     const dropdown = document.createElement('div');
     dropdown.className = 'crypto-dropdown';
     
-    Object.entries(cryptoData).forEach(([symbol, data]) => {
+    allCryptos.forEach(crypto => {
         const option = document.createElement('div');
         option.className = 'crypto-option';
         option.innerHTML = `
             <div class="crypto-option-info">
-                <span class="crypto-icon">${data.icon}</span>
+                <span class="crypto-icon">${crypto.icon}</span>
                 <div>
-                    <div class="crypto-symbol">${symbol}</div>
-                    <div class="crypto-name">${data.name}</div>
+                    <div class="crypto-symbol">${crypto.symbol}</div>
+                    <div class="crypto-name">${crypto.name}</div>
                 </div>
             </div>
             <div class="crypto-option-price">
-                <div class="price-value" id="price_${symbol}">${currentCrypto === symbol ? `$${currentPrice.toLocaleString()}` : '...'}</div>
+                $${crypto.current_price?.toLocaleString() || '0'}
             </div>
         `;
-        option.onclick = () => {
-            currentCrypto = symbol;
+        option.onclick = async () => {
+            currentCrypto = crypto;
             updateSelectedCrypto();
             dropdown.remove();
-            fetchCurrentPrice();
+            await fetchCurrentPrice();
             updateMinAmountLabel();
             calculateExpectedReturn();
         };
@@ -345,38 +388,37 @@ function showCryptoDropdown() {
 
 function updateSelectedCrypto() {
     const selectedDiv = document.getElementById('selectedCrypto');
-    const crypto = cryptoData[currentCrypto];
     
     selectedDiv.innerHTML = `
-        <span class="crypto-icon">${crypto.icon}</span>
+        <span class="crypto-icon">${currentCrypto.icon}</span>
         <div>
-            <div class="crypto-symbol">${currentCrypto}</div>
-            <div class="crypto-name">${crypto.name}</div>
+            <div class="crypto-symbol">${currentCrypto.symbol}</div>
+            <div class="crypto-name">${currentCrypto.name}</div>
         </div>
     `;
     
     const tradeBtn = document.getElementById('tradeBtn');
     if (tradeBtn) {
         if (currentTradeType === 'buy') {
-            tradeBtn.textContent = `BUY ${currentCrypto}`;
+            tradeBtn.textContent = `BUY ${currentCrypto.symbol}`;
         } else {
-            tradeBtn.textContent = `SELL ${currentCrypto}`;
+            tradeBtn.textContent = `SELL ${currentCrypto.symbol}`;
         }
-    }
-}
-
-function updateAvailableBalance() {
-    const availableSpan = document.getElementById('availableAmount');
-    if (availableSpan && currentUser) {
-        availableSpan.textContent = `${currentUser.balance?.toFixed(2) || 0} USDT`;
     }
 }
 
 function updateMinAmountLabel() {
     const minAmount = minAmounts[currentDuration];
     const labelSpan = document.getElementById('minAmountLabel');
+    const amountInput = document.getElementById('amount');
+    
     if (labelSpan) {
         labelSpan.textContent = `Min $${minAmount.toLocaleString()}`;
+    }
+    
+    if (amountInput && (!amountInput.value || parseFloat(amountInput.value) < minAmount)) {
+        amountInput.value = minAmount;
+        calculateExpectedReturn();
     }
 }
 
@@ -409,9 +451,39 @@ function calculateExpectedReturn() {
     }
 }
 
+function startCooldown() {
+    cooldownActive = true;
+    let secondsLeft = 15;
+    const tradeBtn = document.getElementById('tradeBtn');
+    const cooldownMsg = document.getElementById('cooldownMessage');
+    
+    if (tradeBtn) tradeBtn.disabled = true;
+    
+    if (cooldownTimer) clearInterval(cooldownTimer);
+    
+    cooldownTimer = setInterval(() => {
+        secondsLeft--;
+        if (cooldownMsg) {
+            cooldownMsg.textContent = `⏱️ Please wait ${secondsLeft}s before next trade`;
+        }
+        
+        if (secondsLeft <= 0) {
+            clearInterval(cooldownTimer);
+            cooldownActive = false;
+            if (tradeBtn) tradeBtn.disabled = false;
+            if (cooldownMsg) cooldownMsg.textContent = '';
+        }
+    }, 1000);
+}
+
 function executeTrade() {
     if (!currentUser) {
         window.location.href = 'login.html';
+        return;
+    }
+    
+    if (cooldownActive) {
+        alert('Please wait 15 seconds before placing another trade');
         return;
     }
     
@@ -439,20 +511,32 @@ function executeTrade() {
             type: 'trade',
             tradeType: 'buy',
             amount: amount,
-            crypto: currentCrypto,
+            crypto: currentCrypto.symbol,
+            cryptoName: currentCrypto.name,
             price: currentPrice,
             duration: currentDuration,
             expectedReturn: amount * (1 + profitRates[currentDuration] / 100),
-            status: 'pending',
+            profitRate: profitRates[currentDuration],
+            status: 'completed',
             date: new Date().toISOString()
         });
         
         saveUserData();
-        alert(`Trade placed! Bought ${currentCrypto} with $${amount.toLocaleString()}. Duration: ${currentDuration}s. Expected return: ${profitRates[currentDuration]}%`);
+        alert(`✅ Trade placed! Bought ${currentCrypto.symbol} with $${amount.toLocaleString()}. Duration: ${currentDuration}s. Expected return: +${profitRates[currentDuration]}%`);
+        
+        // Start cooldown timer
+        startCooldown();
         
         updateAvailableBalance();
         document.getElementById('amount').value = minAmounts[currentDuration];
         calculateExpectedReturn();
+    }
+}
+
+function updateAvailableBalance() {
+    const availableSpan = document.getElementById('availableAmount');
+    if (availableSpan && currentUser) {
+        availableSpan.textContent = `${currentUser.balance?.toFixed(2) || 0} USDT`;
     }
 }
 
