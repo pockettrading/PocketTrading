@@ -2,9 +2,8 @@
 
 let adminUser = null;
 
-// Check if logged in user is admin (you can set admin email)
-const ADMIN_EMAIL = 'ephremgojo@gmail.com';
-const ADMIN_PASSWORD = 'Jhona@6595';
+// Admin email - change this to your admin email
+const ADMIN_EMAIL = 'admin@pockettrading.com';
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
@@ -19,13 +18,14 @@ function checkAdminAccess() {
     const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
     if (storedUser) {
         adminUser = JSON.parse(storedUser);
-        // Check if user is admin (you can modify this condition)
+        // Check if user email matches admin email
         if (adminUser.email !== ADMIN_EMAIL) {
             alert('Access denied. Admin only.');
             window.location.href = 'home.html';
             return;
         }
     } else {
+        // Not logged in at all
         window.location.href = 'login.html';
         return;
     }
@@ -66,7 +66,6 @@ function showSection(section) {
     const activeSection = document.getElementById(`${section}Section`);
     if (activeSection) activeSection.style.display = 'block';
     
-    // Refresh data when switching sections
     switch(section) {
         case 'dashboard':
             loadDashboardData();
@@ -136,7 +135,7 @@ function loadDashboardData() {
     
     const tbody = document.getElementById('recentActivityBody');
     if (recent.length === 0) {
-        tbody.innerHTML = '<td><td colspan="5" style="text-align: center;">No recent activity</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No recent activity</td--</tr>';
     } else {
         tbody.innerHTML = recent.map(activity => `
             <tr>
@@ -157,7 +156,7 @@ function loadKYCRequests() {
     
     const tbody = document.getElementById('kycTableBody');
     if (kycRequests.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No KYC requests</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No KYC requests</td--</td>';
         return;
     }
     
@@ -175,7 +174,7 @@ function loadKYCRequests() {
                     <button class="btn-reject" onclick="rejectKYC(${request.id})">Reject</button>
                 ` : '-'}
             </td
-        比
+        </tr>
     `).join('');
 }
 
@@ -186,7 +185,7 @@ function loadDepositRequests() {
     
     const tbody = document.getElementById('depositsTableBody');
     if (depositRequests.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No deposit requests</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No deposit requests</td--</tr>';
         return;
     }
     
@@ -207,7 +206,7 @@ function loadDepositRequests() {
                     <button class="btn-reject" onclick="rejectDeposit(${request.id})">Reject</button>
                 ` : '-'}
             </td
-        比
+        </tr>
     `).join('');
 }
 
@@ -218,12 +217,12 @@ function loadWithdrawalRequests() {
     
     const tbody = document.getElementById('withdrawalsTableBody');
     if (withdrawalRequests.length === 0) {
-        tbody.innerHTML = '<td><td colspan="7" style="text-align: center;">No withdrawal requests</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No withdrawal requests</td--</tr>';
         return;
     }
     
     tbody.innerHTML = withdrawalRequests.map(request => `
-        <table>
+        <tr>
             <td>${new Date(request.date).toLocaleString()}</td
             <td>${request.userName || request.userEmail}</td
             <td>$${request.amount.toLocaleString()}</td
@@ -260,7 +259,7 @@ function loadAllTrades() {
     
     const tbody = document.getElementById('tradesTableBody');
     if (allTrades.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No trades found</td></tr>';
+        tbody.innerHTML = '</table><td colspan="8" style="text-align: center;">No trades found</td--</tr>';
         return;
     }
     
@@ -283,7 +282,7 @@ function loadAllUsers() {
     
     const tbody = document.getElementById('usersTableBody');
     if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No users found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No users found</td--</tr>';
         return;
     }
     
@@ -310,7 +309,6 @@ function approveKYC(requestId) {
         request.status = 'approved';
         localStorage.setItem('kyc_requests', JSON.stringify(kycRequests));
         
-        // Update user's KYC status
         const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
         const userIndex = users.findIndex(u => u.id === request.userId);
         if (userIndex !== -1) {
@@ -346,13 +344,11 @@ function approveDeposit(requestId, amount) {
         request.status = 'approved';
         localStorage.setItem('deposit_requests', JSON.stringify(depositRequests));
         
-        // Add funds to user's balance
         const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
         const userIndex = users.findIndex(u => u.id === request.userId);
         if (userIndex !== -1) {
             users[userIndex].balance = (users[userIndex].balance || 0) + amount;
             
-            // Add transaction record
             if (!users[userIndex].transactions) users[userIndex].transactions = [];
             users[userIndex].transactions.unshift({
                 id: Date.now(),
@@ -394,9 +390,6 @@ function approveWithdrawal(requestId, amount) {
         request.status = 'approved';
         localStorage.setItem('withdrawal_requests', JSON.stringify(withdrawalRequests));
         
-        // Note: Funds are already deducted when user requested withdrawal
-        // Just mark as approved and process
-        
         alert(`Withdrawal of $${amount} approved!`);
         loadWithdrawalRequests();
         loadDashboardData();
@@ -411,7 +404,6 @@ function rejectWithdrawal(requestId) {
         request.status = 'rejected';
         localStorage.setItem('withdrawal_requests', JSON.stringify(withdrawalRequests));
         
-        // Refund the amount back to user
         const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
         const userIndex = users.findIndex(u => u.id === request.userId);
         if (userIndex !== -1) {
@@ -435,13 +427,13 @@ function viewUserDetails(userId) {
     
     if (user) {
         alert(`
-            User Details:
-            Name: ${user.name}
-            Email: ${user.email}
-            Balance: $${user.balance?.toFixed(2) || 0}
-            KYC Status: ${user.kycStatus || 'pending'}
-            Total Trades: ${user.stats?.totalTrades || 0}
-            Member Since: ${new Date(user.created).toLocaleDateString()}
+User Details:
+Name: ${user.name}
+Email: ${user.email}
+Balance: $${user.balance?.toFixed(2) || 0}
+KYC Status: ${user.kycStatus || 'pending'}
+Total Trades: ${user.stats?.totalTrades || 0}
+Member Since: ${new Date(user.created).toLocaleDateString()}
         `);
     }
 }
@@ -470,7 +462,6 @@ function handleLogout() {
     window.location.href = 'home.html';
 }
 
-// Make functions global
 window.approveKYC = approveKYC;
 window.rejectKYC = rejectKYC;
 window.approveDeposit = approveDeposit;
