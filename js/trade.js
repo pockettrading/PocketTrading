@@ -38,6 +38,7 @@ const cryptoData = {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Trade page loaded');
     loadUser();
+    renderNavLinks();
     renderUserSection();
     
     if (!currentUser) {
@@ -58,6 +59,21 @@ function loadUser() {
         currentUser = null;
         console.log('Guest mode - showing login prompt');
     }
+}
+
+function renderNavLinks() {
+    const navLinks = document.getElementById('navLinks');
+    if (!navLinks) return;
+    
+    if (currentUser) {
+        // Logged-in user - show My Profile link
+        const profileLink = document.createElement('a');
+        profileLink.href = 'profile.html';
+        profileLink.className = 'nav-link';
+        profileLink.textContent = 'My Profile';
+        navLinks.appendChild(profileLink);
+    }
+    // Guest user - no My Profile link (only Home, Markets, Trades)
 }
 
 function renderUserSection() {
@@ -85,7 +101,7 @@ function renderUserSection() {
             </div>
         `;
     } else {
-        // No Login/Sign Up buttons in top bar - empty
+        // Guest user - empty (no buttons)
         userSection.innerHTML = '';
     }
 }
@@ -220,7 +236,6 @@ async function fetchCurrentPrice() {
         }
     } catch (error) {
         console.error('Error fetching price:', error);
-        // Fallback demo price
         currentPrice = currentCrypto === 'BTC' ? 65000 : (currentCrypto === 'ETH' ? 3200 : 500);
         document.getElementById('currentPrice').textContent = `$${currentPrice.toLocaleString()}`;
     }
@@ -279,7 +294,6 @@ function setupTradeEventListeners() {
 }
 
 function showCryptoDropdown() {
-    // Remove existing dropdown
     const existing = document.querySelector('.crypto-dropdown');
     if (existing) existing.remove();
     
@@ -419,7 +433,6 @@ function executeTrade() {
         
         currentUser.balance -= amount;
         
-        // Add transaction
         if (!currentUser.transactions) currentUser.transactions = [];
         currentUser.transactions.unshift({
             id: Date.now(),
@@ -473,5 +486,4 @@ function handleLogout() {
     window.location.href = 'home.html';
 }
 
-// Make functions global
 window.handleLogout = handleLogout;
