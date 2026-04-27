@@ -90,64 +90,30 @@
             color: var(--primary);
         }
 
-        /* User Dropdown */
-        .user-dropdown {
-            position: relative;
-            cursor: pointer;
-        }
-
-        .user-name-display {
+        /* User Info in Top Right */
+        .user-info {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background: var(--card-bg);
-            border-radius: 40px;
-            transition: all 0.3s;
+            gap: 1rem;
         }
 
-        .user-name-display:hover {
-            background: var(--card-hover);
-        }
-
-        .dropdown-menu {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0.5rem;
-            min-width: 160px;
-            display: none;
-            z-index: 100;
-            margin-top: 0.5rem;
-            box-shadow: var(--shadow);
-        }
-
-        .user-dropdown:hover .dropdown-menu {
-            display: block;
-        }
-
-        .dropdown-item {
-            padding: 10px 16px;
+        .username {
             color: var(--text-primary);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .logout-link {
+            color: var(--danger);
             text-decoration: none;
-            display: block;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
             transition: all 0.3s;
-            border-radius: 8px;
-            font-size: 0.85rem;
         }
 
-        .dropdown-item:hover {
-            background: var(--card-hover);
-            color: var(--primary);
-        }
-
-        .dropdown-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 0.5rem 0;
+        .logout-link:hover {
+            text-decoration: underline;
         }
 
         /* Trade Container */
@@ -163,7 +129,7 @@
 
         .trade-header h1 {
             font-size: 1.5rem;
-            font-weight: 500;
+            font-weight: 600;
             margin-bottom: 0.25rem;
         }
 
@@ -194,7 +160,7 @@
             border: none;
             color: var(--text-secondary);
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
             font-size: 0.9rem;
             transition: all 0.3s;
             position: relative;
@@ -243,11 +209,11 @@
         }
 
         .crypto-icon {
-            font-size: 1.3rem;
+            font-size: 1.5rem;
         }
 
         .crypto-symbol {
-            font-weight: 500;
+            font-weight: 700;
             font-size: 0.9rem;
         }
 
@@ -262,7 +228,7 @@
 
         .price-value {
             font-size: 1rem;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .price-change {
@@ -458,6 +424,14 @@
             filter: brightness(1.05);
         }
 
+        /* Error Message */
+        .error-message {
+            color: var(--danger);
+            font-size: 0.7rem;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+
         /* Login Prompt */
         .login-prompt {
             text-align: center;
@@ -541,6 +515,10 @@
                 justify-content: center;
             }
             
+            .user-info {
+                justify-content: center;
+            }
+            
             .duration-buttons {
                 grid-template-columns: repeat(3, 1fr);
             }
@@ -574,12 +552,13 @@
                 </svg>
                 <span>Pocket<span style="color: var(--primary);">Trading</span></span>
             </div>
-            <div class="nav-links" id="navLinks">
+            <div class="nav-links">
                 <a href="home.html" class="nav-link">Home</a>
                 <a href="markets.html" class="nav-link">Markets</a>
                 <a href="trade.html" class="nav-link" style="color: var(--primary);">Trades</a>
+                <a href="profile.html" class="nav-link">My Profile</a>
             </div>
-            <div id="userSection"></div>
+            <div class="user-info" id="userInfo"></div>
         </div>
 
         <div id="tradeContent">
