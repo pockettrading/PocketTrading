@@ -39,7 +39,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
         }
@@ -90,27 +90,53 @@
             color: var(--primary);
         }
 
-        /* Profile Container */
-        .profile-container {
+        /* User Info in Top Right */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .username {
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .logout-link {
+            color: var(--danger);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .logout-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Profile Layout - Luno Style */
+        .profile-layout {
             display: grid;
-            grid-template-columns: 280px 1fr;
+            grid-template-columns: 320px 1fr;
             gap: 2rem;
         }
 
-        /* Sidebar Menu */
+        /* Left Sidebar */
         .profile-sidebar {
             background: var(--card-bg);
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 1.5rem;
-            height: fit-content;
         }
 
-        .user-avatar {
+        /* User Avatar Section */
+        .user-avatar-section {
             text-align: center;
             margin-bottom: 1.5rem;
         }
 
-        .avatar-circle {
+        .user-avatar {
             width: 80px;
             height: 80px;
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
@@ -120,314 +146,37 @@
             justify-content: center;
             margin: 0 auto 1rem;
             font-size: 2rem;
-            font-weight: 700;
+            font-weight: 600;
             color: white;
         }
 
-        .user-name-sidebar {
+        .user-fullname {
             font-size: 1.1rem;
             font-weight: 600;
-            text-align: center;
+            margin-bottom: 0.25rem;
         }
 
-        .user-email-sidebar {
-            font-size: 0.75rem;
+        .user-email {
+            font-size: 0.7rem;
             color: var(--text-secondary);
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-
-        .sidebar-menu {
-            margin-top: 1rem;
-        }
-
-        .menu-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            color: var(--text-secondary);
-        }
-
-        .menu-item:hover {
-            background: var(--card-hover);
-            color: var(--primary);
-        }
-
-        .menu-item.active {
-            background: rgba(247, 147, 26, 0.1);
-            color: var(--primary);
-        }
-
-        /* Main Content */
-        .profile-content {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 1.5rem;
-        }
-
-        .content-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid var(--border);
         }
 
         /* Info Cards */
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
         .info-card {
             background: var(--darker-bg);
-            padding: 1rem;
             border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
         }
 
         .info-label {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--text-tertiary);
             margin-bottom: 0.25rem;
         }
 
         .info-value {
             font-size: 1rem;
-            font-weight: 600;
-        }
-
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .stat-card {
-            background: var(--darker-bg);
-            padding: 1rem;
-            border-radius: 12px;
-            text-align: center;
-        }
-
-        .stat-label {
-            font-size: 0.7rem;
-            color: var(--text-tertiary);
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-value {
-            font-size: 1.2rem;
-            font-weight: 700;
-        }
-
-        .stat-value.positive {
-            color: var(--success);
-        }
-
-        .stat-value.negative {
-            color: var(--danger);
-        }
-
-        /* Trade History Table */
-        .trade-history-table {
-            overflow-x: auto;
-            margin-top: 1rem;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            text-align: left;
-            padding: 0.75rem;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            border-bottom: 1px solid var(--border);
-        }
-
-        td {
-            padding: 0.75rem;
-            font-size: 0.8rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .trade-type-buy {
-            color: var(--success);
-        }
-
-        .trade-type-sell {
-            color: var(--danger);
-        }
-
-        /* KYC Form */
-        .kyc-form .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .kyc-form label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .kyc-form input,
-        .kyc-form select {
-            width: 100%;
-            padding: 10px;
-            background: var(--darker-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-        }
-
-        .file-upload {
-            border: 2px dashed var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .file-upload:hover {
-            border-color: var(--primary);
-        }
-
-        .btn-submit {
-            background: var(--primary);
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 1rem;
-            font-weight: 600;
-        }
-
-        .btn-submit:hover {
-            background: var(--primary-dark);
-        }
-
-        /* Update Profile Form */
-        .update-form .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .update-form label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .update-form input,
-        .update-form select {
-            width: 100%;
-            padding: 10px;
-            background: var(--darker-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-        }
-
-        .btn-save {
-            background: var(--primary);
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 1rem;
-            font-weight: 600;
-        }
-
-        /* Support Form */
-        .support-form .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .support-form label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .support-form input,
-        .support-form textarea {
-            width: 100%;
-            padding: 10px;
-            background: var(--darker-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-        }
-
-        .faq-section {
-            margin-top: 1.5rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border);
-        }
-
-        .faq-item {
-            margin-bottom: 1rem;
-        }
-
-        .faq-question {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .faq-answer {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        /* Action Buttons */
-        .action-buttons {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .btn-deposit-action {
-            flex: 1;
-            background: linear-gradient(135deg, var(--success), #00b894);
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-weight: 600;
-        }
-
-        .btn-withdraw-action {
-            flex: 1;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
             font-weight: 600;
         }
 
@@ -449,13 +198,274 @@
             color: var(--success);
         }
 
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .btn-deposit {
+            flex: 1;
+            background: linear-gradient(135deg, var(--success), #00b894);
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+
+        .btn-withdraw {
+            flex: 1;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+
+        .btn-deposit:hover, .btn-withdraw:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+        }
+
+        /* Trading Statistics */
+        .stats-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-item {
+            background: var(--darker-bg);
+            padding: 0.75rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.6rem;
+            color: var(--text-tertiary);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .stat-value.positive {
+            color: var(--success);
+        }
+
+        .stat-value.negative {
+            color: var(--danger);
+        }
+
+        /* Menu Items */
+        .menu-items {
+            margin-top: 1rem;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.75rem;
+            background: var(--darker-bg);
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85rem;
+        }
+
+        .menu-item:hover {
+            background: var(--card-hover);
+            transform: translateX(4px);
+        }
+
+        .menu-item.active {
+            background: rgba(247, 147, 26, 0.1);
+            color: var(--primary);
+        }
+
+        .menu-icon {
+            font-size: 1.1rem;
+        }
+
+        .menu-text {
+            flex: 1;
+        }
+
+        /* Main Content */
+        .profile-content {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.5rem;
+        }
+
+        .content-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Trade History Table */
+        .trade-history-table {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 0.75rem;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 0.75rem;
+            font-size: 0.8rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .trade-type-buy {
+            color: var(--success);
+        }
+
+        .trade-type-sell {
+            color: var(--danger);
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            background: var(--darker-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+        }
+
+        .file-upload {
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: var(--primary);
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-dark);
+        }
+
+        .support-contact {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .contact-card {
+            background: var(--darker-bg);
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .contact-label {
+            font-size: 0.65rem;
+            color: var(--text-tertiary);
+            margin-bottom: 0.25rem;
+        }
+
+        .contact-value {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .faq-item {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .faq-question {
+            font-weight: 600;
+            font-size: 0.8rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .faq-answer {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
         @media (max-width: 968px) {
-            .profile-container {
+            .profile-layout {
                 grid-template-columns: 1fr;
-            }
-            
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
             }
             
             .container {
@@ -473,11 +483,11 @@
                 justify-content: center;
             }
             
-            .info-grid {
-                grid-template-columns: 1fr;
+            .user-info {
+                justify-content: center;
             }
             
-            .stats-grid {
+            .support-contact {
                 grid-template-columns: 1fr;
             }
         }
@@ -501,90 +511,87 @@
                 <a href="trade.html" class="nav-link">Trades</a>
                 <a href="profile.html" class="nav-link" style="color: var(--primary);">My Profile</a>
             </div>
+            <div class="user-info" id="userInfo">
+                <!-- Username and Logout will be inserted here -->
+            </div>
         </div>
 
-        <!-- Profile Content -->
-        <div class="profile-container">
-            <!-- Sidebar Menu -->
+        <!-- Profile Layout -->
+        <div class="profile-layout">
+            <!-- Left Sidebar -->
             <div class="profile-sidebar">
-                <div class="user-avatar">
-                    <div class="avatar-circle" id="userAvatar">JD</div>
-                    <div class="user-name-sidebar" id="sidebarUserName">Loading...</div>
-                    <div class="user-email-sidebar" id="sidebarUserEmail">Loading...</div>
+                <div class="user-avatar-section">
+                    <div class="user-avatar" id="userAvatar">JD</div>
+                    <div class="user-fullname" id="userFullName">Loading...</div>
+                    <div class="user-email" id="userEmail">Loading...</div>
                 </div>
-                <div class="sidebar-menu">
-                    <div class="menu-item active" data-page="profile">
-                        <span>👤</span> User Profile
+
+                <div class="info-card">
+                    <div class="info-label">Member Since</div>
+                    <div class="info-value" id="memberSince">-</div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-label">Account Balance</div>
+                    <div class="info-value" id="accountBalance">$0.00</div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-label">KYC Status</div>
+                    <div class="info-value">
+                        <span class="kyc-status kyc-pending" id="kycStatus">pending</span>
                     </div>
-                    <div class="menu-item" data-page="history">
-                        <span>📊</span> Trade History
+                </div>
+
+                <div class="action-buttons">
+                    <a href="deposit.html" class="btn-deposit">Deposit</a>
+                    <a href="withdraw.html" class="btn-withdraw">Withdraw Funds</a>
+                </div>
+
+                <div class="stats-title">Trading Statistics</div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Total Trades</div>
+                        <div class="stat-value" id="totalTrades">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Win Rate</div>
+                        <div class="stat-value" id="winRate">0%</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Total Volume</div>
+                        <div class="stat-value" id="totalVolume">$0.00</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Total Profit</div>
+                        <div class="stat-value" id="totalProfit">$0.00</div>
+                    </div>
+                </div>
+
+                <div class="menu-items">
+                    <div class="menu-item active" data-page="history">
+                        <span class="menu-icon">📊</span>
+                        <span class="menu-text">Trade History</span>
                     </div>
                     <div class="menu-item" data-page="kyc">
-                        <span>✓</span> KYC Verification
+                        <span class="menu-icon">✓</span>
+                        <span class="menu-text">KYC Verification</span>
                     </div>
                     <div class="menu-item" data-page="update">
-                        <span>✎</span> Update Profile
+                        <span class="menu-icon">✎</span>
+                        <span class="menu-text">Update Profile</span>
                     </div>
                     <div class="menu-item" data-page="support">
-                        <span>💬</span> Customer Support
+                        <span class="menu-icon">💬</span>
+                        <span class="menu-text">Customer Support</span>
                     </div>
                 </div>
             </div>
 
             <!-- Main Content Area -->
             <div class="profile-content">
-                <!-- User Profile Page -->
-                <div id="profilePage" class="page-content">
-                    <h2 class="content-title">User Profile</h2>
-                    
-                    <div class="info-grid">
-                        <div class="info-card">
-                            <div class="info-label">Full Name</div>
-                            <div class="info-value" id="profileFullName">-</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="info-label">Email</div>
-                            <div class="info-value" id="profileEmail">-</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="info-label">Member Since</div>
-                            <div class="info-value" id="memberSince">-</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="info-label">KYC Status</div>
-                            <div class="info-value">
-                                <span class="kyc-status kyc-pending" id="kycStatusBadge">pending</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-label">Account Balance</div>
-                            <div class="stat-value" id="accountBalance">$0.00</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Total Trades</div>
-                            <div class="stat-value" id="totalTrades">0</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Win Rate</div>
-                            <div class="stat-value" id="winRate">0%</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Total Profit</div>
-                            <div class="stat-value" id="totalProfit">$0.00</div>
-                        </div>
-                    </div>
-
-                    <div class="action-buttons">
-                        <a href="deposit.html" class="btn-deposit-action">Deposit</a>
-                        <a href="withdraw.html" class="btn-withdraw-action">Withdraw Funds</a>
-                    </div>
-                </div>
-
-                <!-- Trade History Page -->
-                <div id="historyPage" class="page-content" style="display: none;">
+                <!-- Trade History Page (Default) -->
+                <div id="historyPage" class="page-content">
                     <h2 class="content-title">Trade History</h2>
                     <div class="trade-history-table">
                         <table>
@@ -599,7 +606,9 @@
                                 </tr>
                             </thead>
                             <tbody id="tradeHistoryBody">
-                                <tr><td colspan="6" style="text-align: center;">No trades yet</td--</tr>
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 2rem;">No trades yet</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -608,9 +617,9 @@
                 <!-- KYC Verification Page -->
                 <div id="kycPage" class="page-content" style="display: none;">
                     <h2 class="content-title">KYC Verification</h2>
-                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">Please verify your identity to unlock full trading limits and withdrawal features.</p>
+                    <p style="margin-bottom: 1rem; font-size: 0.8rem; color: var(--text-secondary);">Please verify your identity to unlock full trading limits and withdrawal features.</p>
                     
-                    <form id="kycForm" class="kyc-form">
+                    <form id="kycForm">
                         <div class="form-group">
                             <label>Full Name (as on ID)</label>
                             <input type="text" id="kycFullName" placeholder="Enter your full name" required>
@@ -631,7 +640,7 @@
                             <label>Upload ID (Front)</label>
                             <div class="file-upload" onclick="document.getElementById('idFront').click()">
                                 <div>📄 Click to upload front side of ID</div>
-                                <div style="font-size: 0.7rem; margin-top: 0.5rem;">JPG, PNG (Max 5MB)</div>
+                                <div style="font-size: 0.6rem; margin-top: 0.5rem;">JPG, PNG (Max 5MB)</div>
                             </div>
                             <input type="file" id="idFront" accept="image/jpeg,image/png" style="display: none;">
                         </div>
@@ -639,7 +648,7 @@
                             <label>Upload ID (Back)</label>
                             <div class="file-upload" onclick="document.getElementById('idBack').click()">
                                 <div>📄 Click to upload back side of ID</div>
-                                <div style="font-size: 0.7rem; margin-top: 0.5rem;">JPG, PNG (Max 5MB)</div>
+                                <div style="font-size: 0.6rem; margin-top: 0.5rem;">JPG, PNG (Max 5MB)</div>
                             </div>
                             <input type="file" id="idBack" accept="image/jpeg,image/png" style="display: none;">
                         </div>
@@ -647,7 +656,7 @@
                             <label>Selfie with ID</label>
                             <div class="file-upload" onclick="document.getElementById('selfie').click()">
                                 <div>📸 Click to upload selfie holding ID</div>
-                                <div style="font-size: 0.7rem; margin-top: 0.5rem;">JPG, PNG (Max 5MB)</div>
+                                <div style="font-size: 0.6rem; margin-top: 0.5rem;">JPG, PNG (Max 5MB)</div>
                             </div>
                             <input type="file" id="selfie" accept="image/jpeg,image/png" style="display: none;">
                         </div>
@@ -658,7 +667,7 @@
                 <!-- Update Profile Page -->
                 <div id="updatePage" class="page-content" style="display: none;">
                     <h2 class="content-title">Update Profile</h2>
-                    <form id="updateProfileForm" class="update-form">
+                    <form id="updateProfileForm">
                         <div class="form-group">
                             <label>Full Name</label>
                             <input type="text" id="updateFullName" placeholder="Enter your full name">
@@ -679,10 +688,6 @@
                                 <option value="UK">United Kingdom</option>
                                 <option value="Canada">Canada</option>
                                 <option value="Australia">Australia</option>
-                                <option value="Germany">Germany</option>
-                                <option value="France">France</option>
-                                <option value="Japan">Japan</option>
-                                <option value="Singapore">Singapore</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -693,7 +698,7 @@
                             <label>Confirm Password</label>
                             <input type="password" id="confirmPassword" placeholder="Confirm new password">
                         </div>
-                        <button type="submit" class="btn-save">Save Changes</button>
+                        <button type="submit" class="btn-submit">Save Changes</button>
                     </form>
                 </div>
 
@@ -701,33 +706,33 @@
                 <div id="supportPage" class="page-content" style="display: none;">
                     <h2 class="content-title">Customer Support</h2>
                     
-                    <div class="info-grid" style="margin-bottom: 1.5rem;">
-                        <div class="info-card">
-                            <div class="info-label">📧 Email</div>
-                            <div class="info-value">support@pockettrading.com</div>
+                    <div class="support-contact">
+                        <div class="contact-card">
+                            <div class="contact-label">📧 Email</div>
+                            <div class="contact-value">support@pockettrading.com</div>
                         </div>
-                        <div class="info-card">
-                            <div class="info-label">💬 Live Chat</div>
-                            <div class="info-value">24/7 Available</div>
+                        <div class="contact-card">
+                            <div class="contact-label">💬 Live Chat</div>
+                            <div class="contact-value">24/7 Available</div>
                         </div>
-                        <div class="info-card">
-                            <div class="info-label">📞 Phone</div>
-                            <div class="info-value">+1 (800) 123-4567</div>
+                        <div class="contact-card">
+                            <div class="contact-label">📞 Phone</div>
+                            <div class="contact-value">+1 (800) 123-4567</div>
                         </div>
-                        <div class="info-card">
-                            <div class="info-label">⏰ Response Time</div>
-                            <div class="info-value">Within 24 hours</div>
+                        <div class="contact-card">
+                            <div class="contact-label">⏰ Response Time</div>
+                            <div class="contact-value">Within 24 hours</div>
                         </div>
                     </div>
 
-                    <form id="supportForm" class="support-form">
+                    <form id="supportForm">
                         <div class="form-group">
                             <label>Subject</label>
                             <input type="text" id="supportSubject" placeholder="Enter subject" required>
                         </div>
                         <div class="form-group">
                             <label>Message</label>
-                            <textarea id="supportMessage" rows="5" placeholder="Describe your issue..." required></textarea>
+                            <textarea id="supportMessage" rows="4" placeholder="Describe your issue..." required></textarea>
                         </div>
                         <div class="form-group">
                             <label>Attach Screenshot (Optional)</label>
@@ -739,20 +744,17 @@
                         <button type="submit" class="btn-submit">Send Message</button>
                     </form>
 
-                    <div class="faq-section">
-                        <h3 style="margin-bottom: 1rem; font-size: 1rem;">Frequently Asked Questions</h3>
-                        <div class="faq-item">
-                            <div class="faq-question">How to deposit?</div>
-                            <div class="faq-answer">Go to Deposit page and follow the instructions to add funds to your account.</div>
-                        </div>
-                        <div class="faq-item">
-                            <div class="faq-question">How long do withdrawals take?</div>
-                            <div class="faq-answer">Withdrawals are processed within 24-48 hours after admin approval.</div>
-                        </div>
-                        <div class="faq-item">
-                            <div class="faq-question">What are the trading fees?</div>
-                            <div class="faq-answer">Trading fee is 0.1% per transaction. No deposit fees.</div>
-                        </div>
+                    <div class="faq-item">
+                        <div class="faq-question">How to deposit?</div>
+                        <div class="faq-answer">Go to Deposit page or click Deposit button in your profile sidebar.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">How long do withdrawals take?</div>
+                        <div class="faq-answer">Withdrawals are processed within 24-48 hours after admin approval.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">What are the trading fees?</div>
+                        <div class="faq-answer">Trading fee is 0.1% per transaction. No deposit fees.</div>
                     </div>
                 </div>
             </div>
