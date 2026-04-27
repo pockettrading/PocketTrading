@@ -93,107 +93,30 @@
             color: var(--primary);
         }
 
-        /* User Dropdown */
-        .user-dropdown {
-            position: relative;
-            cursor: pointer;
-        }
-
-        .user-name-display {
+        /* User Info in Top Right */
+        .user-info {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background: var(--card-bg);
-            border-radius: 40px;
-            transition: all 0.3s;
+            gap: 1rem;
         }
 
-        .user-name-display:hover {
-            background: var(--card-hover);
-        }
-
-        .dropdown-menu {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0.5rem;
-            min-width: 160px;
-            display: none;
-            z-index: 100;
-            margin-top: 0.5rem;
-            box-shadow: var(--shadow);
-        }
-
-        .user-dropdown:hover .dropdown-menu {
-            display: block;
-        }
-
-        .dropdown-item {
-            padding: 10px 16px;
+        .username {
             color: var(--text-primary);
-            text-decoration: none;
-            display: block;
-            transition: all 0.3s;
-            border-radius: 8px;
-            font-size: 0.85rem;
-        }
-
-        .dropdown-item:hover {
-            background: var(--card-hover);
-            color: var(--primary);
-        }
-
-        .dropdown-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 0.5rem 0;
-        }
-
-        .auth-buttons {
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        .login-btn {
-            background: transparent;
-            color: var(--primary);
-            padding: 8px 20px;
-            border: 1px solid var(--primary);
-            border-radius: 8px;
+            font-weight: 500;
             font-size: 0.9rem;
-            font-weight: 600;
+        }
+
+        .logout-link {
+            color: var(--danger);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
         }
 
-        .login-btn:hover {
-            background: rgba(247, 147, 26, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .signup-btn {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            padding: 8px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .signup-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
+        .logout-link:hover {
+            text-decoration: underline;
         }
 
         /* Main Trading Grid */
@@ -392,7 +315,7 @@
             font-size: 0.75rem;
         }
 
-        /* Trading Panel Section */
+        /* Trading Panel */
         .trading-panel {
             background: var(--card-bg);
             border-radius: 16px;
@@ -449,11 +372,6 @@
             font-size: 1rem;
         }
 
-        .amount-input:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
         .quick-amounts {
             display: flex;
             gap: 0.5rem;
@@ -472,12 +390,7 @@
             transition: all 0.3s;
         }
 
-        .quick-amount:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .quick-amount:hover:not(:disabled) {
+        .quick-amount:hover {
             border-color: var(--primary);
             color: var(--primary);
         }
@@ -548,81 +461,6 @@
             font-weight: 600;
         }
 
-        /* Price Alerts Section */
-        .alerts-section {
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border);
-        }
-
-        .alerts-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .alerts-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .add-alert-btn {
-            background: transparent;
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            padding: 4px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.7rem;
-            transition: all 0.3s;
-        }
-
-        .add-alert-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .add-alert-btn:hover:not(:disabled) {
-            background: var(--primary);
-            color: white;
-        }
-
-        .alerts-list {
-            max-height: 100px;
-            overflow-y: auto;
-        }
-
-        .alert-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px;
-            background: var(--darker-bg);
-            border-radius: 6px;
-            margin-bottom: 4px;
-            font-size: 0.7rem;
-        }
-
-        .alert-price {
-            font-weight: 600;
-        }
-
-        .remove-alert {
-            background: none;
-            border: none;
-            color: var(--danger);
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-
-        .no-alerts {
-            text-align: center;
-            color: var(--text-tertiary);
-            font-size: 0.7rem;
-            padding: 0.5rem;
-        }
-
         .loading {
             text-align: center;
             padding: 1rem;
@@ -649,6 +487,10 @@
                 justify-content: center;
             }
             
+            .user-info {
+                justify-content: center;
+            }
+            
             .market-stats-row {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -667,12 +509,13 @@
                 </svg>
                 <span>Pocket<span style="color: var(--primary);">Trading</span></span>
             </div>
-            <div class="nav-links">
+            <div class="nav-links" id="navLinks">
                 <a href="home.html" class="nav-link">Home</a>
                 <a href="markets.html" class="nav-link">Markets</a>
                 <a href="trade.html" class="nav-link">Trades</a>
+                <!-- My Profile link will be added here for logged-in users -->
             </div>
-            <div id="userSection"></div>
+            <div class="user-info" id="userInfo"></div>
         </div>
 
         <!-- Trading Grid -->
@@ -739,7 +582,6 @@
 
             <!-- Right: Trading Panel -->
             <div class="trading-panel" id="tradingPanel">
-                <!-- Content will be populated by JavaScript based on login status -->
                 <div class="loading">Loading trading panel...</div>
             </div>
         </div>
