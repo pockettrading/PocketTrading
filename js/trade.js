@@ -1,9 +1,9 @@
-// Trade page functionality - All cryptos, minimum amounts, cooldown timer
+// Trade page functionality - No pre-selected duration, blank amount
 
 let currentUser = null;
 let currentTradeType = 'buy';
 let currentCrypto = null;
-let currentDuration = 60;
+let currentDuration = null;
 let priceUpdateInterval = null;
 let currentPrice = 0;
 let allCryptos = [];
@@ -35,8 +35,8 @@ const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Trade page loaded');
     loadUser();
+    renderUserInfo();
     renderNavLinks();
-    renderUserSection();
     
     if (!currentUser) {
         renderLoginPrompt();
@@ -55,44 +55,34 @@ function loadUser() {
     }
 }
 
-function renderNavLinks() {
-    const navLinks = document.getElementById('navLinks');
-    if (!navLinks) return;
+function renderUserInfo() {
+    const userInfo = document.getElementById('userInfo');
+    if (!userInfo) return;
     
     if (currentUser) {
+        const displayName = currentUser.name || currentUser.email.split('@')[0];
+        userInfo.innerHTML = `
+            <span class="username">${displayName}</span>
+            <span class="logout-link" onclick="handleLogout()">Logout</span>
+        `;
+    } else {
+        userInfo.innerHTML = '';
+    }
+}
+
+function renderNavLinks() {
+    const navLinks = document.querySelector('.nav-links');
+    if (!navLinks) return;
+    
+    // Check if My Profile link already exists
+    const hasProfileLink = Array.from(navLinks.children).some(link => link.textContent === 'My Profile');
+    
+    if (currentUser && !hasProfileLink) {
         const profileLink = document.createElement('a');
         profileLink.href = 'profile.html';
         profileLink.className = 'nav-link';
         profileLink.textContent = 'My Profile';
         navLinks.appendChild(profileLink);
-    }
-}
-
-function renderUserSection() {
-    const userSection = document.getElementById('userSection');
-    if (!userSection) return;
-    
-    if (currentUser) {
-        const displayName = currentUser.name || currentUser.email.split('@')[0];
-        userSection.innerHTML = `
-            <div class="user-dropdown">
-                <div class="user-name-display">
-                    <span>👤</span>
-                    <span>${displayName}</span>
-                    <span>▼</span>
-                </div>
-                <div class="dropdown-menu">
-                    <a href="profile.html" class="dropdown-item">📋 My Profile</a>
-                    <a href="dashboard.html" class="dropdown-item">📊 Dashboard</a>
-                    <a href="deposit.html" class="dropdown-item">💰 Deposit</a>
-                    <a href="withdraw.html" class="dropdown-item">💸 Withdraw</a>
-                    <div class="dropdown-divider"></div>
-                    <span class="dropdown-item" onclick="handleLogout()" style="cursor: pointer; color: var(--danger);">🚪 Logout</span>
-                </div>
-            </div>
-        `;
-    } else {
-        userSection.innerHTML = '';
     }
 }
 
@@ -125,25 +115,18 @@ async function loadCryptos() {
             current_price: coin.current_price
         }));
         
-        // Set default crypto to BTC if available
         const defaultCrypto = allCryptos.find(c => c.symbol === 'BTC') || allCryptos[0];
         currentCrypto = defaultCrypto;
         
         await initTradePage();
     } catch (error) {
         console.error('Error loading cryptos:', error);
-        // Fallback cryptos
         allCryptos = [
             { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', icon: '₿', current_price: 65000 },
             { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', current_price: 3200 },
             { id: 'binancecoin', symbol: 'BNB', name: 'Binance Coin', icon: 'B', current_price: 580 },
             { id: 'ripple', symbol: 'XRP', name: 'Ripple', icon: 'X', current_price: 0.6 },
-            { id: 'solana', symbol: 'SOL', name: 'Solana', icon: 'S', current_price: 140 },
-            { id: 'cardano', symbol: 'ADA', name: 'Cardano', icon: 'A', current_price: 0.48 },
-            { id: 'dogecoin', symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð', current_price: 0.12 },
-            { id: 'polkadot', symbol: 'DOT', name: 'Polkadot', icon: '●', current_price: 6.8 },
-            { id: 'chainlink', symbol: 'LINK', name: 'Chainlink', icon: 'L', current_price: 14 },
-            { id: 'uniswap', symbol: 'UNI', name: 'Uniswap', icon: 'U', current_price: 7.8 }
+            { id: 'solana', symbol: 'SOL', name: 'Solana', icon: 'S', current_price: 140 }
         ];
         currentCrypto = allCryptos[0];
         await initTradePage();
@@ -161,12 +144,7 @@ function getIconForSymbol(symbol) {
         'DOGE': 'Ð',
         'DOT': '●',
         'LINK': 'L',
-        'UNI': 'U',
-        'AAVE': 'A',
-        'SHIB': '🐕',
-        'AVAX': 'A',
-        'MATIC': 'M',
-        'PEPE': '🐸'
+        'UNI': 'U'
     };
     return icons[symbol] || '📈';
 }
@@ -175,7 +153,6 @@ async function initTradePage() {
     const container = document.getElementById('tradeContent');
     if (!container) return;
     
-    // Render trade interface
     container.innerHTML = `
         <div class="trade-container">
             <div class="trade-header">
@@ -206,9 +183,9 @@ async function initTradePage() {
                 <div class="amount-section">
                     <div class="amount-label">
                         <span>Amount (USDT)</span>
-                        <span id="minAmountLabel">Min $${minAmounts[currentDuration]}</span>
+                        <span id="minAmountLabel">Select duration first</span>
                     </div>
-                    <input type="number" id="amount" class="amount-input" placeholder="Amount to trade" value="${minAmounts[currentDuration]}">
+                    <input type="number" id="amount" class="amount-input" placeholder="Enter amount to trade" value="">
                 </div>
                 
                 <div class="duration-section">
@@ -218,7 +195,7 @@ async function initTradePage() {
                             30s
                             <div class="duration-profit positive">+12%</div>
                         </button>
-                        <button class="duration-btn active" data-duration="60">
+                        <button class="duration-btn" data-duration="60">
                             60s
                             <div class="duration-profit positive">+18%</div>
                         </button>
@@ -246,6 +223,8 @@ async function initTradePage() {
                     <span class="info-value positive" id="expectedReturn">0.00 USDT</span>
                 </div>
                 
+                <div id="errorMessage" class="error-message"></div>
+                
                 <button class="trade-btn buy" id="tradeBtn">BUY ${currentCrypto.symbol}</button>
                 <div id="cooldownMessage" class="cooldown-timer"></div>
             </div>
@@ -255,7 +234,7 @@ async function initTradePage() {
     await fetchCurrentPrice();
     setupTradeEventListeners();
     startPriceUpdates();
-    calculateExpectedReturn();
+    updateAvailableBalance();
 }
 
 async function fetchCurrentPrice() {
@@ -306,11 +285,14 @@ function setupTradeEventListeners() {
     // Duration buttons
     document.querySelectorAll('.duration-btn').forEach(btn => {
         btn.addEventListener('click', () => {
+            // Remove active class from all duration buttons
             document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentDuration = parseInt(btn.dataset.duration);
             updateMinAmountLabel();
+            validateAmount();
             calculateExpectedReturn();
+            clearErrorMessage();
         });
     });
     
@@ -320,6 +302,7 @@ function setupTradeEventListeners() {
         amountInput.addEventListener('input', () => {
             validateAmount();
             calculateExpectedReturn();
+            clearErrorMessage();
         });
     }
     
@@ -364,6 +347,7 @@ function showCryptoDropdown() {
             dropdown.remove();
             await fetchCurrentPrice();
             updateMinAmountLabel();
+            validateAmount();
             calculateExpectedReturn();
         };
         dropdown.appendChild(option);
@@ -412,42 +396,76 @@ function updateMinAmountLabel() {
     const labelSpan = document.getElementById('minAmountLabel');
     const amountInput = document.getElementById('amount');
     
-    if (labelSpan) {
+    if (labelSpan && currentDuration) {
         labelSpan.textContent = `Min $${minAmount.toLocaleString()}`;
-    }
-    
-    if (amountInput && (!amountInput.value || parseFloat(amountInput.value) < minAmount)) {
-        amountInput.value = minAmount;
-        calculateExpectedReturn();
+    } else if (labelSpan && !currentDuration) {
+        labelSpan.textContent = 'Select duration first';
     }
 }
 
 function validateAmount() {
     const amount = parseFloat(document.getElementById('amount').value) || 0;
+    const errorMsg = document.getElementById('errorMessage');
+    
+    if (!currentDuration) {
+        if (errorMsg) errorMsg.textContent = '⚠️ Please select duration first';
+        return false;
+    }
+    
     const minAmount = minAmounts[currentDuration];
     const balance = currentUser?.balance || 0;
-    const amountInput = document.getElementById('amount');
     
-    if (amount < minAmount && amount > 0) {
-        if (amountInput) amountInput.style.borderColor = 'var(--danger)';
+    if (amount <= 0) {
+        if (errorMsg) errorMsg.textContent = '⚠️ Please enter amount';
         return false;
-    } else if (currentTradeType === 'buy' && amount > balance) {
-        if (amountInput) amountInput.style.borderColor = 'var(--danger)';
+    }
+    
+    if (amount < minAmount) {
+        if (errorMsg) errorMsg.textContent = `⚠️ Minimum amount for ${currentDuration}s duration is $${minAmount.toLocaleString()}`;
         return false;
-    } else {
-        if (amountInput) amountInput.style.borderColor = '';
-        return true;
+    }
+    
+    if (currentTradeType === 'buy' && amount > balance) {
+        if (errorMsg) errorMsg.textContent = `⚠️ Insufficient balance. Available: $${balance.toLocaleString()} USDT`;
+        return false;
+    }
+    
+    if (errorMsg) errorMsg.textContent = '';
+    return true;
+}
+
+function clearErrorMessage() {
+    const errorMsg = document.getElementById('errorMessage');
+    if (errorMsg && errorMsg.textContent.includes('⚠️')) {
+        // Only clear validation errors, not other messages
+        if (errorMsg.textContent.includes('duration') || errorMsg.textContent.includes('amount') || errorMsg.textContent.includes('Minimum') || errorMsg.textContent.includes('Insufficient')) {
+            errorMsg.textContent = '';
+        }
     }
 }
 
 function calculateExpectedReturn() {
     const amount = parseFloat(document.getElementById('amount').value) || 0;
+    
+    if (!currentDuration || amount <= 0) {
+        const returnSpan = document.getElementById('expectedReturn');
+        if (returnSpan) returnSpan.textContent = '0.00 USDT';
+        return;
+    }
+    
     const profitRate = profitRates[currentDuration];
     const expectedReturn = amount * (1 + profitRate / 100);
     
     const returnSpan = document.getElementById('expectedReturn');
     if (returnSpan) {
         returnSpan.textContent = `${expectedReturn.toFixed(2)} USDT`;
+    }
+}
+
+function updateAvailableBalance() {
+    const availableSpan = document.getElementById('availableAmount');
+    if (availableSpan && currentUser) {
+        availableSpan.textContent = `${currentUser.balance?.toFixed(2) || 0} USDT`;
     }
 }
 
@@ -487,8 +505,18 @@ function executeTrade() {
         return;
     }
     
+    if (!currentDuration) {
+        alert('Please select duration first');
+        return;
+    }
+    
     const amount = parseFloat(document.getElementById('amount').value) || 0;
     const minAmount = minAmounts[currentDuration];
+    
+    if (amount <= 0) {
+        alert('Please enter amount');
+        return;
+    }
     
     if (amount < minAmount) {
         alert(`Minimum amount for ${currentDuration}s duration is $${minAmount.toLocaleString()}`);
@@ -499,7 +527,7 @@ function executeTrade() {
     
     if (currentTradeType === 'buy') {
         if (amount > balance) {
-            alert('Insufficient balance');
+            alert(`Insufficient balance. Available: $${balance.toLocaleString()} USDT`);
             return;
         }
         
@@ -524,19 +552,17 @@ function executeTrade() {
         saveUserData();
         alert(`✅ Trade placed! Bought ${currentCrypto.symbol} with $${amount.toLocaleString()}. Duration: ${currentDuration}s. Expected return: +${profitRates[currentDuration]}%`);
         
-        // Start cooldown timer
         startCooldown();
         
         updateAvailableBalance();
-        document.getElementById('amount').value = minAmounts[currentDuration];
-        calculateExpectedReturn();
-    }
-}
-
-function updateAvailableBalance() {
-    const availableSpan = document.getElementById('availableAmount');
-    if (availableSpan && currentUser) {
-        availableSpan.textContent = `${currentUser.balance?.toFixed(2) || 0} USDT`;
+        document.getElementById('amount').value = '';
+        document.getElementById('expectedReturn').textContent = '0.00 USDT';
+        
+        // Reset duration selection
+        document.querySelectorAll('.duration-btn').forEach(btn => btn.classList.remove('active'));
+        currentDuration = null;
+        const minLabel = document.getElementById('minAmountLabel');
+        if (minLabel) minLabel.textContent = 'Select duration first';
     }
 }
 
