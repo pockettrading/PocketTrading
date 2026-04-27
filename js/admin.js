@@ -3,8 +3,8 @@
 let adminUser = null;
 
 // Check if logged in user is admin (you can set admin email)
-const ADMIN_EMAIL = 'admin@pockettrading.com';
-const ADMIN_PASSWORD = 'admin123';
+const ADMIN_EMAIL = 'ephremgojo@gmail.com';
+const ADMIN_PASSWORD = 'Jhona@6595';
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
