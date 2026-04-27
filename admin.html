@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pocket Trading - Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #F7931A;
+            --primary-dark: #e67e22;
+            --primary-light: #f8b45a;
+            --dark-bg: #0A0E17;
+            --darker-bg: #06090F;
+            --card-bg: #151E2C;
+            --card-hover: #1A2535;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0AAB5;
+            --text-tertiary: #6B7A8A;
+            --success: #00D897;
+            --danger: #FF4757;
+            --warning: #FFA502;
+            --border: #2A3545;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Top Navigation Bar */
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .logo span {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+        }
+
+        /* Admin Layout */
+        .admin-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+        }
+
+        /* Admin Sidebar */
+        .admin-sidebar {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.5rem;
+            height: fit-content;
+        }
+
+        .sidebar-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .admin-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .admin-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.75rem;
+            background: transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .admin-menu-item:hover {
+            background: var(--card-hover);
+            color: var(--primary);
+        }
+
+        .admin-menu-item.active {
+            background: rgba(247, 147, 26, 0.1);
+            color: var(--primary);
+        }
+
+        /* Admin Content */
+        .admin-content {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.5rem;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .content-header h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .stats-badge {
+            background: var(--primary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Tables */
+        .data-table {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 1rem;
+            font-size: 0.8rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .status-pending {
+            background: rgba(255, 165, 2, 0.2);
+            color: var(--warning);
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .status-approved {
+            background: rgba(0, 216, 151, 0.2);
+            color: var(--success);
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .status-rejected {
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--danger);
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        /* Buttons */
+        .btn-approve {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .btn-reject {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .btn-view {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            background: var(--darker-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+        }
+
+        .wallet-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .wallet-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 968px) {
+            .admin-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Top Navigation Bar -->
+        <div class="top-nav">
+            <div class="logo">
+                <svg viewBox="0 0 40 40" fill="none">
+                    <rect width="40" height="40" rx="10" fill="#F7931A"/>
+                    <path d="M20 10L25 15L20 20L15 15L20 10Z" fill="white"/>
+                    <path d="M20 20L25 25L20 30L15 25L20 20Z" fill="white"/>
+                </svg>
+                <span>Pocket<span style="color: var(--primary);">Trading</span></span>
+            </div>
+            <div class="nav-links">
+                <a href="home.html" class="nav-link">Home</a>
+                <a href="markets.html" class="nav-link">Markets</a>
+                <a href="trade.html" class="nav-link">Trades</a>
+                <a href="profile.html" class="nav-link">My Profile</a>
+                <a href="admin.html" class="nav-link" style="color: var(--primary);">Admin</a>
+            </div>
+            <div class="user-info" id="userInfo"></div>
+        </div>
+
+        <!-- Admin Layout -->
+        <div class="admin-layout">
+            <!-- Admin Sidebar -->
+            <div class="admin-sidebar">
+                <div class="sidebar-title">Admin Panel</div>
+                <div class="admin-menu">
+                    <div class="admin-menu-item active" data-section="dashboard">
+                        📊 Dashboard
+                    </div>
+                    <div class="admin-menu-item" data-section="kyc">
+                        ✓ KYC Verification
+                    </div>
+                    <div class="admin-menu-item" data-section="deposits">
+                        💰 Deposit Requests
+                    </div>
+                    <div class="admin-menu-item" data-section="withdrawals">
+                        💸 Withdrawal Requests
+                    </div>
+                    <div class="admin-menu-item" data-section="trades">
+                        📈 Trade Management
+                    </div>
+                    <div class="admin-menu-item" data-section="users">
+                        👥 Users List
+                    </div>
+                    <div class="admin-menu-item" data-section="settings">
+                        ⚙️ Wallet Settings
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Content -->
+            <div class="admin-content">
+                <!-- Dashboard Section -->
+                <div id="dashboardSection" class="admin-section">
+                    <div class="content-header">
+                        <h2>Admin Dashboard</h2>
+                    </div>
+                    <div id="dashboardStats" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;">
+                        <div class="stat-card" style="background: var(--darker-bg); padding: 1rem; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 0.7rem; color: var(--text-tertiary);">Total Users</div>
+                            <div style="font-size: 1.5rem; font-weight: 700;" id="totalUsers">0</div>
+                        </div>
+                        <div class="stat-card" style="background: var(--darker-bg); padding: 1rem; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 0.7rem; color: var(--text-tertiary);">Pending KYC</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--warning);" id="pendingKYC">0</div>
+                        </div>
+                        <div class="stat-card" style="background: var(--darker-bg); padding: 1rem; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 0.7rem; color: var(--text-tertiary);">Pending Deposits</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="pendingDeposits">0</div>
+                        </div>
+                        <div class="stat-card" style="background: var(--darker-bg); padding: 1rem; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 0.7rem; color: var(--text-tertiary);">Pending Withdrawals</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--danger);" id="pendingWithdrawals">0</div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="margin-bottom: 1rem;">Recent Activity</h3>
+                        <div id="recentActivity" class="data-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>User</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentActivityBody">
+                                    <tr><td colspan="5" style="text-align: center;">No recent activity</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KYC Section -->
+                <div id="kycSection" class="admin-section" style="display: none;">
+                    <div class="content-header">
+                        <h2>KYC Verification Requests</h2>
+                        <span class="stats-badge" id="kycCount">0 Pending</span>
+                    </div>
+                    <div class="data-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>User ID</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>ID Type</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="kycTableBody">
+                                <tr><td colspan="7" style="text-align: center;">No KYC requests</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Deposits Section -->
+                <div id="depositsSection" class="admin-section" style="display: none;">
+                    <div class="content-header">
+                        <h2>Deposit Requests</h2>
+                        <span class="stats-badge" id="depositCount">0 Pending</span>
+                    </div>
+                    <div class="data-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>User</th>
+                                    <th>Amount</th>
+                                    <th>Currency</th>
+                                    <th>Wallet Address</th>
+                                    <th>Proof</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="depositsTableBody">
+                                <tr><td colspan="8" style="text-align: center;">No deposit requests</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Withdrawals Section -->
+                <div id="withdrawalsSection" class="admin-section" style="display: none;">
+                    <div class="content-header">
+                        <h2>Withdrawal Requests</h2>
+                        <span class="stats-badge" id="withdrawalCount">0 Pending</span>
+                    </div>
+                    <div class="data-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>User</th>
+                                    <th>Amount</th>
+                                    <th>Currency</th>
+                                    <th>Wallet Address</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawalsTableBody">
+                                <tr><td colspan="7" style="text-align: center;">No withdrawal requests</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Trades Section -->
+                <div id="tradesSection" class="admin-section" style="display: none;">
+                    <div class="content-header">
+                        <h2>Trade Management</h2>
+                    </div>
+                    <div class="data-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>User</th>
+                                    <th>Type</th>
+                                    <th>Crypto</th>
+                                    <th>Amount</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tradesTableBody">
+                                <tr><td colspan="8" style="text-align: center;">No trades found</td></tr>
+                            </tbody>
+                        <td>
+                    </div>
+                </div>
+
+                <!-- Users Section -->
+                <div id="usersSection" class="admin-section" style="display: none;">
+                    <div class="content-header">
+                        <h2>Users List</h2>
+                    </div>
+                    <div class="data-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Balance</th>
+                                    <th>KYC Status</th>
+                                    <th>Member Since</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr><td colspan="7" style="text-align: center;">No users found</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Wallet Settings Section -->
+                <div id="settingsSection" class="admin-section" style="display: none;">
+                    <div class="content-header">
+                        <h2>Wallet Settings</h2>
+                    </div>
+                    <div class="wallet-section">
+                        <div class="wallet-title">Cryptocurrency Wallet Addresses</div>
+                        <div class="form-group">
+                            <label>Ethereum (ETH) Address</label>
+                            <input type="text" id="adminEthAddress" placeholder="0x...">
+                        </div>
+                        <div class="form-group">
+                            <label>Bitcoin (BTC) Address</label>
+                            <input type="text" id="adminBtcAddress" placeholder="bc1...">
+                        </div>
+                        <div class="form-group">
+                            <label>Tether (USDT) - ERC-20 Address</label>
+                            <input type="text" id="adminUsdtAddress" placeholder="0x...">
+                        </div>
+                        <button class="btn-approve" onclick="saveWalletSettings()">Save Addresses</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>
