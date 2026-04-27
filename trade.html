@@ -90,7 +90,7 @@
             color: var(--primary);
         }
 
-        /* User Dropdown (for logged-in users) */
+        /* User Dropdown (for logged-in users only) */
         .user-dropdown {
             position: relative;
             cursor: pointer;
@@ -536,7 +536,7 @@
 </head>
 <body>
     <div class="container">
-        <!-- Top Navigation Bar - No Login/Sign Up buttons here -->
+        <!-- Top Navigation Bar -->
         <div class="top-nav">
             <div class="logo">
                 <svg viewBox="0 0 40 40" fill="none">
@@ -546,11 +546,11 @@
                 </svg>
                 <span>Pocket<span style="color: var(--primary);">Trading</span></span>
             </div>
-            <div class="nav-links">
+            <div class="nav-links" id="navLinks">
                 <a href="home.html" class="nav-link">Home</a>
                 <a href="markets.html" class="nav-link">Markets</a>
                 <a href="trade.html" class="nav-link" style="color: var(--primary);">Trades</a>
-                <a href="profile.html" class="nav-link">My Profile</a>
+                <!-- My Profile link will be added by JavaScript for logged-in users only -->
             </div>
             <div id="userSection"></div>
         </div>
