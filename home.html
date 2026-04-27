@@ -227,10 +227,14 @@
         }
 
         .section-title {
-            font-size: 1.8rem;
+            font-size: 2rem;
             font-weight: 700;
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
             text-align: center;
+            background: linear-gradient(135deg, var(--primary), var(--text-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .features-grid {
@@ -245,11 +249,13 @@
             padding: 1.5rem;
             text-align: center;
             transition: all 0.3s;
+            border: 1px solid var(--border);
         }
 
         .feature-card:hover {
             transform: translateY(-4px);
             box-shadow: var(--shadow);
+            border-color: var(--primary);
         }
 
         .feature-icon {
@@ -261,6 +267,7 @@
             font-size: 1.1rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
+            color: var(--primary);
         }
 
         .feature-description {
@@ -275,32 +282,58 @@
             border-radius: 24px;
             padding: 3rem;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1%, transparent 1%);
+            background-size: 50px 50px;
+            animation: moveBackground 20s linear infinite;
+        }
+
+        @keyframes moveBackground {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
         }
 
         .cta-title {
-            font-size: 1.5rem;
-            font-weight: 700;
+            font-size: 2rem;
+            font-weight: 800;
             margin-bottom: 1rem;
             color: white;
+            position: relative;
+            z-index: 1;
         }
 
         .cta-description {
-            color: rgba(255,255,255,0.9);
+            color: rgba(255,255,255,0.95);
             margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 1;
         }
 
         .btn-cta {
             background: white;
             color: var(--primary);
-            padding: 12px 28px;
+            padding: 14px 32px;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 1rem;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
             text-decoration: none;
             display: inline-block;
+            position: relative;
+            z-index: 1;
         }
 
         .btn-cta:hover {
@@ -315,6 +348,10 @@
             
             .hero-title {
                 font-size: 2.5rem;
+            }
+            
+            .cta-title {
+                font-size: 1.5rem;
             }
             
             .container {
@@ -369,7 +406,6 @@
                 <a href="home.html" class="nav-link" style="color: var(--primary);">Home</a>
                 <a href="markets.html" class="nav-link">Markets</a>
                 <a href="trade.html" class="nav-link">Trades</a>
-                <!-- My Profile link will be added here for logged-in users -->
             </div>
             <div class="user-info" id="userInfo"></div>
         </div>
@@ -425,38 +461,48 @@
             </div>
         </div>
 
-        <!-- Features Section -->
+        <!-- Features Section - New Engaging Text -->
         <div class="features-section">
-            <h2 class="section-title">Why Choose Pocket Trading?</h2>
+            <h2 class="section-title">Why Trade with Pocket Trading?</h2>
             <div class="features-grid">
                 <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <div class="feature-title">Real-time Market Data</div>
-                    <div class="feature-description">Get instant access to live cryptocurrency prices and market movements.</div>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📈</div>
-                    <div class="feature-title">Advanced Charting Tools</div>
-                    <div class="feature-description">Professional-grade charts with technical indicators and drawing tools.</div>
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-title">Lightning Fast Execution</div>
+                    <div class="feature-description">Execute trades in milliseconds with our ultra-low latency platform. Never miss a market opportunity again.</div>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🔒</div>
-                    <div class="feature-title">Secure & Reliable</div>
-                    <div class="feature-description">Bank-level security with 2FA and cold storage for your assets.</div>
+                    <div class="feature-title">Bank-Grade Security</div>
+                    <div class="feature-description">Your funds are protected with military-grade encryption, cold storage, and multi-signature technology.</div>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">💬</div>
-                    <div class="feature-title">24/7 Customer Support</div>
-                    <div class="feature-description">Round-the-clock support from our expert team.</div>
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-title">Professional Charts</div>
+                    <div class="feature-description">Access advanced charting tools, technical indicators, and real-time market data from top exchanges.</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💎</div>
+                    <div class="feature-title">Zero Hidden Fees</div>
+                    <div class="feature-description">Transparent pricing with competitive spreads. What you see is what you pay - no surprises.</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <div class="feature-title">Trade Anywhere</div>
+                    <div class="feature-description">Full-featured mobile trading with the same powerful tools as our desktop platform.</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <div class="feature-title">Smart Alerts</div>
+                    <div class="feature-description">Set price alerts and never miss a movement. Get notified instantly when your targets are hit.</div>
                 </div>
             </div>
         </div>
 
-        <!-- CTA Section -->
+        <!-- CTA Section - Engaging Call to Action -->
         <div class="cta-section">
-            <h3 class="cta-title">Ready to Start Trading?</h3>
-            <p class="cta-description">Join Pocket Trading today and start your trading journey with real funds.</p>
-            <a href="register.html" class="btn-cta">Create Account</a>
+            <h3 class="cta-title">Ready to Master the Crypto Market?</h3>
+            <p class="cta-description">Join thousands of successful traders already using Pocket Trading to grow their portfolio.</p>
+            <a href="register.html" class="btn-cta">Launch Your Trading Journey →</a>
         </div>
     </div>
 
