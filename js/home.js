@@ -1,5 +1,4 @@
-// Home page functionality - Shows Login + Sign Up buttons for guests
-// My Profile link only appears when logged in
+// Home page functionality - Username + Logout in top-right corner
 
 let currentUser = null;
 
@@ -8,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Home page loaded');
     loadUser();
     renderNavLinks();
-    renderUserSection();
+    renderUserInfo();
     loadUserStats();
 });
 
@@ -32,13 +31,11 @@ function renderNavLinks() {
     const navLinks = document.getElementById('navLinks');
     if (!navLinks) return;
     
-    // Clear existing links except Home, Markets, Trades
-    const existingLinks = navLinks.querySelectorAll('.nav-link');
-    existingLinks.forEach(link => {
-        if (link.textContent !== 'Home' && link.textContent !== 'Markets' && link.textContent !== 'Trades') {
-            link.remove();
-        }
-    });
+    // Remove existing My Profile link if it exists
+    const existingProfileLink = Array.from(navLinks.children).find(link => link.textContent === 'My Profile');
+    if (existingProfileLink) {
+        existingProfileLink.remove();
+    }
     
     // Add My Profile link only if user is logged in
     if (currentUser) {
@@ -50,39 +47,18 @@ function renderNavLinks() {
     }
 }
 
-function renderUserSection() {
-    const userSection = document.getElementById('userSection');
-    if (!userSection) return;
+function renderUserInfo() {
+    const userInfo = document.getElementById('userInfo');
+    if (!userInfo) return;
     
     if (currentUser) {
-        // Show user dropdown for logged-in users
         const displayName = currentUser.name || currentUser.email.split('@')[0];
-        
-        userSection.innerHTML = `
-            <div class="user-dropdown">
-                <div class="user-name-display">
-                    <span>👤</span>
-                    <span>${displayName}</span>
-                    <span>▼</span>
-                </div>
-                <div class="dropdown-menu">
-                    <a href="profile.html" class="dropdown-item">📋 My Profile</a>
-                    <a href="dashboard.html" class="dropdown-item">📊 Dashboard</a>
-                    <a href="deposit.html" class="dropdown-item">💰 Deposit</a>
-                    <a href="withdraw.html" class="dropdown-item">💸 Withdraw</a>
-                    <div class="dropdown-divider"></div>
-                    <span class="dropdown-item" onclick="handleLogout()" style="cursor: pointer; color: var(--danger);">🚪 Logout</span>
-                </div>
-            </div>
+        userInfo.innerHTML = `
+            <span class="username">${displayName}</span>
+            <span class="logout-link" onclick="handleLogout()">Logout</span>
         `;
     } else {
-        // Show Login + Sign Up buttons for guests
-        userSection.innerHTML = `
-            <div class="auth-buttons">
-                <a href="login.html" class="login-btn">Login</a>
-                <a href="register.html" class="signup-btn">Sign Up</a>
-            </div>
-        `;
+        userInfo.innerHTML = '';
     }
 }
 
@@ -176,3 +152,6 @@ function handleLogout() {
     sessionStorage.removeItem('pocket_user');
     window.location.href = 'home.html';
 }
+
+// Make functions global
+window.handleLogout = handleLogout;
