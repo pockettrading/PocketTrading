@@ -1,4 +1,4 @@
-// Profile functionality - Luno Style with Sidebar
+// Profile functionality - Luno Style (Menu only in sidebar)
 
 let currentUser = null;
 
@@ -35,14 +35,14 @@ function renderUserInfo() {
 }
 
 function initProfilePage() {
-    updateUserProfile();
+    updateProfileInfo();
     loadTradingStats();
     loadTradeHistory();
     setupMenuNavigation();
     setupForms();
 }
 
-function updateUserProfile() {
+function updateProfileInfo() {
     if (!currentUser) return;
     
     const fullName = currentUser.name || currentUser.email.split('@')[0];
@@ -51,17 +51,14 @@ function updateUserProfile() {
     const currentBalance = currentUser.balance || 0;
     const kycStatus = currentUser.kycStatus || 'pending';
     
-    // Avatar initials
-    const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-    document.getElementById('userAvatar').textContent = initials;
-    document.getElementById('userFullName').textContent = fullName;
-    document.getElementById('userEmail').textContent = email;
+    document.getElementById('profileFullName').textContent = fullName;
+    document.getElementById('profileEmail').textContent = email;
     document.getElementById('memberSince').textContent = memberSince;
     document.getElementById('accountBalance').textContent = `$${currentBalance.toFixed(2)}`;
     
     const kycBadge = document.getElementById('kycStatus');
     kycBadge.textContent = kycStatus;
-    kycBadge.className = `kyc-status kyc-${kycStatus}`;
+    kycBadge.className = `kyc-badge kyc-${kycStatus}`;
     
     // Update form fields
     const updateFullName = document.getElementById('updateFullName');
@@ -83,7 +80,6 @@ function loadTradingStats() {
     
     let winningTrades = 0;
     let totalVolume = 0;
-    let totalProfit = currentUser.stats?.totalProfit || 0;
     
     trades.forEach(trade => {
         totalVolume += trade.amount || 0;
@@ -95,11 +91,6 @@ function loadTradingStats() {
     document.getElementById('totalTrades').textContent = totalTrades;
     document.getElementById('winRate').textContent = `${winRate}%`;
     document.getElementById('totalVolume').textContent = `$${totalVolume.toFixed(2)}`;
-    
-    const profitElem = document.getElementById('totalProfit');
-    const sign = totalProfit >= 0 ? '+' : '';
-    profitElem.textContent = `${sign}$${Math.abs(totalProfit).toFixed(2)}`;
-    profitElem.className = `stat-value ${totalProfit >= 0 ? 'positive' : 'negative'}`;
 }
 
 function loadTradeHistory() {
@@ -131,7 +122,7 @@ function loadTradeHistory() {
 
 function setupMenuNavigation() {
     const menuItems = document.querySelectorAll('.menu-item');
-    const pages = ['historyPage', 'kycPage', 'updatePage', 'supportPage'];
+    const pages = ['profilePage', 'historyPage', 'kycPage', 'updatePage', 'supportPage'];
     
     menuItems.forEach((item, index) => {
         item.addEventListener('click', () => {
@@ -237,7 +228,7 @@ function updateProfile() {
     
     saveUserData();
     showNotification('Profile updated successfully!', 'success');
-    updateUserProfile();
+    updateProfileInfo();
 }
 
 function submitKYC() {
@@ -273,7 +264,7 @@ function submitKYC() {
     
     const kycBadge = document.getElementById('kycStatus');
     kycBadge.textContent = 'pending';
-    kycBadge.className = 'kyc-status kyc-pending';
+    kycBadge.className = 'kyc-badge kyc-pending';
     
     document.getElementById('kycForm').reset();
 }
