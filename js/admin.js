@@ -10,8 +10,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Wait for supabaseDB
     if (typeof supabaseDB === 'undefined') {
-        console.log('Waiting for Supabase...');
-        setTimeout(() => checkAdminAccess(), 500);
+        console.log('Supabase not ready, waiting...');
+        setTimeout(() => checkAdminAccess(), 1000);
         return;
     }
     
@@ -22,11 +22,11 @@ async function checkAdminAccess() {
     console.log('Checking admin access...');
     
     const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
-    console.log('Stored user:', storedUser);
+    console.log('Stored user found:', !!storedUser);
     
     if (storedUser) {
         adminUser = JSON.parse(storedUser);
-        console.log('Admin user:', adminUser.email);
+        console.log('Admin user email:', adminUser.email);
         
         // ONLY ephremgojo@gmail.com can access admin panel
         if (adminUser.email !== 'ephremgojo@gmail.com') {
@@ -40,8 +40,10 @@ async function checkAdminAccess() {
     }
     
     renderAdminUserInfo();
-    await loadDashboardData();
     setupAdminMenu();
+    
+    // Load all data
+    await loadDashboardData();
     await loadWalletSettings();
     
     // Show dashboard section by default
@@ -69,9 +71,7 @@ function setupAdminMenu() {
             e.preventDefault();
             console.log('Menu clicked:', this.dataset.section);
             
-            // Remove active class from all
             menuItems.forEach(mi => mi.classList.remove('active'));
-            // Add active class to clicked
             this.classList.add('active');
             
             const section = this.dataset.section;
@@ -125,19 +125,30 @@ function showSection(section) {
 async function loadDashboardData() {
     console.log('Loading dashboard data...');
     
+    // Show loading state
+    document.getElementById('totalUsers').textContent = 'Loading...';
+    document.getElementById('pendingKYC').textContent = 'Loading...';
+    document.getElementById('pendingDeposits').textContent = 'Loading...';
+    document.getElementById('pendingWithdrawals').textContent = 'Loading...';
+    
     try {
+        // Test Supabase connection first
+        console.log('Testing Supabase connection...');
+        const testResult = await supabaseDB.get('users', { limit: 1 });
+        console.log('Supabase test result:', testResult);
+        
         const users = await supabaseDB.getAllUsers();
-        console.log('Users loaded:', users.length);
+        console.log('Users loaded:', users ? users.length : 0);
         
         const kycRequests = await supabaseDB.getKYCRequests();
         const depositRequests = await supabaseDB.getDepositRequests();
         const withdrawalRequests = await supabaseDB.getWithdrawalRequests();
         
-        const pendingKYC = kycRequests.filter(r => r.status === 'pending').length;
-        const pendingDeposits = depositRequests.filter(r => r.status === 'pending').length;
-        const pendingWithdrawals = withdrawalRequests.filter(r => r.status === 'pending').length;
+        const pendingKYC = kycRequests ? kycRequests.filter(r => r.status === 'pending').length : 0;
+        const pendingDeposits = depositRequests ? depositRequests.filter(r => r.status === 'pending').length : 0;
+        const pendingWithdrawals = withdrawalRequests ? withdrawalRequests.filter(r => r.status === 'pending').length : 0;
         
-        document.getElementById('totalUsers').textContent = users.length;
+        document.getElementById('totalUsers').textContent = users ? users.length : 0;
         document.getElementById('pendingKYC').textContent = pendingKYC;
         document.getElementById('pendingDeposits').textContent = pendingDeposits;
         document.getElementById('pendingWithdrawals').textContent = pendingWithdrawals;
@@ -145,25 +156,29 @@ async function loadDashboardData() {
         // Recent activity
         const allActivities = [];
         
-        depositRequests.forEach(d => {
-            allActivities.push({
-                date: d.date,
-                user: d.user_name || d.user_email,
-                type: 'Deposit',
-                amount: d.amount,
-                status: d.status
+        if (depositRequests) {
+            depositRequests.forEach(d => {
+                allActivities.push({
+                    date: d.date,
+                    user: d.user_name || d.user_email,
+                    type: 'Deposit',
+                    amount: d.amount,
+                    status: d.status
+                });
             });
-        });
+        }
         
-        withdrawalRequests.forEach(w => {
-            allActivities.push({
-                date: w.date,
-                user: w.user_name || w.user_email,
-                type: 'Withdrawal',
-                amount: w.amount,
-                status: w.status
+        if (withdrawalRequests) {
+            withdrawalRequests.forEach(w => {
+                allActivities.push({
+                    date: w.date,
+                    user: w.user_name || w.user_email,
+                    type: 'Withdrawal',
+                    amount: w.amount,
+                    status: w.status
+                });
             });
-        });
+        }
         
         allActivities.sort((a, b) => new Date(b.date) - new Date(a.date));
         const recent = allActivities.slice(0, 10);
@@ -174,17 +189,24 @@ async function loadDashboardData() {
         } else {
             tbody.innerHTML = recent.map(activity => `
                 <tr>
-                    <td>${new Date(activity.date).toLocaleString()}</td
-                    <td>${activity.user}</td
-                    <td>${activity.type}</td
-                    <td>$${activity.amount.toLocaleString()}</td
-                    <td><span class="status-${activity.status}">${activity.status}</span></td
+                    <td>${new Date(activity.date).toLocaleString()}</td>
+                    <td>${activity.user}</td>
+                    <td>${activity.type}</td>
+                    <td>$${activity.amount ? activity.amount.toLocaleString() : '0'}</td>
+                    <td><span class="status-${activity.status}">${activity.status}</span></td>
                 </tr>
             `).join('');
         }
+        
     } catch (error) {
         console.error('Error loading dashboard:', error);
-        document.getElementById('totalUsers').textContent = 'Error';
+        document.getElementById('totalUsers').textContent = '0';
+        document.getElementById('pendingKYC').textContent = '0';
+        document.getElementById('pendingDeposits').textContent = '0';
+        document.getElementById('pendingWithdrawals').textContent = '0';
+        
+        const tbody = document.getElementById('recentActivityBody');
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--danger);">Error loading data. Check console.</td--</tr>';
     }
 }
 
@@ -193,29 +215,29 @@ async function loadKYCRequests() {
     
     try {
         const kycRequests = await supabaseDB.getKYCRequests();
-        const pending = kycRequests.filter(r => r.status === 'pending');
+        const pending = kycRequests ? kycRequests.filter(r => r.status === 'pending') : [];
         document.getElementById('kycCount').textContent = `${pending.length} Pending`;
         
         const tbody = document.getElementById('kycTableBody');
-        if (kycRequests.length === 0) {
+        if (!kycRequests || kycRequests.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No KYC requests</td--</tr>';
             return;
         }
         
         tbody.innerHTML = kycRequests.map(request => `
             <tr>
-                <td>${new Date(request.date).toLocaleString()}</td
-                <td>${request.user_id}</td
-                <td>${request.full_name}</td
-                <td>${request.user_email}</td
-                <td>${request.id_type}</td
-                <td><span class="status-${request.status}">${request.status}</span></td
+                <td>${new Date(request.date).toLocaleString()}</td>
+                <td>${request.user_id}</td>
+                <td>${request.full_name || '-'}</td>
+                <td>${request.user_email || '-'}</td>
+                <td>${request.id_type || '-'}</td>
+                <td><span class="status-${request.status}">${request.status}</span></td>
                 <td>
                     ${request.status === 'pending' ? `
                         <button class="btn-approve" onclick="approveKYC(${request.id}, ${request.user_id})">Approve</button>
                         <button class="btn-reject" onclick="rejectKYC(${request.id}, ${request.user_id})">Reject</button>
                     ` : '-'}
-                </td
+                </td>
             </tr>
         `).join('');
     } catch (error) {
@@ -228,32 +250,30 @@ async function loadDepositRequests() {
     
     try {
         const depositRequests = await supabaseDB.getDepositRequests();
-        const pending = depositRequests.filter(r => r.status === 'pending');
+        const pending = depositRequests ? depositRequests.filter(r => r.status === 'pending') : [];
         document.getElementById('depositCount').textContent = `${pending.length} Pending`;
         
         const tbody = document.getElementById('depositsTableBody');
-        if (depositRequests.length === 0) {
+        if (!depositRequests || depositRequests.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No deposit requests</td--</tr>';
             return;
         }
         
         tbody.innerHTML = depositRequests.map(request => `
             <tr>
-                <td>${new Date(request.date).toLocaleString()}</td
-                <td>${request.user_name || request.user_email}</td
-                <td>$${request.amount.toLocaleString()}</td
-                <td>${request.currency}</td
-                <td>${request.wallet_address?.substring(0, 20) || 'N/A'}...</td
-                <td>
-                    <button class="btn-view" onclick="viewProof('${request.screenshot}')">View Proof</button>
-                </td
-                <td><span class="status-${request.status}">${request.status}</span></td
+                <td>${new Date(request.date).toLocaleString()}</td>
+                <td>${request.user_name || request.user_email}</td>
+                <td>$${request.amount ? request.amount.toLocaleString() : '0'}</td>
+                <td>${request.currency || '-'}</td>
+                <td>${request.wallet_address ? request.wallet_address.substring(0, 20) : 'N/A'}...</td>
+                <td><button class="btn-view" onclick="viewProof('${request.screenshot || ''}')">View Proof</button></td>
+                <td><span class="status-${request.status}">${request.status}</span></td>
                 <td>
                     ${request.status === 'pending' ? `
                         <button class="btn-approve" onclick="approveDeposit(${request.id}, ${request.user_id}, ${request.amount})">Approve</button>
                         <button class="btn-reject" onclick="rejectDeposit(${request.id})">Reject</button>
                     ` : '-'}
-                </td
+                </td>
             </tr>
         `).join('');
     } catch (error) {
@@ -266,29 +286,29 @@ async function loadWithdrawalRequests() {
     
     try {
         const withdrawalRequests = await supabaseDB.getWithdrawalRequests();
-        const pending = withdrawalRequests.filter(r => r.status === 'pending');
+        const pending = withdrawalRequests ? withdrawalRequests.filter(r => r.status === 'pending') : [];
         document.getElementById('withdrawalCount').textContent = `${pending.length} Pending`;
         
         const tbody = document.getElementById('withdrawalsTableBody');
-        if (withdrawalRequests.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No withdrawal requests</td--<tr>';
+        if (!withdrawalRequests || withdrawalRequests.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No withdrawal requests</td--</tr>';
             return;
         }
         
         tbody.innerHTML = withdrawalRequests.map(request => `
             <tr>
-                <td>${new Date(request.date).toLocaleString()}</td
-                <td>${request.user_name || request.user_email}</td
-                <td>$${request.amount.toLocaleString()}</td
-                <td>${request.crypto}</td
-                <td>${request.wallet_address?.substring(0, 20) || 'N/A'}...</td
-                <td><span class="status-${request.status}">${request.status}</span></td
+                <td>${new Date(request.date).toLocaleString()}</td>
+                <td>${request.user_name || request.user_email}</td>
+                <td>$${request.amount ? request.amount.toLocaleString() : '0'}</td>
+                <td>${request.crypto || '-'}</td>
+                <td>${request.wallet_address ? request.wallet_address.substring(0, 20) : 'N/A'}...</td>
+                <td><span class="status-${request.status}">${request.status}</span></td>
                 <td>
                     ${request.status === 'pending' ? `
                         <button class="btn-approve" onclick="approveWithdrawal(${request.id}, ${request.user_id}, ${request.amount})">Approve</button>
                         <button class="btn-reject" onclick="rejectWithdrawal(${request.id}, ${request.user_id}, ${request.amount})">Reject</button>
                     ` : '-'}
-                </td
+                </td>
             </tr>
         `).join('');
     } catch (error) {
@@ -301,28 +321,32 @@ async function loadAllTrades() {
     
     try {
         const allTrades = await supabaseDB.getAllTransactions();
-        allTrades.sort((a, b) => new Date(b.date) - new Date(a.date));
+        if (allTrades) {
+            allTrades.sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
         
         const tbody = document.getElementById('tradesTableBody');
-        if (allTrades.length === 0) {
+        if (!allTrades || allTrades.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No trades found</td--</tr>';
             return;
         }
         
         const users = await supabaseDB.getAllUsers();
         const userMap = {};
-        users.forEach(u => { userMap[u.id] = u.name || u.email; });
+        if (users) {
+            users.forEach(u => { userMap[u.id] = u.name || u.email; });
+        }
         
         tbody.innerHTML = allTrades.map(trade => `
             <tr>
-                <td>${new Date(trade.date).toLocaleString()}</td
-                <td>${userMap[trade.user_id] || trade.user_id}</td
-                <td>${trade.type}</td
-                <td>${trade.crypto || 'BTC'}</td
-                <td>${trade.amount?.toFixed(2) || '0'}</td
-                <td>$${trade.price?.toFixed(2) || '0'}</td
-                <td>$${trade.total?.toFixed(2) || '0'}</td
-                <td><span class="status-completed">completed</span></td
+                <td>${new Date(trade.date).toLocaleString()}</td>
+                <td>${userMap[trade.user_id] || trade.user_id}</td>
+                <td>${trade.type}</td>
+                <td>${trade.crypto || 'BTC'}</td>
+                <td>${trade.amount?.toFixed(2) || '0'}</td>
+                <td>$${trade.price?.toFixed(2) || '0'}</td>
+                <td>$${trade.total?.toFixed(2) || '0'}</td>
+                <td><span class="status-completed">completed</span></td>
             </tr>
         `).join('');
     } catch (error) {
@@ -337,22 +361,20 @@ async function loadAllUsers() {
         const users = await supabaseDB.getAllUsers();
         
         const tbody = document.getElementById('usersTableBody');
-        if (users.length === 0) {
-            tbody.innerHTML = '<td><td colspan="7" style="text-align: center;">No users found</td--</tr>';
+        if (!users || users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No users found</td--</tr>';
             return;
         }
         
         tbody.innerHTML = users.map(user => `
             <tr>
-                <td>${user.id}</td
-                <td>${user.name || '-'}</td
-                <td>${user.email}</td
-                <td>$${user.balance?.toFixed(2) || '0'}</td
-                <td><span class="status-${user.kyc_status || 'pending'}">${user.kyc_status || 'pending'}</span></td
-                <td>${new Date(user.created_at).toLocaleDateString()}</td
-                <td>
-                    <button class="btn-view" onclick="viewUserDetails(${user.id})">View</button>
-                </td
+                <td>${user.id}</td>
+                <td>${user.name || '-'}</td>
+                <td>${user.email}</td>
+                <td>$${user.balance?.toFixed(2) || '0'}</td>
+                <td><span class="status-${user.kyc_status || 'pending'}">${user.kyc_status || 'pending'}</span></td>
+                <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                <td><button class="btn-view" onclick="viewUserDetails(${user.id})">View</button></td>
             </tr>
         `).join('');
     } catch (error) {
@@ -515,7 +537,6 @@ Phone: ${user.phone || 'Not set'}
 Country: ${user.country || 'Not set'}
 Admin: ${user.is_admin ? 'Yes' : 'No'}
 Member Since: ${new Date(user.created_at).toLocaleDateString()}
-Last Login: ${user.last_login ? new Date(user.last_login).toLocaleString() : 'Never'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             `);
         }
