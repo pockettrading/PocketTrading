@@ -1,9 +1,12 @@
-// Admin Panel - Complete Control System
+// Admin Panel - Complete with Multiple Admin Support
 
 let adminUser = null;
 
-// Admin email - change this to your admin email
-const ADMIN_EMAIL = 'admin@pockettrading.com';
+// ✅ Admin emails list - Add all admin emails here
+const ADMIN_EMAILS = [
+    'admin@pockettrading.com',
+    'ephremgojo@gmail.com'  // ✅ Added as admin
+];
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
@@ -18,20 +21,74 @@ function checkAdminAccess() {
     const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
     if (storedUser) {
         adminUser = JSON.parse(storedUser);
-        // Check if user email matches admin email
-        if (adminUser.email !== ADMIN_EMAIL) {
+        
+        // ✅ Check if user email is in admin list
+        // ✅ Also check for isAdmin flag as fallback
+        const isAdminByEmail = ADMIN_EMAILS.includes(adminUser.email);
+        const isAdminByFlag = adminUser.isAdmin === true;
+        
+        if (!isAdminByEmail && !isAdminByFlag) {
             alert('Access denied. Admin only.');
             window.location.href = 'home.html';
             return;
         }
     } else {
-        // Not logged in at all
         window.location.href = 'login.html';
         return;
     }
     
     renderAdminUserInfo();
 }
+
+// ✅ Function to grant admin access to a user (can be called from console)
+function grantAdminAccess(email) {
+    const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
+    const userIndex = users.findIndex(u => u.email === email);
+    
+    if (userIndex !== -1) {
+        users[userIndex].isAdmin = true;
+        localStorage.setItem('pocket_users', JSON.stringify(users));
+        
+        // If this is the current user, update session too
+        if (adminUser && adminUser.email === email) {
+            adminUser.isAdmin = true;
+            if (localStorage.getItem('pocket_user')) {
+                localStorage.setItem('pocket_user', JSON.stringify(adminUser));
+            }
+            if (sessionStorage.getItem('pocket_user')) {
+                sessionStorage.setItem('pocket_user', JSON.stringify(adminUser));
+            }
+        }
+        
+        console.log(`✅ Admin rights granted to: ${email}`);
+        alert(`Admin rights granted to: ${email}`);
+        return true;
+    } else {
+        console.log(`❌ User not found: ${email}`);
+        alert(`User not found: ${email}`);
+        return false;
+    }
+}
+
+// ✅ Function to revoke admin access
+function revokeAdminAccess(email) {
+    const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
+    const userIndex = users.findIndex(u => u.email === email);
+    
+    if (userIndex !== -1) {
+        users[userIndex].isAdmin = false;
+        localStorage.setItem('pocket_users', JSON.stringify(users));
+        
+        console.log(`❌ Admin rights revoked from: ${email}`);
+        alert(`Admin rights revoked from: ${email}`);
+        return true;
+    }
+    return false;
+}
+
+// ✅ Make functions available globally
+window.grantAdminAccess = grantAdminAccess;
+window.revokeAdminAccess = revokeAdminAccess;
 
 function renderAdminUserInfo() {
     const userInfo = document.getElementById('userInfo');
@@ -144,7 +201,7 @@ function loadDashboardData() {
                 <td>${activity.type}</td
                 <td>$${activity.amount.toLocaleString()}</td
                 <td><span class="status-${activity.status}">${activity.status}</span></td
-            比
+            </tr>
         `).join('');
     }
 }
@@ -156,7 +213,7 @@ function loadKYCRequests() {
     
     const tbody = document.getElementById('kycTableBody');
     if (kycRequests.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No KYC requests</td--</td>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No KYC requests</td--<tr>';
         return;
     }
     
@@ -259,7 +316,7 @@ function loadAllTrades() {
     
     const tbody = document.getElementById('tradesTableBody');
     if (allTrades.length === 0) {
-        tbody.innerHTML = '</table><td colspan="8" style="text-align: center;">No trades found</td--</tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No trades found</td--</tr>';
         return;
     }
     
@@ -462,6 +519,7 @@ function handleLogout() {
     window.location.href = 'home.html';
 }
 
+// Make functions global
 window.approveKYC = approveKYC;
 window.rejectKYC = rejectKYC;
 window.approveDeposit = approveDeposit;
@@ -472,3 +530,5 @@ window.viewProof = viewProof;
 window.viewUserDetails = viewUserDetails;
 window.saveWalletSettings = saveWalletSettings;
 window.handleLogout = handleLogout;
+window.grantAdminAccess = grantAdminAccess;
+window.revokeAdminAccess = revokeAdminAccess;
