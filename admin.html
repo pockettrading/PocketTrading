@@ -156,6 +156,9 @@
             transition: all 0.3s;
             font-size: 0.85rem;
             color: var(--text-secondary);
+            border: none;
+            width: 100%;
+            text-align: left;
         }
 
         .admin-menu-item:hover {
@@ -173,6 +176,7 @@
             background: var(--card-bg);
             border-radius: 20px;
             padding: 1.5rem;
+            min-height: 500px;
         }
 
         .content-header {
@@ -380,6 +384,27 @@
             .dashboard-stats {
                 grid-template-columns: 1fr;
             }
+            
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+            
+            th {
+                display: none;
+            }
+            
+            td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.75rem;
+            }
+            
+            td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--text-secondary);
+            }
         }
     </style>
 </head>
@@ -411,27 +436,27 @@
             <div class="admin-sidebar">
                 <div class="sidebar-title">Admin Panel</div>
                 <div class="admin-menu">
-                    <div class="admin-menu-item active" data-section="dashboard">
+                    <button class="admin-menu-item active" data-section="dashboard">
                         📊 Dashboard
-                    </div>
-                    <div class="admin-menu-item" data-section="kyc">
+                    </button>
+                    <button class="admin-menu-item" data-section="kyc">
                         ✓ KYC Verification
-                    </div>
-                    <div class="admin-menu-item" data-section="deposits">
+                    </button>
+                    <button class="admin-menu-item" data-section="deposits">
                         💰 Deposit Requests
-                    </div>
-                    <div class="admin-menu-item" data-section="withdrawals">
+                    </button>
+                    <button class="admin-menu-item" data-section="withdrawals">
                         💸 Withdrawal Requests
-                    </div>
-                    <div class="admin-menu-item" data-section="trades">
+                    </button>
+                    <button class="admin-menu-item" data-section="trades">
                         📈 Trade Management
-                    </div>
-                    <div class="admin-menu-item" data-section="users">
+                    </button>
+                    <button class="admin-menu-item" data-section="users">
                         👥 Users List
-                    </div>
-                    <div class="admin-menu-item" data-section="settings">
+                    </button>
+                    <button class="admin-menu-item" data-section="settings">
                         ⚙️ Wallet Settings
-                    </div>
+                    </button>
                 </div>
             </div>
 
@@ -452,11 +477,11 @@
                             <div class="stat-card-label">Pending KYC</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-card-value" id="pendingDeposits" style="color: var(--primary);">0</div>
+                            <div class="stat-card-value" id="pendingDeposits">0</div>
                             <div class="stat-card-label">Pending Deposits</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-card-value" id="pendingWithdrawals" style="color: var(--danger);">0</div>
+                            <div class="stat-card-value" id="pendingWithdrawals">0</div>
                             <div class="stat-card-label">Pending Withdrawals</div>
                         </div>
                     </div>
@@ -476,7 +501,7 @@
                                 <tbody id="recentActivityBody">
                                     <tr><td colspan="5" style="text-align: center;">No recent activity</td--</tr>
                                 </tbody>
-                            </table>
+                             </table>
                         </div>
                     </div>
                 </div>
@@ -528,7 +553,7 @@
                                 </tr>
                             </thead>
                             <tbody id="depositsTableBody">
-                                <tr><td colspan="8" style="text-align: center;">No deposit requests</td--</tr>
+                                <tr><td colspan="8" style="text-align: center;">No deposit requests</td--<table>
                             </tbody>
                         </table>
                     </div>
@@ -605,7 +630,7 @@
                                 </tr>
                             </thead>
                             <tbody id="usersTableBody">
-                                <tr><td colspan="7" style="text-align: center;">No users found</td--<tr>
+                                <tr><td colspan="7" style="text-align: center;">No users found</td--</tr>
                             </tbody>
                         </table>
                     </div>
@@ -637,6 +662,51 @@
         </div>
     </div>
 
+    <!-- Scripts -->
+    <script src="js/supabase.js"></script>
     <script src="js/admin.js"></script>
+    
+    <!-- Fallback direct menu handler -->
+    <script>
+        (function() {
+            // Ensure menu works even if admin.js has issues
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('Fallback menu handler loaded');
+                
+                const menuItems = document.querySelectorAll('.admin-menu-item');
+                const sections = document.querySelectorAll('.admin-section');
+                
+                function switchSection(sectionId) {
+                    sections.forEach(section => {
+                        section.style.display = 'none';
+                    });
+                    const activeSection = document.getElementById(sectionId + 'Section');
+                    if (activeSection) {
+                        activeSection.style.display = 'block';
+                    }
+                    
+                    menuItems.forEach(item => {
+                        if (item.dataset.section === sectionId) {
+                            item.classList.add('active');
+                        } else {
+                            item.classList.remove('active');
+                        }
+                    });
+                }
+                
+                menuItems.forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const section = this.dataset.section;
+                        console.log('Fallback: Switching to', section);
+                        switchSection(section);
+                    });
+                });
+                
+                // Show dashboard by default
+                switchSection('dashboard');
+            });
+        })();
+    </script>
 </body>
 </html>
