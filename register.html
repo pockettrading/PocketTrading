@@ -223,21 +223,24 @@
         .strength-weak {
             color: var(--danger);
         }
-        .strength-weak ~ .strength-bar-container .strength-bar {
+        .strength-weak ~ .strength-bar-container .strength-bar,
+        .strength-weak + .strength-bar-container .strength-bar {
             background: var(--danger);
         }
 
         .strength-medium {
             color: var(--warning);
         }
-        .strength-medium ~ .strength-bar-container .strength-bar {
+        .strength-medium ~ .strength-bar-container .strength-bar,
+        .strength-medium + .strength-bar-container .strength-bar {
             background: var(--warning);
         }
 
         .strength-strong {
             color: var(--success);
         }
-        .strength-strong ~ .strength-bar-container .strength-bar {
+        .strength-strong ~ .strength-bar-container .strength-bar,
+        .strength-strong + .strength-bar-container .strength-bar {
             background: var(--success);
         }
 
@@ -455,6 +458,7 @@
         </div>
     </div>
 
+    <script src="js/supabase.js"></script>
     <script src="js/register.js"></script>
 </body>
 </html>
