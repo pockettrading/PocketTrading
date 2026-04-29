@@ -1,22 +1,48 @@
-// Home page functionality - Username + Logout in top-right corner
+// Home page functionality - Supabase Cloud Database
+// File: js/home.js
 
 let currentUser = null;
 
 // Initialize when page loads
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('Home page loaded');
-    loadUser();
-    renderNavLinks();
-    renderUserInfo();
-    loadUserStats();
+    
+    // Wait for supabaseDB
+    if (typeof supabaseDB === 'undefined') {
+        setTimeout(() => initHomePage(), 500);
+        return;
+    }
+    
+    await initHomePage();
 });
 
-function loadUser() {
+async function initHomePage() {
+    await loadUser();
+    renderNavLinks();
+    renderUserInfo();
+    await loadUserStats();
+}
+
+async function loadUser() {
     try {
         const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
         if (storedUser) {
             currentUser = JSON.parse(storedUser);
-            console.log('User logged in:', currentUser.email);
+            // Verify user still exists in cloud
+            const cloudUser = await supabaseDB.getUserByEmail(currentUser.email);
+            if (cloudUser) {
+                currentUser = cloudUser;
+                // Update session
+                if (localStorage.getItem('pocket_user')) {
+                    localStorage.setItem('pocket_user', JSON.stringify(currentUser));
+                }
+                if (sessionStorage.getItem('pocket_user')) {
+                    sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
+                }
+            } else {
+                currentUser = null;
+            }
+            console.log('User loaded:', currentUser?.email);
         } else {
             console.log('No user logged in - guest mode');
             currentUser = null;
@@ -58,11 +84,16 @@ function renderUserInfo() {
             <span class="logout-link" onclick="handleLogout()">Logout</span>
         `;
     } else {
-        userInfo.innerHTML = '';
+        userInfo.innerHTML = `
+            <div class="auth-buttons">
+                <a href="login.html" class="login-btn">Login</a>
+                <a href="register.html" class="signup-btn">Sign Up</a>
+            </div>
+        `;
     }
 }
 
-function loadUserStats() {
+async function loadUserStats() {
     if (!currentUser) {
         // Guest mode - show placeholder stats
         const balanceElem = document.getElementById('userBalance');
@@ -116,34 +147,39 @@ function loadUserStats() {
         }
     }
     
-    // Calculate trading stats from transactions
-    const transactions = currentUser.transactions || [];
-    const trades = transactions.filter(t => t.type === 'trade' || t.type === 'buy' || t.type === 'sell');
-    
-    const totalTrades = trades.length;
-    
-    let winningTrades = 0;
-    let totalProfit = currentUser.stats?.totalProfit || 0;
-    
-    trades.forEach(trade => {
-        if (trade.pnl && trade.pnl > 0) winningTrades++;
-    });
-    
-    const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100).toFixed(1) : 0;
-    
-    const tradesElem = document.getElementById('totalTrades');
-    const winRateElem = document.getElementById('winRate');
-    const profitElem = document.getElementById('totalProfit');
-    
-    if (tradesElem) tradesElem.textContent = totalTrades;
-    if (winRateElem) {
-        winRateElem.textContent = `${winRate}%`;
-        winRateElem.className = 'stat-value';
-    }
-    if (profitElem) {
-        const sign = totalProfit >= 0 ? '+' : '';
-        profitElem.textContent = `${sign}$${Math.abs(totalProfit).toFixed(2)}`;
-        profitElem.className = `stat-value ${totalProfit >= 0 ? 'positive' : 'negative'}`;
+    // Get user's transactions from Supabase
+    try {
+        const transactions = await supabaseDB.getUserTransactions(currentUser.id);
+        const trades = transactions.filter(t => t.type === 'trade' || t.type === 'buy' || t.type === 'sell');
+        
+        const totalTrades = trades.length;
+        
+        let winningTrades = 0;
+        let totalProfit = 0;
+        
+        trades.forEach(trade => {
+            if (trade.pnl && trade.pnl > 0) winningTrades++;
+            if (trade.pnl) totalProfit += trade.pnl;
+        });
+        
+        const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100).toFixed(1) : 0;
+        
+        const tradesElem = document.getElementById('totalTrades');
+        const winRateElem = document.getElementById('winRate');
+        const profitElem = document.getElementById('totalProfit');
+        
+        if (tradesElem) tradesElem.textContent = totalTrades;
+        if (winRateElem) {
+            winRateElem.textContent = `${winRate}%`;
+            winRateElem.className = 'stat-value';
+        }
+        if (profitElem) {
+            const sign = totalProfit >= 0 ? '+' : '';
+            profitElem.textContent = `${sign}$${Math.abs(totalProfit).toFixed(2)}`;
+            profitElem.className = `stat-value ${totalProfit >= 0 ? 'positive' : 'negative'}`;
+        }
+    } catch (error) {
+        console.error('Error loading user stats:', error);
     }
 }
 
