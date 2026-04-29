@@ -1,4 +1,5 @@
-// Register page functionality - Auto-login after registration
+// Register page functionality - Supabase Cloud Database
+// File: js/register.js
 
 class RegisterManager {
     constructor() {
@@ -85,7 +86,7 @@ class RegisterManager {
         }
     }
 
-    handleRegister() {
+    async handleRegister() {
         const fullName = document.getElementById('fullName').value;
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
@@ -125,60 +126,64 @@ class RegisterManager {
             return;
         }
 
-        // Get existing users
-        const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
-        
-        if (users.find(u => u.email === email)) {
-            this.showNotification('Email already exists', 'error');
-            return;
-        }
-
-        // Format full name properly
-        const formattedName = fullName.trim().split(' ').map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-        ).join(' ');
-
-        // Create new user with REAL account only (balance starts at $0)
-        const newUser = {
-            id: Date.now(),
-            name: formattedName,
-            email: email,
-            password: password,
-            balance: 0,
-            kycStatus: 'pending',
-            created: new Date().toISOString(),
-            lastLogin: new Date().toISOString(),
-            transactions: [],
-            withdrawals: [],
-            deposits: [],
-            pendingDeposits: [],
-            portfolio: {},
-            stats: {
-                totalTrades: 0,
-                winningTrades: 0,
-                losingTrades: 0,
-                totalVolume: 0,
-                totalProfit: 0
+        try {
+            // Check if supabaseDB is available
+            if (typeof supabaseDB === 'undefined') {
+                this.showNotification('Database connection error. Please refresh and try again.', 'error');
+                return;
             }
-        };
 
-        users.push(newUser);
-        localStorage.setItem('pocket_users', JSON.stringify(users));
+            // Check if user already exists in Supabase
+            const existingUsers = await supabaseDB.get('users', { email: email });
+            
+            if (existingUsers && existingUsers.length > 0) {
+                this.showNotification('Email already exists', 'error');
+                return;
+            }
 
-        // Auto-login - store user session
-        sessionStorage.setItem('pocket_user', JSON.stringify(newUser));
-        localStorage.removeItem('pocket_user');
+            const formattedName = fullName.trim().split(' ').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+            ).join(' ');
 
-        this.showNotification(`Welcome ${formattedName}! Your account has been created successfully. Redirecting...`, 'success');
+            // Check if this is the admin email
+            const isAdmin = (email === 'ephremgojo@gmail.com');
 
-        // Redirect to home page after 1.5 seconds
-        setTimeout(() => {
-            window.location.href = 'home.html';
-        }, 1500);
+            const newUser = {
+                id: Date.now(),
+                name: formattedName,
+                email: email,
+                password: password,
+                balance: 0,
+                kyc_status: 'pending',
+                phone: '',
+                country: '',
+                created_at: new Date().toISOString(),
+                last_login: new Date().toISOString(),
+                is_admin: isAdmin
+            };
+
+            // Insert into Supabase
+            const result = await supabaseDB.insert('users', newUser);
+            
+            console.log('User registered successfully:', newUser);
+
+            this.showNotification(`Welcome ${formattedName}! Your account has been created successfully.`, 'success');
+
+            // Auto login after registration
+            sessionStorage.setItem('pocket_user', JSON.stringify(newUser));
+            localStorage.removeItem('pocket_user');
+
+            setTimeout(() => {
+                window.location.href = 'home.html';
+            }, 2000);
+            
+        } catch (error) {
+            console.error('Registration error:', error);
+            this.showNotification('Registration failed. Please try again.', 'error');
+        }
     }
 
     showNotification(message, type) {
-        // Remove existing notification
         const existing = document.querySelector('.auth-notification');
         if (existing) existing.remove();
 
@@ -193,9 +198,20 @@ class RegisterManager {
         setTimeout(() => {
             notification.style.animation = 'slideOut 0.3s ease-out';
             setTimeout(() => notification.remove(), 300);
-        }, 2000);
+        }, 3000);
     }
 }
 
-// Initialize register page
-const registerManager = new RegisterManager();
+// Wait for supabaseDB to be ready
+function waitForSupabase() {
+    if (typeof supabaseDB !== 'undefined' && supabaseDB) {
+        console.log('Supabase ready, initializing register manager...');
+        new RegisterManager();
+    } else {
+        console.log('Waiting for Supabase...');
+        setTimeout(waitForSupabase, 100);
+    }
+}
+
+// Start the registration manager
+waitForSupabase();
