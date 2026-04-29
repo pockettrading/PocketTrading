@@ -1,4 +1,4 @@
-// Admin Panel - Supabase Cloud Database
+// Admin Panel - Supabase Cloud Database (FIXED)
 // File: js/admin.js
 // Admin email: ephremgojo@gmail.com (ONLY)
 
@@ -6,7 +6,7 @@ let adminUser = null;
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log('Admin page loaded');
+    console.log('Admin page loaded - Initializing...');
     
     // Wait for supabaseDB
     if (typeof supabaseDB === 'undefined') {
@@ -16,15 +16,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     await checkAdminAccess();
-    await loadAdminData();
-    setupAdminMenu();
-    await loadWalletSettings();
 });
 
 async function checkAdminAccess() {
+    console.log('Checking admin access...');
+    
     const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
+    console.log('Stored user:', storedUser);
+    
     if (storedUser) {
         adminUser = JSON.parse(storedUser);
+        console.log('Admin user:', adminUser.email);
         
         // ONLY ephremgojo@gmail.com can access admin panel
         if (adminUser.email !== 'ephremgojo@gmail.com') {
@@ -38,6 +40,12 @@ async function checkAdminAccess() {
     }
     
     renderAdminUserInfo();
+    await loadDashboardData();
+    setupAdminMenu();
+    await loadWalletSettings();
+    
+    // Show dashboard section by default
+    showSection('dashboard');
 }
 
 function renderAdminUserInfo() {
@@ -51,28 +59,47 @@ function renderAdminUserInfo() {
 }
 
 function setupAdminMenu() {
+    console.log('Setting up admin menu...');
+    
     const menuItems = document.querySelectorAll('.admin-menu-item');
+    console.log('Found menu items:', menuItems.length);
+    
     menuItems.forEach(item => {
-        item.addEventListener('click', () => {
-            menuItems.forEach(mi => mi.classList.remove('active'));
-            item.classList.add('active');
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Menu clicked:', this.dataset.section);
             
-            const section = item.dataset.section;
+            // Remove active class from all
+            menuItems.forEach(mi => mi.classList.remove('active'));
+            // Add active class to clicked
+            this.classList.add('active');
+            
+            const section = this.dataset.section;
             showSection(section);
         });
     });
 }
 
 function showSection(section) {
+    console.log('Showing section:', section);
+    
     const sections = ['dashboard', 'kyc', 'deposits', 'withdrawals', 'trades', 'users', 'settings'];
     sections.forEach(s => {
         const elem = document.getElementById(`${s}Section`);
-        if (elem) elem.style.display = 'none';
+        if (elem) {
+            elem.style.display = 'none';
+        }
     });
     
     const activeSection = document.getElementById(`${section}Section`);
-    if (activeSection) activeSection.style.display = 'block';
+    if (activeSection) {
+        activeSection.style.display = 'block';
+        console.log('Displayed section:', section);
+    } else {
+        console.error('Section not found:', section);
+    }
     
+    // Load data for the section
     switch(section) {
         case 'dashboard':
             loadDashboardData();
@@ -95,13 +122,13 @@ function showSection(section) {
     }
 }
 
-async function loadAdminData() {
-    await loadDashboardData();
-}
-
 async function loadDashboardData() {
+    console.log('Loading dashboard data...');
+    
     try {
         const users = await supabaseDB.getAllUsers();
+        console.log('Users loaded:', users.length);
+        
         const kycRequests = await supabaseDB.getKYCRequests();
         const depositRequests = await supabaseDB.getDepositRequests();
         const withdrawalRequests = await supabaseDB.getWithdrawalRequests();
@@ -157,10 +184,13 @@ async function loadDashboardData() {
         }
     } catch (error) {
         console.error('Error loading dashboard:', error);
+        document.getElementById('totalUsers').textContent = 'Error';
     }
 }
 
 async function loadKYCRequests() {
+    console.log('Loading KYC requests...');
+    
     try {
         const kycRequests = await supabaseDB.getKYCRequests();
         const pending = kycRequests.filter(r => r.status === 'pending');
@@ -194,6 +224,8 @@ async function loadKYCRequests() {
 }
 
 async function loadDepositRequests() {
+    console.log('Loading deposit requests...');
+    
     try {
         const depositRequests = await supabaseDB.getDepositRequests();
         const pending = depositRequests.filter(r => r.status === 'pending');
@@ -211,7 +243,7 @@ async function loadDepositRequests() {
                 <td>${request.user_name || request.user_email}</td
                 <td>$${request.amount.toLocaleString()}</td
                 <td>${request.currency}</td
-                <td>${request.wallet_address?.substring(0, 20)}...</td
+                <td>${request.wallet_address?.substring(0, 20) || 'N/A'}...</td
                 <td>
                     <button class="btn-view" onclick="viewProof('${request.screenshot}')">View Proof</button>
                 </td
@@ -230,6 +262,8 @@ async function loadDepositRequests() {
 }
 
 async function loadWithdrawalRequests() {
+    console.log('Loading withdrawal requests...');
+    
     try {
         const withdrawalRequests = await supabaseDB.getWithdrawalRequests();
         const pending = withdrawalRequests.filter(r => r.status === 'pending');
@@ -237,7 +271,7 @@ async function loadWithdrawalRequests() {
         
         const tbody = document.getElementById('withdrawalsTableBody');
         if (withdrawalRequests.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No withdrawal requests</td--</tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No withdrawal requests</td--<tr>';
             return;
         }
         
@@ -247,7 +281,7 @@ async function loadWithdrawalRequests() {
                 <td>${request.user_name || request.user_email}</td
                 <td>$${request.amount.toLocaleString()}</td
                 <td>${request.crypto}</td
-                <td>${request.wallet_address?.substring(0, 20)}...</td
+                <td>${request.wallet_address?.substring(0, 20) || 'N/A'}...</td
                 <td><span class="status-${request.status}">${request.status}</span></td
                 <td>
                     ${request.status === 'pending' ? `
@@ -263,6 +297,8 @@ async function loadWithdrawalRequests() {
 }
 
 async function loadAllTrades() {
+    console.log('Loading trades...');
+    
     try {
         const allTrades = await supabaseDB.getAllTransactions();
         allTrades.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -273,7 +309,6 @@ async function loadAllTrades() {
             return;
         }
         
-        // Get user names for each trade
         const users = await supabaseDB.getAllUsers();
         const userMap = {};
         users.forEach(u => { userMap[u.id] = u.name || u.email; });
@@ -296,12 +331,14 @@ async function loadAllTrades() {
 }
 
 async function loadAllUsers() {
+    console.log('Loading users...');
+    
     try {
         const users = await supabaseDB.getAllUsers();
         
         const tbody = document.getElementById('usersTableBody');
         if (users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No users found</td--</tr>';
+            tbody.innerHTML = '<td><td colspan="7" style="text-align: center;">No users found</td--</tr>';
             return;
         }
         
@@ -320,6 +357,38 @@ async function loadAllUsers() {
         `).join('');
     } catch (error) {
         console.error('Error loading users:', error);
+    }
+}
+
+async function loadWalletSettings() {
+    console.log('Loading wallet settings...');
+    
+    try {
+        const settings = await supabaseDB.getWalletSettings();
+        if (settings) {
+            document.getElementById('adminEthAddress').value = settings.eth_address || '';
+            document.getElementById('adminBtcAddress').value = settings.btc_address || '';
+            document.getElementById('adminUsdtAddress').value = settings.usdt_address || '';
+        }
+    } catch (error) {
+        console.error('Error loading wallet settings:', error);
+    }
+}
+
+async function saveWalletSettings() {
+    try {
+        const settings = {
+            eth_address: document.getElementById('adminEthAddress').value,
+            btc_address: document.getElementById('adminBtcAddress').value,
+            usdt_address: document.getElementById('adminUsdtAddress').value,
+            updated_at: new Date().toISOString()
+        };
+        
+        await supabaseDB.updateWalletSettings(settings);
+        alert('Wallet addresses saved successfully!');
+    } catch (error) {
+        console.error('Error saving wallet settings:', error);
+        alert('Error saving wallet settings');
     }
 }
 
@@ -355,14 +424,12 @@ async function approveDeposit(requestId, userId, amount) {
     try {
         await supabaseDB.update('deposit_requests', requestId, { status: 'approved' });
         
-        // Get user and update balance
         const users = await supabaseDB.getAllUsers();
         const user = users.find(u => u.id === userId);
         if (user) {
             const newBalance = (user.balance || 0) + amount;
             await supabaseDB.updateUserBalance(userId, newBalance);
             
-            // Add transaction record
             await supabaseDB.insert('transactions', {
                 id: Date.now(),
                 user_id: userId,
@@ -385,7 +452,6 @@ async function approveDeposit(requestId, userId, amount) {
 async function rejectDeposit(requestId) {
     try {
         await supabaseDB.update('deposit_requests', requestId, { status: 'rejected' });
-        
         alert('Deposit rejected!');
         await loadDepositRequests();
         await loadDashboardData();
@@ -398,7 +464,6 @@ async function rejectDeposit(requestId) {
 async function approveWithdrawal(requestId, userId, amount) {
     try {
         await supabaseDB.update('withdrawal_requests', requestId, { status: 'approved' });
-        
         alert(`Withdrawal of $${amount} approved!`);
         await loadWithdrawalRequests();
         await loadDashboardData();
@@ -412,7 +477,6 @@ async function rejectWithdrawal(requestId, userId, amount) {
     try {
         await supabaseDB.update('withdrawal_requests', requestId, { status: 'rejected' });
         
-        // Refund the amount back to user
         const users = await supabaseDB.getAllUsers();
         const user = users.find(u => u.id === userId);
         if (user) {
@@ -429,36 +493,6 @@ async function rejectWithdrawal(requestId, userId, amount) {
     }
 }
 
-async function loadWalletSettings() {
-    try {
-        const settings = await supabaseDB.getWalletSettings();
-        if (settings) {
-            document.getElementById('adminEthAddress').value = settings.eth_address || '';
-            document.getElementById('adminBtcAddress').value = settings.btc_address || '';
-            document.getElementById('adminUsdtAddress').value = settings.usdt_address || '';
-        }
-    } catch (error) {
-        console.error('Error loading wallet settings:', error);
-    }
-}
-
-async function saveWalletSettings() {
-    try {
-        const settings = {
-            eth_address: document.getElementById('adminEthAddress').value,
-            btc_address: document.getElementById('adminBtcAddress').value,
-            usdt_address: document.getElementById('adminUsdtAddress').value,
-            updated_at: new Date().toISOString()
-        };
-        
-        await supabaseDB.updateWalletSettings(settings);
-        alert('Wallet addresses saved successfully!');
-    } catch (error) {
-        console.error('Error saving wallet settings:', error);
-        alert('Error saving wallet settings');
-    }
-}
-
 function viewProof(screenshot) {
     alert(`Proof of payment: ${screenshot}\n\n(Image would be displayed here in production)`);
 }
@@ -471,13 +505,18 @@ async function viewUserDetails(userId) {
         if (user) {
             alert(`
 User Details:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ID: ${user.id}
 Name: ${user.name}
 Email: ${user.email}
 Balance: $${user.balance?.toFixed(2) || 0}
 KYC Status: ${user.kyc_status || 'pending'}
 Phone: ${user.phone || 'Not set'}
 Country: ${user.country || 'Not set'}
+Admin: ${user.is_admin ? 'Yes' : 'No'}
 Member Since: ${new Date(user.created_at).toLocaleDateString()}
+Last Login: ${user.last_login ? new Date(user.last_login).toLocaleString() : 'Never'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             `);
         }
     } catch (error) {
