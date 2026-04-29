@@ -90,6 +90,32 @@
             color: var(--primary);
         }
 
+        /* User Info in Top Right */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .username {
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .logout-link {
+            color: var(--danger);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .logout-link:hover {
+            text-decoration: underline;
+        }
+
         /* Admin Layout */
         .admin-layout {
             display: grid;
@@ -171,6 +197,32 @@
             font-weight: 600;
         }
 
+        /* Dashboard Stats */
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--darker-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-card-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .stat-card-label {
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+            margin-top: 0.25rem;
+        }
+
         /* Tables */
         .data-table {
             overflow-x: auto;
@@ -202,15 +254,17 @@
             border-radius: 20px;
             font-size: 0.7rem;
             font-weight: 600;
+            display: inline-block;
         }
 
-        .status-approved {
+        .status-approved, .status-verified, .status-completed {
             background: rgba(0, 216, 151, 0.2);
             color: var(--success);
             padding: 4px 8px;
             border-radius: 20px;
             font-size: 0.7rem;
             font-weight: 600;
+            display: inline-block;
         }
 
         .status-rejected {
@@ -220,6 +274,7 @@
             border-radius: 20px;
             font-size: 0.7rem;
             font-weight: 600;
+            display: inline-block;
         }
 
         /* Buttons */
@@ -297,8 +352,33 @@
                 grid-template-columns: 1fr;
             }
             
+            .dashboard-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
             .container {
                 padding: 1rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-nav {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .nav-links {
+                justify-content: center;
+            }
+            
+            .user-info {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-stats {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -362,27 +442,27 @@
                     <div class="content-header">
                         <h2>Admin Dashboard</h2>
                     </div>
-                    <div id="dashboardStats" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;">
-                        <div class="stat-card" style="background: var(--darker-bg); padding: 1rem; border-radius: 12px; text-align: center;">
-                            <div style="font-size: 0.7rem; color: var(--text-tertiary);">Total Users</div>
-                            <div style="font-size: 1.5rem; font-weight: 700;" id="totalUsers">0</div>
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <div class="stat-card-value" id="totalUsers">0</div>
+                            <div class="stat-card-label">Total Users</div>
                         </div>
-                        <div class="stat-card" style="background: var(--darker-bg); padding: 1rem; border-radius: 12px; text-align: center;">
-                            <div style="font-size: 0.7rem; color: var(--text-tertiary);">Pending KYC</div>
-                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--warning);" id="pendingKYC">0</div>
+                        <div class="stat-card">
+                            <div class="stat-card-value" id="pendingKYC" style="color: var(--warning);">0</div>
+                            <div class="stat-card-label">Pending KYC</div>
                         </div>
-                        <div class="stat-card" style="background: var(--darker-bg); padding: 1rem; border-radius: 12px; text-align: center;">
-                            <div style="font-size: 0.7rem; color: var(--text-tertiary);">Pending Deposits</div>
-                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="pendingDeposits">0</div>
+                        <div class="stat-card">
+                            <div class="stat-card-value" id="pendingDeposits" style="color: var(--primary);">0</div>
+                            <div class="stat-card-label">Pending Deposits</div>
                         </div>
-                        <div class="stat-card" style="background: var(--darker-bg); padding: 1rem; border-radius: 12px; text-align: center;">
-                            <div style="font-size: 0.7rem; color: var(--text-tertiary);">Pending Withdrawals</div>
-                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--danger);" id="pendingWithdrawals">0</div>
+                        <div class="stat-card">
+                            <div class="stat-card-value" id="pendingWithdrawals" style="color: var(--danger);">0</div>
+                            <div class="stat-card-label">Pending Withdrawals</div>
                         </div>
                     </div>
                     <div>
-                        <h3 style="margin-bottom: 1rem;">Recent Activity</h3>
-                        <div id="recentActivity" class="data-table">
+                        <h3 style="margin-bottom: 1rem; font-size: 1rem;">Recent Activity</h3>
+                        <div class="data-table">
                             <table>
                                 <thead>
                                     <tr>
@@ -394,7 +474,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="recentActivityBody">
-                                    <tr><td colspan="5" style="text-align: center;">No recent activity</td></tr>
+                                    <tr><td colspan="5" style="text-align: center;">No recent activity</td--</tr>
                                 </tbody>
                             </table>
                         </div>
@@ -421,7 +501,7 @@
                                 </tr>
                             </thead>
                             <tbody id="kycTableBody">
-                                <tr><td colspan="7" style="text-align: center;">No KYC requests</td></tr>
+                                <tr><td colspan="7" style="text-align: center;">No KYC requests</td--</tr>
                             </tbody>
                         </table>
                     </div>
@@ -448,7 +528,7 @@
                                 </tr>
                             </thead>
                             <tbody id="depositsTableBody">
-                                <tr><td colspan="8" style="text-align: center;">No deposit requests</td></tr>
+                                <tr><td colspan="8" style="text-align: center;">No deposit requests</td--</tr>
                             </tbody>
                         </table>
                     </div>
@@ -474,7 +554,7 @@
                                 </tr>
                             </thead>
                             <tbody id="withdrawalsTableBody">
-                                <tr><td colspan="7" style="text-align: center;">No withdrawal requests</td></tr>
+                                <tr><td colspan="7" style="text-align: center;">No withdrawal requests</td--</tr>
                             </tbody>
                         </table>
                     </div>
@@ -500,9 +580,9 @@
                                 </tr>
                             </thead>
                             <tbody id="tradesTableBody">
-                                <tr><td colspan="8" style="text-align: center;">No trades found</td></tr>
+                                <tr><td colspan="8" style="text-align: center;">No trades found</td--</tr>
                             </tbody>
-                        <td>
+                        </table>
                     </div>
                 </div>
 
@@ -525,7 +605,7 @@
                                 </tr>
                             </thead>
                             <tbody id="usersTableBody">
-                                <tr><td colspan="7" style="text-align: center;">No users found</td></tr>
+                                <tr><td colspan="7" style="text-align: center;">No users found</td--<tr>
                             </tbody>
                         </table>
                     </div>
