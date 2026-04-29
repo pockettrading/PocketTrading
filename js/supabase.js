@@ -123,11 +123,31 @@ class SupabaseClient {
     // Update wallet settings
     async updateWalletSettings(settings) {
         const existing = await this.getWalletSettings();
-        if (existing) {
+        if (existing && existing.id) {
             return await this.update('wallet_settings', existing.id, settings);
         } else {
             return await this.insert('wallet_settings', settings);
         }
+    }
+
+    // Get transactions by user
+    async getUserTransactions(userId) {
+        return await this.get('transactions', { user_id: userId });
+    }
+
+    // Get all transactions
+    async getAllTransactions() {
+        return await this.get('transactions');
+    }
+
+    // Update user KYC status
+    async updateUserKYCStatus(userId, status) {
+        return await this.update('users', userId, { kyc_status: status });
+    }
+
+    // Update user balance
+    async updateUserBalance(userId, newBalance) {
+        return await this.update('users', userId, { balance: newBalance });
     }
 }
 
