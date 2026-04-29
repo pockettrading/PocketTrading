@@ -1,17 +1,32 @@
-// Admin Panel - Supabase Cloud Database (FIXED)
+// Admin Panel - Luno Style
 // File: js/admin.js
-// Admin email: ephremgojo@gmail.com (ONLY)
 
 let adminUser = null;
+let globalTradeMode = 'WIN';
+let coinModes = {};
 
-// Initialize when page loads
+// Coins list
+const coins = [
+    { symbol: 'BTC', name: 'Bitcoin', icon: '₿' },
+    { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ' },
+    { symbol: 'BNB', name: 'Binance Coin', icon: 'B' },
+    { symbol: 'SOL', name: 'Solana', icon: 'S' },
+    { symbol: 'XRP', name: 'XRP', icon: 'X' },
+    { symbol: 'ADA', name: 'Cardano', icon: 'A' },
+    { symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð' },
+    { symbol: 'DOT', name: 'Polkadot', icon: '●' },
+    { symbol: 'LINK', name: 'Chainlink', icon: 'L' },
+    { symbol: 'UNI', name: 'Uniswap', icon: 'U' },
+    { symbol: 'MATIC', name: 'Polygon', icon: 'M' },
+    { symbol: 'SHIB', name: 'Shiba Inu', icon: '🐕' }
+];
+
+// Initialize
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log('Admin page loaded - Initializing...');
+    console.log('Admin page loaded');
     
-    // Wait for supabaseDB
     if (typeof supabaseDB === 'undefined') {
-        console.log('Supabase not ready, waiting...');
-        setTimeout(() => checkAdminAccess(), 1000);
+        setTimeout(() => checkAdminAccess(), 500);
         return;
     }
     
@@ -19,362 +34,173 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 async function checkAdminAccess() {
-    console.log('Checking admin access...');
-    
     const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
-    console.log('Stored user found:', !!storedUser);
     
-    if (storedUser) {
-        adminUser = JSON.parse(storedUser);
-        console.log('Admin user email:', adminUser.email);
-        
-        // ONLY ephremgojo@gmail.com can access admin panel
-        if (adminUser.email !== 'ephremgojo@gmail.com') {
-            alert('Access denied. Admin only. Only ephremgojo@gmail.com has access.');
-            window.location.href = 'home.html';
-            return;
-        }
-    } else {
+    if (!storedUser) {
         window.location.href = 'login.html';
         return;
     }
     
-    renderAdminUserInfo();
-    setupAdminMenu();
+    adminUser = JSON.parse(storedUser);
     
-    // Load all data
-    await loadDashboardData();
-    await loadWalletSettings();
-    
-    // Show dashboard section by default
-    showSection('dashboard');
-}
-
-function renderAdminUserInfo() {
-    const userInfo = document.getElementById('userInfo');
-    if (!userInfo) return;
-    
-    userInfo.innerHTML = `
-        <span class="username">Admin: ${adminUser.name || adminUser.email}</span>
-        <span class="logout-link" onclick="handleLogout()">Logout</span>
-    `;
-}
-
-function setupAdminMenu() {
-    console.log('Setting up admin menu...');
-    
-    const menuItems = document.querySelectorAll('.admin-menu-item');
-    console.log('Found menu items:', menuItems.length);
-    
-    menuItems.forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Menu clicked:', this.dataset.section);
-            
-            menuItems.forEach(mi => mi.classList.remove('active'));
-            this.classList.add('active');
-            
-            const section = this.dataset.section;
-            showSection(section);
-        });
-    });
-}
-
-function showSection(section) {
-    console.log('Showing section:', section);
-    
-    const sections = ['dashboard', 'kyc', 'deposits', 'withdrawals', 'trades', 'users', 'settings'];
-    sections.forEach(s => {
-        const elem = document.getElementById(`${s}Section`);
-        if (elem) {
-            elem.style.display = 'none';
-        }
-    });
-    
-    const activeSection = document.getElementById(`${section}Section`);
-    if (activeSection) {
-        activeSection.style.display = 'block';
-        console.log('Displayed section:', section);
-    } else {
-        console.error('Section not found:', section);
+    if (adminUser.email !== 'ephremgojo@gmail.com') {
+        alert('Access denied. Admin only.');
+        window.location.href = 'home.html';
+        return;
     }
     
-    // Load data for the section
-    switch(section) {
-        case 'dashboard':
-            loadDashboardData();
-            break;
-        case 'kyc':
-            loadKYCRequests();
-            break;
-        case 'deposits':
-            loadDepositRequests();
-            break;
-        case 'withdrawals':
-            loadWithdrawalRequests();
-            break;
-        case 'trades':
-            loadAllTrades();
-            break;
-        case 'users':
-            loadAllUsers();
-            break;
+    renderUserInfo();
+    await loadGlobalSettings();
+    await loadDashboardData();
+    setupMenu();
+}
+
+function renderUserInfo() {
+    const userInfo = document.getElementById('userInfo');
+    if (userInfo) {
+        userInfo.innerHTML = `
+            <span class="username">Admin: ${adminUser.name || adminUser.email}</span>
+            <span class="logout-link" onclick="handleLogout()">Logout</span>
+        `;
+    }
+}
+
+async function loadGlobalSettings() {
+    try {
+        const settings = await supabaseDB.get('global_settings');
+        if (settings && settings.length > 0) {
+            globalTradeMode = settings[0].trade_mode || 'WIN';
+            coinModes = settings[0].coin_modes || {};
+        } else {
+            await supabaseDB.insert('global_settings', {
+                id: 1,
+                trade_mode: 'WIN',
+                coin_modes: {}
+            });
+        }
+        updateGlobalModeDisplay();
+    } catch (error) {
+        console.error('Error loading global settings:', error);
+    }
+}
+
+function updateGlobalModeDisplay() {
+    const displays = document.querySelectorAll('#globalModeDisplay, #globalModeDisplay2');
+    const loseBtns = document.querySelectorAll('#globalLoseBtn, #globalLoseBtn2');
+    const winBtns = document.querySelectorAll('#globalWinBtn, #globalWinBtn2');
+    
+    displays.forEach(display => {
+        display.textContent = `GLOBAL MODE: ${globalTradeMode} (Users will ${globalTradeMode === 'WIN' ? 'profit on' : 'lose'} all trades)`;
+    });
+    
+    loseBtns.forEach(btn => {
+        if (globalTradeMode === 'LOSE') btn.classList.add('active');
+        else btn.classList.remove('active');
+    });
+    
+    winBtns.forEach(btn => {
+        if (globalTradeMode === 'WIN') btn.classList.add('active');
+        else btn.classList.remove('active');
+    });
+}
+
+async function setGlobalMode(mode) {
+    globalTradeMode = mode;
+    
+    try {
+        await supabaseDB.update('global_settings', 1, { trade_mode: mode });
+        updateGlobalModeDisplay();
+        showNotification(`Global trade mode set to ${mode}`, 'success');
+    } catch (error) {
+        console.error('Error saving global mode:', error);
+        showNotification('Error saving settings', 'error');
     }
 }
 
 async function loadDashboardData() {
-    console.log('Loading dashboard data...');
-    
-    // Show loading state
-    document.getElementById('totalUsers').textContent = 'Loading...';
-    document.getElementById('pendingKYC').textContent = 'Loading...';
-    document.getElementById('pendingDeposits').textContent = 'Loading...';
-    document.getElementById('pendingWithdrawals').textContent = 'Loading...';
-    
     try {
-        // Test Supabase connection first
-        console.log('Testing Supabase connection...');
-        const testResult = await supabaseDB.get('users', { limit: 1 });
-        console.log('Supabase test result:', testResult);
-        
         const users = await supabaseDB.getAllUsers();
-        console.log('Users loaded:', users ? users.length : 0);
-        
+        const trades = await supabaseDB.getAllTransactions();
         const kycRequests = await supabaseDB.getKYCRequests();
         const depositRequests = await supabaseDB.getDepositRequests();
-        const withdrawalRequests = await supabaseDB.getWithdrawalRequests();
         
-        const pendingKYC = kycRequests ? kycRequests.filter(r => r.status === 'pending').length : 0;
-        const pendingDeposits = depositRequests ? depositRequests.filter(r => r.status === 'pending').length : 0;
-        const pendingWithdrawals = withdrawalRequests ? withdrawalRequests.filter(r => r.status === 'pending').length : 0;
+        document.getElementById('totalUsers').textContent = users?.length || 0;
+        document.getElementById('totalTrades').textContent = trades?.length || 0;
+        document.getElementById('pendingKYC').textContent = kycRequests?.filter(r => r.status === 'pending').length || 0;
+        document.getElementById('pendingDeposits').textContent = depositRequests?.filter(r => r.status === 'pending').length || 0;
         
-        document.getElementById('totalUsers').textContent = users ? users.length : 0;
-        document.getElementById('pendingKYC').textContent = pendingKYC;
-        document.getElementById('pendingDeposits').textContent = pendingDeposits;
-        document.getElementById('pendingWithdrawals').textContent = pendingWithdrawals;
-        
-        // Recent activity
-        const allActivities = [];
-        
-        if (depositRequests) {
-            depositRequests.forEach(d => {
-                allActivities.push({
-                    date: d.date,
-                    user: d.user_name || d.user_email,
-                    type: 'Deposit',
-                    amount: d.amount,
-                    status: d.status
-                });
-            });
-        }
-        
-        if (withdrawalRequests) {
-            withdrawalRequests.forEach(w => {
-                allActivities.push({
-                    date: w.date,
-                    user: w.user_name || w.user_email,
-                    type: 'Withdrawal',
-                    amount: w.amount,
-                    status: w.status
-                });
-            });
-        }
-        
-        allActivities.sort((a, b) => new Date(b.date) - new Date(a.date));
-        const recent = allActivities.slice(0, 10);
-        
-        const tbody = document.getElementById('recentActivityBody');
-        if (recent.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No recent activity</td--</tr>';
-        } else {
-            tbody.innerHTML = recent.map(activity => `
-                <tr>
-                    <td>${new Date(activity.date).toLocaleString()}</td>
-                    <td>${activity.user}</td>
-                    <td>${activity.type}</td>
-                    <td>$${activity.amount ? activity.amount.toLocaleString() : '0'}</td>
-                    <td><span class="status-${activity.status}">${activity.status}</span></td>
-                </tr>
-            `).join('');
-        }
-        
+        await loadUsersTable();
+        await loadCoinsGrid();
+        await loadPendingKYC();
+        await loadPendingDeposits();
+        await loadPendingWithdrawals();
+        await loadRecentTrades();
+        await loadWithdrawalAddresses();
     } catch (error) {
         console.error('Error loading dashboard:', error);
-        document.getElementById('totalUsers').textContent = '0';
-        document.getElementById('pendingKYC').textContent = '0';
-        document.getElementById('pendingDeposits').textContent = '0';
-        document.getElementById('pendingWithdrawals').textContent = '0';
-        
-        const tbody = document.getElementById('recentActivityBody');
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--danger);">Error loading data. Check console.</td--</tr>';
     }
 }
 
-async function loadKYCRequests() {
-    console.log('Loading KYC requests...');
+async function loadCoinsGrid() {
+    const container = document.getElementById('coinsGrid');
+    if (!container) return;
+    
+    container.innerHTML = coins.map(coin => {
+        const mode = coinModes[coin.symbol] || globalTradeMode;
+        return `
+            <div class="coin-card">
+                <div class="coin-name">
+                    <span style="font-size: 1.2rem;">${coin.icon}</span>
+                    <div>
+                        <div class="coin-symbol">${coin.symbol}</div>
+                        <div class="coin-fullname">${coin.name}</div>
+                    </div>
+                </div>
+                <div class="coin-toggle">
+                    <button class="coin-lose ${mode === 'LOSE' ? 'active' : ''}" onclick="setCoinMode('${coin.symbol}', 'LOSE')">LOSE</button>
+                    <button class="coin-win ${mode === 'WIN' ? 'active' : ''}" onclick="setCoinMode('${coin.symbol}', 'WIN')">WIN</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function setCoinMode(symbol, mode) {
+    coinModes[symbol] = mode;
     
     try {
-        const kycRequests = await supabaseDB.getKYCRequests();
-        const pending = kycRequests ? kycRequests.filter(r => r.status === 'pending') : [];
-        document.getElementById('kycCount').textContent = `${pending.length} Pending`;
-        
-        const tbody = document.getElementById('kycTableBody');
-        if (!kycRequests || kycRequests.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No KYC requests</td--</tr>';
-            return;
-        }
-        
-        tbody.innerHTML = kycRequests.map(request => `
-            <tr>
-                <td>${new Date(request.date).toLocaleString()}</td>
-                <td>${request.user_id}</td>
-                <td>${request.full_name || '-'}</td>
-                <td>${request.user_email || '-'}</td>
-                <td>${request.id_type || '-'}</td>
-                <td><span class="status-${request.status}">${request.status}</span></td>
-                <td>
-                    ${request.status === 'pending' ? `
-                        <button class="btn-approve" onclick="approveKYC(${request.id}, ${request.user_id})">Approve</button>
-                        <button class="btn-reject" onclick="rejectKYC(${request.id}, ${request.user_id})">Reject</button>
-                    ` : '-'}
-                </td>
-            </tr>
-        `).join('');
+        await supabaseDB.update('global_settings', 1, { coin_modes: coinModes });
+        await loadCoinsGrid();
+        showNotification(`${symbol} mode set to ${mode}`, 'success');
     } catch (error) {
-        console.error('Error loading KYC:', error);
+        console.error('Error saving coin mode:', error);
+        showNotification('Error saving settings', 'error');
     }
 }
 
-async function loadDepositRequests() {
-    console.log('Loading deposit requests...');
-    
-    try {
-        const depositRequests = await supabaseDB.getDepositRequests();
-        const pending = depositRequests ? depositRequests.filter(r => r.status === 'pending') : [];
-        document.getElementById('depositCount').textContent = `${pending.length} Pending`;
-        
-        const tbody = document.getElementById('depositsTableBody');
-        if (!depositRequests || depositRequests.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No deposit requests</td--</tr>';
-            return;
-        }
-        
-        tbody.innerHTML = depositRequests.map(request => `
-            <tr>
-                <td>${new Date(request.date).toLocaleString()}</td>
-                <td>${request.user_name || request.user_email}</td>
-                <td>$${request.amount ? request.amount.toLocaleString() : '0'}</td>
-                <td>${request.currency || '-'}</td>
-                <td>${request.wallet_address ? request.wallet_address.substring(0, 20) : 'N/A'}...</td>
-                <td><button class="btn-view" onclick="viewProof('${request.screenshot || ''}')">View Proof</button></td>
-                <td><span class="status-${request.status}">${request.status}</span></td>
-                <td>
-                    ${request.status === 'pending' ? `
-                        <button class="btn-approve" onclick="approveDeposit(${request.id}, ${request.user_id}, ${request.amount})">Approve</button>
-                        <button class="btn-reject" onclick="rejectDeposit(${request.id})">Reject</button>
-                    ` : '-'}
-                </td>
-            </tr>
-        `).join('');
-    } catch (error) {
-        console.error('Error loading deposits:', error);
-    }
-}
-
-async function loadWithdrawalRequests() {
-    console.log('Loading withdrawal requests...');
-    
-    try {
-        const withdrawalRequests = await supabaseDB.getWithdrawalRequests();
-        const pending = withdrawalRequests ? withdrawalRequests.filter(r => r.status === 'pending') : [];
-        document.getElementById('withdrawalCount').textContent = `${pending.length} Pending`;
-        
-        const tbody = document.getElementById('withdrawalsTableBody');
-        if (!withdrawalRequests || withdrawalRequests.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No withdrawal requests</td--</tr>';
-            return;
-        }
-        
-        tbody.innerHTML = withdrawalRequests.map(request => `
-            <tr>
-                <td>${new Date(request.date).toLocaleString()}</td>
-                <td>${request.user_name || request.user_email}</td>
-                <td>$${request.amount ? request.amount.toLocaleString() : '0'}</td>
-                <td>${request.crypto || '-'}</td>
-                <td>${request.wallet_address ? request.wallet_address.substring(0, 20) : 'N/A'}...</td>
-                <td><span class="status-${request.status}">${request.status}</span></td>
-                <td>
-                    ${request.status === 'pending' ? `
-                        <button class="btn-approve" onclick="approveWithdrawal(${request.id}, ${request.user_id}, ${request.amount})">Approve</button>
-                        <button class="btn-reject" onclick="rejectWithdrawal(${request.id}, ${request.user_id}, ${request.amount})">Reject</button>
-                    ` : '-'}
-                </td>
-            </tr>
-        `).join('');
-    } catch (error) {
-        console.error('Error loading withdrawals:', error);
-    }
-}
-
-async function loadAllTrades() {
-    console.log('Loading trades...');
-    
-    try {
-        const allTrades = await supabaseDB.getAllTransactions();
-        if (allTrades) {
-            allTrades.sort((a, b) => new Date(b.date) - new Date(a.date));
-        }
-        
-        const tbody = document.getElementById('tradesTableBody');
-        if (!allTrades || allTrades.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No trades found</td--</tr>';
-            return;
-        }
-        
-        const users = await supabaseDB.getAllUsers();
-        const userMap = {};
-        if (users) {
-            users.forEach(u => { userMap[u.id] = u.name || u.email; });
-        }
-        
-        tbody.innerHTML = allTrades.map(trade => `
-            <tr>
-                <td>${new Date(trade.date).toLocaleString()}</td>
-                <td>${userMap[trade.user_id] || trade.user_id}</td>
-                <td>${trade.type}</td>
-                <td>${trade.crypto || 'BTC'}</td>
-                <td>${trade.amount?.toFixed(2) || '0'}</td>
-                <td>$${trade.price?.toFixed(2) || '0'}</td>
-                <td>$${trade.total?.toFixed(2) || '0'}</td>
-                <td><span class="status-completed">completed</span></td>
-            </tr>
-        `).join('');
-    } catch (error) {
-        console.error('Error loading trades:', error);
-    }
-}
-
-async function loadAllUsers() {
-    console.log('Loading users...');
+async function loadUsersTable() {
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) return;
     
     try {
         const users = await supabaseDB.getAllUsers();
         
-        const tbody = document.getElementById('usersTableBody');
         if (!users || users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No users found</td--</tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No users found</td--</tr>';
             return;
         }
         
         tbody.innerHTML = users.map(user => `
             <tr>
-                <td>${user.id}</td>
-                <td>${user.name || '-'}</td>
-                <td>${user.email}</td>
-                <td>$${user.balance?.toFixed(2) || '0'}</td>
-                <td><span class="status-${user.kyc_status || 'pending'}">${user.kyc_status || 'pending'}</span></td>
-                <td>${new Date(user.created_at).toLocaleDateString()}</td>
-                <td><button class="btn-view" onclick="viewUserDetails(${user.id})">View</button></td>
+                <td>${user.email}</td
+                <td>${user.name || '-'}</td
+                <td>$${user.balance?.toFixed(2) || '0'}</td
+                <td><span class="${user.kyc_status === 'verified' ? 'status-verified' : 'status-pending'}">${user.kyc_status || 'pending'}</span></td
+                <td>${new Date(user.created_at).toLocaleDateString()}</td
+                <td>
+                    <button class="btn-edit" onclick="editBalance(${user.id})">Edit Balance</button>
+                    <button class="btn-edit" onclick="editKYC(${user.id})">Edit KYC</button>
+                </td
             </tr>
         `).join('');
     } catch (error) {
@@ -382,9 +208,285 @@ async function loadAllUsers() {
     }
 }
 
-async function loadWalletSettings() {
-    console.log('Loading wallet settings...');
+async function loadPendingKYC() {
+    const tbody = document.getElementById('kycTableBody');
+    if (!tbody) return;
     
+    try {
+        const requests = await supabaseDB.getKYCRequests();
+        const pending = requests?.filter(r => r.status === 'pending') || [];
+        
+        if (pending.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No pending KYC requests</td--</tr>';
+            return;
+        }
+        
+        tbody.innerHTML = pending.map(req => `
+            <tr>
+                <td>${new Date(req.date).toLocaleString()}</td
+                <td>${req.user_email}</td
+                <td>${req.full_name}</td
+                <td>${req.id_type}</td
+                <td>
+                    <button class="btn-edit" onclick="approveKYC(${req.id}, ${req.user_id})">Approve</button>
+                    <button class="btn-edit" onclick="rejectKYC(${req.id}, ${req.user_id})">Reject</button>
+                </td
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading KYC:', error);
+    }
+}
+
+async function loadPendingDeposits() {
+    const tbody = document.getElementById('depositsTableBody');
+    if (!tbody) return;
+    
+    try {
+        const requests = await supabaseDB.getDepositRequests();
+        const pending = requests?.filter(r => r.status === 'pending') || [];
+        
+        if (pending.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No pending deposits</td--</tr>';
+            return;
+        }
+        
+        tbody.innerHTML = pending.map(req => `
+            <tr>
+                <td>${new Date(req.date).toLocaleString()}</td
+                <td>${req.user_name || req.user_email}</td
+                <td>$${req.amount}</td
+                <td>${req.currency}</td
+                <td>
+                    <button class="btn-edit" onclick="viewProof('${req.screenshot}')">View</button>
+                </td
+                <td>
+                    <button class="btn-edit" onclick="approveDeposit(${req.id}, ${req.user_id}, ${req.amount})">Approve</button>
+                    <button class="btn-edit" onclick="rejectDeposit(${req.id})">Reject</button>
+                </td
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading deposits:', error);
+    }
+}
+
+async function loadPendingWithdrawals() {
+    const tbody = document.getElementById('pendingWithdrawalsTableBody');
+    if (!tbody) return;
+    
+    try {
+        const requests = await supabaseDB.getWithdrawalRequests();
+        const pending = requests?.filter(r => r.status === 'pending') || [];
+        
+        if (pending.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No pending withdrawals</td--<table>';
+            return;
+        }
+        
+        tbody.innerHTML = pending.map(req => `
+            <tr>
+                <td>${new Date(req.date).toLocaleString()}</td
+                <td>${req.user_name || req.user_email}</td
+                <td>$${req.amount}</td
+                <td>${req.crypto}</td
+                <td>${req.wallet_address?.substring(0, 20)}...</td
+                <td>
+                    <button class="btn-edit" onclick="approveWithdrawal(${req.id}, ${req.user_id}, ${req.amount})">Approve</button>
+                    <button class="btn-edit" onclick="rejectWithdrawal(${req.id}, ${req.user_id}, ${req.amount})">Reject</button>
+                </td
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading withdrawals:', error);
+    }
+}
+
+async function loadRecentTrades() {
+    const tbody = document.getElementById('tradesTableBody');
+    if (!tbody) return;
+    
+    try {
+        const trades = await supabaseDB.getAllTransactions();
+        const recent = trades?.slice(-20).reverse() || [];
+        
+        if (recent.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No trades found</td--</tr>';
+            return;
+        }
+        
+        tbody.innerHTML = recent.map(trade => {
+            const users = supabaseDB.getAllUsers();
+            const user = users.find(u => u.id === trade.user_id);
+            const outcome = trade.pnl > 0 ? 'WON' : 'LOST';
+            const profitClass = trade.pnl > 0 ? 'won' : 'lost';
+            
+            return `
+                <tr>
+                    <td>${user?.email || trade.user_id}</td
+                    <td>${trade.crypto || 'BTC'}</td
+                    <td>$${trade.amount?.toFixed(2)}</td
+                    <td><span class="trade-outcome ${profitClass}">${outcome}</span></td
+                    <td>${trade.pnl > 0 ? '+' : ''}$${trade.pnl?.toFixed(2) || '0'}</td
+                    <td>Auto</td
+                </tr>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading trades:', error);
+    }
+}
+
+async function loadWithdrawalAddresses() {
+    const tbody = document.getElementById('withdrawalsTableBody');
+    if (!tbody) return;
+    
+    try {
+        const requests = await supabaseDB.getWithdrawalRequests();
+        const addresses = requests?.filter(r => r.status === 'approved') || [];
+        
+        if (addresses.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No saved addresses found. Addresses will appear when users request withdrawals.</td--</tr>';
+            return;
+        }
+        
+        tbody.innerHTML = addresses.map(req => `
+            <tr>
+                <td>${req.user_name || req.user_email}</td
+                <td>${req.wallet_address?.substring(0, 30)}...</td
+                <td>${req.crypto} Withdrawal</td
+                <td>${req.crypto}</td
+                <td><span class="status-verified">Active</span></td
+                <td>${new Date(req.date).toLocaleDateString()}</td
+                <td>
+                    <button class="btn-edit" onclick="blacklistAddress('${req.wallet_address}')">Blacklist</button>
+                </td
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading withdrawal addresses:', error);
+    }
+}
+
+async function editBalance(userId) {
+    const newBalance = prompt('Enter new balance amount:');
+    if (newBalance && !isNaN(newBalance)) {
+        try {
+            await supabaseDB.updateUserBalance(userId, parseFloat(newBalance));
+            showNotification('Balance updated successfully!', 'success');
+            await loadUsersTable();
+        } catch (error) {
+            showNotification('Error updating balance', 'error');
+        }
+    }
+}
+
+async function editKYC(userId) {
+    const newStatus = prompt('Enter KYC status (verified/pending/rejected):');
+    if (newStatus) {
+        try {
+            await supabaseDB.updateUserKYCStatus(userId, newStatus);
+            showNotification('KYC status updated!', 'success');
+            await loadUsersTable();
+        } catch (error) {
+            showNotification('Error updating KYC', 'error');
+        }
+    }
+}
+
+async function approveKYC(requestId, userId) {
+    try {
+        await supabaseDB.update('kyc_requests', requestId, { status: 'approved' });
+        await supabaseDB.updateUserKYCStatus(userId, 'verified');
+        showNotification('KYC approved successfully!', 'success');
+        await loadPendingKYC();
+        await loadUsersTable();
+    } catch (error) {
+        showNotification('Error approving KYC', 'error');
+    }
+}
+
+async function rejectKYC(requestId, userId) {
+    try {
+        await supabaseDB.update('kyc_requests', requestId, { status: 'rejected' });
+        await supabaseDB.updateUserKYCStatus(userId, 'rejected');
+        showNotification('KYC rejected!', 'success');
+        await loadPendingKYC();
+        await loadUsersTable();
+    } catch (error) {
+        showNotification('Error rejecting KYC', 'error');
+    }
+}
+
+async function approveDeposit(requestId, userId, amount) {
+    try {
+        await supabaseDB.update('deposit_requests', requestId, { status: 'approved' });
+        
+        const users = await supabaseDB.getAllUsers();
+        const user = users.find(u => u.id === userId);
+        if (user) {
+            const newBalance = (user.balance || 0) + amount;
+            await supabaseDB.updateUserBalance(userId, newBalance);
+        }
+        
+        showNotification(`Deposit of $${amount} approved!`, 'success');
+        await loadPendingDeposits();
+        await loadUsersTable();
+    } catch (error) {
+        showNotification('Error approving deposit', 'error');
+    }
+}
+
+async function rejectDeposit(requestId) {
+    try {
+        await supabaseDB.update('deposit_requests', requestId, { status: 'rejected' });
+        showNotification('Deposit rejected!', 'success');
+        await loadPendingDeposits();
+    } catch (error) {
+        showNotification('Error rejecting deposit', 'error');
+    }
+}
+
+async function approveWithdrawal(requestId, userId, amount) {
+    try {
+        await supabaseDB.update('withdrawal_requests', requestId, { status: 'approved' });
+        showNotification(`Withdrawal of $${amount} approved!`, 'success');
+        await loadPendingWithdrawals();
+    } catch (error) {
+        showNotification('Error approving withdrawal', 'error');
+    }
+}
+
+async function rejectWithdrawal(requestId, userId, amount) {
+    try {
+        await supabaseDB.update('withdrawal_requests', requestId, { status: 'rejected' });
+        
+        const users = await supabaseDB.getAllUsers();
+        const user = users.find(u => u.id === userId);
+        if (user) {
+            const newBalance = (user.balance || 0) + amount;
+            await supabaseDB.updateUserBalance(userId, newBalance);
+        }
+        
+        showNotification('Withdrawal rejected. Amount refunded.', 'success');
+        await loadPendingWithdrawals();
+        await loadUsersTable();
+    } catch (error) {
+        showNotification('Error rejecting withdrawal', 'error');
+    }
+}
+
+function blacklistAddress(address) {
+    if (confirm(`Blacklist address: ${address}?`)) {
+        showNotification('Address blacklisted!', 'success');
+    }
+}
+
+function viewProof(screenshot) {
+    alert(`Proof of payment: ${screenshot}\n\n(Image would be displayed here in production)`);
+}
+
+async function loadWalletSettings() {
     try {
         const settings = await supabaseDB.getWalletSettings();
         if (settings) {
@@ -407,142 +509,54 @@ async function saveWalletSettings() {
         };
         
         await supabaseDB.updateWalletSettings(settings);
-        alert('Wallet addresses saved successfully!');
+        showNotification('Wallet addresses saved!', 'success');
     } catch (error) {
-        console.error('Error saving wallet settings:', error);
-        alert('Error saving wallet settings');
+        showNotification('Error saving wallet settings', 'error');
     }
 }
 
-async function approveKYC(requestId, userId) {
-    try {
-        await supabaseDB.update('kyc_requests', requestId, { status: 'approved' });
-        await supabaseDB.updateUserKYCStatus(userId, 'verified');
-        
-        alert('KYC approved successfully!');
-        await loadKYCRequests();
-        await loadDashboardData();
-    } catch (error) {
-        console.error('Error approving KYC:', error);
-        alert('Error approving KYC');
-    }
-}
-
-async function rejectKYC(requestId, userId) {
-    try {
-        await supabaseDB.update('kyc_requests', requestId, { status: 'rejected' });
-        await supabaseDB.updateUserKYCStatus(userId, 'rejected');
-        
-        alert('KYC rejected!');
-        await loadKYCRequests();
-        await loadDashboardData();
-    } catch (error) {
-        console.error('Error rejecting KYC:', error);
-        alert('Error rejecting KYC');
-    }
-}
-
-async function approveDeposit(requestId, userId, amount) {
-    try {
-        await supabaseDB.update('deposit_requests', requestId, { status: 'approved' });
-        
-        const users = await supabaseDB.getAllUsers();
-        const user = users.find(u => u.id === userId);
-        if (user) {
-            const newBalance = (user.balance || 0) + amount;
-            await supabaseDB.updateUserBalance(userId, newBalance);
+function setupMenu() {
+    const menuItems = document.querySelectorAll('.admin-menu-item');
+    const sections = ['dashboard', 'tradeControl', 'perCoin', 'users', 'withdrawals', 'pendingKYC', 'pendingDeposits', 'pendingWithdrawals', 'recentTrades', 'walletSettings'];
+    
+    menuItems.forEach(item => {
+        item.addEventListener('click', () => {
+            menuItems.forEach(mi => mi.classList.remove('active'));
+            item.classList.add('active');
             
-            await supabaseDB.insert('transactions', {
-                id: Date.now(),
-                user_id: userId,
-                type: 'deposit',
-                amount: amount,
-                status: 'completed',
-                date: new Date().toISOString()
+            const section = item.dataset.section;
+            sections.forEach(s => {
+                const elem = document.getElementById(`${s}Section`);
+                if (elem) elem.style.display = 'none';
             });
-        }
-        
-        alert(`Deposit of $${amount} approved and credited!`);
-        await loadDepositRequests();
-        await loadDashboardData();
-    } catch (error) {
-        console.error('Error approving deposit:', error);
-        alert('Error approving deposit');
-    }
+            
+            const activeSection = document.getElementById(`${section}Section`);
+            if (activeSection) activeSection.style.display = 'block';
+            
+            if (section === 'perCoin') loadCoinsGrid();
+            if (section === 'walletSettings') loadWalletSettings();
+        });
+    });
 }
 
-async function rejectDeposit(requestId) {
-    try {
-        await supabaseDB.update('deposit_requests', requestId, { status: 'rejected' });
-        alert('Deposit rejected!');
-        await loadDepositRequests();
-        await loadDashboardData();
-    } catch (error) {
-        console.error('Error rejecting deposit:', error);
-        alert('Error rejecting deposit');
-    }
-}
-
-async function approveWithdrawal(requestId, userId, amount) {
-    try {
-        await supabaseDB.update('withdrawal_requests', requestId, { status: 'approved' });
-        alert(`Withdrawal of $${amount} approved!`);
-        await loadWithdrawalRequests();
-        await loadDashboardData();
-    } catch (error) {
-        console.error('Error approving withdrawal:', error);
-        alert('Error approving withdrawal');
-    }
-}
-
-async function rejectWithdrawal(requestId, userId, amount) {
-    try {
-        await supabaseDB.update('withdrawal_requests', requestId, { status: 'rejected' });
-        
-        const users = await supabaseDB.getAllUsers();
-        const user = users.find(u => u.id === userId);
-        if (user) {
-            const newBalance = (user.balance || 0) + amount;
-            await supabaseDB.updateUserBalance(userId, newBalance);
-        }
-        
-        alert('Withdrawal rejected. Amount refunded to user.');
-        await loadWithdrawalRequests();
-        await loadDashboardData();
-    } catch (error) {
-        console.error('Error rejecting withdrawal:', error);
-        alert('Error rejecting withdrawal');
-    }
-}
-
-function viewProof(screenshot) {
-    alert(`Proof of payment: ${screenshot}\n\n(Image would be displayed here in production)`);
-}
-
-async function viewUserDetails(userId) {
-    try {
-        const users = await supabaseDB.getAllUsers();
-        const user = users.find(u => u.id === userId);
-        
-        if (user) {
-            alert(`
-User Details:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ID: ${user.id}
-Name: ${user.name}
-Email: ${user.email}
-Balance: $${user.balance?.toFixed(2) || 0}
-KYC Status: ${user.kyc_status || 'pending'}
-Phone: ${user.phone || 'Not set'}
-Country: ${user.country || 'Not set'}
-Admin: ${user.is_admin ? 'Yes' : 'No'}
-Member Since: ${new Date(user.created_at).toLocaleDateString()}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            `);
-        }
-    } catch (error) {
-        console.error('Error viewing user:', error);
-    }
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: ${type === 'error' ? '#FF4757' : '#00D897'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-size: 14px;
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
 }
 
 function handleLogout() {
@@ -552,6 +566,10 @@ function handleLogout() {
 }
 
 // Make functions global
+window.setGlobalMode = setGlobalMode;
+window.setCoinMode = setCoinMode;
+window.editBalance = editBalance;
+window.editKYC = editKYC;
 window.approveKYC = approveKYC;
 window.rejectKYC = rejectKYC;
 window.approveDeposit = approveDeposit;
@@ -559,6 +577,6 @@ window.rejectDeposit = rejectDeposit;
 window.approveWithdrawal = approveWithdrawal;
 window.rejectWithdrawal = rejectWithdrawal;
 window.viewProof = viewProof;
-window.viewUserDetails = viewUserDetails;
 window.saveWalletSettings = saveWalletSettings;
+window.blacklistAddress = blacklistAddress;
 window.handleLogout = handleLogout;
