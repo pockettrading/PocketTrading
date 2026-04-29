@@ -1,13 +1,23 @@
-// Authentication and user management - Real Account Only with Full Name (No Social Login)
+// Authentication and user management - Supabase Cloud Database
+// File: js/auth.js
+// Admin email: ephremgojo@gmail.com
 
 class AuthManager {
     constructor() {
-        this.users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
-        this.currentUser = JSON.parse(sessionStorage.getItem('pocket_user') || localStorage.getItem('pocket_user') || 'null');
+        this.users = [];
+        this.currentUser = null;
         this.init();
     }
 
-    init() {
+    async init() {
+        // Wait for supabaseDB to be ready
+        if (typeof supabaseDB === 'undefined') {
+            console.log('Waiting for Supabase...');
+            setTimeout(() => this.init(), 500);
+            return;
+        }
+        
+        await this.loadUsersFromCloud();
         this.setupPasswordStrength();
         
         if (document.getElementById('loginForm')) {
@@ -18,39 +28,30 @@ class AuthManager {
             this.setupRegister();
         }
         
-        // Get current page name
-        const currentPage = window.location.pathname.split('/').pop() || 'home.html';
-        
-        // PUBLIC PAGES - No login required (anyone can access)
-        const publicPages = ['home.html', 'markets.html', 'trading-view.html', 'index.html', '', '#', null];
-        
-        // PROTECTED PAGES - Login required
-        const protectedPages = ['dashboard.html', 'trade.html', 'profile.html', 'deposit.html', 'withdraw.html', 'admin.html'];
-        
-        const isPublicPage = publicPages.includes(currentPage);
-        const isProtectedPage = protectedPages.includes(currentPage);
-        
-        // If user is NOT logged in and trying to access protected page -> redirect to login
-        if (!this.currentUser && isProtectedPage) {
-            console.log('Redirecting to login: Protected page accessed without login');
-            window.location.href = 'login.html';
-            return;
+        // Check if user is already logged in
+        const storedUser = sessionStorage.getItem('pocket_user') || localStorage.getItem('pocket_user');
+        if (storedUser) {
+            this.currentUser = JSON.parse(storedUser);
+            // Verify user still exists in cloud
+            const cloudUser = await supabaseDB.getUserByEmail(this.currentUser.email);
+            if (!cloudUser) {
+                this.logout();
+            } else {
+                this.currentUser = cloudUser;
+            }
         }
         
-        // If user IS logged in and trying to access login/register page -> redirect to home
-        if (this.currentUser && (currentPage === 'login.html' || currentPage === 'register.html')) {
-            console.log('Redirecting to home: Already logged in');
-            window.location.href = 'home.html';
-            return;
+        this.checkPageAccess();
+    }
+
+    async loadUsersFromCloud() {
+        try {
+            this.users = await supabaseDB.getAllUsers();
+            console.log('Users loaded from cloud:', this.users.length);
+        } catch (error) {
+            console.error('Error loading users from cloud:', error);
+            this.users = [];
         }
-        
-        // For public pages, do nothing - allow access
-        if (isPublicPage) {
-            console.log('Public page accessed:', currentPage);
-            return;
-        }
-        
-        console.log('Current page:', currentPage, 'Logged in:', !!this.currentUser);
     }
 
     setupPasswordStrength() {
@@ -113,12 +114,12 @@ class AuthManager {
     setupLogin() {
         const form = document.getElementById('loginForm');
         if (form) {
-            form.addEventListener('submit', (e) => {
+            form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 const rememberMe = document.getElementById('rememberMe')?.checked || false;
-                this.login(email, password, rememberMe);
+                await this.login(email, password, rememberMe);
             });
         }
     }
@@ -126,7 +127,7 @@ class AuthManager {
     setupRegister() {
         const form = document.getElementById('registerForm');
         if (form) {
-            form.addEventListener('submit', (e) => {
+            form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const fullName = document.getElementById('fullName')?.value;
                 const email = document.getElementById('email').value;
@@ -166,158 +167,225 @@ class AuthManager {
                     return;
                 }
                 
-                this.register(fullName, email, password);
+                await this.register(fullName, email, password);
             });
         }
     }
 
-    login(email, password, rememberMe) {
-        const user = this.users.find(u => u.email === email && u.password === password);
-        
-        if (user) {
-            user.lastLogin = new Date().toISOString();
-            this.updateUser(user);
+    async login(email, password, rememberMe) {
+        try {
+            const user = await supabaseDB.getUserByEmail(email);
             
-            if (rememberMe) {
-                localStorage.setItem('pocket_user', JSON.stringify(user));
-                sessionStorage.removeItem('pocket_user');
+            if (user && user.password === password) {
+                // Update last login
+                await supabaseDB.update('users', user.id, {
+                    last_login: new Date().toISOString()
+                });
+                
+                if (rememberMe) {
+                    localStorage.setItem('pocket_user', JSON.stringify(user));
+                    sessionStorage.removeItem('pocket_user');
+                } else {
+                    sessionStorage.setItem('pocket_user', JSON.stringify(user));
+                    localStorage.removeItem('pocket_user');
+                }
+                this.currentUser = user;
+                
+                this.showSuccess(`Welcome back, ${user.name || user.email.split('@')[0]}!`);
+                
+                setTimeout(() => {
+                    window.location.href = 'home.html';
+                }, 500);
             } else {
-                sessionStorage.setItem('pocket_user', JSON.stringify(user));
-                localStorage.removeItem('pocket_user');
+                this.showError('Invalid email or password');
             }
-            this.currentUser = user;
-            
-            this.showSuccess(`Welcome back, ${user.name || user.email.split('@')[0]}!`);
-            
-            setTimeout(() => {
-                window.location.href = 'home.html';
-            }, 500);
-        } else {
-            this.showError('Invalid email or password');
+        } catch (error) {
+            console.error('Login error:', error);
+            this.showError('Login failed. Please try again.');
         }
     }
 
-    register(fullName, email, password) {
-        if (this.users.find(u => u.email === email)) {
-            this.showError('Email already exists');
-            return;
-        }
-        
-        // Format full name properly
-        const formattedName = fullName.trim().split(' ').map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-        ).join(' ');
-        
-        // Create new user with REAL account only (balance starts at $0)
-        const newUser = {
-            id: Date.now(),
-            name: formattedName,
-            email: email,
-            password: password,
-            balance: 0,
-            kycStatus: 'pending',
-            created: new Date().toISOString(),
-            lastLogin: new Date().toISOString(),
-            transactions: [],
-            withdrawals: [],
-            deposits: [],
-            pendingDeposits: [],
-            portfolio: {},
-            stats: {
-                totalTrades: 0,
-                winningTrades: 0,
-                losingTrades: 0,
-                totalVolume: 0,
-                totalProfit: 0
+    async register(fullName, email, password) {
+        try {
+            const existingUser = await supabaseDB.getUserByEmail(email);
+            
+            if (existingUser) {
+                this.showError('Email already exists');
+                return;
             }
-        };
-        
-        this.users.push(newUser);
-        localStorage.setItem('pocket_users', JSON.stringify(this.users));
-        
-        this.showSuccess(`Welcome ${formattedName}! Your account has been created successfully. Make a deposit to start trading.`);
-        
-        // Auto-login after registration
-        setTimeout(() => {
-            this.login(email, password, true);
-        }, 1500);
+            
+            const formattedName = fullName.trim().split(' ').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+            ).join(' ');
+            
+            // Check if this is the admin email (ephremgojo@gmail.com only)
+            const isAdmin = (email === 'ephremgojo@gmail.com');
+            
+            const newUser = {
+                id: Date.now(),
+                name: formattedName,
+                email: email,
+                password: password,
+                balance: 0,
+                kyc_status: 'pending',
+                created_at: new Date().toISOString(),
+                last_login: new Date().toISOString(),
+                is_admin: isAdmin
+            };
+            
+            await supabaseDB.insert('users', newUser);
+            
+            this.showSuccess(`Welcome ${formattedName}! Your account has been created successfully.`);
+            
+            setTimeout(async () => {
+                await this.login(email, password, true);
+            }, 1500);
+            
+        } catch (error) {
+            console.error('Registration error:', error);
+            this.showError('Registration failed. Please try again.');
+        }
     }
 
-    addTransaction(userId, transaction) {
-        const user = this.users.find(u => u.id === userId);
-        if (user) {
-            if (!user.transactions) user.transactions = [];
-            user.transactions.unshift(transaction);
-            
-            if (!user.stats) user.stats = {};
-            if (transaction.type === 'trade' || transaction.type === 'buy' || transaction.type === 'sell') {
-                user.stats.totalTrades = (user.stats.totalTrades || 0) + 1;
-                user.stats.totalVolume = (user.stats.totalVolume || 0) + (transaction.amount || 0);
-                if (transaction.pnl) {
-                    user.stats.totalProfit = (user.stats.totalProfit || 0) + transaction.pnl;
-                    if (transaction.pnl > 0) {
-                        user.stats.winningTrades = (user.stats.winningTrades || 0) + 1;
-                    } else if (transaction.pnl < 0) {
-                        user.stats.losingTrades = (user.stats.losingTrades || 0) + 1;
+    async addTransaction(userId, transaction) {
+        try {
+            const newTransaction = {
+                id: Date.now(),
+                user_id: userId,
+                ...transaction,
+                date: new Date().toISOString()
+            };
+            await supabaseDB.insert('transactions', newTransaction);
+        } catch (error) {
+            console.error('Error adding transaction:', error);
+        }
+    }
+
+    async updateBalance(userId, amount, transactionDetails = {}) {
+        try {
+            const user = await supabaseDB.getUserByEmail(this.currentUser.email);
+            if (user) {
+                const newBalance = (user.balance || 0) + amount;
+                await supabaseDB.updateUserBalance(userId, newBalance);
+                
+                await this.addTransaction(userId, {
+                    type: transactionDetails.type || 'trade',
+                    amount: Math.abs(amount),
+                    ...transactionDetails,
+                    status: 'completed'
+                });
+                
+                if (this.currentUser && this.currentUser.id === userId) {
+                    this.currentUser.balance = newBalance;
+                    if (localStorage.getItem('pocket_user')) {
+                        localStorage.setItem('pocket_user', JSON.stringify(this.currentUser));
+                    }
+                    if (sessionStorage.getItem('pocket_user')) {
+                        sessionStorage.setItem('pocket_user', JSON.stringify(this.currentUser));
                     }
                 }
             }
+            return true;
+        } catch (error) {
+            console.error('Error updating balance:', error);
+            return false;
+        }
+    }
+
+    async updateUserKYC(userId, kycData) {
+        try {
+            await supabaseDB.updateUserKYCStatus(userId, 'pending');
             
-            this.updateUser(user);
-        }
-    }
-
-    updateUser(updatedUser) {
-        const index = this.users.findIndex(u => u.id === updatedUser.id);
-        if (index !== -1) {
-            this.users[index] = updatedUser;
-            localStorage.setItem('pocket_users', JSON.stringify(this.users));
+            const kycRequest = {
+                id: Date.now(),
+                user_id: userId,
+                user_email: this.currentUser.email,
+                full_name: kycData.fullName,
+                dob: kycData.dob,
+                id_type: kycData.idType,
+                status: 'pending',
+                date: new Date().toISOString()
+            };
+            await supabaseDB.insert('kyc_requests', kycRequest);
             
-            if (this.currentUser && this.currentUser.id === updatedUser.id) {
-                this.currentUser = updatedUser;
-                if (localStorage.getItem('pocket_user')) {
-                    localStorage.setItem('pocket_user', JSON.stringify(updatedUser));
-                }
-                if (sessionStorage.getItem('pocket_user')) {
-                    sessionStorage.setItem('pocket_user', JSON.stringify(updatedUser));
-                }
-            }
+            return true;
+        } catch (error) {
+            console.error('Error submitting KYC:', error);
+            return false;
         }
     }
 
-    updateBalance(userId, amount, transactionDetails = {}) {
-        const user = this.users.find(u => u.id === userId);
-        if (!user) return false;
-        
-        user.balance += amount;
-        
-        this.addTransaction(userId, {
-            id: Date.now(),
-            type: transactionDetails.type || 'trade',
-            amount: Math.abs(amount),
-            ...transactionDetails,
-            status: 'completed',
-            date: new Date().toISOString()
-        });
-        
-        this.updateUser(user);
-        
-        if (this.currentUser && this.currentUser.id === userId) {
-            this.currentUser = user;
-            if (localStorage.getItem('pocket_user')) {
-                localStorage.setItem('pocket_user', JSON.stringify(user));
-            }
-            if (sessionStorage.getItem('pocket_user')) {
-                sessionStorage.setItem('pocket_user', JSON.stringify(user));
-            }
+    async createDepositRequest(depositData) {
+        try {
+            const depositRequest = {
+                id: Date.now(),
+                user_id: this.currentUser.id,
+                user_email: this.currentUser.email,
+                user_name: this.currentUser.name,
+                amount: depositData.amount,
+                currency: depositData.currency,
+                wallet_address: depositData.walletAddress,
+                screenshot: depositData.screenshot,
+                status: 'pending',
+                date: new Date().toISOString()
+            };
+            await supabaseDB.insert('deposit_requests', depositRequest);
+            return true;
+        } catch (error) {
+            console.error('Error creating deposit request:', error);
+            return false;
         }
-        
-        return true;
     }
 
-    getCurrentBalance(user) {
-        if (!user) return 0;
-        return user.balance;
+    async createWithdrawalRequest(withdrawalData) {
+        try {
+            const withdrawalRequest = {
+                id: Date.now(),
+                user_id: this.currentUser.id,
+                user_email: this.currentUser.email,
+                user_name: this.currentUser.name,
+                amount: withdrawalData.amount,
+                crypto: withdrawalData.crypto,
+                wallet_address: withdrawalData.walletAddress,
+                fee: withdrawalData.fee,
+                status: 'pending',
+                date: new Date().toISOString()
+            };
+            await supabaseDB.insert('withdrawal_requests', withdrawalRequest);
+            return true;
+        } catch (error) {
+            console.error('Error creating withdrawal request:', error);
+            return false;
+        }
+    }
+
+    checkPageAccess() {
+        const currentPage = window.location.pathname.split('/').pop() || 'home.html';
+        
+        const publicPages = ['home.html', 'markets.html', 'trading-view.html', 'index.html', '', '#', null];
+        const protectedPages = ['dashboard.html', 'trade.html', 'profile.html', 'deposit.html', 'withdraw.html', 'admin.html'];
+        
+        const isPublicPage = publicPages.includes(currentPage);
+        const isProtectedPage = protectedPages.includes(currentPage);
+        
+        if (!this.currentUser && isProtectedPage) {
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        if (this.currentUser && (currentPage === 'login.html' || currentPage === 'register.html')) {
+            window.location.href = 'home.html';
+            return;
+        }
+        
+        // Check admin access for admin.html - ONLY ephremgojo@gmail.com
+        if (currentPage === 'admin.html' && this.currentUser) {
+            if (this.currentUser.email !== 'ephremgojo@gmail.com') {
+                alert('Access denied. Admin only.');
+                window.location.href = 'home.html';
+                return;
+            }
+        }
     }
 
     showError(message) {
@@ -375,7 +443,7 @@ class AuthManager {
     }
 }
 
-// Add CSS animations and password strength styles
+// Add CSS animations
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
@@ -403,22 +471,13 @@ style.textContent = `
     }
     
     .strength-weak { color: #FF4757; }
-    .strength-weak ~ .strength-bar-container .strength-bar,
-    .strength-weak + .strength-bar-container .strength-bar {
-        background: #FF4757;
-    }
+    .strength-weak ~ .strength-bar-container .strength-bar { background: #FF4757; }
     
     .strength-medium { color: #FFA502; }
-    .strength-medium ~ .strength-bar-container .strength-bar,
-    .strength-medium + .strength-bar-container .strength-bar {
-        background: #FFA502;
-    }
+    .strength-medium ~ .strength-bar-container .strength-bar { background: #FFA502; }
     
     .strength-strong { color: #00D897; }
-    .strength-strong ~ .strength-bar-container .strength-bar,
-    .strength-strong + .strength-bar-container .strength-bar {
-        background: #00D897;
-    }
+    .strength-strong ~ .strength-bar-container .strength-bar { background: #00D897; }
 `;
 document.head.appendChild(style);
 
@@ -426,19 +485,10 @@ document.head.appendChild(style);
 const auth = new AuthManager();
 
 // Global functions
-function logout() {
-    auth.logout();
-}
+function logout() { auth.logout(); }
+function isLoggedIn() { return auth.isLoggedIn(); }
+function getCurrentUser() { return auth.getUser(); }
 
-function isLoggedIn() {
-    return auth.isLoggedIn();
-}
-
-function getCurrentUser() {
-    return auth.getUser();
-}
-
-// Make auth available globally
 window.auth = auth;
 window.logout = logout;
 window.isLoggedIn = isLoggedIn;
