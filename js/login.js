@@ -1,19 +1,39 @@
-// Login page functionality - Social login removed
+// Login page functionality - Optimized for Guest, Registered, and Admin Users
+// File: js/login.js
 
 class LoginManager {
     constructor() {
         this.init();
     }
 
-    init() {
+    async init() {
+        // Wait for supabaseDB
+        if (typeof supabaseDB === 'undefined') {
+            console.log('Waiting for Supabase...');
+            setTimeout(() => this.init(), 500);
+            return;
+        }
+        
+        await this.checkAlreadyLoggedIn();
         this.setupEventListeners();
-        this.checkAlreadyLoggedIn();
     }
 
-    checkAlreadyLoggedIn() {
+    async checkAlreadyLoggedIn() {
         const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
         if (storedUser) {
-            window.location.href = 'home.html';
+            const user = JSON.parse(storedUser);
+            
+            // Verify user still exists in cloud
+            const cloudUser = await supabaseDB.getUserByEmail(user.email);
+            if (cloudUser) {
+                // User is already logged in, redirect to home
+                console.log('User already logged in:', user.email);
+                window.location.href = 'home.html';
+            } else {
+                // Clear invalid session
+                localStorage.removeItem('pocket_user');
+                sessionStorage.removeItem('pocket_user');
+            }
         }
     }
 
@@ -35,7 +55,7 @@ class LoginManager {
         }
     }
 
-    handleLogin() {
+    async handleLogin() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const rememberMe = document.getElementById('rememberMe').checked;
@@ -45,34 +65,45 @@ class LoginManager {
             return;
         }
 
-        const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
-        const user = users.find(u => u.email === email && u.password === password);
+        try {
+            // Get user from Supabase
+            const user = await supabaseDB.getUserByEmail(email);
 
-        if (user) {
-            user.lastLogin = new Date().toISOString();
-            
-            const userIndex = users.findIndex(u => u.id === user.id);
-            if (userIndex !== -1) {
-                users[userIndex] = user;
-                localStorage.setItem('pocket_users', JSON.stringify(users));
-            }
+            if (user && user.password === password) {
+                // Update last login
+                await supabaseDB.update('users', user.id, {
+                    last_login: new Date().toISOString()
+                });
 
-            if (rememberMe) {
-                localStorage.setItem('pocket_user', JSON.stringify(user));
-                sessionStorage.removeItem('pocket_user');
+                // Store user session
+                if (rememberMe) {
+                    localStorage.setItem('pocket_user', JSON.stringify(user));
+                    sessionStorage.removeItem('pocket_user');
+                } else {
+                    sessionStorage.setItem('pocket_user', JSON.stringify(user));
+                    localStorage.removeItem('pocket_user');
+                }
+
+                const displayName = user.name || user.email.split('@')[0];
+                const isAdmin = (user.email === 'ephremgojo@gmail.com');
+                
+                // Show different welcome message for admin
+                if (isAdmin) {
+                    this.showNotification(`Welcome back, Admin ${displayName}!`, 'success');
+                } else {
+                    this.showNotification(`Welcome back, ${displayName}!`, 'success');
+                }
+
+                // Redirect based on user type (admin gets admin panel option, but goes to home first)
+                setTimeout(() => {
+                    window.location.href = 'home.html';
+                }, 500);
             } else {
-                sessionStorage.setItem('pocket_user', JSON.stringify(user));
-                localStorage.removeItem('pocket_user');
+                this.showNotification('Invalid email or password', 'error');
             }
-
-            const displayName = user.name || user.email.split('@')[0];
-            this.showNotification(`Welcome back, ${displayName}!`, 'success');
-
-            setTimeout(() => {
-                window.location.href = 'home.html';
-            }, 500);
-        } else {
-            this.showNotification('Invalid email or password', 'error');
+        } catch (error) {
+            console.error('Login error:', error);
+            this.showNotification('Login failed. Please try again.', 'error');
         }
     }
 
@@ -83,15 +114,9 @@ class LoginManager {
             this.showNotification('Please enter your email address', 'error');
             return;
         }
-
-        const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
-        const user = users.find(u => u.email === email);
         
-        if (user) {
-            this.showNotification(`Password reset link sent to ${email}`, 'success');
-        } else {
-            this.showNotification('Email address not found', 'error');
-        }
+        // In a real app, send reset email
+        this.showNotification(`Password reset link sent to ${email}`, 'success');
     }
 
     showNotification(message, type) {
@@ -113,4 +138,5 @@ class LoginManager {
     }
 }
 
+// Initialize login page
 const loginManager = new LoginManager();
