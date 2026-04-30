@@ -116,6 +116,89 @@
             text-decoration: underline;
         }
 
+        /* Auth Buttons */
+        .auth-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .login-btn {
+            background: transparent;
+            color: var(--primary);
+            padding: 8px 20px;
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .login-btn:hover {
+            background: rgba(247, 147, 26, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .signup-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .signup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
+        }
+
+        /* Admin Badge */
+        .admin-badge {
+            background: linear-gradient(135deg, var(--danger), #ff6b6b);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        /* Login Prompt */
+        .login-prompt {
+            text-align: center;
+            padding: 3rem;
+            background: var(--card-bg);
+            border-radius: 20px;
+            max-width: 500px;
+            margin: 2rem auto;
+        }
+
+        .login-prompt h3 {
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            font-weight: 500;
+        }
+
+        .login-prompt p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .login-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
         /* Trade Container */
         .trade-container {
             max-width: 650px;
@@ -275,11 +358,6 @@
             gap: 10px;
         }
 
-        .crypto-option-price {
-            text-align: right;
-            font-size: 0.75rem;
-        }
-
         /* Amount Input */
         .amount-section {
             margin-bottom: 1.5rem;
@@ -424,75 +502,6 @@
             filter: brightness(1.05);
         }
 
-        /* Error Message */
-        .error-message {
-            color: var(--danger);
-            font-size: 0.7rem;
-            margin-top: 0.5rem;
-            text-align: center;
-        }
-
-        /* Login Prompt */
-        .login-prompt {
-            text-align: center;
-            padding: 3rem;
-            background: var(--card-bg);
-            border-radius: 20px;
-            max-width: 450px;
-            margin: 0 auto;
-        }
-
-        .login-prompt h3 {
-            margin-bottom: 0.75rem;
-            font-size: 1.3rem;
-            font-weight: 500;
-        }
-
-        .login-prompt p {
-            color: var(--text-secondary);
-            margin-bottom: 1.5rem;
-            font-size: 0.8rem;
-        }
-
-        .login-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-        }
-
-        .btn-login {
-            background: transparent;
-            color: var(--primary);
-            padding: 10px 28px;
-            border: 1px solid var(--primary);
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.85rem;
-            transition: all 0.3s;
-        }
-
-        .btn-login:hover {
-            background: rgba(247, 147, 26, 0.1);
-        }
-
-        .btn-signup {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            padding: 10px 28px;
-            border: none;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.85rem;
-            transition: all 0.3s;
-        }
-
-        .btn-signup:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
-        }
-
         /* Cooldown Timer */
         .cooldown-timer {
             text-align: center;
@@ -552,11 +561,10 @@
                 </svg>
                 <span>Pocket<span style="color: var(--primary);">Trading</span></span>
             </div>
-            <div class="nav-links">
+            <div class="nav-links" id="navLinks">
                 <a href="home.html" class="nav-link">Home</a>
                 <a href="markets.html" class="nav-link">Markets</a>
                 <a href="trade.html" class="nav-link" style="color: var(--primary);">Trades</a>
-                <a href="profile.html" class="nav-link">My Profile</a>
             </div>
             <div class="user-info" id="userInfo"></div>
         </div>
@@ -566,6 +574,7 @@
         </div>
     </div>
 
+    <script src="js/supabase.js"></script>
     <script src="js/trade.js"></script>
 </body>
 </html>
