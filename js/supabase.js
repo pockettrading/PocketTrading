@@ -1,9 +1,9 @@
 // Supabase Cloud Database Connection
 // File: js/supabase.js
-// COMPLETE CORRECTED VERSION - Using custom_users table
+// REPLACE THE ANON KEY BELOW WITH YOUR COMPLETE KEY FROM SUPABASE
 
 const SUPABASE_URL = 'https://nzjgknwwenrczxzrnhjr.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56amdrbnd3ZW5yY3p4enJuaGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NzY5NjksImV4cCI6MjA5MzE1Mjk2OX0.3Fb_VO5kYYBQF0T_2G19fcvnk91l-DOQZA_SKG8Xuao';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56amdrbnd3ZW5yY3p4enJuaGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NzY5NjksImV4cCI6MjA5MzE1Mjk2OX0.3Fb_VO5kYYBQF0T_2G19fcvnk91l-DOQZA_SKG8Xuao';  // ← REPLACE THIS
 
 class SupabaseClient {
     constructor() {
@@ -15,7 +15,6 @@ class SupabaseClient {
         };
     }
 
-    // GET data from table
     async get(table, filters = {}) {
         let queryString = '';
         if (Object.keys(filters).length > 0) {
@@ -32,11 +31,9 @@ class SupabaseClient {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
         return await response.json();
     }
 
-    // INSERT data into table
     async insert(table, data) {
         const response = await fetch(`${this.url}/rest/v1/${table}`, {
             method: 'POST',
@@ -47,11 +44,9 @@ class SupabaseClient {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
         return await response.json();
     }
 
-    // UPDATE data in table
     async update(table, id, data) {
         const response = await fetch(`${this.url}/rest/v1/${table}?id=eq.${id}`, {
             method: 'PATCH',
@@ -62,11 +57,9 @@ class SupabaseClient {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
         return await response.json();
     }
 
-    // DELETE data from table
     async delete(table, id) {
         const response = await fetch(`${this.url}/rest/v1/${table}?id=eq.${id}`, {
             method: 'DELETE',
@@ -76,12 +69,10 @@ class SupabaseClient {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
         return true;
     }
 
-    // ============ CUSTOM_USERS TABLE METHODS ============
-    
+    // User methods
     async getUserByEmail(email) {
         const users = await this.get('custom_users', { email: email });
         return users.length > 0 ? users[0] : null;
@@ -99,8 +90,7 @@ class SupabaseClient {
         return await this.update('custom_users', userId, { balance: newBalance });
     }
 
-    // ============ TRANSACTIONS TABLE METHODS ============
-    
+    // Transaction methods
     async getUserTransactions(userId) {
         return await this.get('transactions', { user_id: userId });
     }
@@ -109,8 +99,7 @@ class SupabaseClient {
         return await this.get('transactions');
     }
 
-    // ============ DEPOSIT REQUESTS METHODS ============
-    
+    // Deposit requests
     async getDepositRequests(status = null) {
         if (status) {
             return await this.get('deposit_requests', { status: status });
@@ -118,8 +107,7 @@ class SupabaseClient {
         return await this.get('deposit_requests');
     }
 
-    // ============ WITHDRAWAL REQUESTS METHODS ============
-    
+    // Withdrawal requests
     async getWithdrawalRequests(status = null) {
         if (status) {
             return await this.get('withdrawal_requests', { status: status });
@@ -127,8 +115,7 @@ class SupabaseClient {
         return await this.get('withdrawal_requests');
     }
 
-    // ============ KYC REQUESTS METHODS ============
-    
+    // KYC requests
     async getKYCRequests(status = null) {
         if (status) {
             return await this.get('kyc_requests', { status: status });
@@ -136,8 +123,7 @@ class SupabaseClient {
         return await this.get('kyc_requests');
     }
 
-    // ============ WALLET SETTINGS METHODS ============
-    
+    // Wallet settings
     async getWalletSettings() {
         const settings = await this.get('wallet_settings');
         return settings.length > 0 ? settings[0] : null;
@@ -152,8 +138,7 @@ class SupabaseClient {
         }
     }
 
-    // ============ GLOBAL SETTINGS METHODS ============
-    
+    // Global settings
     async getGlobalSettings() {
         const settings = await this.get('global_settings');
         return settings.length > 0 ? settings[0] : null;
@@ -169,11 +154,6 @@ class SupabaseClient {
     }
 }
 
-// Create global supabase instance
 const supabaseDB = new SupabaseClient();
-
-// Make available globally
 window.supabaseDB = supabaseDB;
-
-console.log('Supabase client initialized with URL:', SUPABASE_URL);
-console.log('Using custom_users table for authentication');
+console.log('Supabase client initialized');
