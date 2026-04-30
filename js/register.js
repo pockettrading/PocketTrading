@@ -1,6 +1,5 @@
-// Register page functionality - Optimized for Guest, Registered, and Admin Users
+// Register page functionality - Supabase Cloud Database
 // File: js/register.js
-// Admin email: ephremgojo@gmail.com
 
 class RegisterManager {
     constructor() {
@@ -8,13 +7,13 @@ class RegisterManager {
     }
 
     init() {
-        // Wait for supabaseDB
         if (typeof supabaseDB === 'undefined') {
             console.log('Waiting for Supabase...');
             setTimeout(() => this.init(), 500);
             return;
         }
         
+        console.log('Supabase ready, initializing register...');
         this.setupEventListeners();
         this.setupPasswordStrength();
         this.checkAlreadyLoggedIn();
@@ -23,15 +22,7 @@ class RegisterManager {
     async checkAlreadyLoggedIn() {
         const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
         if (storedUser) {
-            const user = JSON.parse(storedUser);
-            
-            // Verify user still exists in cloud
-            const cloudUser = await supabaseDB.getUserByEmail(user.email);
-            if (cloudUser) {
-                // User is already logged in, redirect to home
-                console.log('User already logged in, redirecting to home...');
-                window.location.href = 'home.html';
-            }
+            window.location.href = 'home.html';
         }
     }
 
@@ -109,7 +100,8 @@ class RegisterManager {
         const confirmPassword = document.getElementById('confirmPassword').value;
         const termsAgree = document.getElementById('termsAgree').checked;
 
-        // Validation
+        console.log('Registration started for:', email);
+
         if (!fullName || !email || !password || !confirmPassword) {
             this.showNotification('Please fill in all fields', 'error');
             return;
@@ -143,8 +135,10 @@ class RegisterManager {
         }
 
         try {
-            // Check if user already exists in Supabase
-            const existingUsers = await supabaseDB.get('users', { email: email });
+            // Check if user already exists - USING custom_users table
+            console.log('Checking if user exists...');
+            const existingUsers = await supabaseDB.get('custom_users', { email: email });
+            console.log('Existing users check result:', existingUsers);
             
             if (existingUsers && existingUsers.length > 0) {
                 this.showNotification('Email already exists', 'error');
@@ -155,8 +149,7 @@ class RegisterManager {
                 word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
             ).join(' ');
 
-            // Check if this is the admin email (ephremgojo@gmail.com)
-            const isAdmin = (email === 'ephremgojo@gmail.com');
+            const isAdmin = (email === 'ephregojo@gmail.com');
 
             const newUser = {
                 id: Date.now(),
@@ -172,30 +165,25 @@ class RegisterManager {
                 is_admin: isAdmin
             };
 
-            // Insert into Supabase
-            const result = await supabaseDB.insert('users', newUser);
+            console.log('Attempting to insert user into custom_users:', newUser);
             
-            console.log('User registered successfully:', newUser);
+            // Insert into Supabase - USING custom_users table
+            const result = await supabaseDB.insert('custom_users', newUser);
+            console.log('Insert result:', result);
 
-            // Show different welcome message for admin
-            if (isAdmin) {
-                this.showNotification(`Welcome Admin ${formattedName}! Your admin account has been created.`, 'success');
-            } else {
-                this.showNotification(`Welcome ${formattedName}! Your account has been created successfully.`, 'success');
-            }
+            this.showNotification(`Welcome ${formattedName}! Your account has been created successfully.`, 'success');
 
             // Auto login after registration
             sessionStorage.setItem('pocket_user', JSON.stringify(newUser));
             localStorage.removeItem('pocket_user');
 
-            // Redirect to home page after 2 seconds
             setTimeout(() => {
                 window.location.href = 'home.html';
             }, 2000);
             
         } catch (error) {
-            console.error('Registration error:', error);
-            this.showNotification('Registration failed. Please try again.', 'error');
+            console.error('Registration error details:', error);
+            this.showNotification(`Registration failed: ${error.message || 'Please try again'}`, 'error');
         }
     }
 
