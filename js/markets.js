@@ -8,7 +8,7 @@ let priceUpdateInterval = null;
 let allCryptoData = [];
 
 // Admin email
-const ADMIN_EMAIL = 'ephremgojo@gmail.com';
+const ADMIN_EMAIL = 'ephregojo@gmail.com';
 
 // Binance API
 const BINANCE_BASE_URL = 'https://api.binance.com/api/v3';
@@ -108,8 +108,18 @@ function renderNavLinks() {
     const navLinks = document.getElementById('navLinks');
     if (!navLinks) return;
     
-    // Keep only Home, Markets, Trades (no My Profile on markets page)
-    // This is intentional - markets page is public, no profile link needed
+    // Clear existing dynamic links (keep Home, Markets, Trades)
+    const existingLinks = navLinks.querySelectorAll('.nav-link:not([href="home.html"]):not([href="markets.html"]):not([href="trade.html"])');
+    existingLinks.forEach(link => link.remove());
+    
+    // Add My Profile link only for registered users
+    if (currentUser) {
+        const profileLink = document.createElement('a');
+        profileLink.href = 'profile.html';
+        profileLink.className = 'nav-link';
+        profileLink.textContent = 'My Profile';
+        navLinks.appendChild(profileLink);
+    }
 }
 
 function renderUserInfo() {
