@@ -131,9 +131,14 @@ function renderUserInfo() {
         const displayName = currentUser.name || currentUser.email.split('@')[0];
         const adminBadge = currentUser.isAdmin ? '<span class="admin-badge">Admin</span>' : '';
         
+        let adminPanelButton = '';
+        if (currentUser.isAdmin) {
+            adminPanelButton = '<a href="admin.html" class="login-btn" style="margin-left: 0.5rem;">Admin Panel</a>';
+        }
+        
         userInfo.innerHTML = `
             <span class="username">${displayName}${adminBadge}</span>
-            ${currentUser.isAdmin ? '<a href="admin.html" class="login-btn" style="margin-left: 0.5rem;">Admin Panel</a>' : ''}
+            ${adminPanelButton}
             <span class="logout-link" onclick="handleLogout()">Logout</span>
         `;
     } else {
@@ -197,6 +202,7 @@ async function loadMarketData() {
                     change: parseFloat(data.priceChangePercent),
                     volume: parseFloat(data.quoteVolume)
                 });
+                console.log(`Loaded ${crypto.symbol}: $${parseFloat(data.lastPrice)}`);
             } catch (err) {
                 console.error(`Error fetching ${crypto.symbol}:`, err);
                 cryptoDataWithPrices.push({ ...crypto, price: 0, change: 0, volume: 0 });
@@ -206,8 +212,10 @@ async function loadMarketData() {
         allCryptoData = cryptoDataWithPrices.filter(c => c.price > 0);
         
         if (allCryptoData.length === 0) {
+            console.log('No crypto data from API, using fallback');
             renderFallbackData();
         } else {
+            console.log(`Loaded ${allCryptoData.length} cryptocurrencies`);
             renderMarketTable();
         }
         
@@ -236,16 +244,17 @@ function renderMarketTable() {
     }
     
     if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="loading-state">No cryptocurrencies found</td--</tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="loading-state">No cryptocurrencies found</td--</td>';
         return;
     }
     
-    tbody.innerHTML = filteredData.map(crypto => {
+    let html = '';
+    for (const crypto of filteredData) {
         const changeClass = crypto.change >= 0 ? 'positive' : 'negative';
         const changeSign = crypto.change >= 0 ? '+' : '';
         const marketCap = crypto.price * 10000000;
         
-        return `
+        html += `
             <tr>
                 <td>
                     <div class="crypto-info" onclick="openTradingView('${crypto.symbol}')">
@@ -255,22 +264,24 @@ function renderMarketTable() {
                             <div class="crypto-symbol">${crypto.symbol}</div>
                         </div>
                     </div>
-                </td
-                <td>$${formatPrice(crypto.price)}</td
+                </td>
+                <td>$${formatPrice(crypto.price)}</td>
                 <td>
                     <span class="price-change ${changeClass}">
                         ${changeSign}${crypto.change.toFixed(2)}%
                     </span>
-                </td
-                <td>${formatMarketCap(marketCap)}</td
+                </td>
+                <td>${formatMarketCap(marketCap)}</td>
                 <td>
                     <button class="btn-tradingview" onclick="event.stopPropagation(); openTradingView('${crypto.symbol}')">
                         📊 TradingView
                     </button>
-                </td
-            比
+                </td>
+            </tr>
         `;
-    }).join('');
+    }
+    
+    tbody.innerHTML = html;
 }
 
 function formatPrice(price) {
@@ -297,23 +308,26 @@ function formatVolume(volume) {
 
 function renderFallbackData() {
     const fallbackData = [
-        { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 75808.00, change: -0.70, marketCap: 1516000000000 },
-        { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2352.73, change: 0.06, marketCap: 283870000000 },
-        { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 304.29, change: 0.07, marketCap: 51780000000 },
-        { symbol: 'SOL', name: 'Solana', icon: 'S', price: 97.72, change: 0.21, marketCap: 44690000000 },
-        { symbol: 'XRP', name: 'Ripple', icon: 'X', price: 0.6153, change: 0.03, marketCap: 33740000000 },
-        { symbol: 'ADA', name: 'Cardano', icon: 'A', price: 0.4815, change: 0.15, marketCap: 17050000000 },
+        { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 76295.52, change: -0.51, marketCap: 1516000000000 },
+        { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2450.73, change: 1.20, marketCap: 294000000000 },
+        { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 310.29, change: 0.89, marketCap: 51780000000 },
+        { symbol: 'SOL', name: 'Solana', icon: 'S', price: 101.72, change: 2.10, marketCap: 44690000000 },
+        { symbol: 'XRP', name: 'Ripple', icon: 'X', price: 0.6253, change: 1.50, marketCap: 33740000000 },
+        { symbol: 'ADA', name: 'Cardano', icon: 'A', price: 0.4915, change: 0.15, marketCap: 17050000000 },
         { symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð', price: 0.1198, change: 0.24, marketCap: 17470000000 },
-        { symbol: 'DOT', name: 'Polkadot', icon: '●', price: 6.83, change: 0.25, marketCap: 9770000000 }
+        { symbol: 'DOT', name: 'Polkadot', icon: '●', price: 6.83, change: -0.25, marketCap: 9770000000 },
+        { symbol: 'LINK', name: 'Chainlink', icon: 'L', price: 14.50, change: 2.10, marketCap: 8500000000 },
+        { symbol: 'UNI', name: 'Uniswap', icon: 'U', price: 7.85, change: -1.50, marketCap: 5900000000 }
     ];
     
     const tbody = document.getElementById('marketTableBody');
     if (tbody) {
-        tbody.innerHTML = fallbackData.map(crypto => {
+        let html = '';
+        for (const crypto of fallbackData) {
             const changeClass = crypto.change >= 0 ? 'positive' : 'negative';
             const changeSign = crypto.change >= 0 ? '+' : '';
             
-            return `
+            html += `
                 <tr>
                     <td>
                         <div class="crypto-info" onclick="openTradingView('${crypto.symbol}')">
@@ -323,22 +337,23 @@ function renderFallbackData() {
                                 <div class="crypto-symbol">${crypto.symbol}</div>
                             </div>
                         </div>
-                    </td
-                    <td>$${formatPrice(crypto.price)}</td
+                    </td>
+                    <td>$${formatPrice(crypto.price)}</td>
                     <td>
                         <span class="price-change ${changeClass}">
                             ${changeSign}${crypto.change.toFixed(2)}%
                         </span>
-                    </td
-                    <td>${formatMarketCap(crypto.marketCap)}</td
+                    </td>
+                    <td>${formatMarketCap(crypto.marketCap)}</td>
                     <td>
                         <button class="btn-tradingview" onclick="event.stopPropagation(); openTradingView('${crypto.symbol}')">
                             📊 TradingView
                         </button>
-                    </td
-                比
+                    </td>
+                </tr>
             `;
-        }).join('');
+        }
+        tbody.innerHTML = html;
     }
 }
 
