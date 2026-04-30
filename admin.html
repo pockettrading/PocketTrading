@@ -39,7 +39,7 @@
         }
 
         .container {
-            max-width: 1600px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 1.5rem;
         }
@@ -111,72 +111,36 @@
             cursor: pointer;
         }
 
-        /* Admin Layout */
-        .admin-layout {
+        /* Admin Menu Tabs - Top Navigation */
+        .admin-tabs {
             display: flex;
-            gap: 1.5rem;
-        }
-
-        /* Sidebar */
-        .admin-sidebar {
-            width: 280px;
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 1.5rem;
-            height: fit-content;
-            position: sticky;
-            top: 1rem;
-        }
-
-        .sidebar-title {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-tertiary);
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
             border-bottom: 1px solid var(--border);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            padding-bottom: 0.5rem;
         }
 
-        .admin-menu {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .admin-menu-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 0.75rem;
+        .admin-tab {
+            padding: 8px 20px;
             background: transparent;
-            border-radius: 10px;
+            border: none;
+            color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.3s;
+            border-radius: 8px;
             font-size: 0.85rem;
-            color: var(--text-secondary);
-            border: none;
-            width: 100%;
-            text-align: left;
+            font-weight: 500;
         }
 
-        .admin-menu-item:hover {
+        .admin-tab:hover {
             background: var(--card-hover);
             color: var(--primary);
         }
 
-        .admin-menu-item.active {
+        .admin-tab.active {
             background: rgba(247, 147, 26, 0.1);
             color: var(--primary);
-        }
-
-        /* Main Content */
-        .admin-content {
-            flex: 1;
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 1.5rem;
         }
 
         /* Stats Cards */
@@ -188,7 +152,7 @@
         }
 
         .stat-card {
-            background: var(--darker-bg);
+            background: var(--card-bg);
             border-radius: 12px;
             padding: 1rem;
             text-align: center;
@@ -285,13 +249,7 @@
             font-weight: 600;
         }
 
-        .section-header h3 {
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-
-        /* Per-Coin Grid */
+        /* Coins Grid */
         .coins-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -358,10 +316,9 @@
             color: white;
         }
 
-        /* Users Table */
-        .users-table, .withdrawals-table, .trades-table {
+        /* Tables */
+        .data-table {
             overflow-x: auto;
-            margin-bottom: 1.5rem;
         }
 
         table {
@@ -430,22 +387,57 @@
             color: var(--text-tertiary);
         }
 
+        /* Form */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            margin-bottom: 0.25rem;
+            color: var(--text-secondary);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            background: var(--darker-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+        }
+
         @media (max-width: 968px) {
-            .admin-layout {
-                flex-direction: column;
-            }
-            
-            .admin-sidebar {
-                width: 100%;
-                position: static;
-            }
-            
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
             
             .coins-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-nav {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .nav-links {
+                justify-content: center;
+            }
+            
+            .user-info {
+                justify-content: center;
+            }
+            
+            .admin-tabs {
+                justify-content: center;
             }
         }
     </style>
@@ -472,274 +464,240 @@
             <div class="user-info" id="userInfo"></div>
         </div>
 
-        <!-- Admin Layout -->
-        <div class="admin-layout">
-            <!-- Sidebar -->
-            <div class="admin-sidebar">
-                <div class="sidebar-title">Navigation</div>
-                <div class="admin-menu">
-                    <button class="admin-menu-item active" data-section="dashboard">
-                        📊 Dashboard
-                    </button>
-                    <button class="admin-menu-item" data-section="tradeControl">
-                        🎮 Trade Control
-                    </button>
-                    <button class="admin-menu-item" data-section="perCoin">
-                        💰 Per-Coin Control
-                    </button>
-                    <button class="admin-menu-item" data-section="users">
-                        👥 All Users
-                    </button>
-                    <button class="admin-menu-item" data-section="withdrawals">
-                        💸 Withdrawal Addresses
-                    </button>
-                    <button class="admin-menu-item" data-section="pendingKYC">
-                        ✓ Pending KYC
-                    </button>
-                    <button class="admin-menu-item" data-section="pendingDeposits">
-                        💰 Pending Deposits
-                    </button>
-                    <button class="admin-menu-item" data-section="pendingWithdrawals">
-                        📤 Pending Withdrawals
-                    </button>
-                    <button class="admin-menu-item" data-section="recentTrades">
-                        📈 Recent Trades
-                    </button>
-                    <button class="admin-menu-item" data-section="walletSettings">
-                        ⚙️ Wallet Settings
-                    </button>
+        <!-- Admin Tabs (Top Navigation Menu) -->
+        <div class="admin-tabs" id="adminTabs">
+            <button class="admin-tab active" data-section="dashboard">📊 Dashboard</button>
+            <button class="admin-tab" data-section="global">🎮 Global Trade Control</button>
+            <button class="admin-tab" data-section="perCoin">💰 Per-Coin Control</button>
+            <button class="admin-tab" data-section="users">👥 All Users</button>
+            <button class="admin-tab" data-section="withdrawals">💸 Withdrawal Addresses</button>
+            <button class="admin-tab" data-section="pendingKYC">✓ Pending KYC</button>
+            <button class="admin-tab" data-section="pendingDeposits">💰 Pending Deposits</button>
+            <button class="admin-tab" data-section="pendingWithdrawals">📤 Pending Withdrawals</button>
+            <button class="admin-tab" data-section="recentTrades">📈 Recent Trades</button>
+            <button class="admin-tab" data-section="wallet">⚙️ Wallet Settings</button>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboardSection" class="admin-section">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalUsers">0</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalTrades">0</div>
+                    <div class="stat-label">Total Trades</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="pendingKYC">0</div>
+                    <div class="stat-label">Pending KYC</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="pendingDeposits">0</div>
+                    <div class="stat-label">Pending Deposits</div>
                 </div>
             </div>
 
-            <!-- Main Content -->
-            <div class="admin-content">
-                <!-- Dashboard Section -->
-                <div id="dashboardSection" class="admin-section">
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-value" id="totalUsers">0</div>
-                            <div class="stat-label">Total Users</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="totalTrades">0</div>
-                            <div class="stat-label">Total Trades</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="pendingKYC">0</div>
-                            <div class="stat-label">Pending KYC</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="pendingDeposits">0</div>
-                            <div class="stat-label">Pending Deposits</div>
-                        </div>
-                    </div>
-
-                    <!-- Global Trade Control -->
-                    <div class="global-control">
-                        <div class="global-title">GLOBAL TRADE OUTCOME CONTROL</div>
-                        <div class="global-subtitle">This setting affects ALL new trades across all coins</div>
-                        <div class="toggle-buttons">
-                            <button class="toggle-btn lose" id="globalLoseBtn" onclick="setGlobalMode('LOSE')">LOSE</button>
-                            <button class="toggle-btn win" id="globalWinBtn" onclick="setGlobalMode('WIN')">WIN</button>
-                        </div>
-                        <div class="database-value" id="globalModeDisplay">GLOBAL MODE: WIN (Users will profit on all trades)</div>
-                    </div>
+            <div class="global-control">
+                <div class="global-title">GLOBAL TRADE OUTCOME CONTROL</div>
+                <div class="global-subtitle">This setting affects ALL new trades across all coins</div>
+                <div class="toggle-buttons">
+                    <button class="toggle-btn lose" id="globalLoseBtn" onclick="setGlobalMode('LOSE')">LOSE</button>
+                    <button class="toggle-btn win" id="globalWinBtn" onclick="setGlobalMode('WIN')">WIN</button>
                 </div>
+                <div class="database-value" id="globalModeDisplay">GLOBAL MODE: WIN</div>
+            </div>
+        </div>
 
-                <!-- Trade Control Section -->
-                <div id="tradeControlSection" class="admin-section" style="display: none;">
-                    <div class="section-header">
-                        <h2>Trade Control Settings</h2>
-                    </div>
-                    <div class="global-control">
-                        <div class="global-title">GLOBAL TRADE OUTCOME CONTROL</div>
-                        <div class="global-subtitle">This setting affects ALL new trades across all coins</div>
-                        <div class="toggle-buttons">
-                            <button class="toggle-btn lose" id="globalLoseBtn2" onclick="setGlobalMode('LOSE')">LOSE</button>
-                            <button class="toggle-btn win" id="globalWinBtn2" onclick="setGlobalMode('WIN')">WIN</button>
-                        </div>
-                        <div class="database-value" id="globalModeDisplay2">GLOBAL MODE: WIN</div>
-                    </div>
+        <!-- Global Trade Control Section -->
+        <div id="globalSection" class="admin-section" style="display: none;">
+            <div class="global-control">
+                <div class="global-title">GLOBAL TRADE OUTCOME CONTROL</div>
+                <div class="global-subtitle">This setting affects ALL new trades across all coins</div>
+                <div class="toggle-buttons">
+                    <button class="toggle-btn lose" id="globalLoseBtn2" onclick="setGlobalMode('LOSE')">LOSE</button>
+                    <button class="toggle-btn win" id="globalWinBtn2" onclick="setGlobalMode('WIN')">WIN</button>
                 </div>
+                <div class="database-value" id="globalModeDisplay2">GLOBAL MODE: WIN</div>
+            </div>
+        </div>
 
-                <!-- Per-Coin Control Section -->
-                <div id="perCoinSection" class="admin-section" style="display: none;">
-                    <div class="section-header">
-                        <h2>PER-COIN TRADE CONTROL</h2>
-                        <div class="global-subtitle">Override global setting for specific cryptocurrencies</div>
-                    </div>
-                    <div class="coins-grid" id="coinsGrid">
-                        <!-- Coins will be populated by JavaScript -->
-                    </div>
-                </div>
+        <!-- Per-Coin Control Section -->
+        <div id="perCoinSection" class="admin-section" style="display: none;">
+            <div class="section-header">
+                <h2>PER-COIN TRADE CONTROL</h2>
+                <div class="global-subtitle">Override global setting for specific cryptocurrencies</div>
+            </div>
+            <div class="coins-grid" id="coinsGrid">
+                <!-- Coins will be populated by JavaScript -->
+            </div>
+        </div>
 
-                <!-- All Users Section -->
-                <div id="usersSection" class="admin-section" style="display: none;">
-                    <div class="section-header">
-                        <h2>All Users</h2>
-                    </div>
-                    <div class="users-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Email</th>
-                                    <th>Full Name</th>
-                                    <th>Balance</th>
-                                    <th>KYC Status</th>
-                                    <th>Joined</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="usersTableBody">
-                                <td><td colspan="6" class="empty-state">No users found</td--</tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <!-- All Users Section -->
+        <div id="usersSection" class="admin-section" style="display: none;">
+            <div class="section-header">
+                <h2>All Users</h2>
+            </div>
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Full Name</th>
+                            <th>Balance</th>
+                            <th>KYC Status</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr><td colspan="6" class="empty-state">No users found</td--</tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                <!-- Withdrawal Addresses Section -->
-                <div id="withdrawalsSection" class="admin-section" style="display: none;">
-                    <div class="section-header">
-                        <h2>All Withdrawal Addresses</h2>
-                        <div class="global-subtitle">⚠️ Manage all saved withdrawal addresses. Blacklisted addresses cannot be used for withdrawals.</div>
-                    </div>
-                    <div class="withdrawals-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>User</th>
-                                    <th>Address</th>
-                                    <th>Label</th>
-                                    <th>Currency</th>
-                                    <th>Status</th>
-                                    <th>Date Added</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="withdrawalsTableBody">
-                                <tr><td colspan="7" class="empty-state">No saved addresses found. Addresses will appear when users request withdrawals.</td--</tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <!-- Withdrawal Addresses Section -->
+        <div id="withdrawalsSection" class="admin-section" style="display: none;">
+            <div class="section-header">
+                <h2>All Withdrawal Addresses</h2>
+                <div class="global-subtitle">⚠️ Manage all saved withdrawal addresses.</div>
+            </div>
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Address</th>
+                            <th>Currency</th>
+                            <th>Status</th>
+                            <th>Date Added</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="withdrawalsTableBody">
+                        <tr><td colspan="6" class="empty-state">No saved addresses found</td--</tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                <!-- Pending KYC Section -->
-                <div id="pendingKYCSection" class="admin-section" style="display: none;">
-                    <div class="section-header">
-                        <h2>Pending KYC Verification Requests</h2>
-                    </div>
-                    <div class="users-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>User</th>
-                                    <th>Full Name</th>
-                                    <th>ID Type</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="kycTableBody">
-                                <tr><td colspan="5" class="empty-state">No pending KYC requests</td--</tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <!-- Pending KYC Section -->
+        <div id="pendingKYCSection" class="admin-section" style="display: none;">
+            <div class="section-header">
+                <h2>Pending KYC Verification Requests</h2>
+            </div>
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>User</th>
+                            <th>Full Name</th>
+                            <th>ID Type</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kycTableBody">
+                        <tr><td colspan="5" class="empty-state">No pending KYC requests</td--</tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                <!-- Pending Deposits Section -->
-                <div id="pendingDepositsSection" class="admin-section" style="display: none;">
-                    <div class="section-header">
-                        <h2>Pending Deposits</h2>
-                    </div>
-                    <div class="users-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>User</th>
-                                    <th>Amount</th>
-                                    <th>Currency</th>
-                                    <th>Proof</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="depositsTableBody">
-                                <tr><td colspan="6" class="empty-state">No pending deposits</td--</tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <!-- Pending Deposits Section -->
+        <div id="pendingDepositsSection" class="admin-section" style="display: none;">
+            <div class="section-header">
+                <h2>Pending Deposits</h2>
+            </div>
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>User</th>
+                            <th>Amount</th>
+                            <th>Currency</th>
+                            <th>Proof</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="depositsTableBody">
+                        <tr><td colspan="6" class="empty-state">No pending deposits</td--</tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                <!-- Pending Withdrawals Section -->
-                <div id="pendingWithdrawalsSection" class="admin-section" style="display: none;">
-                    <div class="section-header">
-                        <h2>Pending Withdrawals</h2>
-                    </div>
-                    <div class="users-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>User</th>
-                                    <th>Amount</th>
-                                    <th>Currency</th>
-                                    <th>Wallet Address</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pendingWithdrawalsTableBody">
-                                <tr><td colspan="6" class="empty-state">No pending withdrawals</td--</tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <!-- Pending Withdrawals Section -->
+        <div id="pendingWithdrawalsSection" class="admin-section" style="display: none;">
+            <div class="section-header">
+                <h2>Pending Withdrawals</h2>
+            </div>
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>User</th>
+                            <th>Amount</th>
+                            <th>Currency</th>
+                            <th>Wallet Address</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingWithdrawalsTableBody">
+                        <tr><td colspan="6" class="empty-state">No pending withdrawals</td--</tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                <!-- Recent Trades Section -->
-                <div id="recentTradesSection" class="admin-section" style="display: none;">
-                    <div class="section-header">
-                        <h2>Recent Trades (Auto-Settled)</h2>
-                    </div>
-                    <div class="trades-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>User</th>
-                                    <th>Coin</th>
-                                    <th>Amount</th>
-                                    <th>Outcome</th>
-                                    <th>Profit</th>
-                                    <th>Settled</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tradesTableBody">
-                                <tr><td colspan="6" class="empty-state">No trades found</td--</tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <!-- Recent Trades Section -->
+        <div id="recentTradesSection" class="admin-section" style="display: none;">
+            <div class="section-header">
+                <h2>Recent Trades (Auto-Settled)</h2>
+            </div>
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Coin</th>
+                            <th>Amount</th>
+                            <th>Outcome</th>
+                            <th>Profit</th>
+                            <th>Settled</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tradesTableBody">
+                        <tr><td colspan="6" class="empty-state">No trades found</td--</tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                <!-- Wallet Settings Section -->
-                <div id="walletSettingsSection" class="admin-section" style="display: none;">
-                    <div class="section-header">
-                        <h2>Wallet Settings</h2>
-                    </div>
-                    <div class="global-control">
-                        <div class="global-title">Cryptocurrency Wallet Addresses</div>
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label style="display: block; font-size: 0.75rem; margin-bottom: 0.25rem;">Ethereum (ETH) Address</label>
-                            <input type="text" id="adminEthAddress" style="width: 100%; padding: 10px; background: var(--darker-bg); border: 1px solid var(--border); border-radius: 8px; color: white;">
-                        </div>
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label style="display: block; font-size: 0.75rem; margin-bottom: 0.25rem;">Bitcoin (BTC) Address</label>
-                            <input type="text" id="adminBtcAddress" style="width: 100%; padding: 10px; background: var(--darker-bg); border: 1px solid var(--border); border-radius: 8px; color: white;">
-                        </div>
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label style="display: block; font-size: 0.75rem; margin-bottom: 0.25rem;">Tether (USDT) Address</label>
-                            <input type="text" id="adminUsdtAddress" style="width: 100%; padding: 10px; background: var(--darker-bg); border: 1px solid var(--border); border-radius: 8px; color: white;">
-                        </div>
-                        <button class="toggle-btn win" onclick="saveWalletSettings()" style="width: auto; padding: 10px 20px;">Save Addresses</button>
-                    </div>
+        <!-- Wallet Settings Section -->
+        <div id="walletSection" class="admin-section" style="display: none;">
+            <div class="section-header">
+                <h2>Wallet Settings</h2>
+            </div>
+            <div class="global-control">
+                <div class="global-title">Cryptocurrency Wallet Addresses</div>
+                <div class="form-group">
+                    <label>Ethereum (ETH) Address</label>
+                    <input type="text" id="adminEthAddress" placeholder="0x...">
                 </div>
+                <div class="form-group">
+                    <label>Bitcoin (BTC) Address</label>
+                    <input type="text" id="adminBtcAddress" placeholder="bc1...">
+                </div>
+                <div class="form-group">
+                    <label>Tether (USDT) Address</label>
+                    <input type="text" id="adminUsdtAddress" placeholder="0x...">
+                </div>
+                <button class="toggle-btn win" onclick="saveWalletSettings()" style="width: auto; padding: 10px 20px;">Save Addresses</button>
             </div>
         </div>
     </div>
