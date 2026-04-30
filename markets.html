@@ -116,6 +116,61 @@
             text-decoration: underline;
         }
 
+        /* Auth Buttons */
+        .auth-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .login-btn {
+            background: transparent;
+            color: var(--primary);
+            padding: 8px 20px;
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .login-btn:hover {
+            background: rgba(247, 147, 26, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .signup-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .signup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
+        }
+
+        /* Admin Badge */
+        .admin-badge {
+            background: linear-gradient(135deg, var(--danger), #ff6b6b);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
         /* Markets Header */
         .markets-header {
             margin-bottom: 2rem;
@@ -414,11 +469,10 @@
                 </svg>
                 <span>Pocket<span style="color: var(--primary);">Trading</span></span>
             </div>
-            <div class="nav-links">
+            <div class="nav-links" id="navLinks">
                 <a href="home.html" class="nav-link">Home</a>
                 <a href="markets.html" class="nav-link" style="color: var(--primary);">Markets</a>
                 <a href="trade.html" class="nav-link">Trades</a>
-                <a href="profile.html" class="nav-link">My Profile</a>
             </div>
             <div class="user-info" id="userInfo"></div>
         </div>
@@ -433,7 +487,7 @@
         <div class="stats-cards">
             <div class="stat-card">
                 <div class="stat-label">TOTAL MARKET CAP</div>
-                <div class="stat-value" id="totalMarketCap">$2.72T</div>
+                <div class="stat-value" id="totalMarketCap">$2.54T</div>
                 <div class="stat-change" id="marketCapChange">-0.5%</div>
             </div>
             <div class="stat-card">
@@ -448,7 +502,7 @@
             </div>
             <div class="stat-card">
                 <div class="stat-label">ACTIVE COINS</div>
-                <div class="stat-value" id="activeCoins">100</div>
+                <div class="stat-value" id="activeCoins">18</div>
                 <div class="stat-change">+2 this week</div>
             </div>
         </div>
@@ -481,13 +535,14 @@
                 </thead>
                 <tbody id="marketTableBody">
                     <tr>
-                        <td colspan="5" class="loading-state">Loading market data...</td--<tr>
+                        <td colspan="5" class="loading-state">Loading market data...</td--</td>
                     </tbody>
                 </tbody>
             </table>
         </div>
     </div>
 
+    <script src="js/supabase.js"></script>
     <script src="js/markets.js"></script>
 </body>
 </html>
