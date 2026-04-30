@@ -1,5 +1,6 @@
-// Register page functionality - Supabase Cloud Database
+// Register page functionality - Optimized for Guest, Registered, and Admin Users
 // File: js/register.js
+// Admin email: ephremgojo@gmail.com
 
 class RegisterManager {
     constructor() {
@@ -7,15 +8,30 @@ class RegisterManager {
     }
 
     init() {
+        // Wait for supabaseDB
+        if (typeof supabaseDB === 'undefined') {
+            console.log('Waiting for Supabase...');
+            setTimeout(() => this.init(), 500);
+            return;
+        }
+        
         this.setupEventListeners();
         this.setupPasswordStrength();
         this.checkAlreadyLoggedIn();
     }
 
-    checkAlreadyLoggedIn() {
+    async checkAlreadyLoggedIn() {
         const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
         if (storedUser) {
-            window.location.href = 'home.html';
+            const user = JSON.parse(storedUser);
+            
+            // Verify user still exists in cloud
+            const cloudUser = await supabaseDB.getUserByEmail(user.email);
+            if (cloudUser) {
+                // User is already logged in, redirect to home
+                console.log('User already logged in, redirecting to home...');
+                window.location.href = 'home.html';
+            }
         }
     }
 
@@ -127,12 +143,6 @@ class RegisterManager {
         }
 
         try {
-            // Check if supabaseDB is available
-            if (typeof supabaseDB === 'undefined') {
-                this.showNotification('Database connection error. Please refresh and try again.', 'error');
-                return;
-            }
-
             // Check if user already exists in Supabase
             const existingUsers = await supabaseDB.get('users', { email: email });
             
@@ -145,7 +155,7 @@ class RegisterManager {
                 word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
             ).join(' ');
 
-            // Check if this is the admin email
+            // Check if this is the admin email (ephremgojo@gmail.com)
             const isAdmin = (email === 'ephremgojo@gmail.com');
 
             const newUser = {
@@ -167,12 +177,18 @@ class RegisterManager {
             
             console.log('User registered successfully:', newUser);
 
-            this.showNotification(`Welcome ${formattedName}! Your account has been created successfully.`, 'success');
+            // Show different welcome message for admin
+            if (isAdmin) {
+                this.showNotification(`Welcome Admin ${formattedName}! Your admin account has been created.`, 'success');
+            } else {
+                this.showNotification(`Welcome ${formattedName}! Your account has been created successfully.`, 'success');
+            }
 
             // Auto login after registration
             sessionStorage.setItem('pocket_user', JSON.stringify(newUser));
             localStorage.removeItem('pocket_user');
 
+            // Redirect to home page after 2 seconds
             setTimeout(() => {
                 window.location.href = 'home.html';
             }, 2000);
@@ -202,16 +218,5 @@ class RegisterManager {
     }
 }
 
-// Wait for supabaseDB to be ready
-function waitForSupabase() {
-    if (typeof supabaseDB !== 'undefined' && supabaseDB) {
-        console.log('Supabase ready, initializing register manager...');
-        new RegisterManager();
-    } else {
-        console.log('Waiting for Supabase...');
-        setTimeout(waitForSupabase, 100);
-    }
-}
-
-// Start the registration manager
-waitForSupabase();
+// Initialize register page
+const registerManager = new RegisterManager();
