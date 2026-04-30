@@ -52,6 +52,7 @@ class AuthManager {
             const cloudUser = await supabaseDB.getUserByEmail(parsedUser.email);
             if (cloudUser) {
                 this.currentUser = cloudUser;
+                // Set admin flag based on email
                 this.currentUser.isAdmin = (this.currentUser.email === 'ephregojo@gmail.com');
                 
                 // Update session with latest data
@@ -197,7 +198,7 @@ class AuthManager {
                     last_login: new Date().toISOString()
                 });
                 
-                // Set admin flag
+                // Set admin flag based on email (ONLY ephregojo@gmail.com)
                 user.isAdmin = (user.email === 'ephregojo@gmail.com');
                 
                 if (rememberMe) {
@@ -240,7 +241,7 @@ class AuthManager {
                 word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
             ).join(' ');
             
-            // Check if this is the admin email
+            // Check if this is the admin email (ONLY ephregojo@gmail.com)
             const isAdmin = (email === 'ephregojo@gmail.com');
             
             const newUser = {
@@ -402,7 +403,7 @@ class AuthManager {
         // PROTECTED PAGES - Login required
         const protectedPages = ['dashboard.html', 'trade.html', 'profile.html', 'deposit.html', 'withdraw.html'];
         
-        // ADMIN PAGES - Admin only
+        // ADMIN PAGES - Admin only (ONLY ephregojo@gmail.com)
         const adminPages = ['admin.html'];
         
         const isPublicPage = publicPages.includes(currentPage);
@@ -422,7 +423,7 @@ class AuthManager {
             return;
         }
         
-        // Admin page access - only ephregojo@gmail.com
+        // Admin page access - ONLY ephregojo@gmail.com
         if (isAdminPage) {
             if (!this.currentUser) {
                 window.location.href = 'login.html';
