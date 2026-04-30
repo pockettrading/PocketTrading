@@ -27,7 +27,7 @@ class LoginManager {
             const cloudUser = await supabaseDB.getUserByEmail(user.email);
             if (cloudUser) {
                 // User is already logged in, redirect to home
-                console.log('User already logged in:', user.email);
+                console.log('User already logged in, redirecting to home...');
                 window.location.href = 'home.html';
             } else {
                 // Clear invalid session
@@ -60,6 +60,8 @@ class LoginManager {
         const password = document.getElementById('password').value;
         const rememberMe = document.getElementById('rememberMe').checked;
 
+        console.log('Attempting login for:', email);
+
         if (!email || !password) {
             this.showNotification('Please enter email and password', 'error');
             return;
@@ -68,33 +70,41 @@ class LoginManager {
         try {
             // Get user from Supabase
             const user = await supabaseDB.getUserByEmail(email);
+            console.log('User found:', user ? 'Yes' : 'No');
 
             if (user && user.password === password) {
+                console.log('Password matched! Logging in...');
+                
                 // Update last login
-                await supabaseDB.update('users', user.id, {
+                await supabaseDB.update('custom_users', user.id, {
                     last_login: new Date().toISOString()
                 });
+
+                // Set admin flag
+                user.isAdmin = (user.email === 'ephregojo@gmail.com');
 
                 // Store user session
                 if (rememberMe) {
                     localStorage.setItem('pocket_user', JSON.stringify(user));
                     sessionStorage.removeItem('pocket_user');
+                    console.log('Saved to localStorage (remember me)');
                 } else {
                     sessionStorage.setItem('pocket_user', JSON.stringify(user));
                     localStorage.removeItem('pocket_user');
+                    console.log('Saved to sessionStorage');
                 }
 
                 const displayName = user.name || user.email.split('@')[0];
-                const isAdmin = (user.email === 'ephremgojo@gmail.com');
+                const isAdmin = user.isAdmin;
                 
-                // Show different welcome message for admin
                 if (isAdmin) {
                     this.showNotification(`Welcome back, Admin ${displayName}!`, 'success');
                 } else {
                     this.showNotification(`Welcome back, ${displayName}!`, 'success');
                 }
 
-                // Redirect based on user type (admin gets admin panel option, but goes to home first)
+                // Redirect to home page
+                console.log('Redirecting to home.html...');
                 setTimeout(() => {
                     window.location.href = 'home.html';
                 }, 500);
