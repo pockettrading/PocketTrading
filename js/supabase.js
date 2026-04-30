@@ -1,8 +1,8 @@
 // Supabase Cloud Database Connection
 // File: js/supabase.js
 
-const SUPABASE_URL = 'https://vfgrehgegnjzfjzwxrkw.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmZ3JlaGdlZ25qemZqend4cmt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0ODkzMTEsImV4cCI6MjA5MzA2NTMxMX0.iQSRDrcyhz6hNQSMoDRdLVtpfBM1gqF5epbq_yf1Fsc';
+const SUPABASE_URL = 'https://nzjgknwwenrczxzrnhjr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56amdrbnd3ZW5yY3p4enJuaGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NzY5NjksImV4cCI6MjA5MzE1Mjk2OX0.3Fb_VO5kYYBQF0T_2G19fcvnk91l-DOQZA_SKG8Xuao';
 
 class SupabaseClient {
     constructor() {
@@ -130,7 +130,23 @@ class SupabaseClient {
         }
     }
 
-    // Get transactions by user
+    // Get global settings
+    async getGlobalSettings() {
+        const settings = await this.get('global_settings');
+        return settings.length > 0 ? settings[0] : null;
+    }
+
+    // Update global settings
+    async updateGlobalSettings(settings) {
+        const existing = await this.getGlobalSettings();
+        if (existing && existing.id) {
+            return await this.update('global_settings', existing.id, settings);
+        } else {
+            return await this.insert('global_settings', settings);
+        }
+    }
+
+    // Get user transactions
     async getUserTransactions(userId) {
         return await this.get('transactions', { user_id: userId });
     }
@@ -149,6 +165,18 @@ class SupabaseClient {
     async updateUserBalance(userId, newBalance) {
         return await this.update('users', userId, { balance: newBalance });
     }
+
+    // Check if table exists (for debugging)
+    async checkTable(tableName) {
+        try {
+            const result = await this.get(tableName, { limit: 1 });
+            console.log(`Table ${tableName} exists, has ${result.length} records`);
+            return true;
+        } catch (error) {
+            console.error(`Table ${tableName} error:`, error);
+            return false;
+        }
+    }
 }
 
 // Create global supabase instance
@@ -157,4 +185,4 @@ const supabaseDB = new SupabaseClient();
 // Make available globally
 window.supabaseDB = supabaseDB;
 
-console.log('Supabase client initialized');
+console.log('Supabase client initialized with URL:', SUPABASE_URL);
