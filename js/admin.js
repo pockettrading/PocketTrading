@@ -1,4 +1,4 @@
-// Admin Panel - Luno Style
+// Admin Panel - No Sidebar, Working Top Tabs
 // File: js/admin.js
 
 let adminUser = null;
@@ -52,7 +52,8 @@ async function checkAdminAccess() {
     renderUserInfo();
     await loadGlobalSettings();
     await loadDashboardData();
-    setupMenu();
+    setupTabs();
+    loadWalletSettings();
 }
 
 function renderUserInfo() {
@@ -63,6 +64,39 @@ function renderUserInfo() {
             <span class="logout-link" onclick="handleLogout()">Logout</span>
         `;
     }
+}
+
+function setupTabs() {
+    const tabs = document.querySelectorAll('.admin-tab');
+    const sections = ['dashboard', 'global', 'perCoin', 'users', 'withdrawals', 'pendingKYC', 'pendingDeposits', 'pendingWithdrawals', 'recentTrades', 'wallet'];
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Update active class on tabs
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // Hide all sections
+            sections.forEach(section => {
+                const elem = document.getElementById(`${section}Section`);
+                if (elem) elem.style.display = 'none';
+            });
+            
+            // Show selected section
+            const sectionName = tab.dataset.section;
+            const activeSection = document.getElementById(`${sectionName}Section`);
+            if (activeSection) activeSection.style.display = 'block';
+            
+            // Load data for specific sections
+            if (sectionName === 'perCoin') loadCoinsGrid();
+            if (sectionName === 'users') loadUsersTable();
+            if (sectionName === 'pendingKYC') loadPendingKYC();
+            if (sectionName === 'pendingDeposits') loadPendingDeposits();
+            if (sectionName === 'pendingWithdrawals') loadPendingWithdrawals();
+            if (sectionName === 'recentTrades') loadRecentTrades();
+            if (sectionName === 'withdrawals') loadWithdrawalAddresses();
+        });
+    });
 }
 
 async function loadGlobalSettings() {
@@ -90,17 +124,21 @@ function updateGlobalModeDisplay() {
     const winBtns = document.querySelectorAll('#globalWinBtn, #globalWinBtn2');
     
     displays.forEach(display => {
-        display.textContent = `GLOBAL MODE: ${globalTradeMode} (Users will ${globalTradeMode === 'WIN' ? 'profit on' : 'lose'} all trades)`;
+        if (display) display.textContent = `GLOBAL MODE: ${globalTradeMode} (Users will ${globalTradeMode === 'WIN' ? 'profit on' : 'lose'} all trades)`;
     });
     
     loseBtns.forEach(btn => {
-        if (globalTradeMode === 'LOSE') btn.classList.add('active');
-        else btn.classList.remove('active');
+        if (btn) {
+            if (globalTradeMode === 'LOSE') btn.classList.add('active');
+            else btn.classList.remove('active');
+        }
     });
     
     winBtns.forEach(btn => {
-        if (globalTradeMode === 'WIN') btn.classList.add('active');
-        else btn.classList.remove('active');
+        if (btn) {
+            if (globalTradeMode === 'WIN') btn.classList.add('active');
+            else btn.classList.remove('active');
+        }
     });
 }
 
@@ -131,11 +169,6 @@ async function loadDashboardData() {
         
         await loadUsersTable();
         await loadCoinsGrid();
-        await loadPendingKYC();
-        await loadPendingDeposits();
-        await loadPendingWithdrawals();
-        await loadRecentTrades();
-        await loadWithdrawalAddresses();
     } catch (error) {
         console.error('Error loading dashboard:', error);
     }
@@ -257,9 +290,7 @@ async function loadPendingDeposits() {
                 <td>${req.user_name || req.user_email}</td
                 <td>$${req.amount}</td
                 <td>${req.currency}</td
-                <td>
-                    <button class="btn-edit" onclick="viewProof('${req.screenshot}')">View</button>
-                </td
+                <td><button class="btn-edit" onclick="viewProof('${req.screenshot || ''}')">View</button></td
                 <td>
                     <button class="btn-edit" onclick="approveDeposit(${req.id}, ${req.user_id}, ${req.amount})">Approve</button>
                     <button class="btn-edit" onclick="rejectDeposit(${req.id})">Reject</button>
@@ -280,7 +311,7 @@ async function loadPendingWithdrawals() {
         const pending = requests?.filter(r => r.status === 'pending') || [];
         
         if (pending.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No pending withdrawals</td--<table>';
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No pending withdrawals</td--</tr>';
             return;
         }
         
@@ -315,15 +346,17 @@ async function loadRecentTrades() {
             return;
         }
         
+        const users = await supabaseDB.getAllUsers();
+        const userMap = {};
+        if (users) users.forEach(u => { userMap[u.id] = u.name || u.email; });
+        
         tbody.innerHTML = recent.map(trade => {
-            const users = supabaseDB.getAllUsers();
-            const user = users.find(u => u.id === trade.user_id);
-            const outcome = trade.pnl > 0 ? 'WON' : 'LOST';
-            const profitClass = trade.pnl > 0 ? 'won' : 'lost';
+            const outcome = trade.pnl > 0 ? 'WON' : (trade.pnl < 0 ? 'LOST' : 'PENDING');
+            const profitClass = trade.pnl > 0 ? 'won' : (trade.pnl < 0 ? 'lost' : '');
             
             return `
                 <tr>
-                    <td>${user?.email || trade.user_id}</td
+                    <td>${userMap[trade.user_id] || trade.user_id}</td
                     <td>${trade.crypto || 'BTC'}</td
                     <td>$${trade.amount?.toFixed(2)}</td
                     <td><span class="trade-outcome ${profitClass}">${outcome}</span></td
@@ -346,7 +379,7 @@ async function loadWithdrawalAddresses() {
         const addresses = requests?.filter(r => r.status === 'approved') || [];
         
         if (addresses.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No saved addresses found. Addresses will appear when users request withdrawals.</td--</tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No saved addresses found</td--</tr>';
             return;
         }
         
@@ -354,13 +387,10 @@ async function loadWithdrawalAddresses() {
             <tr>
                 <td>${req.user_name || req.user_email}</td
                 <td>${req.wallet_address?.substring(0, 30)}...</td
-                <td>${req.crypto} Withdrawal</td
                 <td>${req.crypto}</td
                 <td><span class="status-verified">Active</span></td
                 <td>${new Date(req.date).toLocaleDateString()}</td
-                <td>
-                    <button class="btn-edit" onclick="blacklistAddress('${req.wallet_address}')">Blacklist</button>
-                </td
+                <td><button class="btn-edit" onclick="blacklistAddress('${req.wallet_address}')">Blacklist</button></td
             </tr>
         `).join('');
     } catch (error) {
@@ -476,14 +506,14 @@ async function rejectWithdrawal(requestId, userId, amount) {
     }
 }
 
+function viewProof(screenshot) {
+    alert(`Proof of payment: ${screenshot}\n\n(Image would be displayed here in production)`);
+}
+
 function blacklistAddress(address) {
     if (confirm(`Blacklist address: ${address}?`)) {
         showNotification('Address blacklisted!', 'success');
     }
-}
-
-function viewProof(screenshot) {
-    alert(`Proof of payment: ${screenshot}\n\n(Image would be displayed here in production)`);
 }
 
 async function loadWalletSettings() {
@@ -513,30 +543,6 @@ async function saveWalletSettings() {
     } catch (error) {
         showNotification('Error saving wallet settings', 'error');
     }
-}
-
-function setupMenu() {
-    const menuItems = document.querySelectorAll('.admin-menu-item');
-    const sections = ['dashboard', 'tradeControl', 'perCoin', 'users', 'withdrawals', 'pendingKYC', 'pendingDeposits', 'pendingWithdrawals', 'recentTrades', 'walletSettings'];
-    
-    menuItems.forEach(item => {
-        item.addEventListener('click', () => {
-            menuItems.forEach(mi => mi.classList.remove('active'));
-            item.classList.add('active');
-            
-            const section = item.dataset.section;
-            sections.forEach(s => {
-                const elem = document.getElementById(`${s}Section`);
-                if (elem) elem.style.display = 'none';
-            });
-            
-            const activeSection = document.getElementById(`${section}Section`);
-            if (activeSection) activeSection.style.display = 'block';
-            
-            if (section === 'perCoin') loadCoinsGrid();
-            if (section === 'walletSettings') loadWalletSettings();
-        });
-    });
 }
 
 function showNotification(message, type) {
