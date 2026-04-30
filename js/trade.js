@@ -1,4 +1,5 @@
-// Trade page functionality - No pre-selected duration, blank amount
+// Trade page functionality - Optimized for Guest, Registered, and Admin Users
+// File: js/trade.js
 
 let currentUser = null;
 let currentTradeType = 'buy';
@@ -9,6 +10,9 @@ let currentPrice = 0;
 let allCryptos = [];
 let cooldownActive = false;
 let cooldownTimer = null;
+
+// Admin email
+const ADMIN_EMAIL = 'ephremgojo@gmail.com';
 
 // Profit percentages based on duration
 const profitRates = {
@@ -32,27 +36,68 @@ const minAmounts = {
 const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
 
 // Initialize when page loads
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('Trade page loaded');
-    loadUser();
-    renderUserInfo();
+    
+    if (typeof supabaseDB === 'undefined') {
+        setTimeout(() => initTradePage(), 500);
+        return;
+    }
+    
+    await initTradePage();
+});
+
+async function initTradePage() {
+    await loadUser();
     renderNavLinks();
+    renderUserInfo();
     
     if (!currentUser) {
         renderLoginPrompt();
     } else {
-        loadCryptos();
+        await loadCryptos();
     }
-});
+}
 
-function loadUser() {
-    const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
-    if (storedUser) {
-        currentUser = JSON.parse(storedUser);
-        console.log('User logged in:', currentUser.email);
-    } else {
+async function loadUser() {
+    try {
+        const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
+        if (storedUser) {
+            currentUser = JSON.parse(storedUser);
+            
+            // Verify user still exists in cloud
+            const cloudUser = await supabaseDB.getUserByEmail(currentUser.email);
+            if (cloudUser) {
+                currentUser = cloudUser;
+                currentUser.isAdmin = (currentUser.email === ADMIN_EMAIL);
+                
+                // Update session
+                if (localStorage.getItem('pocket_user')) {
+                    localStorage.setItem('pocket_user', JSON.stringify(currentUser));
+                }
+                if (sessionStorage.getItem('pocket_user')) {
+                    sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
+                }
+            } else {
+                currentUser = null;
+            }
+            console.log('User loaded:', currentUser?.email, 'Is Admin:', currentUser?.isAdmin);
+        } else {
+            console.log('Guest mode - no user logged in');
+            currentUser = null;
+        }
+    } catch(e) {
+        console.log('Error loading user:', e);
         currentUser = null;
     }
+}
+
+function renderNavLinks() {
+    const navLinks = document.getElementById('navLinks');
+    if (!navLinks) return;
+    
+    // Keep only Home, Markets, Trades (no My Profile on trade page)
+    // This is intentional - trade page is for trading only
 }
 
 function renderUserInfo() {
@@ -61,28 +106,20 @@ function renderUserInfo() {
     
     if (currentUser) {
         const displayName = currentUser.name || currentUser.email.split('@')[0];
+        const adminBadge = currentUser.isAdmin ? '<span class="admin-badge">Admin</span>' : '';
+        
         userInfo.innerHTML = `
-            <span class="username">${displayName}</span>
+            <span class="username">${displayName}${adminBadge}</span>
+            ${currentUser.isAdmin ? '<a href="admin.html" class="login-btn" style="margin-left: 0.5rem;">Admin Panel</a>' : ''}
             <span class="logout-link" onclick="handleLogout()">Logout</span>
         `;
     } else {
-        userInfo.innerHTML = '';
-    }
-}
-
-function renderNavLinks() {
-    const navLinks = document.querySelector('.nav-links');
-    if (!navLinks) return;
-    
-    // Check if My Profile link already exists
-    const hasProfileLink = Array.from(navLinks.children).some(link => link.textContent === 'My Profile');
-    
-    if (currentUser && !hasProfileLink) {
-        const profileLink = document.createElement('a');
-        profileLink.href = 'profile.html';
-        profileLink.className = 'nav-link';
-        profileLink.textContent = 'My Profile';
-        navLinks.appendChild(profileLink);
+        userInfo.innerHTML = `
+            <div class="auth-buttons">
+                <a href="login.html" class="login-btn">Login</a>
+                <a href="register.html" class="signup-btn">Sign Up</a>
+            </div>
+        `;
     }
 }
 
@@ -95,8 +132,8 @@ function renderLoginPrompt() {
             <h3>🔒 Login Required</h3>
             <p>Please login or create an account to start trading</p>
             <div class="login-buttons">
-                <a href="login.html" class="btn-login">Login</a>
-                <a href="register.html" class="btn-signup">Sign Up</a>
+                <a href="login.html" class="btn-login" style="background: transparent; color: var(--primary); padding: 10px 28px; border: 1px solid var(--primary); border-radius: 10px; text-decoration: none; font-weight: 500;">Login</a>
+                <a href="register.html" class="btn-signup" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; padding: 10px 28px; border: none; border-radius: 10px; text-decoration: none; font-weight: 500;">Sign Up</a>
             </div>
         </div>
     `;
@@ -104,7 +141,7 @@ function renderLoginPrompt() {
 
 async function loadCryptos() {
     try {
-        const response = await fetch(`${COINGECKO_BASE_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false`);
+        const response = await fetch(`${COINGECKO_BASE_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false`);
         const data = await response.json();
         
         allCryptos = data.map(coin => ({
@@ -118,9 +155,10 @@ async function loadCryptos() {
         const defaultCrypto = allCryptos.find(c => c.symbol === 'BTC') || allCryptos[0];
         currentCrypto = defaultCrypto;
         
-        await initTradePage();
+        await initTradeInterface();
     } catch (error) {
         console.error('Error loading cryptos:', error);
+        // Fallback cryptos
         allCryptos = [
             { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', icon: '₿', current_price: 65000 },
             { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', current_price: 3200 },
@@ -129,7 +167,7 @@ async function loadCryptos() {
             { id: 'solana', symbol: 'SOL', name: 'Solana', icon: 'S', current_price: 140 }
         ];
         currentCrypto = allCryptos[0];
-        await initTradePage();
+        await initTradeInterface();
     }
 }
 
@@ -149,7 +187,7 @@ function getIconForSymbol(symbol) {
     return icons[symbol] || '📈';
 }
 
-async function initTradePage() {
+async function initTradeInterface() {
     const container = document.getElementById('tradeContent');
     if (!container) return;
     
@@ -223,7 +261,7 @@ async function initTradePage() {
                     <span class="info-value positive" id="expectedReturn">0.00 USDT</span>
                 </div>
                 
-                <div id="errorMessage" class="error-message"></div>
+                <div id="errorMessage" class="error-message" style="color: var(--danger); font-size: 0.7rem; margin-top: 0.5rem;"></div>
                 
                 <button class="trade-btn buy" id="tradeBtn">BUY ${currentCrypto.symbol}</button>
                 <div id="cooldownMessage" class="cooldown-timer"></div>
@@ -232,9 +270,10 @@ async function initTradePage() {
     `;
     
     await fetchCurrentPrice();
-    setupTradeEventListeners();
+    setupEventListeners();
     startPriceUpdates();
     updateAvailableBalance();
+    updateMinAmountLabel();
 }
 
 async function fetchCurrentPrice() {
@@ -263,7 +302,7 @@ async function fetchCurrentPrice() {
     }
 }
 
-function setupTradeEventListeners() {
+function setupEventListeners() {
     // Order type tabs
     document.querySelectorAll('.order-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -285,7 +324,6 @@ function setupTradeEventListeners() {
     // Duration buttons
     document.querySelectorAll('.duration-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            // Remove active class from all duration buttons
             document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentDuration = parseInt(btn.dataset.duration);
@@ -437,7 +475,6 @@ function validateAmount() {
 function clearErrorMessage() {
     const errorMsg = document.getElementById('errorMessage');
     if (errorMsg && errorMsg.textContent.includes('⚠️')) {
-        // Only clear validation errors, not other messages
         if (errorMsg.textContent.includes('duration') || errorMsg.textContent.includes('amount') || errorMsg.textContent.includes('Minimum') || errorMsg.textContent.includes('Insufficient')) {
             errorMsg.textContent = '';
         }
@@ -496,6 +533,7 @@ function startCooldown() {
 
 function executeTrade() {
     if (!currentUser) {
+        alert('Please login to trade');
         window.location.href = 'login.html';
         return;
     }
@@ -531,8 +569,14 @@ function executeTrade() {
             return;
         }
         
+        // Get global trade mode from settings
+        const tradeOutcome = determineTradeOutcome(currentCrypto.symbol);
+        const profitMultiplier = tradeOutcome === 'WIN' ? (1 + profitRates[currentDuration] / 100) : (1 - profitRates[currentDuration] / 100);
+        const pnlAmount = tradeOutcome === 'WIN' ? amount * (profitRates[currentDuration] / 100) : -amount * (profitRates[currentDuration] / 100);
+        
         currentUser.balance -= amount;
         
+        // Add transaction record
         if (!currentUser.transactions) currentUser.transactions = [];
         currentUser.transactions.unshift({
             id: Date.now(),
@@ -544,16 +588,19 @@ function executeTrade() {
             price: currentPrice,
             duration: currentDuration,
             expectedReturn: amount * (1 + profitRates[currentDuration] / 100),
+            pnl: pnlAmount,
+            tradeOutcome: tradeOutcome,
             profitRate: profitRates[currentDuration],
             status: 'completed',
             date: new Date().toISOString()
         });
         
         saveUserData();
-        alert(`✅ Trade placed! Bought ${currentCrypto.symbol} with $${amount.toLocaleString()}. Duration: ${currentDuration}s. Expected return: +${profitRates[currentDuration]}%`);
+        
+        const outcomeMessage = tradeOutcome === 'WIN' ? `+${profitRates[currentDuration]}%` : `-${profitRates[currentDuration]}%`;
+        alert(`✅ Trade placed! Bought ${currentCrypto.symbol} with $${amount.toLocaleString()}. Duration: ${currentDuration}s. Outcome: ${outcomeMessage}`);
         
         startCooldown();
-        
         updateAvailableBalance();
         document.getElementById('amount').value = '';
         document.getElementById('expectedReturn').textContent = '0.00 USDT';
@@ -566,7 +613,25 @@ function executeTrade() {
     }
 }
 
-function saveUserData() {
+function determineTradeOutcome(cryptoSymbol) {
+    // Get global settings from localStorage (set by admin)
+    const globalSettings = JSON.parse(localStorage.getItem('global_settings') || '{}');
+    const globalMode = globalSettings.trade_mode || 'WIN';
+    const coinModes = globalSettings.coin_modes || {};
+    
+    // Check if this coin has a specific mode
+    if (coinModes[cryptoSymbol]) {
+        return coinModes[cryptoSymbol];
+    }
+    
+    return globalMode;
+}
+
+async function saveUserData() {
+    // Update in Supabase
+    await supabaseDB.updateUserBalance(currentUser.id, currentUser.balance);
+    
+    // Update in users array (for local consistency)
     const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
     const userIndex = users.findIndex(u => u.id === currentUser.id);
     if (userIndex !== -1) {
@@ -574,6 +639,7 @@ function saveUserData() {
         localStorage.setItem('pocket_users', JSON.stringify(users));
     }
     
+    // Update current session
     if (localStorage.getItem('pocket_user')) {
         localStorage.setItem('pocket_user', JSON.stringify(currentUser));
     }
@@ -596,4 +662,5 @@ function handleLogout() {
     window.location.href = 'home.html';
 }
 
+// Make functions global
 window.handleLogout = handleLogout;
