@@ -63,8 +63,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 async function initMarketsPage() {
     await loadUser();
-    renderNavLinks();
     renderUserInfo();
+    renderNavLinks();
     await loadMarketStats();
     await loadMarketData();
     setupEventListeners();
@@ -104,6 +104,30 @@ async function loadUser() {
     }
 }
 
+function renderUserInfo() {
+    const userInfoDiv = document.getElementById('userInfo');
+    if (!userInfoDiv) return;
+    
+    if (currentUser) {
+        const displayName = currentUser.name || currentUser.email.split('@')[0];
+        const adminBadge = currentUser.isAdmin ? '<span class="admin-badge">Admin</span>' : '';
+        const adminPanelBtn = currentUser.isAdmin ? '<a href="admin.html" class="admin-panel-btn">Admin Panel</a>' : '';
+        
+        userInfoDiv.innerHTML = `
+            <span class="username">${displayName}${adminBadge}</span>
+            ${adminPanelBtn}
+            <span class="logout-link" onclick="handleLogout()">Logout</span>
+        `;
+    } else {
+        userInfoDiv.innerHTML = `
+            <div class="auth-buttons">
+                <a href="login.html" class="login-btn">Login</a>
+                <a href="register.html" class="signup-btn">Sign Up</a>
+            </div>
+        `;
+    }
+}
+
 function renderNavLinks() {
     const navLinks = document.getElementById('navLinks');
     if (!navLinks) return;
@@ -119,36 +143,6 @@ function renderNavLinks() {
         profileLink.className = 'nav-link';
         profileLink.textContent = 'My Profile';
         navLinks.appendChild(profileLink);
-    }
-}
-
-function renderUserInfo() {
-    const userInfo = document.getElementById('userInfo');
-    if (!userInfo) return;
-    
-    if (currentUser) {
-        // Registered or Admin User - Show username and logout
-        const displayName = currentUser.name || currentUser.email.split('@')[0];
-        const adminBadge = currentUser.isAdmin ? '<span class="admin-badge">Admin</span>' : '';
-        
-        let adminPanelButton = '';
-        if (currentUser.isAdmin) {
-            adminPanelButton = '<a href="admin.html" class="login-btn" style="margin-left: 0.5rem;">Admin Panel</a>';
-        }
-        
-        userInfo.innerHTML = `
-            <span class="username">${displayName}${adminBadge}</span>
-            ${adminPanelButton}
-            <span class="logout-link" onclick="handleLogout()">Logout</span>
-        `;
-    } else {
-        // Guest User - Show Login and Sign Up buttons
-        userInfo.innerHTML = `
-            <div class="auth-buttons">
-                <a href="login.html" class="login-btn">Login</a>
-                <a href="register.html" class="signup-btn">Sign Up</a>
-            </div>
-        `;
     }
 }
 
@@ -244,7 +238,7 @@ function renderMarketTable() {
     }
     
     if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="loading-state">No cryptocurrencies found</td--</td>';
+        tbody.innerHTML = '<tr><td colspan="5" class="loading-state">No cryptocurrencies found</td--</tr>';
         return;
     }
     
@@ -264,20 +258,20 @@ function renderMarketTable() {
                             <div class="crypto-symbol">${crypto.symbol}</div>
                         </div>
                     </div>
-                </td>
-                <td>$${formatPrice(crypto.price)}</td>
+                </td
+                <td>$${formatPrice(crypto.price)}</td
                 <td>
                     <span class="price-change ${changeClass}">
                         ${changeSign}${crypto.change.toFixed(2)}%
                     </span>
-                </td>
-                <td>${formatMarketCap(marketCap)}</td>
+                </td
+                <td>${formatMarketCap(marketCap)}</td
                 <td>
                     <button class="btn-tradingview" onclick="event.stopPropagation(); openTradingView('${crypto.symbol}')">
                         📊 TradingView
                     </button>
-                </td>
-            </tr>
+                </td
+            比
         `;
     }
     
@@ -308,7 +302,7 @@ function formatVolume(volume) {
 
 function renderFallbackData() {
     const fallbackData = [
-        { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 76295.52, change: -0.51, marketCap: 1516000000000 },
+        { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 76375.98, change: 0.73, marketCap: 763760000000 },
         { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2450.73, change: 1.20, marketCap: 294000000000 },
         { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 310.29, change: 0.89, marketCap: 51780000000 },
         { symbol: 'SOL', name: 'Solana', icon: 'S', price: 101.72, change: 2.10, marketCap: 44690000000 },
@@ -337,20 +331,20 @@ function renderFallbackData() {
                                 <div class="crypto-symbol">${crypto.symbol}</div>
                             </div>
                         </div>
-                    </td>
-                    <td>$${formatPrice(crypto.price)}</td>
+                    </td
+                    <td>$${formatPrice(crypto.price)}</td
                     <td>
                         <span class="price-change ${changeClass}">
                             ${changeSign}${crypto.change.toFixed(2)}%
                         </span>
-                    </td>
-                    <td>${formatMarketCap(crypto.marketCap)}</td>
+                    </td
+                    <td>${formatMarketCap(crypto.marketCap)}</td
                     <td>
                         <button class="btn-tradingview" onclick="event.stopPropagation(); openTradingView('${crypto.symbol}')">
                             📊 TradingView
                         </button>
-                    </td>
-                </tr>
+                    </td
+                比
             `;
         }
         tbody.innerHTML = html;
