@@ -171,6 +171,24 @@
             margin-left: 8px;
         }
 
+        /* Admin Panel Button */
+        .admin-panel-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            margin-left: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .admin-panel-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(247, 147, 26, 0.3);
+        }
+
         /* Markets Header */
         .markets-header {
             margin-bottom: 2rem;
@@ -474,7 +492,7 @@
                 <a href="markets.html" class="nav-link" style="color: var(--primary);">Markets</a>
                 <a href="trade.html" class="nav-link">Trades</a>
             </div>
-            <div class="user-info" id="userInfo"></div>
+            <div id="userInfo" class="user-info"></div>
         </div>
 
         <!-- Markets Header -->
@@ -487,22 +505,22 @@
         <div class="stats-cards">
             <div class="stat-card">
                 <div class="stat-label">TOTAL MARKET CAP</div>
-                <div class="stat-value" id="totalMarketCap">$2.54T</div>
-                <div class="stat-change" id="marketCapChange">-0.5%</div>
+                <div class="stat-value" id="totalMarketCap">$2.56T</div>
+                <div class="stat-change" id="marketCapChange">+0.0%</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">24H VOLUME</div>
-                <div class="stat-value" id="totalVolume">$68.27B</div>
-                <div class="stat-change positive" id="volumeChange">+0.6%</div>
+                <div class="stat-value" id="totalVolume">$6.34B</div>
+                <div class="stat-change positive" id="volumeChange">+1.0%</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">BTC DOMINANCE</div>
-                <div class="stat-value" id="btcDominance">58.2%</div>
+                <div class="stat-value" id="btcDominance">58.1%</div>
                 <div class="stat-change" id="dominanceChange">+0.0%</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">ACTIVE COINS</div>
-                <div class="stat-value" id="activeCoins">18</div>
+                <div class="stat-value" id="activeCoins">14</div>
                 <div class="stat-change">+2 this week</div>
             </div>
         </div>
