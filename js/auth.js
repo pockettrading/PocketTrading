@@ -1,6 +1,6 @@
 // Authentication and user management - Supabase Cloud Database
 // File: js/auth.js
-// Admin email: ephremgojo@gmail.com (ONLY)
+// Admin email: ephregojo@gmail.com (ONLY)
 
 class AuthManager {
     constructor() {
@@ -52,7 +52,7 @@ class AuthManager {
             const cloudUser = await supabaseDB.getUserByEmail(parsedUser.email);
             if (cloudUser) {
                 this.currentUser = cloudUser;
-                this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
+                this.currentUser.isAdmin = (this.currentUser.email === 'ephregojo@gmail.com');
                 
                 // Update session with latest data
                 if (localStorage.getItem('pocket_user')) {
@@ -193,12 +193,12 @@ class AuthManager {
             
             if (user && user.password === password) {
                 // Update last login
-                await supabaseDB.update('users', user.id, {
+                await supabaseDB.update('custom_users', user.id, {
                     last_login: new Date().toISOString()
                 });
                 
                 // Set admin flag
-                user.isAdmin = (user.email === 'ephremgojo@gmail.com');
+                user.isAdmin = (user.email === 'ephregojo@gmail.com');
                 
                 if (rememberMe) {
                     localStorage.setItem('pocket_user', JSON.stringify(user));
@@ -241,7 +241,7 @@ class AuthManager {
             ).join(' ');
             
             // Check if this is the admin email
-            const isAdmin = (email === 'ephremgojo@gmail.com');
+            const isAdmin = (email === 'ephregojo@gmail.com');
             
             const newUser = {
                 id: Date.now(),
@@ -257,7 +257,7 @@ class AuthManager {
                 is_admin: isAdmin
             };
             
-            await supabaseDB.insert('users', newUser);
+            await supabaseDB.insert('custom_users', newUser);
             
             const welcomeMessage = isAdmin 
                 ? `Welcome Admin ${formattedName}! Your admin account has been created successfully.` 
@@ -422,13 +422,13 @@ class AuthManager {
             return;
         }
         
-        // Admin page access - only ephremgojo@gmail.com
+        // Admin page access - only ephregojo@gmail.com
         if (isAdminPage) {
             if (!this.currentUser) {
                 window.location.href = 'login.html';
                 return;
             }
-            if (this.currentUser.email !== 'ephremgojo@gmail.com') {
+            if (this.currentUser.email !== 'ephregojo@gmail.com') {
                 alert('Access denied. Admin only.');
                 window.location.href = 'home.html';
                 return;
@@ -494,7 +494,7 @@ class AuthManager {
     }
 
     isAdmin() {
-        return this.currentUser !== null && this.currentUser.email === 'ephremgojo@gmail.com';
+        return this.currentUser !== null && this.currentUser.email === 'ephregojo@gmail.com';
     }
 
     getUser() {
