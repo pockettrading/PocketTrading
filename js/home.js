@@ -1,13 +1,15 @@
-// Home page functionality - Supabase Cloud Database
+// Home page functionality - Optimized for Guest, Registered, and Admin Users
 // File: js/home.js
 
 let currentUser = null;
+
+// Admin email (only this email has admin access)
+const ADMIN_EMAIL = 'ephremgojo@gmail.com';
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('Home page loaded');
     
-    // Wait for supabaseDB
     if (typeof supabaseDB === 'undefined') {
         setTimeout(() => initHomePage(), 500);
         return;
@@ -28,11 +30,14 @@ async function loadUser() {
         const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
         if (storedUser) {
             currentUser = JSON.parse(storedUser);
+            
             // Verify user still exists in cloud
             const cloudUser = await supabaseDB.getUserByEmail(currentUser.email);
             if (cloudUser) {
                 currentUser = cloudUser;
-                // Update session
+                currentUser.isAdmin = (currentUser.email === ADMIN_EMAIL);
+                
+                // Update session with latest data
                 if (localStorage.getItem('pocket_user')) {
                     localStorage.setItem('pocket_user', JSON.stringify(currentUser));
                 }
@@ -42,7 +47,7 @@ async function loadUser() {
             } else {
                 currentUser = null;
             }
-            console.log('User loaded:', currentUser?.email);
+            console.log('User loaded:', currentUser?.email, 'Is Admin:', currentUser?.isAdmin);
         } else {
             console.log('No user logged in - guest mode');
             currentUser = null;
@@ -57,13 +62,11 @@ function renderNavLinks() {
     const navLinks = document.getElementById('navLinks');
     if (!navLinks) return;
     
-    // Remove existing My Profile link if it exists
-    const existingProfileLink = Array.from(navLinks.children).find(link => link.textContent === 'My Profile');
-    if (existingProfileLink) {
-        existingProfileLink.remove();
-    }
+    // Clear existing dynamic links (keep Home, Markets, Trades)
+    const existingLinks = navLinks.querySelectorAll('.nav-link:not([href="home.html"]):not([href="markets.html"]):not([href="trade.html"])');
+    existingLinks.forEach(link => link.remove());
     
-    // Add My Profile link only if user is logged in
+    // Add My Profile link only for registered users (not guests)
     if (currentUser) {
         const profileLink = document.createElement('a');
         profileLink.href = 'profile.html';
@@ -78,12 +81,17 @@ function renderUserInfo() {
     if (!userInfo) return;
     
     if (currentUser) {
+        // Registered User - Show username and logout
         const displayName = currentUser.name || currentUser.email.split('@')[0];
+        const adminBadge = currentUser.isAdmin ? '<span class="admin-badge">Admin</span>' : '';
+        
         userInfo.innerHTML = `
-            <span class="username">${displayName}</span>
+            <span class="username">${displayName}${adminBadge}</span>
+            ${currentUser.isAdmin ? '<a href="admin.html" class="login-btn" style="margin-left: 0.5rem;">Admin Panel</a>' : ''}
             <span class="logout-link" onclick="handleLogout()">Logout</span>
         `;
     } else {
+        // Guest User - Show Login and Sign Up buttons
         userInfo.innerHTML = `
             <div class="auth-buttons">
                 <a href="login.html" class="login-btn">Login</a>
@@ -122,7 +130,7 @@ async function loadUserStats() {
         return;
     }
     
-    // Logged in user - show real stats
+    // Registered User - show real stats from database
     const currentBalance = currentUser.balance || 0;
     
     const balanceElem = document.getElementById('userBalance');
