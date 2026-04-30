@@ -3,9 +3,6 @@
 
 let currentUser = null;
 
-// Admin email (only this email has admin access)
-const ADMIN_EMAIL = 'ephremgojo@gmail.com';
-
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('Home page loaded');
@@ -35,7 +32,8 @@ async function loadUser() {
             const cloudUser = await supabaseDB.getUserByEmail(currentUser.email);
             if (cloudUser) {
                 currentUser = cloudUser;
-                currentUser.isAdmin = (currentUser.email === ADMIN_EMAIL);
+                // Set admin flag based on email
+                currentUser.isAdmin = (currentUser.email === 'ephregojo@gmail.com');
                 
                 // Update session with latest data
                 if (localStorage.getItem('pocket_user')) {
