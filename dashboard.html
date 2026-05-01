@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pocket Trading - Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Lightweight Charts -->
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.js"></script>
     <style>
         * {
             margin: 0;
@@ -41,7 +39,7 @@
         }
 
         .container {
-            max-width: 1600px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
         }
@@ -92,67 +90,116 @@
             color: var(--primary);
         }
 
-        /* User Dropdown */
-        .user-dropdown {
-            position: relative;
-            cursor: pointer;
-        }
-
-        .user-name-display {
+        /* User Info in Top Right */
+        .user-info {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background: var(--card-bg);
-            border-radius: 40px;
-            transition: all 0.3s;
+            gap: 1rem;
         }
 
-        .user-name-display:hover {
-            background: var(--card-hover);
-        }
-
-        .dropdown-menu {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0.5rem;
-            min-width: 160px;
-            display: none;
-            z-index: 100;
-            margin-top: 0.5rem;
-            box-shadow: var(--shadow);
-        }
-
-        .user-dropdown:hover .dropdown-menu {
-            display: block;
-        }
-
-        .dropdown-item {
-            padding: 10px 16px;
+        .username {
             color: var(--text-primary);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .logout-link {
+            color: var(--danger);
             text-decoration: none;
-            display: block;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
             transition: all 0.3s;
-            border-radius: 8px;
-            font-size: 0.85rem;
         }
 
-        .dropdown-item:hover {
-            background: var(--card-hover);
+        .logout-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Auth Buttons */
+        .auth-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .login-btn {
+            background: transparent;
             color: var(--primary);
+            padding: 8px 20px;
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
         }
 
-        .dropdown-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 0.5rem 0;
+        .login-btn:hover {
+            background: rgba(247, 147, 26, 0.1);
+            transform: translateY(-2px);
         }
 
-        /* Stats Grid */
+        .signup-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .signup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
+        }
+
+        /* Admin Badge */
+        .admin-badge {
+            background: linear-gradient(135deg, var(--danger), #ff6b6b);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        /* Login Prompt */
+        .login-prompt {
+            text-align: center;
+            padding: 3rem;
+            background: var(--card-bg);
+            border-radius: 20px;
+            max-width: 500px;
+            margin: 2rem auto;
+        }
+
+        .login-prompt h3 {
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            font-weight: 500;
+        }
+
+        .login-prompt p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .login-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        /* Stats Cards */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -211,40 +258,6 @@
             color: var(--danger);
         }
 
-        /* Top Trading Section */
-        .top-trading {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .top-trading h3 {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-
-        .demo-account {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            background: var(--darker-bg);
-            border-radius: 12px;
-        }
-
-        .demo-label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .demo-balance {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
         /* Trading Section */
         .trading-section {
             display: grid;
@@ -265,8 +278,6 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            gap: 1rem;
         }
 
         .section-header h2 {
@@ -274,160 +285,37 @@
             font-weight: 600;
         }
 
-        /* Symbol Selector */
-        .symbol-selector {
-            display: flex;
-            gap: 0.5rem;
+        .timeframe-select {
             background: var(--darker-bg);
-            padding: 0.25rem;
-            border-radius: 12px;
-        }
-
-        .symbol-btn {
-            padding: 6px 16px;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        .symbol-btn:hover {
-            color: var(--primary);
-        }
-
-        .symbol-btn.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        /* Timeframe Selector */
-        .timeframe-selector {
-            display: flex;
-            gap: 0.25rem;
-            background: var(--darker-bg);
-            padding: 0.25rem;
-            border-radius: 12px;
-        }
-
-        .timeframe-btn {
+            border: 1px solid var(--border);
+            color: var(--text-primary);
             padding: 6px 12px;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.75rem;
-            font-weight: 500;
+            font-size: 0.8rem;
         }
 
-        .timeframe-btn:hover {
-            color: var(--primary);
+        .chart-placeholder {
+            min-height: 300px;
         }
 
-        .timeframe-btn.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        /* Chart Wrapper */
-        .chart-wrapper {
-            position: relative;
-            min-height: 450px;
-        }
-
-        #chart {
+        canvas {
+            max-height: 300px;
             width: 100%;
-            height: 450px;
-        }
-
-        /* Price Info */
-        .price-info {
-            display: flex;
-            align-items: baseline;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .current-price {
-            font-size: 1.8rem;
-            font-weight: 700;
-        }
-
-        .price-change {
-            font-size: 0.9rem;
-            padding: 4px 12px;
-            border-radius: 20px;
-        }
-
-        .price-change.positive {
-            background: rgba(0, 216, 151, 0.1);
-            color: var(--success);
-        }
-
-        .price-change.negative {
-            background: rgba(255, 71, 87, 0.1);
-            color: var(--danger);
-        }
-
-        /* Market Stats */
-        .market-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .market-stat {
-            text-align: center;
-        }
-
-        .market-stat-label {
-            font-size: 0.7rem;
-            color: var(--text-tertiary);
-            margin-bottom: 0.25rem;
-        }
-
-        .market-stat-value {
-            font-size: 0.85rem;
-            font-weight: 600;
         }
 
         /* Crypto List */
         .crypto-list {
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
-            max-height: 450px;
-            overflow-y: auto;
-        }
-
-        .crypto-list::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .crypto-list::-webkit-scrollbar-track {
-            background: var(--darker-bg);
-            border-radius: 4px;
-        }
-
-        .crypto-list::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 4px;
+            gap: 1rem;
         }
 
         .crypto-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem;
+            padding: 1rem;
             background: var(--darker-bg);
             border-radius: 12px;
             transition: all 0.3s;
@@ -446,16 +334,15 @@
         }
 
         .crypto-icon {
-            font-size: 1.2rem;
+            font-size: 1.5rem;
         }
 
         .crypto-symbol {
             font-weight: 600;
-            font-size: 0.85rem;
         }
 
         .crypto-name {
-            font-size: 0.65rem;
+            font-size: 0.7rem;
             color: var(--text-tertiary);
         }
 
@@ -465,11 +352,10 @@
 
         .crypto-price-value {
             font-weight: 600;
-            font-size: 0.85rem;
         }
 
         .crypto-change {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
         }
 
         .crypto-change.positive {
@@ -552,23 +438,6 @@
             color: var(--warning);
         }
 
-        .view-all {
-            color: var(--primary);
-            text-decoration: none;
-            font-size: 0.8rem;
-        }
-
-        .view-all:hover {
-            text-decoration: underline;
-        }
-
-        /* Loading State */
-        .loading-state {
-            text-align: center;
-            padding: 2rem;
-            color: var(--text-tertiary);
-        }
-
         @media (max-width: 968px) {
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -593,20 +462,14 @@
                 justify-content: center;
             }
             
-            .section-header {
-                flex-direction: column;
-                align-items: flex-start;
+            .user-info {
+                justify-content: center;
             }
         }
 
         @media (max-width: 480px) {
             .stats-grid {
                 grid-template-columns: 1fr;
-            }
-            
-            .market-stats {
-                grid-template-columns: 1fr;
-                gap: 0.5rem;
             }
         }
     </style>
@@ -623,158 +486,21 @@
                 </svg>
                 <span>Pocket<span style="color: var(--primary);">Trading</span></span>
             </div>
-            <div class="nav-links">
+            <div class="nav-links" id="navLinks">
                 <a href="home.html" class="nav-link">Home</a>
                 <a href="markets.html" class="nav-link">Markets</a>
                 <a href="trade.html" class="nav-link">Trades</a>
-                <a href="profile.html" class="nav-link">My Profile</a>
             </div>
-            <div id="userSection"></div>
+            <div class="user-info" id="userInfo"></div>
         </div>
 
-        <!-- Stats Cards -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-label">Total Balance</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-                    </svg>
-                </div>
-                <div class="stat-value" id="totalBalance">$0.00</div>
-                <div class="stat-change" id="balanceChange">0% from start</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-label">24h Volume</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9h-4m-7 9A9 9 0 013 12m9 9v-4M3 12a9 9 0 019-9m-9 9h4m7-9a9 9 0 00-9 9"/>
-                    </svg>
-                </div>
-                <div class="stat-value" id="dailyVolume">$0.00</div>
-                <div class="stat-change positive" id="volumeChange">+0%</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-label">Total Profit/Loss</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 17v2h6v-2M3 7v2h6V7M13 5v2h6V5M13 11v2h6v-2M13 17v2h6v-2"/>
-                    </svg>
-                </div>
-                <div class="stat-value" id="totalProfit">$0.00</div>
-                <div class="stat-change positive" id="profitChange">+0%</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-label">Active Trades</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 12h6M12 9v6M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-                    </svg>
-                </div>
-                <div class="stat-value" id="activeTrades">0</div>
-                <div class="stat-change">Currently open</div>
-            </div>
-        </div>
-
-        <!-- Top Trading Section -->
-        <div class="top-trading">
-            <h3>Top Trading</h3>
-            <div class="demo-account">
-                <span class="demo-label">Real Account</span>
-                <span class="demo-balance" id="demoBalance">$0.00</span>
-            </div>
-        </div>
-
-        <!-- Trading Chart Section -->
-        <div class="trading-section">
-            <div class="chart-container">
-                <div class="section-header">
-                    <h2 id="chartSymbol">BTC/USD</h2>
-                    <div class="symbol-selector">
-                        <button class="symbol-btn active" data-symbol="BTC">BTC</button>
-                        <button class="symbol-btn" data-symbol="ETH">ETH</button>
-                        <button class="symbol-btn" data-symbol="BNB">BNB</button>
-                        <button class="symbol-btn" data-symbol="SOL">SOL</button>
-                    </div>
-                </div>
-                
-                <!-- Price Info -->
-                <div class="price-info">
-                    <span class="current-price" id="currentPrice">$0.00</span>
-                    <span class="price-change" id="priceChange">0.00%</span>
-                </div>
-                
-                <!-- Market Stats -->
-                <div class="market-stats">
-                    <div class="market-stat">
-                        <div class="market-stat-label">24h High</div>
-                        <div class="market-stat-value" id="high24h">$0.00</div>
-                    </div>
-                    <div class="market-stat">
-                        <div class="market-stat-label">24h Low</div>
-                        <div class="market-stat-value" id="low24h">$0.00</div>
-                    </div>
-                    <div class="market-stat">
-                        <div class="market-stat-label">24h Volume</div>
-                        <div class="market-stat-value" id="volume24h">$0.00</div>
-                    </div>
-                </div>
-                
-                <!-- Timeframe Selector -->
-                <div class="section-header">
-                    <div class="timeframe-selector">
-                        <button class="timeframe-btn" data-interval="1m">1m</button>
-                        <button class="timeframe-btn" data-interval="5m">5m</button>
-                        <button class="timeframe-btn" data-interval="15m">15m</button>
-                        <button class="timeframe-btn active" data-interval="1h">1h</button>
-                        <button class="timeframe-btn" data-interval="4h">4h</button>
-                        <button class="timeframe-btn" data-interval="1d">1d</button>
-                        <button class="timeframe-btn" data-interval="1w">1w</button>
-                    </div>
-                </div>
-                
-                <!-- Chart -->
-                <div class="chart-wrapper">
-                    <div id="chart"></div>
-                </div>
-            </div>
-
-            <div class="market-data">
-                <div class="section-header">
-                    <h2>Top Cryptocurrencies</h2>
-                </div>
-                <div class="crypto-list" id="cryptoList">
-                    <div class="loading-state">Loading market data...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent Transactions -->
-        <div class="transactions-section">
-            <div class="section-header">
-                <h2>Recent Transactions</h2>
-                <a href="#" class="view-all">View All</a>
-            </div>
-            <div class="transactions-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody id="transactionsList">
-                        <tr>
-                            <td colspan="4" style="text-align: center; padding: 2rem;">No transactions yet</td--</tr>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <div id="dashboardContent">
+            <!-- Content will be populated by JavaScript based on login status -->
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/supabase.js"></script>
     <script src="js/dashboard.js"></script>
 </body>
 </html>
