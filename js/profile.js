@@ -4,7 +4,7 @@
 let currentUser = null;
 
 // Admin email
-const ADMIN_EMAIL = 'ephremgojo@gmail.com';
+const ADMIN_EMAIL = 'ephregojo@gmail.com';
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', async function() {
@@ -72,7 +72,18 @@ function renderNavLinks() {
     const navLinks = document.getElementById('navLinks');
     if (!navLinks) return;
     
-    // Profile page already has My Profile link active
+    // Clear existing dynamic links (keep Home, Markets, Trades)
+    const existingLinks = navLinks.querySelectorAll('.nav-link:not([href="home.html"]):not([href="markets.html"]):not([href="trade.html"])');
+    existingLinks.forEach(link => link.remove());
+    
+    // Add My Profile link only for registered users (already on profile page, but keep for consistency)
+    if (currentUser) {
+        const profileLink = document.createElement('a');
+        profileLink.href = 'profile.html';
+        profileLink.className = 'nav-link';
+        profileLink.textContent = 'My Profile';
+        navLinks.appendChild(profileLink);
+    }
 }
 
 function renderUserInfo() {
@@ -83,12 +94,18 @@ function renderUserInfo() {
         const displayName = currentUser.name || currentUser.email.split('@')[0];
         const adminBadge = currentUser.isAdmin ? '<span class="admin-badge">Admin</span>' : '';
         
+        let adminPanelButton = '';
+        if (currentUser.isAdmin) {
+            adminPanelButton = '<a href="admin.html" class="login-btn" style="margin-left: 0.5rem;">Admin Panel</a>';
+        }
+        
         userInfo.innerHTML = `
             <span class="username">${displayName}${adminBadge}</span>
-            ${currentUser.isAdmin ? '<a href="admin.html" class="login-btn" style="margin-left: 0.5rem;">Admin Panel</a>' : ''}
+            ${adminPanelButton}
             <span class="logout-link" onclick="handleLogout()">Logout</span>
         `;
     } else {
+        // Guest User - Show Login and Sign Up buttons
         userInfo.innerHTML = `
             <div class="auth-buttons">
                 <a href="login.html" class="login-btn">Login</a>
@@ -225,9 +242,9 @@ function renderProfileInterface() {
                             </thead>
                             <tbody id="tradeHistoryBody">
                                 <tr>
-                                    <td colspan="6" style="text-align: center; padding: 2rem;">No trades yet</td--</td>
+                                    <td colspan="6" style="text-align: center; padding: 2rem;">No trades yet</td--</tr>
                             </tbody>
-                        </td>
+                        </table>
                     </div>
                 </div>
 
@@ -425,12 +442,10 @@ async function loadTradingStats() {
         
         let winningTrades = 0;
         let totalVolume = 0;
-        let totalProfit = 0;
         
         trades.forEach(trade => {
             totalVolume += trade.amount || 0;
             if (trade.pnl && trade.pnl > 0) winningTrades++;
-            if (trade.pnl) totalProfit += trade.pnl;
         });
         
         const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100).toFixed(1) : 0;
@@ -439,12 +454,6 @@ async function loadTradingStats() {
         document.getElementById('winRate').textContent = `${winRate}%`;
         document.getElementById('totalVolume').textContent = `$${totalVolume.toFixed(2)}`;
         
-        const profitElem = document.getElementById('totalProfit');
-        if (profitElem) {
-            const sign = totalProfit >= 0 ? '+' : '';
-            profitElem.textContent = `${sign}$${Math.abs(totalProfit).toFixed(2)}`;
-            profitElem.className = `stat-value ${totalProfit >= 0 ? 'positive' : 'negative'}`;
-        }
     } catch (error) {
         console.error('Error loading trading stats:', error);
     }
@@ -559,7 +568,7 @@ async function updateProfile() {
     }
     
     if (newEmail && newEmail !== currentUser.email) {
-        const existingUsers = await supabaseDB.get('users', { email: newEmail });
+        const existingUsers = await supabaseDB.get('custom_users', { email: newEmail });
         if (existingUsers && existingUsers.length > 0) {
             showNotification('Email already exists', 'error');
             return;
@@ -587,7 +596,7 @@ async function updateProfile() {
         currentUser.password = newPassword;
     }
     
-    await supabaseDB.update('users', currentUser.id, {
+    await supabaseDB.update('custom_users', currentUser.id, {
         name: currentUser.name,
         email: currentUser.email,
         phone: currentUser.phone,
