@@ -1,756 +1,543 @@
-// Profile page functionality - Optimized for Guest, Registered, and Admin Users
+// Profile Page Controller - PocketTrading
 // File: js/profile.js
 
-let currentUser = null;
-
-// Admin email
-const ADMIN_EMAIL = 'ephregojo@gmail.com';
-
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('Profile page loaded');
-    
-    if (typeof supabaseDB === 'undefined') {
-        setTimeout(() => initProfilePage(), 500);
-        return;
+class ProfileManager {
+    constructor() {
+        this.currentUser = null;
+        this.userTrades = [];
+        this.activities = [];
+        this.kycStatus = 'pending';
+        this.selectedAvatar = '👤';
+        this.init();
     }
-    
-    await initProfilePage();
-});
 
-async function initProfilePage() {
-    await loadUser();
-    renderNavLinks();
-    renderUserInfo();
-    
-    if (!currentUser) {
-        renderLoginPrompt();
-    } else {
-        renderProfileInterface();
-        await loadUserProfile();
-        await loadTradingStats();
-        await loadTradeHistory();
-        setupMenuNavigation();
-        setupForms();
+    async init() {
+        if (typeof auth === 'undefined') {
+            setTimeout(() => this.init(), 100);
+            return;
+        }
+
+        this.currentUser = auth.getUser();
+        
+        if (!this.currentUser) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        await this.loadUserData();
+        await this.loadUserTrades();
+        await this.loadActivities();
+        this.setupUserInterface();
+        this.setupEventListeners();
+        this.loadSavedAvatar();
     }
-}
 
-async function loadUser() {
-    try {
-        const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
-        if (storedUser) {
-            currentUser = JSON.parse(storedUser);
-            
-            // Verify user still exists in cloud
-            const cloudUser = await supabaseDB.getUserByEmail(currentUser.email);
-            if (cloudUser) {
-                currentUser = cloudUser;
-                currentUser.isAdmin = (currentUser.email === ADMIN_EMAIL);
-                
-                // Update session
-                if (localStorage.getItem('pocket_user')) {
-                    localStorage.setItem('pocket_user', JSON.stringify(currentUser));
-                }
-                if (sessionStorage.getItem('pocket_user')) {
-                    sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
-                }
-            } else {
-                currentUser = null;
+    async loadUserData() {
+        try {
+            const userData = await supabaseDB.getUserByEmail(this.currentUser.email);
+            if (userData) {
+                this.currentUser = { ...this.currentUser, ...userData };
+                this.kycStatus = this.currentUser.kyc_status || 'pending';
             }
-            console.log('User loaded:', currentUser?.email, 'Is Admin:', currentUser?.isAdmin);
-        } else {
-            console.log('Guest mode - no user logged in');
-            currentUser = null;
+        } catch (error) {
+            console.error('Error loading user data:', error);
         }
-    } catch(e) {
-        console.log('Error loading user:', e);
-        currentUser = null;
     }
-}
 
-function renderNavLinks() {
-    const navLinks = document.getElementById('navLinks');
-    if (!navLinks) return;
-    
-    // Clear existing dynamic links (keep Home, Markets, Trades)
-    const existingLinks = navLinks.querySelectorAll('.nav-link:not([href="home.html"]):not([href="markets.html"]):not([href="trade.html"])');
-    existingLinks.forEach(link => link.remove());
-    
-    // Add My Profile link only for registered users (already on profile page, but keep for consistency)
-    if (currentUser) {
-        const profileLink = document.createElement('a');
-        profileLink.href = 'profile.html';
-        profileLink.className = 'nav-link';
-        profileLink.textContent = 'My Profile';
-        navLinks.appendChild(profileLink);
+    async loadUserTrades() {
+        try {
+            this.userTrades = await supabaseDB.getUserTrades(this.currentUser.id);
+        } catch (error) {
+            console.error('Error loading trades:', error);
+            this.userTrades = [];
+        }
     }
-}
 
-function renderUserInfo() {
-    const userInfo = document.getElementById('userInfo');
-    if (!userInfo) return;
-    
-    if (currentUser) {
-        const displayName = currentUser.name || currentUser.email.split('@')[0];
-        const adminBadge = currentUser.isAdmin ? '<span class="admin-badge">Admin</span>' : '';
+    async loadActivities() {
+        try {
+            // Load activities from Supabase
+            const activities = await supabaseDB.getUserActivities(this.currentUser.id);
+            if (activities && activities.length > 0) {
+                this.activities = activities;
+            } else {
+                this.activities = this.getDemoActivities();
+            }
+            this.renderActivities();
+        } catch (error) {
+            console.error('Error loading activities:', error);
+            this.activities = this.getDemoActivities();
+            this.renderActivities();
+        }
+    }
+
+    getDemoActivities() {
+        const now = new Date();
+        return [
+            {
+                id: 1,
+                type: 'login',
+                title: 'Account Login',
+                description: 'You logged into your account',
+                date: now.toISOString(),
+                icon: '🔐'
+            },
+            {
+                id: 2,
+                type: 'trade',
+                title: 'Trade Opened',
+                description: 'Opened BTC/USD long position',
+                date: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+                icon: '📈'
+            },
+            {
+                id: 3,
+                type: 'deposit',
+                title: 'Deposit Request',
+                description: 'Deposit request submitted - pending approval',
+                date: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+                icon: '💰'
+            }
+        ];
+    }
+
+    setupUserInterface() {
+        // Fill profile information
+        const profileName = document.getElementById('profileName');
+        const profileEmail = document.getElementById('profileEmail');
+        const sidebarUserName = document.getElementById('sidebarUserName');
+        const sidebarUserEmail = document.getElementById('sidebarUserEmail');
+        const fullName = document.getElementById('fullName');
+        const email = document.getElementById('email');
+        const phone = document.getElementById('phone');
+        const country = document.getElementById('country');
+        const timezone = document.getElementById('timezone');
         
-        let adminPanelButton = '';
-        if (currentUser.isAdmin) {
-            adminPanelButton = '<a href="admin.html" class="login-btn" style="margin-left: 0.5rem;">Admin Panel</a>';
+        if (profileName) profileName.textContent = this.currentUser.name || 'Trader';
+        if (profileEmail) profileEmail.textContent = this.currentUser.email;
+        if (sidebarUserName) sidebarUserName.textContent = this.currentUser.name || 'Trader';
+        if (sidebarUserEmail) sidebarUserEmail.textContent = this.currentUser.email;
+        if (fullName) fullName.value = this.currentUser.name || '';
+        if (email) email.value = this.currentUser.email;
+        if (phone) phone.value = this.currentUser.phone || '';
+        if (country) country.value = this.currentUser.country || '';
+        if (timezone) timezone.value = this.currentUser.timezone || 'UTC+0';
+        
+        // Update stats
+        this.updateStats();
+        
+        // Update KYC section
+        this.updateKYCSection();
+        
+        // Update avatar
+        const avatarElement = document.getElementById('profileAvatar');
+        if (avatarElement) {
+            avatarElement.textContent = this.selectedAvatar;
         }
         
-        userInfo.innerHTML = `
-            <span class="username">${displayName}${adminBadge}</span>
-            ${adminPanelButton}
-            <span class="logout-link" onclick="handleLogout()">Logout</span>
-        `;
-    } else {
-        // Guest User - Show Login and Sign Up buttons
-        userInfo.innerHTML = `
-            <div class="auth-buttons">
-                <a href="login.html" class="login-btn">Login</a>
-                <a href="register.html" class="signup-btn">Sign Up</a>
-            </div>
-        `;
+        // Admin elements
+        if (this.currentUser.isAdmin) {
+            const adminElements = document.querySelectorAll('.admin-only');
+            adminElements.forEach(el => el.style.display = 'block');
+        }
     }
-}
 
-function renderLoginPrompt() {
-    const container = document.getElementById('profileContent');
-    if (!container) return;
-    
-    container.innerHTML = `
-        <div class="login-prompt">
-            <h3>🔒 Login Required</h3>
-            <p>Please login or create an account to view your profile</p>
-            <div class="login-buttons">
-                <a href="login.html" class="btn-login" style="background: transparent; color: var(--primary); padding: 10px 28px; border: 1px solid var(--primary); border-radius: 10px; text-decoration: none; font-weight: 500;">Login</a>
-                <a href="register.html" class="btn-signup" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; padding: 10px 28px; border: none; border-radius: 10px; text-decoration: none; font-weight: 500;">Sign Up</a>
-            </div>
-        </div>
-    `;
-}
-
-function renderProfileInterface() {
-    const container = document.getElementById('profileContent');
-    if (!container) return;
-    
-    container.innerHTML = `
-        <div class="profile-layout">
-            <!-- Left Sidebar - Menu Only -->
-            <div class="profile-sidebar">
-                <div class="sidebar-title">User Profile</div>
-                <div class="menu-items">
-                    <div class="menu-item active" data-page="profile">
-                        <span class="menu-icon">👤</span>
-                        <span>Profile</span>
-                    </div>
-                    <div class="menu-item" data-page="history">
-                        <span class="menu-icon">📊</span>
-                        <span>Trade History</span>
-                    </div>
-                    <div class="menu-item" data-page="kyc">
-                        <span class="menu-icon">✓</span>
-                        <span>KYC Verification</span>
-                    </div>
-                    <div class="menu-item" data-page="update">
-                        <span class="menu-icon">✎</span>
-                        <span>Update Profile</span>
-                    </div>
-                    <div class="menu-item" data-page="support">
-                        <span class="menu-icon">💬</span>
-                        <span>Customer Support</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Main Content Area -->
-            <div class="profile-content">
-                <!-- Profile Page (Default) -->
-                <div id="profilePage" class="page-content">
-                    <h2 class="content-title">Profile</h2>
-                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">View your personal information and account status</p>
-
-                    <!-- Personal Information Card -->
-                    <div class="info-card">
-                        <div class="info-row">
-                            <span class="info-label">Full Name</span>
-                            <span class="info-value" id="profileFullName">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Email</span>
-                            <span class="info-value" id="profileEmail">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Member Since</span>
-                            <span class="info-value" id="memberSince">-</span>
-                        </div>
-                    </div>
-
-                    <!-- Balance and KYC Section -->
-                    <div class="balance-section">
-                        <div class="balance-item">
-                            <div class="balance-label">Account Balance</div>
-                            <div class="balance-value" id="accountBalance">$0.00</div>
-                        </div>
-                        <div class="balance-item">
-                            <div class="balance-label">KYC Status</div>
-                            <div>
-                                <span class="kyc-badge kyc-pending" id="kycStatus">pending</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="action-buttons">
-                        <a href="deposit.html" class="btn-deposit">Deposit</a>
-                        <a href="withdraw.html" class="btn-withdraw">Withdraw Funds</a>
-                    </div>
-
-                    <!-- Trading Statistics -->
-                    <div class="stats-title">Trading Statistics</div>
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <div class="stat-label">Total Trades</div>
-                            <div class="stat-value" id="totalTrades">0</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">Win Rate</div>
-                            <div class="stat-value" id="winRate">0%</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">Total Volume</div>
-                            <div class="stat-value" id="totalVolume">$0.00</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Trade History Page -->
-                <div id="historyPage" class="page-content" style="display: none;">
-                    <h2 class="content-title">Trade History</h2>
-                    <div class="trade-history-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Type</th>
-                                    <th>Crypto</th>
-                                    <th>Amount</th>
-                                    <th>Price</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tradeHistoryBody">
-                                <tr>
-                                    <td colspan="6" style="text-align: center; padding: 2rem;">No trades yet</td--</tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- KYC Verification Page -->
-                <div id="kycPage" class="page-content" style="display: none;">
-                    <h2 class="content-title">KYC Verification</h2>
-                    <p style="margin-bottom: 1rem; font-size: 0.8rem; color: var(--text-secondary);">Please verify your identity to unlock full trading limits and withdrawal features.</p>
-                    
-                    <form id="kycForm">
-                        <div class="form-group">
-                            <label>Full Name (as on ID)</label>
-                            <input type="text" id="kycFullName" placeholder="Enter your full name" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Date of Birth</label>
-                            <input type="date" id="kycDob" required>
-                        </div>
-                        <div class="form-group">
-                            <label>ID Type</label>
-                            <select id="kycIdType">
-                                <option value="passport">Passport</option>
-                                <option value="drivers_license">Driver's License</option>
-                                <option value="national_id">National ID Card</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Upload ID (Front)</label>
-                            <div class="file-upload" onclick="document.getElementById('idFront').click()">
-                                <div>📄 Click to upload front side of ID</div>
-                                <div style="font-size: 0.6rem; margin-top: 0.5rem;">JPG, PNG (Max 5MB)</div>
-                            </div>
-                            <input type="file" id="idFront" accept="image/jpeg,image/png" style="display: none;">
-                        </div>
-                        <div class="form-group">
-                            <label>Upload ID (Back)</label>
-                            <div class="file-upload" onclick="document.getElementById('idBack').click()">
-                                <div>📄 Click to upload back side of ID</div>
-                                <div style="font-size: 0.6rem; margin-top: 0.5rem;">JPG, PNG (Max 5MB)</div>
-                            </div>
-                            <input type="file" id="idBack" accept="image/jpeg,image/png" style="display: none;">
-                        </div>
-                        <div class="form-group">
-                            <label>Selfie with ID</label>
-                            <div class="file-upload" onclick="document.getElementById('selfie').click()">
-                                <div>📸 Click to upload selfie holding ID</div>
-                                <div style="font-size: 0.6rem; margin-top: 0.5rem;">JPG, PNG (Max 5MB)</div>
-                            </div>
-                            <input type="file" id="selfie" accept="image/jpeg,image/png" style="display: none;">
-                        </div>
-                        <button type="submit" class="btn-submit">Submit KYC</button>
-                    </form>
-                </div>
-
-                <!-- Update Profile Page -->
-                <div id="updatePage" class="page-content" style="display: none;">
-                    <h2 class="content-title">Update Profile</h2>
-                    <form id="updateProfileForm">
-                        <div class="form-group">
-                            <label>Full Name</label>
-                            <input type="text" id="updateFullName" placeholder="Enter your full name">
-                        </div>
-                        <div class="form-group">
-                            <label>Email Address</label>
-                            <input type="email" id="updateEmail" placeholder="Enter your email">
-                        </div>
-                        <div class="form-group">
-                            <label>Phone Number</label>
-                            <input type="tel" id="updatePhone" placeholder="Enter your phone number">
-                        </div>
-                        <div class="form-group">
-                            <label>Country</label>
-                            <select id="updateCountry">
-                                <option value="">Select Country</option>
-                                <option value="USA">United States</option>
-                                <option value="UK">United Kingdom</option>
-                                <option value="Canada">Canada</option>
-                                <option value="Australia">Australia</option>
-                                <option value="Germany">Germany</option>
-                                <option value="France">France</option>
-                                <option value="Japan">Japan</option>
-                                <option value="Singapore">Singapore</option>
-                                <option value="UAE">United Arab Emirates</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Change Password</label>
-                            <input type="password" id="newPassword" placeholder="New password (leave blank to keep current)">
-                        </div>
-                        <div class="form-group">
-                            <label>Confirm Password</label>
-                            <input type="password" id="confirmPassword" placeholder="Confirm new password">
-                        </div>
-                        <button type="submit" class="btn-submit">Save Changes</button>
-                    </form>
-                </div>
-
-                <!-- Customer Support Page -->
-                <div id="supportPage" class="page-content" style="display: none;">
-                    <h2 class="content-title">Customer Support</h2>
-                    
-                    <div class="support-contact">
-                        <div class="contact-card">
-                            <div class="contact-label">📧 Email</div>
-                            <div class="contact-value">support@pockettrading.com</div>
-                        </div>
-                        <div class="contact-card">
-                            <div class="contact-label">💬 Live Chat</div>
-                            <div class="contact-value">24/7 Available</div>
-                        </div>
-                        <div class="contact-card">
-                            <div class="contact-label">📞 Phone</div>
-                            <div class="contact-value">+1 (800) 123-4567</div>
-                        </div>
-                        <div class="contact-card">
-                            <div class="contact-label">⏰ Response Time</div>
-                            <div class="contact-value">Within 24 hours</div>
-                        </div>
-                    </div>
-
-                    <form id="supportForm">
-                        <div class="form-group">
-                            <label>Subject</label>
-                            <input type="text" id="supportSubject" placeholder="Enter subject" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Message</label>
-                            <textarea id="supportMessage" rows="4" placeholder="Describe your issue..." required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Attach Screenshot (Optional)</label>
-                            <div class="file-upload" onclick="document.getElementById('supportAttachment').click()">
-                                <div>📎 Click to attach file</div>
-                            </div>
-                            <input type="file" id="supportAttachment" accept="image/jpeg,image/png" style="display: none;">
-                        </div>
-                        <button type="submit" class="btn-submit">Send Message</button>
-                    </form>
-
-                    <div class="faq-item">
-                        <div class="faq-question">How to deposit?</div>
-                        <div class="faq-answer">Go to Deposit page or click Deposit button in your profile.</div>
-                    </div>
-                    <div class="faq-item">
-                        <div class="faq-question">How long do withdrawals take?</div>
-                        <div class="faq-answer">Withdrawals are processed within 24-48 hours after admin approval.</div>
-                    </div>
-                    <div class="faq-item">
-                        <div class="faq-question">What are the trading fees?</div>
-                        <div class="faq-answer">Trading fee is 0.1% per transaction. No deposit fees.</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-async function loadUserProfile() {
-    if (!currentUser) return;
-    
-    const fullName = currentUser.name || currentUser.email.split('@')[0];
-    const email = currentUser.email;
-    const memberSince = currentUser.created_at ? new Date(currentUser.created_at).toLocaleDateString() : new Date().toLocaleDateString();
-    const currentBalance = currentUser.balance || 0;
-    const kycStatus = currentUser.kyc_status || 'pending';
-    
-    document.getElementById('profileFullName').textContent = fullName;
-    document.getElementById('profileEmail').textContent = email;
-    document.getElementById('memberSince').textContent = memberSince;
-    document.getElementById('accountBalance').textContent = `$${currentBalance.toFixed(2)}`;
-    
-    const kycBadge = document.getElementById('kycStatus');
-    kycBadge.textContent = kycStatus;
-    kycBadge.className = `kyc-badge kyc-${kycStatus}`;
-    
-    // Update form fields
-    const updateFullName = document.getElementById('updateFullName');
-    const updateEmail = document.getElementById('updateEmail');
-    const updateCountry = document.getElementById('updateCountry');
-    const kycFullName = document.getElementById('kycFullName');
-    
-    if (updateFullName) updateFullName.value = fullName;
-    if (updateEmail) updateEmail.value = email;
-    if (updateCountry && currentUser.country) updateCountry.value = currentUser.country;
-    if (kycFullName) kycFullName.value = fullName;
-}
-
-async function loadTradingStats() {
-    if (!currentUser) return;
-    
-    try {
-        const transactions = await supabaseDB.getUserTransactions(currentUser.id);
-        const trades = transactions.filter(t => t.type === 'trade' || t.type === 'buy' || t.type === 'sell');
-        
-        const totalTrades = trades.length;
-        
-        let winningTrades = 0;
-        let totalVolume = 0;
-        
-        trades.forEach(trade => {
-            totalVolume += trade.amount || 0;
-            if (trade.pnl && trade.pnl > 0) winningTrades++;
-        });
-        
+    updateStats() {
+        const totalTrades = this.userTrades.length;
+        const winningTrades = this.userTrades.filter(t => (t.pnl || 0) > 0).length;
         const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100).toFixed(1) : 0;
         
-        document.getElementById('totalTrades').textContent = totalTrades;
-        document.getElementById('winRate').textContent = `${winRate}%`;
-        document.getElementById('totalVolume').textContent = `$${totalVolume.toFixed(2)}`;
+        const statBalance = document.getElementById('statBalance');
+        const statTrades = document.getElementById('statTrades');
+        const statWinRate = document.getElementById('statWinRate');
         
-    } catch (error) {
-        console.error('Error loading trading stats:', error);
+        if (statBalance) statBalance.textContent = `$${(this.currentUser.balance || 0).toFixed(2)}`;
+        if (statTrades) statTrades.textContent = totalTrades;
+        if (statWinRate) statWinRate.textContent = `${winRate}%`;
     }
-}
 
-async function loadTradeHistory() {
-    const tbody = document.getElementById('tradeHistoryBody');
-    if (!tbody) return;
-    
-    try {
-        const transactions = await supabaseDB.getUserTransactions(currentUser.id);
-        const trades = transactions.filter(t => t.type === 'trade' || t.type === 'buy' || t.type === 'sell').slice(0, 20);
+    updateKYCSection() {
+        const kycStatusSpan = document.getElementById('kycStatus');
+        const kycForm = document.getElementById('kycForm');
+        const kycStatusMessage = document.getElementById('kycStatusMessage');
         
-        if (trades.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No trades yet</td--</tr>';
+        if (this.kycStatus === 'verified') {
+            if (kycStatusSpan) {
+                kycStatusSpan.textContent = 'Verified ✓';
+                kycStatusSpan.className = 'kyc-status kyc-verified';
+            }
+            if (kycForm) kycForm.style.display = 'none';
+            if (kycStatusMessage) {
+                kycStatusMessage.style.display = 'block';
+                kycStatusMessage.innerHTML = `
+                    <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+                    <h4>Identity Verified</h4>
+                    <p style="color: #00D897; margin-top: 8px;">Your account is fully verified</p>
+                `;
+            }
+        } else if (this.kycStatus === 'pending') {
+            if (kycStatusSpan) {
+                kycStatusSpan.textContent = 'Pending Review';
+                kycStatusSpan.className = 'kyc-status kyc-pending';
+            }
+            if (kycForm) kycForm.style.display = 'block';
+        } else {
+            if (kycStatusSpan) {
+                kycStatusSpan.textContent = 'Not Verified';
+                kycStatusSpan.className = 'kyc-status kyc-none';
+            }
+            if (kycForm) kycForm.style.display = 'block';
+        }
+    }
+
+    renderActivities() {
+        const timeline = document.getElementById('activityTimeline');
+        if (!timeline) return;
+        
+        if (this.activities.length === 0) {
+            timeline.innerHTML = `
+                <div class="timeline-item">
+                    <div class="timeline-icon">📭</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">No recent activity</div>
+                        <div class="timeline-desc">Start trading to see activity here</div>
+                    </div>
+                </div>
+            `;
             return;
         }
         
-        tbody.innerHTML = trades.map(trade => {
-            const tradeType = trade.tradeType || trade.type;
-            return `
-                <tr>
-                    <td>${new Date(trade.date).toLocaleDateString()} ${new Date(trade.date).toLocaleTimeString()}</td
-                    <td class="trade-type-${tradeType}">${tradeType?.toUpperCase() || trade.type.toUpperCase()}</td
-                    <td>${trade.crypto || 'BTC'}</td
-                    <td>${trade.amount?.toFixed(2) || '0'}</td
-                    <td>$${trade.price?.toFixed(2) || '0'}</td
-                    <td>$${trade.expectedReturn?.toFixed(2) || trade.total?.toFixed(2) || '0'}</td
-                比
-            `;
-        }).join('');
-    } catch (error) {
-        console.error('Error loading trade history:', error);
+        timeline.innerHTML = this.activities.slice(0, 10).map(activity => `
+            <div class="timeline-item">
+                <div class="timeline-icon">${activity.icon || this.getActivityIcon(activity.type)}</div>
+                <div class="timeline-content">
+                    <div class="timeline-title">${activity.title}</div>
+                    <div class="timeline-desc">${activity.description}</div>
+                    <div class="timeline-date">${this.formatDate(activity.date)}</div>
+                </div>
+            </div>
+        `).join('');
     }
-}
 
-function setupMenuNavigation() {
-    const menuItems = document.querySelectorAll('.menu-item');
-    const pages = ['profilePage', 'historyPage', 'kycPage', 'updatePage', 'supportPage'];
-    
-    menuItems.forEach((item, index) => {
-        item.addEventListener('click', () => {
-            menuItems.forEach(mi => mi.classList.remove('active'));
-            item.classList.add('active');
+    getActivityIcon(type) {
+        const icons = {
+            'login': '🔐',
+            'trade': '📈',
+            'deposit': '💰',
+            'withdraw': '💸',
+            'kyc': '📋',
+            'profile': '👤'
+        };
+        return icons[type] || '📌';
+    }
+
+    formatDate(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins} minutes ago`;
+        if (diffHours < 24) return `${diffHours} hours ago`;
+        if (diffDays < 7) return `${diffDays} days ago`;
+        return date.toLocaleDateString();
+    }
+
+    async saveProfileChanges(e) {
+        e.preventDefault();
+        
+        const fullName = document.getElementById('fullName').value;
+        const phone = document.getElementById('phone').value;
+        const country = document.getElementById('country').value;
+        const timezone = document.getElementById('timezone').value;
+        
+        const updates = {
+            name: fullName,
+            phone: phone,
+            country: country,
+            timezone: timezone,
+            updated_at: new Date().toISOString()
+        };
+        
+        try {
+            await supabaseDB.update('custom_users', this.currentUser.id, updates);
             
-            pages.forEach(page => {
-                const pageElem = document.getElementById(page);
-                if (pageElem) pageElem.style.display = 'none';
+            // Update current user object
+            this.currentUser = { ...this.currentUser, ...updates };
+            
+            // Update session storage
+            if (localStorage.getItem('pocket_user')) {
+                localStorage.setItem('pocket_user', JSON.stringify(this.currentUser));
+            }
+            if (sessionStorage.getItem('pocket_user')) {
+                sessionStorage.setItem('pocket_user', JSON.stringify(this.currentUser));
+            }
+            
+            // Update UI
+            const profileName = document.getElementById('profileName');
+            const sidebarUserName = document.getElementById('sidebarUserName');
+            if (profileName) profileName.textContent = fullName;
+            if (sidebarUserName) sidebarUserName.textContent = fullName;
+            
+            auth.showSuccess('Profile updated successfully!');
+            this.addActivity('profile', 'Profile Updated', 'Your profile information was updated');
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            auth.showError('Failed to update profile');
+        }
+    }
+
+    async changePassword() {
+        const currentPassword = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            auth.showError('Please fill in all password fields');
+            return;
+        }
+        
+        if (newPassword !== confirmPassword) {
+            auth.showError('New passwords do not match');
+            return;
+        }
+        
+        if (newPassword.length < 8) {
+            auth.showError('Password must be at least 8 characters');
+            return;
+        }
+        
+        if (this.currentUser.password !== currentPassword) {
+            auth.showError('Current password is incorrect');
+            return;
+        }
+        
+        try {
+            await supabaseDB.update('custom_users', this.currentUser.id, {
+                password: newPassword,
+                updated_at: new Date().toISOString()
             });
             
-            const selectedPage = document.getElementById(pages[index]);
-            if (selectedPage) selectedPage.style.display = 'block';
-        });
-    });
-}
-
-function setupForms() {
-    // Update Profile Form
-    const updateForm = document.getElementById('updateProfileForm');
-    if (updateForm) {
-        updateForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            updateProfile();
-        });
-    }
-    
-    // KYC Form
-    const kycForm = document.getElementById('kycForm');
-    if (kycForm) {
-        kycForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            submitKYC();
-        });
-    }
-    
-    // Support Form
-    const supportForm = document.getElementById('supportForm');
-    if (supportForm) {
-        supportForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            sendSupportMessage();
-        });
-    }
-    
-    // File upload handlers
-    const idFront = document.getElementById('idFront');
-    if (idFront) {
-        idFront.addEventListener('change', (e) => handleFileUpload(e.target.files[0], 'ID Front'));
-    }
-    
-    const idBack = document.getElementById('idBack');
-    if (idBack) {
-        idBack.addEventListener('change', (e) => handleFileUpload(e.target.files[0], 'ID Back'));
-    }
-    
-    const selfie = document.getElementById('selfie');
-    if (selfie) {
-        selfie.addEventListener('change', (e) => handleFileUpload(e.target.files[0], 'Selfie'));
-    }
-}
-
-async function updateProfile() {
-    const newName = document.getElementById('updateFullName').value;
-    const newEmail = document.getElementById('updateEmail').value;
-    const newPhone = document.getElementById('updatePhone').value;
-    const newCountry = document.getElementById('updateCountry').value;
-    const newPassword = document.getElementById('newPassword').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-    
-    if (newName) {
-        currentUser.name = newName;
-    }
-    
-    if (newEmail && newEmail !== currentUser.email) {
-        const existingUsers = await supabaseDB.get('custom_users', { email: newEmail });
-        if (existingUsers && existingUsers.length > 0) {
-            showNotification('Email already exists', 'error');
-            return;
+            this.currentUser.password = newPassword;
+            
+            // Update session storage
+            if (localStorage.getItem('pocket_user')) {
+                localStorage.setItem('pocket_user', JSON.stringify(this.currentUser));
+            }
+            if (sessionStorage.getItem('pocket_user')) {
+                sessionStorage.setItem('pocket_user', JSON.stringify(this.currentUser));
+            }
+            
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            
+            auth.showSuccess('Password changed successfully!');
+            this.addActivity('profile', 'Password Changed', 'Your account password was updated');
+        } catch (error) {
+            console.error('Error changing password:', error);
+            auth.showError('Failed to change password');
         }
-        currentUser.email = newEmail;
     }
-    
-    if (newPhone) {
-        currentUser.phone = newPhone;
-    }
-    
-    if (newCountry) {
-        currentUser.country = newCountry;
-    }
-    
-    if (newPassword) {
-        if (newPassword.length < 8) {
-            showNotification('Password must be at least 8 characters', 'error');
+
+    async submitKYC() {
+        const fullName = document.getElementById('kycFullName').value;
+        const dob = document.getElementById('kycDob').value;
+        const idType = document.getElementById('kycIdType').value;
+        const idFront = document.getElementById('idFront').files[0];
+        const idBack = document.getElementById('idBack').files[0];
+        const selfie = document.getElementById('selfie').files[0];
+        
+        if (!fullName || !dob || !idType) {
+            auth.showError('Please fill in all KYC fields');
             return;
-        }
-        if (newPassword !== confirmPassword) {
-            showNotification('Passwords do not match', 'error');
-            return;
-        }
-        currentUser.password = newPassword;
-    }
-    
-    await supabaseDB.update('custom_users', currentUser.id, {
-        name: currentUser.name,
-        email: currentUser.email,
-        phone: currentUser.phone,
-        country: currentUser.country,
-        password: currentUser.password
-    });
-    
-    saveUserData();
-    showNotification('Profile updated successfully!', 'success');
-    await loadUserProfile();
-}
-
-async function submitKYC() {
-    const fullName = document.getElementById('kycFullName').value;
-    const dob = document.getElementById('kycDob').value;
-    const idType = document.getElementById('kycIdType').value;
-    
-    if (!fullName || !dob || !idType) {
-        showNotification('Please fill in all fields', 'error');
-        return;
-    }
-    
-    const hasIdFront = document.getElementById('idFront').files.length > 0;
-    const hasIdBack = document.getElementById('idBack').files.length > 0;
-    const hasSelfie = document.getElementById('selfie').files.length > 0;
-    
-    if (!hasIdFront || !hasIdBack || !hasSelfie) {
-        showNotification('Please upload all required documents', 'error');
-        return;
-    }
-    
-    const kycRequest = {
-        id: Date.now(),
-        user_id: currentUser.id,
-        user_email: currentUser.email,
-        full_name: fullName,
-        dob: dob,
-        id_type: idType,
-        status: 'pending',
-        date: new Date().toISOString()
-    };
-    
-    await supabaseDB.insert('kyc_requests', kycRequest);
-    await supabaseDB.updateUserKYCStatus(currentUser.id, 'pending');
-    
-    currentUser.kyc_status = 'pending';
-    saveUserData();
-    
-    showNotification('KYC documents submitted successfully! We will verify within 24-48 hours.', 'success');
-    
-    const kycBadge = document.getElementById('kycStatus');
-    kycBadge.textContent = 'pending';
-    kycBadge.className = 'kyc-badge kyc-pending';
-    
-    document.getElementById('kycForm').reset();
-}
-
-async function sendSupportMessage() {
-    const subject = document.getElementById('supportSubject').value;
-    const message = document.getElementById('supportMessage').value;
-    
-    if (!subject || !message) {
-        showNotification('Please enter subject and message', 'error');
-        return;
-    }
-    
-    const supportTicket = {
-        id: Date.now(),
-        userId: currentUser.id,
-        userEmail: currentUser.email,
-        subject: subject,
-        message: message,
-        status: 'open',
-        date: new Date().toISOString()
-    };
-    
-    let tickets = JSON.parse(localStorage.getItem('support_tickets') || '[]');
-    tickets.push(supportTicket);
-    localStorage.setItem('support_tickets', JSON.stringify(tickets));
-    
-    showNotification('Support message sent! We will respond within 24 hours.', 'success');
-    
-    document.getElementById('supportSubject').value = '';
-    document.getElementById('supportMessage').value = '';
-    document.getElementById('supportAttachment').value = '';
-}
-
-function handleFileUpload(file, type) {
-    if (file) {
-        if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
-            showNotification(`${type} must be JPG or PNG`, 'error');
-            return false;
         }
         
-        if (file.size > 5 * 1024 * 1024) {
-            showNotification(`${type} must be less than 5MB`, 'error');
-            return false;
+        if (!idFront || !idBack || !selfie) {
+            auth.showError('Please upload all required documents');
+            return;
         }
         
-        showNotification(`${type} uploaded successfully!`, 'success');
-        return true;
+        // Simulate file upload (in production, upload to cloud storage)
+        auth.showSuccess('KYC documents submitted for review!');
+        
+        try {
+            await supabaseDB.update('custom_users', this.currentUser.id, {
+                kyc_status: 'pending',
+                kyc_submitted_at: new Date().toISOString(),
+                kyc_full_name: fullName,
+                kyc_dob: dob,
+                kyc_id_type: idType
+            });
+            
+            await supabaseDB.insert('kyc_requests', {
+                id: Date.now(),
+                user_id: this.currentUser.id,
+                user_email: this.currentUser.email,
+                full_name: fullName,
+                dob: dob,
+                id_type: idType,
+                status: 'pending',
+                date: new Date().toISOString()
+            });
+            
+            this.kycStatus = 'pending';
+            this.updateKYCSection();
+            this.addActivity('kyc', 'KYC Submitted', 'Identity verification documents submitted');
+            
+            // Clear form
+            document.getElementById('kycFullName').value = '';
+            document.getElementById('kycDob').value = '';
+            document.getElementById('kycIdType').value = '';
+            document.getElementById('idFront').value = '';
+            document.getElementById('idBack').value = '';
+            document.getElementById('selfie').value = '';
+            
+        } catch (error) {
+            console.error('Error submitting KYC:', error);
+            auth.showError('Failed to submit KYC');
+        }
     }
-    return false;
+
+    async addActivity(type, title, description) {
+        const activity = {
+            id: Date.now(),
+            user_id: this.currentUser.id,
+            type: type,
+            title: title,
+            description: description,
+            date: new Date().toISOString(),
+            icon: this.getActivityIcon(type)
+        };
+        
+        await supabaseDB.insert('user_activities', activity);
+        this.activities.unshift(activity);
+        this.renderActivities();
+    }
+
+    changeAvatar() {
+        const modal = document.getElementById('avatarModal');
+        modal.style.display = 'flex';
+    }
+
+    setAvatar(avatar) {
+        this.selectedAvatar = avatar;
+        const avatarElement = document.getElementById('profileAvatar');
+        if (avatarElement) avatarElement.textContent = avatar;
+        
+        localStorage.setItem(`avatar_${this.currentUser.id}`, avatar);
+        
+        this.closeAvatarModal();
+        auth.showSuccess('Avatar updated!');
+    }
+
+    loadSavedAvatar() {
+        const savedAvatar = localStorage.getItem(`avatar_${this.currentUser?.id}`);
+        if (savedAvatar) {
+            this.selectedAvatar = savedAvatar;
+            const avatarElement = document.getElementById('profileAvatar');
+            if (avatarElement) avatarElement.textContent = savedAvatar;
+        }
+    }
+
+    closeAvatarModal() {
+        const modal = document.getElementById('avatarModal');
+        modal.style.display = 'none';
+    }
+
+    showDeleteAccountModal() {
+        const modal = document.getElementById('deleteModal');
+        modal.style.display = 'flex';
+    }
+
+    closeDeleteModal() {
+        const modal = document.getElementById('deleteModal');
+        modal.style.display = 'none';
+        document.getElementById('deleteConfirm').value = '';
+    }
+
+    async deleteAccount() {
+        const confirmText = document.getElementById('deleteConfirm').value;
+        
+        if (confirmText !== 'DELETE') {
+            auth.showError('Please type DELETE to confirm');
+            return;
+        }
+        
+        if (confirm('Are you absolutely sure? This will delete all your data permanently.')) {
+            try {
+                // Delete user trades
+                const userTrades = await supabaseDB.getUserTrades(this.currentUser.id);
+                for (const trade of userTrades) {
+                    await supabaseDB.delete('trades', trade.id);
+                }
+                
+                // Delete user activities
+                const userActivities = await supabaseDB.getUserActivities(this.currentUser.id);
+                for (const activity of userActivities) {
+                    await supabaseDB.delete('user_activities', activity.id);
+                }
+                
+                // Delete user
+                await supabaseDB.delete('custom_users', this.currentUser.id);
+                
+                // Clear storage and logout
+                localStorage.removeItem('pocket_user');
+                sessionStorage.removeItem('pocket_user');
+                localStorage.removeItem(`avatar_${this.currentUser.id}`);
+                localStorage.removeItem(`watchlist_${this.currentUser.id}`);
+                
+                auth.showSuccess('Account deleted successfully');
+                setTimeout(() => {
+                    window.location.href = 'home.html';
+                }, 2000);
+            } catch (error) {
+                console.error('Error deleting account:', error);
+                auth.showError('Failed to delete account');
+            }
+        }
+    }
+
+    setupEventListeners() {
+        const profileForm = document.getElementById('profileForm');
+        if (profileForm) {
+            profileForm.addEventListener('submit', (e) => this.saveProfileChanges(e));
+        }
+        
+        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+        const sidebar = document.querySelector('.sidebar');
+        if (mobileMenuBtn && sidebar) {
+            mobileMenuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('show');
+            });
+        }
+        
+        // Close modals when clicking outside
+        window.onclick = (e) => {
+            const avatarModal = document.getElementById('avatarModal');
+            const deleteModal = document.getElementById('deleteModal');
+            if (e.target === avatarModal) this.closeAvatarModal();
+            if (e.target === deleteModal) this.closeDeleteModal();
+        };
+    }
 }
 
-function saveUserData() {
-    const users = JSON.parse(localStorage.getItem('pocket_users') || '[]');
-    const userIndex = users.findIndex(u => u.id === currentUser.id);
-    if (userIndex !== -1) {
-        users[userIndex] = currentUser;
-        localStorage.setItem('pocket_users', JSON.stringify(users));
-    }
-    
-    if (localStorage.getItem('pocket_user')) {
-        localStorage.setItem('pocket_user', JSON.stringify(currentUser));
-    }
-    if (sessionStorage.getItem('pocket_user')) {
-        sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
-    }
-}
+// Initialize
+let profileManager = null;
 
-function showNotification(message, type) {
-    const existing = document.querySelector('.profile-notification');
-    if (existing) existing.remove();
-    
-    const notification = document.createElement('div');
-    notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${type === 'error' ? '#FF4757' : '#00D897'};
-        color: white;
-        padding: 12px 20px;
-        border-radius: 12px;
-        font-size: 14px;
-        z-index: 10000;
-        animation: slideIn 0.3s ease-out;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        max-width: 350px;
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease-out';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
-}
+document.addEventListener('DOMContentLoaded', () => {
+    profileManager = new ProfileManager();
+});
 
-function handleLogout() {
-    localStorage.removeItem('pocket_user');
-    sessionStorage.removeItem('pocket_user');
-    window.location.href = 'home.html';
-}
-
-window.handleLogout = handleLogout;
+// Global functions
+function changeAvatar() { profileManager?.changeAvatar(); }
+function setAvatar(avatar) { profileManager?.setAvatar(avatar); }
+function closeAvatarModal() { profileManager?.closeAvatarModal(); }
+function changePassword() { profileManager?.changePassword(); }
+function submitKYC() { profileManager?.submitKYC(); }
+function showDeleteAccountModal() { profileManager?.showDeleteAccountModal(); }
+function closeDeleteModal() { profileManager?.closeDeleteModal(); }
+function deleteAccount() { profileManager?.deleteAccount(); }
+function logout() { if (auth) auth.logout(); }
