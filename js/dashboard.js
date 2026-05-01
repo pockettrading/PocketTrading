@@ -1,334 +1,541 @@
-// Dashboard functionality with Candlestick Chart - Binance API Only, No Fallbacks
+// Dashboard page functionality - Supabase Integration
+// File: js/dashboard.js
 
 let currentUser = null;
 let chart = null;
-let currentSymbol = 'BTC';
-let currentInterval = '1h';
 let priceUpdateInterval = null;
-let candlestickSeries = null;
 
-// Binance API endpoints
-const BINANCE_BASE_URL = 'https://api.binance.com/api/v3';
+// Admin email
+const ADMIN_EMAIL = 'ephregojo@gmail.com';
 
 // Cryptocurrency data for top list
-const cryptoData = [
-    { symbol: 'BTC', name: 'Bitcoin', icon: '₿' },
-    { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ' },
-    { symbol: 'BNB', name: 'Binance Coin', icon: 'B' },
-    { symbol: 'SOL', name: 'Solana', icon: 'S' },
-    { symbol: 'XRP', name: 'Ripple', icon: 'X' },
-    { symbol: 'ADA', name: 'Cardano', icon: 'A' }
+let cryptoData = [
+    { symbol: 'BTC', name: 'Bitcoin', price: 43250.00, change: 2.5, icon: '₿', volume: '32.5B' },
+    { symbol: 'ETH', name: 'Ethereum', price: 2250.80, change: 1.8, icon: 'Ξ', volume: '15.2B' },
+    { symbol: 'BNB', name: 'Binance Coin', price: 305.60, change: -0.5, icon: 'B', volume: '2.1B' },
+    { symbol: 'SOL', name: 'Solana', price: 98.40, change: 5.2, icon: 'S', volume: '1.8B' },
+    { symbol: 'XRP', name: 'Ripple', price: 0.62, change: 0.3, icon: 'X', volume: '1.2B' },
+    { symbol: 'ADA', name: 'Cardano', price: 0.48, change: -1.2, icon: 'A', volume: '0.8B' }
 ];
 
-// Mapping for Binance symbols
-const binanceSymbols = {
-    BTC: 'BTCUSDT',
-    ETH: 'ETHUSDT',
-    BNB: 'BNBUSDT',
-    SOL: 'SOLUSDT',
-    XRP: 'XRPUSDT',
-    ADA: 'ADAUSDT'
-};
-
-// Interval mapping
-const intervalMap = {
-    '1m': '1m',
-    '5m': '5m',
-    '15m': '15m',
-    '1h': '1h',
-    '4h': '4h',
-    '1d': '1d',
-    '1w': '1w'
-};
+// Binance API for real prices
+const BINANCE_BASE_URL = 'https://api.binance.com/api/v3';
 
 // Initialize when page loads
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('Dashboard page loaded');
-    loadUser();
-    renderUserSection();
-    if (!currentUser) {
-        window.location.href = 'login.html';
+    
+    if (typeof supabaseDB === 'undefined') {
+        setTimeout(() => initDashboardPage(), 500);
         return;
     }
-    initDashboard();
+    
+    await initDashboardPage();
 });
 
-function loadUser() {
-    const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
-    if (storedUser) {
-        currentUser = JSON.parse(storedUser);
-        console.log('User loaded:', currentUser.email);
+async function initDashboardPage() {
+    await loadUser();
+    renderNavLinks();
+    renderUserInfo();
+    
+    if (!currentUser) {
+        renderLoginPrompt();
+    } else {
+        renderDashboardInterface();
+        await loadDashboardData();
+        setupEventListeners();
+        startRealTimeUpdates();
+        await fetchRealCryptoPrices();
     }
 }
 
-function renderUserSection() {
-    const userSection = document.getElementById('userSection');
-    if (!userSection) return;
+async function loadUser() {
+    try {
+        const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
+        if (storedUser) {
+            currentUser = JSON.parse(storedUser);
+            
+            // Verify user still exists in cloud
+            const cloudUser = await supabaseDB.getUserByEmail(currentUser.email);
+            if (cloudUser) {
+                currentUser = cloudUser;
+                currentUser.isAdmin = (currentUser.email === ADMIN_EMAIL);
+                
+                // Update session
+                if (localStorage.getItem('pocket_user')) {
+                    localStorage.setItem('pocket_user', JSON.stringify(currentUser));
+                }
+                if (sessionStorage.getItem('pocket_user')) {
+                    sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
+                }
+            } else {
+                currentUser = null;
+            }
+            console.log('User loaded:', currentUser?.email, 'Is Admin:', currentUser?.isAdmin);
+        } else {
+            console.log('Guest mode - no user logged in');
+            currentUser = null;
+        }
+    } catch(e) {
+        console.log('Error loading user:', e);
+        currentUser = null;
+    }
+}
+
+function renderNavLinks() {
+    const navLinks = document.getElementById('navLinks');
+    if (!navLinks) return;
+    
+    // Clear existing dynamic links (keep Home, Markets, Trades)
+    const existingLinks = navLinks.querySelectorAll('.nav-link:not([href="home.html"]):not([href="markets.html"]):not([href="trade.html"])');
+    existingLinks.forEach(link => link.remove());
+    
+    // Add My Profile link only for registered users
+    if (currentUser) {
+        const profileLink = document.createElement('a');
+        profileLink.href = 'profile.html';
+        profileLink.className = 'nav-link';
+        profileLink.textContent = 'My Profile';
+        navLinks.appendChild(profileLink);
+    }
+}
+
+function renderUserInfo() {
+    const userInfo = document.getElementById('userInfo');
+    if (!userInfo) return;
     
     if (currentUser) {
         const displayName = currentUser.name || currentUser.email.split('@')[0];
-        userSection.innerHTML = `
-            <div class="user-dropdown">
-                <div class="user-name-display">
-                    <span>👤</span>
-                    <span>${displayName}</span>
-                    <span>▼</span>
-                </div>
-                <div class="dropdown-menu">
-                    <a href="profile.html" class="dropdown-item">📋 My Profile</a>
-                    <a href="dashboard.html" class="dropdown-item">📊 Dashboard</a>
-                    <a href="deposit.html" class="dropdown-item">💰 Deposit</a>
-                    <a href="withdraw.html" class="dropdown-item">💸 Withdraw</a>
-                    <div class="dropdown-divider"></div>
-                    <span class="dropdown-item" onclick="handleLogout()" style="cursor: pointer; color: var(--danger);">🚪 Logout</span>
-                </div>
-            </div>
+        const adminBadge = currentUser.isAdmin ? '<span class="admin-badge">Admin</span>' : '';
+        
+        let adminPanelButton = '';
+        if (currentUser.isAdmin) {
+            adminPanelButton = '<a href="admin.html" class="login-btn" style="margin-left: 0.5rem;">Admin Panel</a>';
+        }
+        
+        userInfo.innerHTML = `
+            <span class="username">${displayName}${adminBadge}</span>
+            ${adminPanelButton}
+            <span class="logout-link" onclick="handleLogout()">Logout</span>
         `;
     } else {
-        userSection.innerHTML = `<a href="register.html" class="signup-btn">Sign Up</a>`;
+        userInfo.innerHTML = `
+            <div class="auth-buttons">
+                <a href="login.html" class="login-btn">Login</a>
+                <a href="register.html" class="signup-btn">Sign Up</a>
+            </div>
+        `;
     }
 }
 
-async function initDashboard() {
-    updateBalanceDisplay();
-    loadTransactions();
-    updateStats();
-    setupEventListeners();
-    await initChart();
-    await fetchCandlestickData();
-    await fetchCurrentPrice();
-    await loadCryptoList();
-    startRealTimeUpdates();
+function renderLoginPrompt() {
+    const container = document.getElementById('dashboardContent');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="login-prompt">
+            <h3>🔒 Login Required</h3>
+            <p>Please login or create an account to view your dashboard</p>
+            <div class="login-buttons">
+                <a href="login.html" class="btn-login" style="background: transparent; color: var(--primary); padding: 10px 28px; border: 1px solid var(--primary); border-radius: 10px; text-decoration: none; font-weight: 500;">Login</a>
+                <a href="register.html" class="btn-signup" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; padding: 10px 28px; border: none; border-radius: 10px; text-decoration: none; font-weight: 500;">Sign Up</a>
+            </div>
+        </div>
+    `;
 }
 
-function updateBalanceDisplay() {
+function renderDashboardInterface() {
+    const container = document.getElementById('dashboardContent');
+    if (!container) return;
+    
+    const currentBalance = currentUser.balance || 0;
+    
+    container.innerHTML = `
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Total Balance</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                    </svg>
+                </div>
+                <div class="stat-value" id="totalBalance">$${currentBalance.toFixed(2)}</div>
+                <div class="stat-change" id="balanceChange">0% from start</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">24h Volume</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9h-4m-7 9A9 9 0 013 12m9 9v-4M3 12a9 9 0 019-9m-9 9h4m7-9a9 9 0 00-9 9"/>
+                    </svg>
+                </div>
+                <div class="stat-value" id="dailyVolume">$0.00</div>
+                <div class="stat-change positive" id="volumeChange">+0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Total Profit/Loss</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 17v2h6v-2M3 7v2h6V7M13 5v2h6V5M13 11v2h6v-2M13 17v2h6v-2"/>
+                    </svg>
+                </div>
+                <div class="stat-value" id="totalProfit">$0.00</div>
+                <div class="stat-change positive" id="profitChange">+0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Active Trades</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 12h6M12 9v6M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                    </svg>
+                </div>
+                <div class="stat-value" id="activeTrades">0</div>
+                <div class="stat-change">Currently open</div>
+            </div>
+        </div>
+
+        <!-- Trading Chart and Market Data -->
+        <div class="trading-section">
+            <div class="chart-container">
+                <div class="section-header">
+                    <h2>Market Overview</h2>
+                    <select id="timeframe" class="timeframe-select">
+                        <option value="1H">1H</option>
+                        <option value="24H" selected>24H</option>
+                        <option value="7D">7D</option>
+                        <option value="30D">30D</option>
+                    </select>
+                </div>
+                <div class="chart-placeholder">
+                    <canvas id="priceChart"></canvas>
+                </div>
+            </div>
+
+            <div class="market-data">
+                <div class="section-header">
+                    <h2>Top Cryptocurrencies</h2>
+                </div>
+                <div class="crypto-list" id="cryptoList">
+                    Loading...
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="transactions-section">
+            <div class="section-header">
+                <h2>Recent Transactions</h2>
+                <a href="#" class="view-all" style="color: var(--primary); text-decoration: none; font-size: 0.8rem;">View All</a>
+            </div>
+            <div class="transactions-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsList">
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 2rem;">No transactions yet</td--</tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+async function loadDashboardData() {
+    await updateStats();
+    await loadTransactions();
+    await initChart();
+}
+
+async function updateStats() {
     if (!currentUser) return;
     
     const currentBalance = currentUser.balance || 0;
     const totalBalanceElem = document.getElementById('totalBalance');
-    const demoBalanceElem = document.getElementById('demoBalance');
-    
     if (totalBalanceElem) {
         totalBalanceElem.textContent = `$${currentBalance.toFixed(2)}`;
-        totalBalanceElem.className = currentBalance > 0 ? 'stat-value positive' : 'stat-value';
+        if (currentBalance > 0) {
+            totalBalanceElem.className = 'stat-value positive';
+        } else {
+            totalBalanceElem.className = 'stat-value';
+        }
     }
     
-    if (demoBalanceElem) {
-        demoBalanceElem.textContent = `$${currentBalance.toFixed(2)}`;
-    }
-}
-
-function updateStats() {
-    if (!currentUser) return;
-    
+    // Calculate daily volume from transactions
     const today = new Date().toDateString();
     const todayTransactions = (currentUser.transactions || []).filter(t => 
         new Date(t.date).toDateString() === today && (t.type === 'trade' || t.type === 'buy' || t.type === 'sell')
     );
     const dailyVolume = todayTransactions.reduce((sum, t) => sum + (t.amount || t.total || 0), 0);
-    document.getElementById('dailyVolume').textContent = `$${dailyVolume.toFixed(2)}`;
+    const dailyVolumeElem = document.getElementById('dailyVolume');
+    if (dailyVolumeElem) dailyVolumeElem.textContent = `$${dailyVolume.toFixed(2)}`;
     
+    // Calculate profit/loss
     const trades = (currentUser.transactions || []).filter(t => t.type === 'trade' || t.type === 'buy' || t.type === 'sell');
-    let totalProfit = currentUser.stats?.totalProfit || 0;
-    trades.forEach(trade => { if (trade.pnl) totalProfit += trade.pnl; });
+    let totalProfit = 0;
+    
+    trades.forEach(trade => {
+        if (trade.pnl) {
+            totalProfit += trade.pnl;
+        }
+    });
     
     const profitElem = document.getElementById('totalProfit');
-    profitElem.textContent = `${totalProfit >= 0 ? '+' : ''}$${totalProfit.toFixed(2)}`;
-    profitElem.style.color = totalProfit >= 0 ? 'var(--success)' : 'var(--danger)';
-    
-    const activeTrades = (currentUser.transactions || []).filter(t => t.status === 'open').length;
-    document.getElementById('activeTrades').textContent = activeTrades;
-}
-
-async function initChart() {
-    const chartElement = document.getElementById('chart');
-    if (!chartElement) return;
-    
-    chart = LightweightCharts.createChart(chartElement, {
-        width: chartElement.clientWidth,
-        height: 450,
-        layout: { background: { color: 'transparent' }, textColor: '#A0AAB5' },
-        grid: { vertLines: { color: '#2A3545' }, horzLines: { color: '#2A3545' } },
-        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-        rightPriceScale: { borderColor: '#2A3545' },
-        timeScale: { borderColor: '#2A3545', timeVisible: true, secondsVisible: false },
-    });
-    
-    candlestickSeries = chart.addCandlestickSeries({
-        upColor: '#00D897',
-        downColor: '#FF4757',
-        borderDownColor: '#FF4757',
-        borderUpColor: '#00D897',
-        wickDownColor: '#FF4757',
-        wickUpColor: '#00D897',
-    });
-    
-    window.addEventListener('resize', () => chart.applyOptions({ width: chartElement.clientWidth }));
-}
-
-async function fetchCandlestickData() {
-    const symbol = binanceSymbols[currentSymbol];
-    const interval = intervalMap[currentInterval];
-    
-    try {
-        const response = await fetch(`${BINANCE_BASE_URL}/klines?symbol=${symbol}&interval=${interval}&limit=200`);
-        const data = await response.json();
-        
-        const candlestickData = data.map(item => ({
-            time: Math.floor(item[0] / 1000),
-            open: parseFloat(item[1]),
-            high: parseFloat(item[2]),
-            low: parseFloat(item[3]),
-            close: parseFloat(item[4]),
-        }));
-        
-        candlestickSeries.setData(candlestickData);
-        chart.timeScale().fitContent();
-        console.log(`Loaded ${candlestickData.length} candles for ${symbol}`);
-    } catch (error) {
-        console.error('Error fetching candlestick data:', error);
-        document.getElementById('chartSymbol').innerHTML = `${currentSymbol}/USD <span style="color: var(--danger); font-size: 0.8rem;">(API Error)</span>`;
+    if (profitElem) {
+        const sign = totalProfit >= 0 ? '+' : '';
+        profitElem.textContent = `${sign}$${totalProfit.toFixed(2)}`;
+        profitElem.style.color = totalProfit >= 0 ? 'var(--success)' : 'var(--danger)';
     }
-}
-
-async function fetchCurrentPrice() {
-    const symbol = binanceSymbols[currentSymbol];
     
-    try {
-        const response = await fetch(`${BINANCE_BASE_URL}/ticker/24hr?symbol=${symbol}`);
-        const data = await response.json();
-        
-        const price = parseFloat(data.lastPrice);
-        const change = parseFloat(data.priceChangePercent);
-        const high = parseFloat(data.highPrice);
-        const low = parseFloat(data.lowPrice);
-        const volume = parseFloat(data.volume) * price;
-        
-        document.getElementById('currentPrice').textContent = `$${price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        
-        const changeElem = document.getElementById('priceChange');
-        changeElem.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
-        changeElem.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
-        
-        document.getElementById('high24h').textContent = `$${high.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        document.getElementById('low24h').textContent = `$${low.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        document.getElementById('volume24h').textContent = `$${volume.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-        
-        document.getElementById('chartSymbol').innerHTML = `${currentSymbol}/USD`;
-    } catch (error) {
-        console.error('Error fetching price:', error);
-        document.getElementById('chartSymbol').innerHTML = `${currentSymbol}/USD <span style="color: var(--danger); font-size: 0.8rem;">(API Error)</span>`;
-    }
+    // Count active trades (pending transactions)
+    const activeTrades = (currentUser.transactions || []).filter(t => t.status === 'pending').length;
+    const tradesElem = document.getElementById('activeTrades');
+    if (tradesElem) tradesElem.textContent = activeTrades;
 }
 
-async function loadCryptoList() {
-    const container = document.getElementById('cryptoList');
-    if (!container) return;
-    
-    try {
-        const fetchPromises = cryptoData.map(async (crypto) => {
-            try {
-                const response = await fetch(`${BINANCE_BASE_URL}/ticker/24hr?symbol=${binanceSymbols[crypto.symbol]}`);
-                const data = await response.json();
-                return {
-                    ...crypto,
-                    price: parseFloat(data.lastPrice),
-                    change: parseFloat(data.priceChangePercent)
-                };
-            } catch {
-                return { ...crypto, price: 0, change: 0 };
-            }
-        });
-        
-        const updatedData = await Promise.all(fetchPromises);
-        
-        container.innerHTML = updatedData.map(crypto => {
-            const changeClass = crypto.change >= 0 ? 'positive' : 'negative';
-            const changeSign = crypto.change >= 0 ? '+' : '';
-            const priceDisplay = crypto.price > 0 ? `$${crypto.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : 'Loading...';
-            
-            return `
-                <div class="crypto-item" onclick="changeChartSymbol('${crypto.symbol}')">
-                    <div class="crypto-info">
-                        <div class="crypto-icon">${crypto.icon}</div>
-                        <div>
-                            <div class="crypto-symbol">${crypto.symbol}</div>
-                            <div class="crypto-name">${crypto.name}</div>
-                        </div>
-                    </div>
-                    <div class="crypto-price">
-                        <div class="crypto-price-value">${priceDisplay}</div>
-                        ${crypto.price > 0 ? `<div class="crypto-change ${changeClass}">${changeSign}${crypto.change.toFixed(2)}%</div>` : ''}
-                    </div>
-                </div>
-            `;
-        }).join('');
-    } catch (error) {
-        console.error('Error loading crypto list:', error);
-        container.innerHTML = '<div class="loading-state">Failed to load market data</div>';
-    }
-}
-
-function loadTransactions() {
+async function loadTransactions() {
     const tbody = document.getElementById('transactionsList');
     if (!tbody) return;
     
-    const transactions = (currentUser.transactions || []).slice(-5).reverse();
-    if (transactions.length === 0) {
+    const userTransactions = currentUser.transactions || [];
+    const recentTransactions = userTransactions.slice(-5).reverse();
+    
+    if (recentTransactions.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">No transactions yet</td--</tr>';
         return;
     }
     
-    tbody.innerHTML = transactions.map(t => {
-        const isPositive = t.type === 'deposit' || t.type === 'buy';
+    tbody.innerHTML = recentTransactions.map(transaction => {
+        let typeDisplay = transaction.type;
+        let amountDisplay = `$${transaction.amount.toFixed(2)}`;
+        let typeClass = '';
+        
+        if (transaction.type === 'buy') {
+            typeDisplay = 'Buy';
+            amountDisplay = `+ $${transaction.amount.toFixed(2)}`;
+            typeClass = 'buy';
+        } else if (transaction.type === 'sell') {
+            typeDisplay = 'Sell';
+            amountDisplay = `- $${transaction.amount.toFixed(2)}`;
+            typeClass = 'sell';
+        } else if (transaction.type === 'deposit') {
+            typeDisplay = 'Deposit';
+            amountDisplay = `+ $${transaction.amount.toFixed(2)}`;
+            typeClass = 'deposit';
+        } else if (transaction.type === 'withdraw') {
+            typeDisplay = 'Withdraw';
+            amountDisplay = `- $${transaction.amount.toFixed(2)}`;
+            typeClass = 'withdraw';
+        }
+        
+        const statusClass = transaction.status === 'completed' ? 'status-completed' : 'status-pending';
+        
         return `
             <tr>
-                <td><span class="transaction-type ${t.type}">${t.type.charAt(0).toUpperCase() + t.type.slice(1)}</span></td>
-                <td class="${isPositive ? 'positive-amount' : 'negative-amount'}">${isPositive ? '+' : '-'}$${Math.abs(t.amount).toFixed(2)}</td>
-                <td><span class="status-badge status-${t.status}">${t.status}</span></td>
-                <td>${new Date(t.date).toLocaleDateString()}</td>
+                <td><span class="transaction-type ${typeClass}">${typeDisplay}</span></td>
+                <td class="${transaction.type === 'deposit' || transaction.type === 'buy' ? 'positive-amount' : 'negative-amount'}">${amountDisplay}</td>
+                <td><span class="status-badge ${statusClass}">${transaction.status}</span></td>
+                <td>${new Date(transaction.date).toLocaleDateString()}</td>
             </tr>
         `;
     }).join('');
 }
 
+async function initChart() {
+    const ctx = document.getElementById('priceChart');
+    if (!ctx) return;
+    
+    const labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+    const data = Array.from({ length: 24 }, () => Math.random() * 1000 + 40000);
+    
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'BTC/USD',
+                data: data,
+                borderColor: '#F7931A',
+                backgroundColor: 'rgba(247, 147, 26, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: '#F7931A',
+                pointHoverBorderColor: '#FFFFFF',
+                pointHoverBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    labels: { color: '#A0AAB5', font: { size: 12 } }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: '#151E2C',
+                    titleColor: '#FFFFFF',
+                    bodyColor: '#A0AAB5',
+                    borderColor: '#F7931A',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            return `Price: $${context.parsed.y.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    grid: { color: '#2A3545', drawBorder: false },
+                    ticks: { color: '#A0AAB5', callback: function(value) { return '$' + value.toLocaleString(); } }
+                },
+                x: {
+                    grid: { color: '#2A3545', drawBorder: false },
+                    ticks: { color: '#A0AAB5', maxRotation: 45, minRotation: 45 }
+                }
+            }
+        }
+    });
+}
+
 function setupEventListeners() {
-    document.querySelectorAll('.symbol-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            document.querySelectorAll('.symbol-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentSymbol = btn.dataset.symbol;
-            await fetchCandlestickData();
-            await fetchCurrentPrice();
+    const timeframeSelect = document.getElementById('timeframe');
+    if (timeframeSelect) {
+        timeframeSelect.addEventListener('change', function(e) {
+            updateChartTimeframe(e.target.value);
         });
+    }
+}
+
+function updateChartTimeframe(timeframe) {
+    let dataPoints = 24;
+    
+    switch(timeframe) {
+        case '1H':
+            dataPoints = 60;
+            break;
+        case '24H':
+            dataPoints = 24;
+            break;
+        case '7D':
+            dataPoints = 168;
+            break;
+        case '30D':
+            dataPoints = 720;
+            break;
+    }
+    
+    const newData = Array.from({ length: dataPoints }, () => Math.random() * 1000 + 40000);
+    const labels = Array.from({ length: dataPoints }, (_, i) => {
+        if (timeframe === '1H') return `${i}m`;
+        if (timeframe === '24H') return `${i}:00`;
+        return `Day ${Math.floor(i/24)+1}`;
     });
     
-    document.querySelectorAll('.timeframe-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            document.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentInterval = btn.dataset.interval;
-            await fetchCandlestickData();
-        });
-    });
+    if (chart) {
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = newData;
+        chart.update();
+    }
+}
+
+async function fetchRealCryptoPrices() {
+    try {
+        const cryptoDataWithPrices = [];
+        
+        for (const crypto of cryptoData) {
+            try {
+                const binanceSymbol = crypto.symbol === 'BTC' ? 'BTCUSDT' :
+                                     crypto.symbol === 'ETH' ? 'ETHUSDT' :
+                                     crypto.symbol === 'BNB' ? 'BNBUSDT' :
+                                     crypto.symbol === 'SOL' ? 'SOLUSDT' : null;
+                
+                if (binanceSymbol) {
+                    const response = await fetch(`${BINANCE_BASE_URL}/ticker/24hr?symbol=${binanceSymbol}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        cryptoDataWithPrices.push({
+                            ...crypto,
+                            price: parseFloat(data.lastPrice),
+                            change: parseFloat(data.priceChangePercent)
+                        });
+                    } else {
+                        cryptoDataWithPrices.push(crypto);
+                    }
+                } else {
+                    cryptoDataWithPrices.push(crypto);
+                }
+            } catch (err) {
+                cryptoDataWithPrices.push(crypto);
+            }
+        }
+        
+        cryptoData = cryptoDataWithPrices;
+        loadCryptoList();
+        
+    } catch (error) {
+        console.error('Error fetching crypto prices:', error);
+        loadCryptoList();
+    }
+}
+
+function loadCryptoList() {
+    const container = document.getElementById('cryptoList');
+    if (!container) return;
+    
+    container.innerHTML = cryptoData.map(crypto => {
+        const changeClass = crypto.change >= 0 ? 'positive' : 'negative';
+        const changeSign = crypto.change >= 0 ? '+' : '';
+        
+        return `
+            <div class="crypto-item" onclick="window.location.href='trade.html?crypto=${crypto.symbol}'">
+                <div class="crypto-info">
+                    <div class="crypto-icon">${crypto.icon}</div>
+                    <div>
+                        <div class="crypto-symbol">${crypto.symbol}</div>
+                        <div class="crypto-name">${crypto.name}</div>
+                    </div>
+                </div>
+                <div class="crypto-price">
+                    <div class="crypto-price-value">$${crypto.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                    <div class="crypto-change ${changeClass}">
+                        ${changeSign}${crypto.change.toFixed(2)}%
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 function startRealTimeUpdates() {
     if (priceUpdateInterval) clearInterval(priceUpdateInterval);
+    
     priceUpdateInterval = setInterval(async () => {
-        await fetchCurrentPrice();
-        await loadCryptoList();
-    }, 10000);
-}
-
-async function changeChartSymbol(symbol) {
-    document.querySelectorAll('.symbol-btn').forEach(btn => {
-        if (btn.dataset.symbol === symbol) btn.classList.add('active');
-        else btn.classList.remove('active');
-    });
-    currentSymbol = symbol;
-    await fetchCandlestickData();
-    await fetchCurrentPrice();
+        await fetchRealCryptoPrices();
+        await updateStats();
+        await loadTransactions();
+        
+        // Update chart with new data point
+        if (chart && chart.data.datasets[0].data.length > 0 && cryptoData[0]) {
+            const newPrice = cryptoData[0].price;
+            const newData = chart.data.datasets[0].data.slice(1);
+            newData.push(newPrice);
+            chart.data.datasets[0].data = newData;
+            chart.update('none');
+        }
+    }, 30000);
 }
 
 function handleLogout() {
@@ -337,6 +544,4 @@ function handleLogout() {
     window.location.href = 'home.html';
 }
 
-// Make functions global
-window.changeChartSymbol = changeChartSymbol;
 window.handleLogout = handleLogout;
