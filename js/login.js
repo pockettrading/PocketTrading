@@ -1,152 +1,240 @@
-// Login page functionality - Optimized for Guest, Registered, and Admin Users
+// login.js - Page-specific enhancements for login/register page
 // File: js/login.js
 
-class LoginManager {
-    constructor() {
-        this.init();
-    }
+(function() {
+    'use strict';
 
-    async init() {
-        // Wait for supabaseDB
-        if (typeof supabaseDB === 'undefined') {
-            console.log('Waiting for Supabase...');
-            setTimeout(() => this.init(), 500);
-            return;
-        }
+    // Page-specific initialization
+    function initLoginPage() {
+        // Add any page-specific animations or effects
+        animateCardsOnScroll();
         
-        await this.checkAlreadyLoggedIn();
-        this.setupEventListeners();
+        // Pre-fill demo credentials for testing (remove in production)
+        setupDemoCredentials();
+        
+        // Track page view for analytics
+        trackPageView();
+        
+        // Add input animations
+        addInputAnimations();
     }
 
-    async checkAlreadyLoggedIn() {
-        const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
-        if (storedUser) {
-            const user = JSON.parse(storedUser);
+    // Animate elements on scroll
+    function animateCardsOnScroll() {
+        const cards = document.querySelectorAll('.feature-card, .stat-card');
+        if (cards.length === 0) return;
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        
+        cards.forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.5s ease-out';
+            observer.observe(card);
+        });
+    }
+
+    // Setup demo credentials (for testing only - remove in production)
+    function setupDemoCredentials() {
+        // Check if we're on a development environment
+        const isDev = window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1';
+        
+        if (isDev) {
+            const loginEmail = document.getElementById('loginEmail');
+            const loginPassword = document.getElementById('loginPassword');
+            const demoHint = document.createElement('div');
             
-            // Verify user still exists in cloud
-            const cloudUser = await supabaseDB.getUserByEmail(user.email);
-            if (cloudUser) {
-                // User is already logged in, redirect to home
-                console.log('User already logged in, redirecting to home...');
-                window.location.href = 'home.html';
-            } else {
-                // Clear invalid session
-                localStorage.removeItem('pocket_user');
-                sessionStorage.removeItem('pocket_user');
+            demoHint.style.cssText = `
+                background: rgba(0, 216, 151, 0.1);
+                padding: 12px;
+                border-radius: 12px;
+                margin-top: 16px;
+                font-size: 12px;
+                color: #00D897;
+                text-align: center;
+                cursor: pointer;
+            `;
+            demoHint.innerHTML = '🔑 Demo: Click to fill test credentials (Admin: ephremgojo@gmail.com)';
+            demoHint.onclick = () => {
+                if (loginEmail) loginEmail.value = 'ephremgojo@gmail.com';
+                if (loginPassword) loginPassword.value = 'Admin123';
+                auth.showSuccess('Demo credentials filled! Click Login to continue.');
+            };
+            
+            const formSide = document.querySelector('.form-side');
+            if (formSide && !document.querySelector('.demo-hint')) {
+                demoHint.className = 'demo-hint';
+                formSide.appendChild(demoHint);
             }
         }
     }
 
-    setupEventListeners() {
-        const loginForm = document.getElementById('loginForm');
-        if (loginForm) {
-            loginForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleLogin();
-            });
-        }
-
-        const forgotPasswordLink = document.getElementById('forgotPassword');
-        if (forgotPasswordLink) {
-            forgotPasswordLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.handleForgotPassword();
-            });
-        }
+    // Track page views
+    function trackPageView() {
+        console.log('Login page viewed');
+        // Add your analytics tracking here
+        // Example: gtag('event', 'page_view', { page: 'login' });
     }
 
-    async handleLogin() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const rememberMe = document.getElementById('rememberMe').checked;
-
-        console.log('Attempting login for:', email);
-
-        if (!email || !password) {
-            this.showNotification('Please enter email and password', 'error');
-            return;
-        }
-
-        try {
-            // Get user from Supabase
-            const user = await supabaseDB.getUserByEmail(email);
-            console.log('User found:', user ? 'Yes' : 'No');
-
-            if (user && user.password === password) {
-                console.log('Password matched! Logging in...');
-                
-                // Update last login
-                await supabaseDB.update('custom_users', user.id, {
-                    last_login: new Date().toISOString()
-                });
-
-                // Set admin flag
-                user.isAdmin = (user.email === 'ephregojo@gmail.com');
-
-                // Store user session
-                if (rememberMe) {
-                    localStorage.setItem('pocket_user', JSON.stringify(user));
-                    sessionStorage.removeItem('pocket_user');
-                    console.log('Saved to localStorage (remember me)');
-                } else {
-                    sessionStorage.setItem('pocket_user', JSON.stringify(user));
-                    localStorage.removeItem('pocket_user');
-                    console.log('Saved to sessionStorage');
+    // Add input animations
+    function addInputAnimations() {
+        const inputs = document.querySelectorAll('.form-group input');
+        
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement?.parentElement?.classList.add('focused');
+            });
+            
+            input.addEventListener('blur', () => {
+                if (!input.value) {
+                    input.parentElement?.parentElement?.classList.remove('focused');
                 }
-
-                const displayName = user.name || user.email.split('@')[0];
-                const isAdmin = user.isAdmin;
-                
-                if (isAdmin) {
-                    this.showNotification(`Welcome back, Admin ${displayName}!`, 'success');
-                } else {
-                    this.showNotification(`Welcome back, ${displayName}!`, 'success');
-                }
-
-                // Redirect to home page
-                console.log('Redirecting to home.html...');
-                setTimeout(() => {
-                    window.location.href = 'home.html';
-                }, 500);
-            } else {
-                this.showNotification('Invalid email or password', 'error');
+            });
+            
+            // Check if input has value on load
+            if (input.value) {
+                input.parentElement?.parentElement?.classList.add('focused');
             }
-        } catch (error) {
-            console.error('Login error:', error);
-            this.showNotification('Login failed. Please try again.', 'error');
-        }
+        });
     }
 
-    handleForgotPassword() {
-        const email = document.getElementById('email').value;
-        
-        if (!email) {
-            this.showNotification('Please enter your email address', 'error');
-            return;
+    // Add custom CSS for animations
+    const style = document.createElement('style');
+    style.textContent = `
+        .form-group {
+            transition: all 0.3s ease;
         }
         
-        // In a real app, send reset email
-        this.showNotification(`Password reset link sent to ${email}`, 'success');
-    }
-
-    showNotification(message, type) {
-        const existing = document.querySelector('.auth-notification');
-        if (existing) existing.remove();
-
-        const notification = document.createElement('div');
-        notification.className = 'auth-notification';
-        notification.textContent = message;
-        notification.style.background = type === 'error' ? 'rgba(255, 71, 87, 0.95)' : 'rgba(0, 216, 151, 0.95)';
-        notification.style.color = 'white';
+        .form-group.focused label {
+            color: #00D897;
+        }
         
-        document.body.appendChild(notification);
+        .form-group input:focus {
+            transform: scale(1.01);
+        }
+        
+        .submit-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .submit-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .submit-btn:active::after {
+            width: 300px;
+            height: 300px;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .input-error {
+            animation: shake 0.3s ease-in-out;
+            border-color: #FF4757 !important;
+        }
+        
+        .demo-hint:hover {
+            background: rgba(0, 216, 151, 0.2) !important;
+            transform: scale(1.02);
+            transition: all 0.2s;
+        }
+        
+        /* Social login buttons (optional) */
+        .social-login {
+            margin-top: 32px;
+            text-align: center;
+        }
+        
+        .social-divider {
+            position: relative;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .social-divider::before,
+        .social-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: calc(50% - 30px);
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .social-divider::before { left: 0; }
+        .social-divider::after { right: 0; }
+        
+        .social-divider span {
+            background: #1E2A3A;
+            padding: 0 16px;
+            font-size: 12px;
+            color: #8B93A5;
+        }
+        
+        .social-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+        
+        .social-btn {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 20px;
+            text-decoration: none;
+        }
+        
+        .social-btn:hover {
+            background: rgba(0, 216, 151, 0.1);
+            border-color: #00D897;
+            transform: translateY(-2px);
+        }
+    `;
+    document.head.appendChild(style);
 
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease-out';
-            setTimeout(() => notification.remove(), 300);
-        }, 3000);
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLoginPage);
+    } else {
+        initLoginPage();
     }
-}
 
-// Initialize login page
-const loginManager = new LoginManager();
+    // Export any necessary functions globally
+    window.togglePassword = function(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.type = field.type === 'password' ? 'text' : 'password';
+        }
+    };
+})();
