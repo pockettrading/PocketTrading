@@ -13,54 +13,22 @@ const ADMIN_EMAIL = 'ephregojo@gmail.com';
 // Binance API
 const BINANCE_BASE_URL = 'https://api.binance.com/api/v3';
 
-// Real cryptocurrency icons (Unicode/Emoji)
-const cryptoIcons = {
-    'BTC': '₿',
-    'ETH': 'Ξ',
-    'BNB': 'B',
-    'SOL': '◎',
-    'XRP': 'X',
-    'ADA': 'A',
-    'DOGE': 'Ð',
-    'DOT': '●',
-    'LINK': 'L',
-    'UNI': 'U',
-    'AAVE': 'A',
-    'SHIB': '🐕',
-    'AVAX': 'A',
-    'MATIC': 'M',
-    'USDT': '₮',
-    'USDC': '💵',
-    'DAI': '🔷',
-    'LTC': 'Ł',
-    'BCH': 'BCH',
-    'TRX': 'T',
-    'ETC': '⋄',
-    'VET': 'V',
-    'THETA': 'Θ',
-    'FTM': 'F',
-    'ALGO': 'A',
-    'ATOM': '⚛️'
-};
-
 // Top cryptocurrencies to display (with Binance symbols)
 const topCryptos = [
-    { symbol: 'BTC', name: 'Bitcoin', icon: cryptoIcons['BTC'], binanceSymbol: 'BTCUSDT', category: 'large' },
-    { symbol: 'ETH', name: 'Ethereum', icon: cryptoIcons['ETH'], binanceSymbol: 'ETHUSDT', category: 'large' },
-    { symbol: 'BNB', name: 'Binance Coin', icon: cryptoIcons['BNB'], binanceSymbol: 'BNBUSDT', category: 'large' },
-    { symbol: 'SOL', name: 'Solana', icon: cryptoIcons['SOL'], binanceSymbol: 'SOLUSDT', category: 'large' },
-    { symbol: 'XRP', name: 'Ripple', icon: cryptoIcons['XRP'], binanceSymbol: 'XRPUSDT', category: 'mid' },
-    { symbol: 'ADA', name: 'Cardano', icon: cryptoIcons['ADA'], binanceSymbol: 'ADAUSDT', category: 'mid' },
-    { symbol: 'DOGE', name: 'Dogecoin', icon: cryptoIcons['DOGE'], binanceSymbol: 'DOGEUSDT', category: 'meme' },
-    { symbol: 'DOT', name: 'Polkadot', icon: cryptoIcons['DOT'], binanceSymbol: 'DOTUSDT', category: 'mid' },
-    { symbol: 'LINK', name: 'Chainlink', icon: cryptoIcons['LINK'], binanceSymbol: 'LINKUSDT', category: 'mid' },
-    { symbol: 'UNI', name: 'Uniswap', icon: cryptoIcons['UNI'], binanceSymbol: 'UNIUSDT', category: 'defi' },
-    { symbol: 'AAVE', name: 'Aave', icon: cryptoIcons['AAVE'], binanceSymbol: 'AAVEUSDT', category: 'defi' },
-    { symbol: 'AVAX', name: 'Avalanche', icon: cryptoIcons['AVAX'], binanceSymbol: 'AVAXUSDT', category: 'mid' },
-    { symbol: 'MATIC', name: 'Polygon', icon: cryptoIcons['MATIC'], binanceSymbol: 'MATICUSDT', category: 'mid' },
-    { symbol: 'SHIB', name: 'Shiba Inu', icon: cryptoIcons['SHIB'], binanceSymbol: 'SHIBUSDT', category: 'meme' },
-    { symbol: 'LTC', name: 'Litecoin', icon: cryptoIcons['LTC'], binanceSymbol: 'LTCUSDT', category: 'mid' },
-    { symbol: 'TRX', name: 'TRON', icon: cryptoIcons['TRX'], binanceSymbol: 'TRXUSDT', category: 'mid' }
+    { symbol: 'BTC', name: 'Bitcoin', icon: '₿', binanceSymbol: 'BTCUSDT', category: 'large' },
+    { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', binanceSymbol: 'ETHUSDT', category: 'large' },
+    { symbol: 'BNB', name: 'Binance Coin', icon: 'B', binanceSymbol: 'BNBUSDT', category: 'large' },
+    { symbol: 'SOL', name: 'Solana', icon: 'S', binanceSymbol: 'SOLUSDT', category: 'large' },
+    { symbol: 'XRP', name: 'Ripple', icon: 'X', binanceSymbol: 'XRPUSDT', category: 'mid' },
+    { symbol: 'ADA', name: 'Cardano', icon: 'A', binanceSymbol: 'ADAUSDT', category: 'mid' },
+    { symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð', binanceSymbol: 'DOGEUSDT', category: 'meme' },
+    { symbol: 'DOT', name: 'Polkadot', icon: '●', binanceSymbol: 'DOTUSDT', category: 'mid' },
+    { symbol: 'LINK', name: 'Chainlink', icon: 'L', binanceSymbol: 'LINKUSDT', category: 'mid' },
+    { symbol: 'UNI', name: 'Uniswap', icon: 'U', binanceSymbol: 'UNIUSDT', category: 'defi' },
+    { symbol: 'AAVE', name: 'Aave', icon: 'A', binanceSymbol: 'AAVEUSDT', category: 'defi' },
+    { symbol: 'AVAX', name: 'Avalanche', icon: 'A', binanceSymbol: 'AVAXUSDT', category: 'mid' },
+    { symbol: 'MATIC', name: 'Polygon', icon: 'M', binanceSymbol: 'MATICUSDT', category: 'mid' },
+    { symbol: 'SHIB', name: 'Shiba Inu', icon: '🐕', binanceSymbol: 'SHIBUSDT', category: 'meme' }
 ];
 
 // Symbol to ID mapping for TradingView
@@ -78,9 +46,7 @@ const symbolToIdMap = {
     'AAVE': 'aave',
     'SHIB': 'shiba-inu',
     'AVAX': 'avalanche-2',
-    'MATIC': 'matic-network',
-    'LTC': 'litecoin',
-    'TRX': 'tron'
+    'MATIC': 'matic-network'
 };
 
 // Initialize when page loads
@@ -161,6 +127,7 @@ function renderUserInfo() {
     if (!userInfo) return;
     
     if (currentUser) {
+        // Registered or Admin User - Show username and logout
         const displayName = currentUser.name || currentUser.email.split('@')[0];
         const adminBadge = currentUser.isAdmin ? '<span class="admin-badge">Admin</span>' : '';
         
@@ -235,6 +202,7 @@ async function loadMarketData() {
                     change: parseFloat(data.priceChangePercent),
                     volume: parseFloat(data.quoteVolume)
                 });
+                console.log(`Loaded ${crypto.symbol}: $${parseFloat(data.lastPrice)}`);
             } catch (err) {
                 console.error(`Error fetching ${crypto.symbol}:`, err);
                 cryptoDataWithPrices.push({ ...crypto, price: 0, change: 0, volume: 0 });
@@ -244,8 +212,10 @@ async function loadMarketData() {
         allCryptoData = cryptoDataWithPrices.filter(c => c.price > 0);
         
         if (allCryptoData.length === 0) {
+            console.log('No crypto data from API, using fallback');
             renderFallbackData();
         } else {
+            console.log(`Loaded ${allCryptoData.length} cryptocurrencies`);
             renderMarketTable();
         }
         
@@ -274,7 +244,7 @@ function renderMarketTable() {
     }
     
     if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="loading-state">No cryptocurrencies found</td--</tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="loading-state">No cryptocurrencies found</td--</td>';
         return;
     }
     
@@ -294,20 +264,20 @@ function renderMarketTable() {
                             <div class="crypto-symbol">${crypto.symbol}</div>
                         </div>
                     </div>
-                </td
-                <td>$${formatPrice(crypto.price)}</td
+                </td>
+                <td>$${formatPrice(crypto.price)}</td>
                 <td>
                     <span class="price-change ${changeClass}">
                         ${changeSign}${crypto.change.toFixed(2)}%
                     </span>
-                </td
-                <td>${formatMarketCap(marketCap)}</td
+                </td>
+                <td>${formatMarketCap(marketCap)}</td>
                 <td>
                     <button class="btn-tradingview" onclick="event.stopPropagation(); openTradingView('${crypto.symbol}')">
                         📊 TradingView
                     </button>
-                </td
-            比
+                </td>
+            </tr>
         `;
     }
     
@@ -338,14 +308,16 @@ function formatVolume(volume) {
 
 function renderFallbackData() {
     const fallbackData = [
-        { symbol: 'BTC', name: 'Bitcoin', icon: cryptoIcons['BTC'], price: 76375.98, change: 0.73, marketCap: 1516000000000 },
-        { symbol: 'ETH', name: 'Ethereum', icon: cryptoIcons['ETH'], price: 2450.73, change: 1.20, marketCap: 294000000000 },
-        { symbol: 'BNB', name: 'Binance Coin', icon: cryptoIcons['BNB'], price: 310.29, change: 0.89, marketCap: 51780000000 },
-        { symbol: 'SOL', name: 'Solana', icon: cryptoIcons['SOL'], price: 101.72, change: 2.10, marketCap: 44690000000 },
-        { symbol: 'XRP', name: 'Ripple', icon: cryptoIcons['XRP'], price: 0.6253, change: 1.50, marketCap: 33740000000 },
-        { symbol: 'ADA', name: 'Cardano', icon: cryptoIcons['ADA'], price: 0.4915, change: 0.15, marketCap: 17050000000 },
-        { symbol: 'DOGE', name: 'Dogecoin', icon: cryptoIcons['DOGE'], price: 0.1198, change: 0.24, marketCap: 17470000000 },
-        { symbol: 'DOT', name: 'Polkadot', icon: cryptoIcons['DOT'], price: 6.83, change: -0.25, marketCap: 9770000000 }
+        { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 76295.52, change: -0.51, marketCap: 1516000000000 },
+        { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2450.73, change: 1.20, marketCap: 294000000000 },
+        { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 310.29, change: 0.89, marketCap: 51780000000 },
+        { symbol: 'SOL', name: 'Solana', icon: 'S', price: 101.72, change: 2.10, marketCap: 44690000000 },
+        { symbol: 'XRP', name: 'Ripple', icon: 'X', price: 0.6253, change: 1.50, marketCap: 33740000000 },
+        { symbol: 'ADA', name: 'Cardano', icon: 'A', price: 0.4915, change: 0.15, marketCap: 17050000000 },
+        { symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð', price: 0.1198, change: 0.24, marketCap: 17470000000 },
+        { symbol: 'DOT', name: 'Polkadot', icon: '●', price: 6.83, change: -0.25, marketCap: 9770000000 },
+        { symbol: 'LINK', name: 'Chainlink', icon: 'L', price: 14.50, change: 2.10, marketCap: 8500000000 },
+        { symbol: 'UNI', name: 'Uniswap', icon: 'U', price: 7.85, change: -1.50, marketCap: 5900000000 }
     ];
     
     const tbody = document.getElementById('marketTableBody');
@@ -365,20 +337,20 @@ function renderFallbackData() {
                                 <div class="crypto-symbol">${crypto.symbol}</div>
                             </div>
                         </div>
-                    </td
-                    <td>$${formatPrice(crypto.price)}</td
+                    </td>
+                    <td>$${formatPrice(crypto.price)}</td>
                     <td>
                         <span class="price-change ${changeClass}">
                             ${changeSign}${crypto.change.toFixed(2)}%
                         </span>
-                    </td
-                    <td>${formatMarketCap(crypto.marketCap)}</td
+                    </td>
+                    <td>${formatMarketCap(crypto.marketCap)}</td>
                     <td>
                         <button class="btn-tradingview" onclick="event.stopPropagation(); openTradingView('${crypto.symbol}')">
                             📊 TradingView
                         </button>
-                    </td
-                比
+                    </td>
+                </tr>
             `;
         }
         tbody.innerHTML = html;
