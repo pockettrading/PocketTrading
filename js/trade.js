@@ -1,677 +1,840 @@
-// Trade page functionality - Optimized for Guest, Registered, and Admin Users
-// File: js/trade.js
+// Trades Page Controller - PocketTrading
+// File: js/trades.js
 
-let currentUser = null;
-let currentTradeType = 'buy';
-let currentCrypto = null;
-let currentDuration = null;
-let priceUpdateInterval = null;
-let currentPrice = 0;
-let allCryptos = [];
-let cooldownActive = false;
-let cooldownTimer = null;
-
-// Admin email
-const ADMIN_EMAIL = 'ephregojo@gmail.com';
-
-// Profit percentages based on duration
-const profitRates = {
-    30: 12,
-    60: 18,
-    90: 25,
-    180: 32,
-    300: 45
-};
-
-// Minimum amounts based on duration
-const minAmounts = {
-    30: 100,
-    60: 500,
-    90: 1000,
-    180: 2000,
-    300: 5000
-};
-
-// CoinGecko API
-const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
-
-// Real cryptocurrency icons
-const cryptoIcons = {
-    'BTC': '₿',
-    'ETH': 'Ξ',
-    'BNB': 'B',
-    'SOL': '◎',
-    'XRP': 'X',
-    'ADA': 'A',
-    'DOGE': 'Ð',
-    'DOT': '●',
-    'LINK': 'L',
-    'UNI': 'U',
-    'AAVE': 'A',
-    'SHIB': '🐕',
-    'AVAX': 'A',
-    'MATIC': 'M'
-};
-
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('Trade page loaded');
-    
-    if (typeof supabaseDB === 'undefined') {
-        setTimeout(() => initTradePage(), 500);
-        return;
+class TradesManager {
+    constructor() {
+        this.currentUser = null;
+        this.allTrades = [];
+        this.filteredTrades = [];
+        this.currentTab = 'open';
+        this.symbolFilter = 'all';
+        this.typeFilter = 'all';
+        this.searchTerm = '';
+        this.currentSort = 'date';
+        this.sortDirection = 'desc';
+        this.performanceChart = null;
+        this.updateInterval = null;
+        this.currentPrices = {};
+        this.init();
     }
-    
-    await initTradePage();
-});
 
-async function initTradePage() {
-    await loadUser();
-    renderNavLinks();
-    renderUserInfo();
-    
-    if (!currentUser) {
-        renderLoginPrompt();
-    } else {
-        await loadCryptos();
+    async init() {
+        if (typeof auth === 'undefined') {
+            setTimeout(() => this.init(), 100);
+            return;
+        }
+
+        this.currentUser = auth.getUser();
+        
+        if (!this.currentUser) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        await this.loadUserData();
+        this.setupUserInterface();
+        await this.loadTrades();
+        this.setupEventListeners();
+        this.startPriceUpdates();
+        
+        // Load market prices for P&L calculations
+        await this.loadCurrentPrices();
     }
-}
 
-async function loadUser() {
-    try {
-        const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
-        if (storedUser) {
-            currentUser = JSON.parse(storedUser);
-            
-            // Verify user still exists in cloud
-            const cloudUser = await supabaseDB.getUserByEmail(currentUser.email);
-            if (cloudUser) {
-                currentUser = cloudUser;
-                currentUser.isAdmin = (currentUser.email === ADMIN_EMAIL);
-                
-                // Update session
-                if (localStorage.getItem('pocket_user')) {
-                    localStorage.setItem('pocket_user', JSON.stringify(currentUser));
-                }
-                if (sessionStorage.getItem('pocket_user')) {
-                    sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
-                }
-            } else {
-                currentUser = null;
+    async loadUserData() {
+        try {
+            const userData = await supabaseDB.getUserByEmail(this.currentUser.email);
+            if (userData) {
+                this.currentUser = { ...this.currentUser, ...userData };
             }
-            console.log('User loaded:', currentUser?.email, 'Is Admin:', currentUser?.isAdmin);
-        } else {
-            console.log('Guest mode - no user logged in');
-            currentUser = null;
+        } catch (error) {
+            console.error('Error loading user data:', error);
         }
-    } catch(e) {
-        console.log('Error loading user:', e);
-        currentUser = null;
     }
-}
 
-function renderNavLinks() {
-    const navLinks = document.getElementById('navLinks');
-    if (!navLinks) return;
-    
-    // Clear existing dynamic links (keep Home, Markets, Trades)
-    const existingLinks = navLinks.querySelectorAll('.nav-link:not([href="home.html"]):not([href="markets.html"]):not([href="trade.html"])');
-    existingLinks.forEach(link => link.remove());
-    
-    // Add My Profile link only for registered users
-    if (currentUser) {
-        const profileLink = document.createElement('a');
-        profileLink.href = 'profile.html';
-        profileLink.className = 'nav-link';
-        profileLink.textContent = 'My Profile';
-        navLinks.appendChild(profileLink);
-    }
-}
-
-function renderUserInfo() {
-    const userInfo = document.getElementById('userInfo');
-    if (!userInfo) return;
-    
-    if (currentUser) {
-        const displayName = currentUser.name || currentUser.email.split('@')[0];
-        const adminBadge = currentUser.isAdmin ? '<span class="admin-badge">Admin</span>' : '';
+    setupUserInterface() {
+        const userElements = document.querySelectorAll('.user-only');
+        const userNameElements = document.querySelectorAll('.user-name');
+        const userEmailElements = document.querySelectorAll('.user-email');
         
-        let adminPanelButton = '';
-        if (currentUser.isAdmin) {
-            adminPanelButton = '<a href="admin.html" class="login-btn" style="margin-left: 0.5rem;">Admin Panel</a>';
+        userElements.forEach(el => el.style.display = 'block');
+        
+        if (this.currentUser) {
+            userNameElements.forEach(el => el.textContent = this.currentUser.name || 'Trader');
+            userEmailElements.forEach(el => el.textContent = this.currentUser.email || '');
         }
         
-        userInfo.innerHTML = `
-            <span class="username">${displayName}${adminBadge}</span>
-            ${adminPanelButton}
-            <span class="logout-link" onclick="handleLogout()">Logout</span>
-        `;
-    } else {
-        // Guest User - Show Login and Sign Up buttons
-        userInfo.innerHTML = `
-            <div class="auth-buttons">
-                <a href="login.html" class="login-btn">Login</a>
-                <a href="register.html" class="signup-btn">Sign Up</a>
-            </div>
-        `;
+        const adminElements = document.querySelectorAll('.admin-only');
+        if (this.currentUser?.isAdmin) {
+            adminElements.forEach(el => el.style.display = 'block');
+        }
     }
-}
 
-function renderLoginPrompt() {
-    const container = document.getElementById('tradeContent');
-    if (!container) return;
-    
-    container.innerHTML = `
-        <div class="login-prompt">
-            <h3>🔒 Login Required</h3>
-            <p>Please login or create an account to start trading</p>
-            <div class="login-buttons">
-                <a href="login.html" class="btn-login" style="background: transparent; color: var(--primary); padding: 10px 28px; border: 1px solid var(--primary); border-radius: 10px; text-decoration: none; font-weight: 500;">Login</a>
-                <a href="register.html" class="btn-signup" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; padding: 10px 28px; border: none; border-radius: 10px; text-decoration: none; font-weight: 500;">Sign Up</a>
-            </div>
-        </div>
-    `;
-}
+    async loadTrades() {
+        try {
+            // Load trades from Supabase
+            const trades = await supabaseDB.getUserTrades(this.currentUser.id);
+            
+            if (trades && trades.length > 0) {
+                this.allTrades = trades.map(t => ({
+                    ...t,
+                    pnl: t.pnl || 0,
+                    close_price: t.close_price || null,
+                    close_date: t.close_date || null
+                }));
+            } else {
+                // Demo trades for testing
+                this.allTrades = this.getDemoTrades();
+                // Save demo trades to Supabase for persistence
+                for (const trade of this.allTrades) {
+                    await supabaseDB.insert('trades', trade);
+                }
+            }
+            
+            this.applyFilters();
+            this.updateStats();
+            this.renderTrades();
+            this.updatePerformanceChart();
+        } catch (error) {
+            console.error('Error loading trades:', error);
+            this.allTrades = this.getDemoTrades();
+            this.applyFilters();
+            this.updateStats();
+            this.renderTrades();
+        }
+    }
 
-async function loadCryptos() {
-    try {
-        const response = await fetch(`${COINGECKO_BASE_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false`);
-        const data = await response.json();
+    getDemoTrades() {
+        const now = new Date();
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         
-        allCryptos = data.map(coin => ({
-            id: coin.id,
-            symbol: coin.symbol.toUpperCase(),
-            name: coin.name,
-            icon: cryptoIcons[coin.symbol.toUpperCase()] || '📈',
-            current_price: coin.current_price
-        }));
-        
-        const defaultCrypto = allCryptos.find(c => c.symbol === 'BTC') || allCryptos[0];
-        currentCrypto = defaultCrypto;
-        
-        await initTradeInterface();
-    } catch (error) {
-        console.error('Error loading cryptos:', error);
-        // Fallback cryptos
-        allCryptos = [
-            { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', icon: '₿', current_price: 76426.00 },
-            { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', current_price: 2450.73 },
-            { id: 'binancecoin', symbol: 'BNB', name: 'Binance Coin', icon: 'B', current_price: 310.29 },
-            { id: 'solana', symbol: 'SOL', name: 'Solana', icon: '◎', current_price: 101.72 },
-            { id: 'ripple', symbol: 'XRP', name: 'Ripple', icon: 'X', current_price: 0.6253 }
+        return [
+            {
+                id: 1001,
+                user_id: this.currentUser?.id,
+                symbol: 'BTC/USD',
+                type: 'buy',
+                amount: 1000,
+                leverage: 5,
+                entry_price: 68432.50,
+                current_price: 69123.75,
+                status: 'open',
+                pnl: 101.20,
+                pnl_percentage: 10.12,
+                created_at: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            {
+                id: 1002,
+                user_id: this.currentUser?.id,
+                symbol: 'ETH/USD',
+                type: 'sell',
+                amount: 500,
+                leverage: 3,
+                entry_price: 3821.75,
+                current_price: 3756.30,
+                status: 'open',
+                pnl: 85.70,
+                pnl_percentage: 17.14,
+                created_at: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            {
+                id: 1003,
+                user_id: this.currentUser?.id,
+                symbol: 'SOL/USD',
+                type: 'buy',
+                amount: 800,
+                leverage: 10,
+                entry_price: 168.42,
+                current_price: 172.15,
+                status: 'open',
+                pnl: 176.50,
+                pnl_percentage: 22.06,
+                created_at: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            {
+                id: 1004,
+                user_id: this.currentUser?.id,
+                symbol: 'BTC/USD',
+                type: 'buy',
+                amount: 2000,
+                leverage: 2,
+                entry_price: 67500.00,
+                close_price: 69000.00,
+                pnl: 450.00,
+                pnl_percentage: 22.5,
+                status: 'closed',
+                created_at: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+                close_date: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            {
+                id: 1005,
+                user_id: this.currentUser?.id,
+                symbol: 'ETH/USD',
+                type: 'sell',
+                amount: 300,
+                leverage: 5,
+                entry_price: 3900.00,
+                close_price: 3850.00,
+                pnl: 75.00,
+                pnl_percentage: 25.0,
+                status: 'closed',
+                created_at: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+                close_date: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            {
+                id: 1006,
+                user_id: this.currentUser?.id,
+                symbol: 'DOGE/USD',
+                type: 'buy',
+                amount: 200,
+                leverage: 20,
+                entry_price: 0.162,
+                close_price: 0.175,
+                pnl: 320.99,
+                pnl_percentage: 160.49,
+                status: 'closed',
+                created_at: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+                close_date: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            {
+                id: 1007,
+                user_id: this.currentUser?.id,
+                symbol: 'XRP/USD',
+                type: 'buy',
+                amount: 400,
+                leverage: 3,
+                entry_price: 0.624,
+                close_price: 0.598,
+                pnl: -50.00,
+                pnl_percentage: -12.5,
+                status: 'closed',
+                created_at: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+                close_date: new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000).toISOString()
+            }
         ];
-        currentCrypto = allCryptos[0];
-        await initTradeInterface();
     }
-}
 
-async function initTradeInterface() {
-    const container = document.getElementById('tradeContent');
-    if (!container) return;
-    
-    container.innerHTML = `
-        <div class="trade-container">
-            <div class="trade-header">
-                <h1>Confirm Your Trade</h1>
-                <p>Review your trade details before confirming</p>
-            </div>
-            
-            <div class="trade-card">
-                <div class="order-tabs">
-                    <button class="order-tab buy active" data-trade="buy">BUY</button>
-                    <button class="order-tab sell" data-trade="sell">SELL</button>
-                </div>
-                
-                <div class="crypto-selector" id="cryptoSelector">
-                    <div class="selected-crypto" id="selectedCrypto">
-                        <span class="crypto-icon">${currentCrypto.icon}</span>
-                        <div>
-                            <div class="crypto-symbol">${currentCrypto.symbol}</div>
-                            <div class="crypto-name">${currentCrypto.name}</div>
-                        </div>
-                    </div>
-                    <div class="current-price-display">
-                        <div class="price-value" id="currentPrice">$${currentCrypto.current_price?.toLocaleString() || '0.00'}</div>
-                        <div class="price-change positive" id="priceChange">0.00%</div>
-                    </div>
-                </div>
-                
-                <div class="amount-section">
-                    <div class="amount-label">
-                        <span>Amount (USDT)</span>
-                        <span id="minAmountLabel">Select duration first</span>
-                    </div>
-                    <input type="number" id="amount" class="amount-input" placeholder="Enter amount to trade" value="">
-                </div>
-                
-                <div class="duration-section">
-                    <div class="duration-label">Select Duration</div>
-                    <div class="duration-buttons" id="durationButtons">
-                        <button class="duration-btn" data-duration="30">
-                            30s
-                            <div class="duration-profit positive">+12%</div>
-                        </button>
-                        <button class="duration-btn" data-duration="60">
-                            60s
-                            <div class="duration-profit positive">+18%</div>
-                        </button>
-                        <button class="duration-btn" data-duration="90">
-                            90s
-                            <div class="duration-profit positive">+25%</div>
-                        </button>
-                        <button class="duration-btn" data-duration="180">
-                            180s
-                            <div class="duration-profit positive">+32%</div>
-                        </button>
-                        <button class="duration-btn" data-duration="300">
-                            300s
-                            <div class="duration-profit positive">+45%</div>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="info-row">
-                    <span class="info-label">Available Amount:</span>
-                    <span class="info-value" id="availableAmount">${currentUser?.balance?.toFixed(2) || 0} USDT</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Expected Return:</span>
-                    <span class="info-value positive" id="expectedReturn">0.00 USDT</span>
-                </div>
-                
-                <div id="errorMessage" class="error-message" style="color: var(--danger); font-size: 0.7rem; margin-top: 0.5rem;"></div>
-                
-                <button class="trade-btn buy" id="tradeBtn">BUY ${currentCrypto.symbol}</button>
-                <div id="cooldownMessage" class="cooldown-timer"></div>
-            </div>
-        </div>
-    `;
-    
-    await fetchCurrentPrice();
-    setupEventListeners();
-    startPriceUpdates();
-    updateAvailableBalance();
-}
-
-async function fetchCurrentPrice() {
-    if (!currentCrypto) return;
-    
-    try {
-        const response = await fetch(`${COINGECKO_BASE_URL}/simple/price?ids=${currentCrypto.id}&vs_currencies=usd&include_24hr_change=true`);
-        const data = await response.json();
-        
-        if (data[currentCrypto.id]) {
-            currentPrice = data[currentCrypto.id].usd;
-            const change = data[currentCrypto.id].usd_24h_change || 0;
-            
-            const priceElem = document.getElementById('currentPrice');
-            const changeElem = document.getElementById('priceChange');
-            
-            if (priceElem) priceElem.textContent = `$${currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            if (changeElem) {
-                changeElem.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
-                changeElem.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
-            }
-        }
-    } catch (error) {
-        console.error('Error fetching price:', error);
-        currentPrice = currentCrypto.current_price || 0;
-    }
-}
-
-function setupEventListeners() {
-    // Order type tabs
-    document.querySelectorAll('.order-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.order-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            currentTradeType = tab.dataset.trade;
-            
-            const tradeBtn = document.getElementById('tradeBtn');
-            if (currentTradeType === 'buy') {
-                tradeBtn.textContent = `BUY ${currentCrypto.symbol}`;
-                tradeBtn.className = 'trade-btn buy';
+    async loadCurrentPrices() {
+        try {
+            const markets = await supabaseDB.getAll('market_prices');
+            if (markets && markets.length > 0) {
+                markets.forEach(m => {
+                    this.currentPrices[m.symbol] = m.price;
+                });
             } else {
-                tradeBtn.textContent = `SELL ${currentCrypto.symbol}`;
-                tradeBtn.className = 'trade-btn sell';
+                // Default prices
+                this.currentPrices = {
+                    'BTC/USD': 69123.75,
+                    'ETH/USD': 3756.30,
+                    'SOL/USD': 172.15,
+                    'XRP/USD': 0.618,
+                    'DOGE/USD': 0.168,
+                    'ADA/USD': 0.479,
+                    'AVAX/USD': 43.20,
+                    'MATIC/USD': 0.92
+                };
             }
-        });
-    });
-    
-    // Duration buttons
-    document.querySelectorAll('.duration-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentDuration = parseInt(btn.dataset.duration);
-            updateMinAmountLabel();
-            validateAmount();
-            calculateExpectedReturn();
-            clearErrorMessage();
-        });
-    });
-    
-    // Amount input
-    const amountInput = document.getElementById('amount');
-    if (amountInput) {
-        amountInput.addEventListener('input', () => {
-            validateAmount();
-            calculateExpectedReturn();
-            clearErrorMessage();
-        });
-    }
-    
-    // Crypto selector
-    const cryptoSelector = document.getElementById('cryptoSelector');
-    if (cryptoSelector) {
-        cryptoSelector.addEventListener('click', showCryptoDropdown);
-    }
-    
-    // Trade button
-    const tradeBtn = document.getElementById('tradeBtn');
-    if (tradeBtn) {
-        tradeBtn.addEventListener('click', executeTrade);
-    }
-}
-
-function showCryptoDropdown() {
-    const existing = document.querySelector('.crypto-dropdown');
-    if (existing) existing.remove();
-    
-    const dropdown = document.createElement('div');
-    dropdown.className = 'crypto-dropdown';
-    dropdown.style.cssText = `
-        position: absolute;
-        background: var(--card-bg);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        width: 280px;
-        z-index: 100;
-        margin-top: 4px;
-        overflow-y: auto;
-        max-height: 300px;
-    `;
-    
-    allCryptos.forEach(crypto => {
-        const option = document.createElement('div');
-        option.className = 'crypto-option';
-        option.style.cssText = `
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-        `;
-        option.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 1.2rem;">${crypto.icon}</span>
-                <div>
-                    <div style="font-weight: 600; font-size: 0.85rem;">${crypto.symbol}</div>
-                    <div style="font-size: 0.65rem; color: var(--text-tertiary);">${crypto.name}</div>
-                </div>
-            </div>
-            <div style="font-size: 0.75rem;">
-                $${crypto.current_price?.toLocaleString() || '0'}
-            </div>
-        `;
-        option.onclick = async () => {
-            currentCrypto = crypto;
-            updateSelectedCrypto();
-            dropdown.remove();
-            await fetchCurrentPrice();
-            updateMinAmountLabel();
-            validateAmount();
-            calculateExpectedReturn();
-        };
-        dropdown.appendChild(option);
-    });
-    
-    const rect = document.getElementById('cryptoSelector').getBoundingClientRect();
-    dropdown.style.position = 'absolute';
-    dropdown.style.top = `${rect.bottom + window.scrollY}px`;
-    dropdown.style.left = `${rect.left + window.scrollX}px`;
-    
-    document.body.appendChild(dropdown);
-    
-    setTimeout(() => {
-        document.addEventListener('click', function removeDropdown(e) {
-            if (!dropdown.contains(e.target) && e.target !== document.getElementById('cryptoSelector')) {
-                dropdown.remove();
-                document.removeEventListener('click', removeDropdown);
-            }
-        });
-    }, 0);
-}
-
-function updateSelectedCrypto() {
-    const selectedDiv = document.getElementById('selectedCrypto');
-    
-    selectedDiv.innerHTML = `
-        <span class="crypto-icon">${currentCrypto.icon}</span>
-        <div>
-            <div class="crypto-symbol">${currentCrypto.symbol}</div>
-            <div class="crypto-name">${currentCrypto.name}</div>
-        </div>
-    `;
-    
-    const tradeBtn = document.getElementById('tradeBtn');
-    if (tradeBtn) {
-        if (currentTradeType === 'buy') {
-            tradeBtn.textContent = `BUY ${currentCrypto.symbol}`;
-        } else {
-            tradeBtn.textContent = `SELL ${currentCrypto.symbol}`;
+            
+            // Update open trades with current prices
+            this.updateOpenTradePrices();
+        } catch (error) {
+            console.error('Error loading current prices:', error);
         }
     }
-}
 
-function updateMinAmountLabel() {
-    const minAmount = minAmounts[currentDuration];
-    const labelSpan = document.getElementById('minAmountLabel');
-    const amountInput = document.getElementById('amount');
-    
-    if (labelSpan && currentDuration) {
-        labelSpan.textContent = `Min $${minAmount.toLocaleString()}`;
-    } else if (labelSpan && !currentDuration) {
-        labelSpan.textContent = 'Select duration first';
-    }
-}
-
-function validateAmount() {
-    const amount = parseFloat(document.getElementById('amount').value) || 0;
-    const errorMsg = document.getElementById('errorMessage');
-    
-    if (!currentDuration) {
-        if (errorMsg) errorMsg.textContent = '⚠️ Please select duration first';
-        return false;
-    }
-    
-    const minAmount = minAmounts[currentDuration];
-    const balance = currentUser?.balance || 0;
-    
-    if (amount <= 0) {
-        if (errorMsg) errorMsg.textContent = '⚠️ Please enter amount';
-        return false;
-    }
-    
-    if (amount < minAmount) {
-        if (errorMsg) errorMsg.textContent = `⚠️ Minimum amount for ${currentDuration}s duration is $${minAmount.toLocaleString()}`;
-        return false;
-    }
-    
-    if (currentTradeType === 'buy' && amount > balance) {
-        if (errorMsg) errorMsg.textContent = `⚠️ Insufficient balance. Available: $${balance.toLocaleString()} USDT`;
-        return false;
-    }
-    
-    if (errorMsg) errorMsg.textContent = '';
-    return true;
-}
-
-function clearErrorMessage() {
-    const errorMsg = document.getElementById('errorMessage');
-    if (errorMsg && errorMsg.textContent.includes('⚠️')) {
-        if (errorMsg.textContent.includes('duration') || errorMsg.textContent.includes('amount') || errorMsg.textContent.includes('Minimum') || errorMsg.textContent.includes('Insufficient')) {
-            errorMsg.textContent = '';
+    updateOpenTradePrices() {
+        let updated = false;
+        
+        this.allTrades = this.allTrades.map(trade => {
+            if (trade.status === 'open' && this.currentPrices[trade.symbol]) {
+                const currentPrice = this.currentPrices[trade.symbol];
+                const newPnL = this.calculatePnL(trade, currentPrice);
+                
+                if (trade.current_price !== currentPrice || trade.pnl !== newPnL) {
+                    updated = true;
+                    return {
+                        ...trade,
+                        current_price: currentPrice,
+                        pnl: newPnL,
+                        pnl_percentage: (newPnL / trade.amount * 100)
+                    };
+                }
+            }
+            return trade;
+        });
+        
+        if (updated) {
+            this.applyFilters();
+            this.updateStats();
+            this.renderTrades();
         }
     }
-}
 
-function calculateExpectedReturn() {
-    const amount = parseFloat(document.getElementById('amount').value) || 0;
-    
-    if (!currentDuration || amount <= 0) {
-        const returnSpan = document.getElementById('expectedReturn');
-        if (returnSpan) returnSpan.textContent = '0.00 USDT';
-        return;
+    calculatePnL(trade, currentPrice) {
+        const positionSize = trade.amount * trade.leverage;
+        const priceDiff = trade.type === 'buy' 
+            ? currentPrice - trade.entry_price 
+            : trade.entry_price - currentPrice;
+        const pnl = (positionSize / trade.entry_price) * priceDiff;
+        return parseFloat(pnl.toFixed(2));
     }
-    
-    const profitRate = profitRates[currentDuration];
-    const expectedReturn = amount * (1 + profitRate / 100);
-    
-    const returnSpan = document.getElementById('expectedReturn');
-    if (returnSpan) {
-        returnSpan.textContent = `${expectedReturn.toFixed(2)} USDT`;
-    }
-}
 
-function updateAvailableBalance() {
-    const availableSpan = document.getElementById('availableAmount');
-    if (availableSpan && currentUser) {
-        availableSpan.textContent = `${currentUser.balance?.toFixed(2) || 0} USDT`;
-    }
-}
-
-function startCooldown() {
-    cooldownActive = true;
-    let secondsLeft = 15;
-    const tradeBtn = document.getElementById('tradeBtn');
-    const cooldownMsg = document.getElementById('cooldownMessage');
-    
-    if (tradeBtn) tradeBtn.disabled = true;
-    
-    if (cooldownTimer) clearInterval(cooldownTimer);
-    
-    cooldownTimer = setInterval(() => {
-        secondsLeft--;
-        if (cooldownMsg) {
-            cooldownMsg.textContent = `⏱️ Please wait ${secondsLeft}s before next trade`;
+    applyFilters() {
+        let filtered = [...this.allTrades];
+        
+        // Apply tab filter
+        if (this.currentTab === 'open') {
+            filtered = filtered.filter(t => t.status === 'open');
+        } else if (this.currentTab === 'closed') {
+            filtered = filtered.filter(t => t.status === 'closed');
         }
         
-        if (secondsLeft <= 0) {
-            clearInterval(cooldownTimer);
-            cooldownActive = false;
-            if (tradeBtn) tradeBtn.disabled = false;
-            if (cooldownMsg) cooldownMsg.textContent = '';
+        // Apply symbol filter
+        if (this.symbolFilter !== 'all') {
+            filtered = filtered.filter(t => t.symbol === this.symbolFilter);
         }
-    }, 1000);
-}
+        
+        // Apply type filter
+        if (this.typeFilter !== 'all') {
+            filtered = filtered.filter(t => t.type === this.typeFilter);
+        }
+        
+        // Apply search
+        if (this.searchTerm) {
+            const term = this.searchTerm.toLowerCase();
+            filtered = filtered.filter(t => 
+                t.symbol.toLowerCase().includes(term)
+            );
+        }
+        
+        // Apply sorting
+        filtered.sort((a, b) => {
+            let aVal, bVal;
+            switch(this.currentSort) {
+                case 'symbol':
+                    aVal = a.symbol;
+                    bVal = b.symbol;
+                    break;
+                case 'type':
+                    aVal = a.type;
+                    bVal = b.type;
+                    break;
+                case 'entryPrice':
+                    aVal = a.entry_price;
+                    bVal = b.entry_price;
+                    break;
+                case 'currentPrice':
+                    aVal = a.current_price || a.close_price || 0;
+                    bVal = b.current_price || b.close_price || 0;
+                    break;
+                case 'amount':
+                    aVal = a.amount;
+                    bVal = b.amount;
+                    break;
+                case 'leverage':
+                    aVal = a.leverage;
+                    bVal = b.leverage;
+                    break;
+                case 'pnl':
+                    aVal = a.pnl || 0;
+                    bVal = b.pnl || 0;
+                    break;
+                case 'status':
+                    aVal = a.status;
+                    bVal = b.status;
+                    break;
+                default:
+                    aVal = new Date(a.created_at);
+                    bVal = new Date(b.created_at);
+            }
+            
+            if (this.sortDirection === 'asc') {
+                return aVal > bVal ? 1 : -1;
+            } else {
+                return aVal < bVal ? 1 : -1;
+            }
+        });
+        
+        this.filteredTrades = filtered;
+    }
 
-function executeTrade() {
-    if (!currentUser) {
-        alert('Please login to trade');
-        window.location.href = 'login.html';
-        return;
+    updateStats() {
+        const totalInvested = this.allTrades.reduce((sum, t) => sum + t.amount, 0);
+        const totalPnL = this.allTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+        const closedTrades = this.allTrades.filter(t => t.status === 'closed');
+        const winningTrades = closedTrades.filter(t => (t.pnl || 0) > 0).length;
+        const winRate = closedTrades.length > 0 ? (winningTrades / closedTrades.length * 100).toFixed(1) : 0;
+        const activeTrades = this.allTrades.filter(t => t.status === 'open').length;
+        
+        const totalInvestedEl = document.getElementById('totalInvested');
+        const totalPnLEl = document.getElementById('totalPnL');
+        const pnlPercentageEl = document.getElementById('pnlPercentage');
+        const winRateEl = document.getElementById('winRate');
+        const totalTradesEl = document.getElementById('totalTrades');
+        const activeTradesEl = document.getElementById('activeTrades');
+        
+        if (totalInvestedEl) totalInvestedEl.textContent = `$${totalInvested.toLocaleString()}`;
+        if (totalPnLEl) {
+            totalPnLEl.innerHTML = `<span style="color: ${totalPnL >= 0 ? '#00D897' : '#FF4757'}">${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}</span>`;
+        }
+        if (pnlPercentageEl) {
+            const pnlPercent = totalInvested > 0 ? (totalPnL / totalInvested * 100).toFixed(1) : 0;
+            pnlPercentageEl.innerHTML = `<span style="color: ${pnlPercent >= 0 ? '#00D897' : '#FF4757'}">${pnlPercent >= 0 ? '+' : ''}${pnlPercent}%</span>`;
+        }
+        if (winRateEl) winRateEl.textContent = `${winRate}%`;
+        if (totalTradesEl) totalTradesEl.textContent = this.allTrades.length;
+        if (activeTradesEl) activeTradesEl.textContent = `${activeTrades} Active`;
     }
-    
-    if (cooldownActive) {
-        alert('Please wait 15 seconds before placing another trade');
-        return;
-    }
-    
-    if (!currentDuration) {
-        alert('Please select duration first');
-        return;
-    }
-    
-    const amount = parseFloat(document.getElementById('amount').value) || 0;
-    const minAmount = minAmounts[currentDuration];
-    
-    if (amount <= 0) {
-        alert('Please enter amount');
-        return;
-    }
-    
-    if (amount < minAmount) {
-        alert(`Minimum amount for ${currentDuration}s duration is $${minAmount.toLocaleString()}`);
-        return;
-    }
-    
-    const balance = currentUser.balance || 0;
-    
-    if (currentTradeType === 'buy') {
-        if (amount > balance) {
-            alert(`Insufficient balance. Available: $${balance.toLocaleString()} USDT`);
+
+    renderTrades() {
+        const tbody = document.getElementById('tradesTableBody');
+        if (!tbody) return;
+        
+        if (this.filteredTrades.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📊</div>
+                            <p>No trades found</p>
+                            <small>Start trading from the Markets page</small>
+                        </div>
+                    </td>
+                </tr>
+            `;
             return;
         }
         
-        currentUser.balance -= amount;
+        tbody.innerHTML = this.filteredTrades.map(trade => {
+            const isOpen = trade.status === 'open';
+            const currentPrice = isOpen ? (trade.current_price || 0) : (trade.close_price || 0);
+            const pnl = trade.pnl || 0;
+            const pnlClass = pnl >= 0 ? 'positive' : 'negative';
+            const pnlSymbol = pnl >= 0 ? '+' : '';
+            
+            return `
+                <tr>
+                    <td><strong>${trade.symbol}</strong></td>
+                    <td>
+                        <span class="trade-type-badge ${trade.type === 'buy' ? 'trade-type-buy' : 'trade-type-sell'}">
+                            ${trade.type === 'buy' ? 'BUY/LONG' : 'SELL/SHORT'}
+                        </span>
+                    </td>
+                    <td>$${trade.entry_price.toLocaleString(undefined, { minimumFractionDigits: trade.entry_price < 1 ? 4 : 2 })}</td>
+                    <td>$${currentPrice.toLocaleString(undefined, { minimumFractionDigits: currentPrice < 1 ? 4 : 2 })}</td>
+                    <td>$${trade.amount.toLocaleString()}</td>
+                    <td>${trade.leverage}x</td>
+                    <td class="${pnlClass}">
+                        ${pnlSymbol}$${Math.abs(pnl).toLocaleString()}
+                        <br><small>(${pnlSymbol}${(trade.pnl_percentage || 0).toFixed(2)}%)</small>
+                    </td>
+                    <td>
+                        <span class="status-badge status-${trade.status}">
+                            ${trade.status === 'open' ? 'Open' : 'Closed'}
+                        </span>
+                    </td>
+                    <td>
+                        ${isOpen ? `
+                            <button class="close-trade-btn" onclick="tradesManager.showCloseTradeModal(${trade.id})">Close</button>
+                            <button class="view-details-btn" onclick="tradesManager.showTradeDetails(${trade.id})" style="margin-left: 8px;">Details</button>
+                        ` : `
+                            <button class="view-details-btn" onclick="tradesManager.showTradeDetails(${trade.id})">Details</button>
+                        `}
+                    </td>
+                </tr>
+            `;
+        }).join('');
         
-        // Add transaction record
-        if (!currentUser.transactions) currentUser.transactions = [];
-        currentUser.transactions.unshift({
-            id: Date.now(),
-            type: 'trade',
-            tradeType: 'buy',
-            amount: amount,
-            crypto: currentCrypto.symbol,
-            cryptoName: currentCrypto.name,
-            price: currentPrice,
-            duration: currentDuration,
-            expectedReturn: amount * (1 + profitRates[currentDuration] / 100),
-            profitRate: profitRates[currentDuration],
-            status: 'completed',
-            date: new Date().toISOString()
+        // Update symbol filter dropdown
+        this.updateSymbolFilter();
+    }
+
+    updateSymbolFilter() {
+        const symbols = [...new Set(this.allTrades.map(t => t.symbol))];
+        const filterSelect = document.getElementById('symbolFilter');
+        
+        if (filterSelect && filterSelect.children.length <= 1) {
+            symbols.forEach(symbol => {
+                const option = document.createElement('option');
+                option.value = symbol;
+                option.textContent = symbol;
+                filterSelect.appendChild(option);
+            });
+        }
+    }
+
+    async closeTrade(tradeId) {
+        const trade = this.allTrades.find(t => t.id === tradeId);
+        if (!trade || trade.status !== 'open') return;
+        
+        const currentPrice = this.currentPrices[trade.symbol] || trade.current_price;
+        const pnl = this.calculatePnL(trade, currentPrice);
+        
+        // Update trade record
+        trade.status = 'closed';
+        trade.close_price = currentPrice;
+        trade.close_date = new Date().toISOString();
+        trade.pnl = pnl;
+        trade.pnl_percentage = (pnl / trade.amount * 100);
+        
+        // Update user balance with profit/loss
+        await auth.updateBalance(this.currentUser.id, pnl, {
+            type: 'trade_close',
+            trade_id: tradeId,
+            symbol: trade.symbol,
+            pnl: pnl
         });
         
-        saveUserData();
-        alert(`✅ Trade placed! Bought ${currentCrypto.symbol} with $${amount.toLocaleString()}. Duration: ${currentDuration}s. Expected return: +${profitRates[currentDuration]}%`);
-        
-        startCooldown();
-        updateAvailableBalance();
-        document.getElementById('amount').value = '';
-        document.getElementById('expectedReturn').textContent = '0.00 USDT';
-        
-        // Reset duration selection
-        document.querySelectorAll('.duration-btn').forEach(btn => btn.classList.remove('active'));
-        currentDuration = null;
-        const minLabel = document.getElementById('minAmountLabel');
-        if (minLabel) minLabel.textContent = 'Select duration first';
-    }
-}
-
-async function saveUserData() {
-    try {
         // Update in Supabase
-        await supabaseDB.updateUserBalance(currentUser.id, currentUser.balance);
+        await supabaseDB.update('trades', tradeId, {
+            status: 'closed',
+            close_price: currentPrice,
+            close_date: new Date().toISOString(),
+            pnl: pnl,
+            pnl_percentage: (pnl / trade.amount * 100)
+        });
         
-        // Update current session
-        if (localStorage.getItem('pocket_user')) {
-            localStorage.setItem('pocket_user', JSON.stringify(currentUser));
-        }
-        if (sessionStorage.getItem('pocket_user')) {
-            sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
+        this.applyFilters();
+        this.updateStats();
+        this.renderTrades();
+        this.updatePerformanceChart();
+        
+        auth.showSuccess(`Position closed! ${pnl >= 0 ? 'Profit' : 'Loss'}: $${Math.abs(pnl).toFixed(2)}`);
+        
+        this.closeCloseTradeModal();
+    }
+
+    showTradeDetails(tradeId) {
+        const trade = this.allTrades.find(t => t.id === tradeId);
+        if (!trade) return;
+        
+        const modal = document.getElementById('tradeDetailsModal');
+        const body = document.getElementById('tradeDetailsBody');
+        
+        const isOpen = trade.status === 'open';
+        const currentPrice = isOpen ? (trade.current_price || 0) : (trade.close_price || 0);
+        const positionSize = trade.amount * trade.leverage;
+        
+        body.innerHTML = `
+            <div class="trade-detail-row">
+                <span class="trade-detail-label">Market</span>
+                <span class="trade-detail-value">${trade.symbol}</span>
+            </div>
+            <div class="trade-detail-row">
+                <span class="trade-detail-label">Type</span>
+                <span class="trade-detail-value ${trade.type === 'buy' ? 'positive' : 'negative'}">${trade.type === 'buy' ? 'BUY/LONG' : 'SELL/SHORT'}</span>
+            </div>
+            <div class="trade-detail-row">
+                <span class="trade-detail-label">Entry Price</span>
+                <span class="trade-detail-value">$${trade.entry_price.toLocaleString()}</span>
+            </div>
+            <div class="trade-detail-row">
+                <span class="trade-detail-label">${isOpen ? 'Current Price' : 'Exit Price'}</span>
+                <span class="trade-detail-value">$${currentPrice.toLocaleString()}</span>
+            </div>
+            <div class="trade-detail-row">
+                <span class="trade-detail-label">Amount</span>
+                <span class="trade-detail-value">$${trade.amount.toLocaleString()}</span>
+            </div>
+            <div class="trade-detail-row">
+                <span class="trade-detail-label">Leverage</span>
+                <span class="trade-detail-value">${trade.leverage}x</span>
+            </div>
+            <div class="trade-detail-row">
+                <span class="trade-detail-label">Position Size</span>
+                <span class="trade-detail-value">$${positionSize.toLocaleString()}</span>
+            </div>
+            <div class="trade-detail-row">
+                <span class="trade-detail-label">Open Date</span>
+                <span class="trade-detail-value">${new Date(trade.created_at).toLocaleString()}</span>
+            </div>
+            ${trade.close_date ? `
+                <div class="trade-detail-row">
+                    <span class="trade-detail-label">Close Date</span>
+                    <span class="trade-detail-value">${new Date(trade.close_date).toLocaleString()}</span>
+                </div>
+            ` : ''}
+            <div class="trade-detail-row">
+                <span class="trade-detail-label">P&L</span>
+                <span class="trade-detail-value ${(trade.pnl || 0) >= 0 ? 'positive' : 'negative'}">
+                    ${(trade.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(trade.pnl || 0).toLocaleString()}
+                    (${(trade.pnl_percentage || 0) >= 0 ? '+' : ''}${(trade.pnl_percentage || 0).toFixed(2)}%)
+                </span>
+            </div>
+        `;
+        
+        modal.style.display = 'flex';
+        
+        const closeBtn = modal.querySelector('.modal-close');
+        closeBtn.onclick = () => modal.style.display = 'none';
+        window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+    }
+
+    showCloseTradeModal(tradeId) {
+        const trade = this.allTrades.find(t => t.id === tradeId);
+        if (!trade) return;
+        
+        const modal = document.getElementById('closeTradeModal');
+        const detailsDiv = document.getElementById('closeTradeDetails');
+        const messageEl = document.getElementById('closeTradeMessage');
+        const currentPrice = this.currentPrices[trade.symbol] || trade.current_price;
+        const estimatedPnl = this.calculatePnL(trade, currentPrice);
+        
+        messageEl.textContent = `Are you sure you want to close your ${trade.symbol} position?`;
+        
+        detailsDiv.innerHTML = `
+            <div style="display: flex; justify-content: space-between;">
+                <span>Entry Price:</span>
+                <span>$${trade.entry_price.toLocaleString()}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>Current Price:</span>
+                <span>$${currentPrice.toLocaleString()}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>Position Size:</span>
+                <span>$${(trade.amount * trade.leverage).toLocaleString()}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>Estimated P&L:</span>
+                <span style="color: ${estimatedPnl >= 0 ? '#00D897' : '#FF4757'}">
+                    ${estimatedPnl >= 0 ? '+' : ''}$${Math.abs(estimatedPnl).toLocaleString()}
+                </span>
+            </div>
+        `;
+        
+        modal.style.display = 'flex';
+        
+        const confirmBtn = document.getElementById('confirmCloseBtn');
+        confirmBtn.onclick = () => this.closeTrade(tradeId);
+        
+        const closeBtn = modal.querySelector('.modal-close');
+        closeBtn.onclick = () => this.closeCloseTradeModal();
+        window.onclick = (e) => { if (e.target === modal) this.closeCloseTradeModal(); };
+    }
+
+    closeCloseTradeModal() {
+        const modal = document.getElementById('closeTradeModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    async updatePerformanceChart() {
+        const canvas = document.getElementById('performanceChart');
+        if (!canvas || typeof Chart === 'undefined') return;
+        
+        const period = parseInt(document.getElementById('chartPeriod')?.value || '30');
+        const closedTrades = this.allTrades.filter(t => t.status === 'closed');
+        
+        // Generate daily P&L data
+        const dailyData = this.generateDailyPnLData(closedTrades, period);
+        
+        if (this.performanceChart) {
+            this.performanceChart.destroy();
         }
         
-        console.log('User data saved, new balance:', currentUser.balance);
-    } catch (error) {
-        console.error('Error saving user data:', error);
+        const ctx = canvas.getContext('2d');
+        this.performanceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dailyData.labels,
+                datasets: [
+                    {
+                        label: 'Cumulative P&L',
+                        data: dailyData.cumulativePnL,
+                        borderColor: '#00D897',
+                        backgroundColor: 'rgba(0, 216, 151, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Daily P&L',
+                        data: dailyData.dailyPnL,
+                        borderColor: '#FFA502',
+                        backgroundColor: 'rgba(255, 165, 2, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#FFFFFF' }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                let value = context.raw;
+                                return `${label}: ${value >= 0 ? '+' : ''}$${value.toLocaleString()}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#FFFFFF' }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#FFFFFF' },
+                        title: {
+                            display: true,
+                            text: 'Cumulative P&L ($)',
+                            color: '#00D897'
+                        }
+                    },
+                    y1: {
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        ticks: { color: '#FFA502' },
+                        title: {
+                            display: true,
+                            text: 'Daily P&L ($)',
+                            color: '#FFA502'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    generateDailyPnLData(trades, days) {
+        const labels = [];
+        const dailyPnL = [];
+        const cumulativePnL = [];
+        
+        let runningTotal = 0;
+        
+        for (let i = days; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toLocaleDateString();
+            labels.push(dateStr);
+            
+            // Sum P&L for this day
+            const dayPnL = trades
+                .filter(t => {
+                    const closeDate = new Date(t.close_date);
+                    return closeDate.toLocaleDateString() === dateStr;
+                })
+                .reduce((sum, t) => sum + (t.pnl || 0), 0);
+            
+            dailyPnL.push(dayPnL);
+            runningTotal += dayPnL;
+            cumulativePnL.push(runningTotal);
+        }
+        
+        return { labels, dailyPnL, cumulativePnL };
+    }
+
+    setupEventListeners() {
+        // Tab switching
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.currentTab = btn.dataset.tab;
+                this.applyFilters();
+                this.renderTrades();
+            });
+        });
+        
+        // Symbol filter
+        const symbolFilter = document.getElementById('symbolFilter');
+        if (symbolFilter) {
+            symbolFilter.addEventListener('change', (e) => {
+                this.symbolFilter = e.target.value;
+                this.applyFilters();
+                this.renderTrades();
+            });
+        }
+        
+        // Type filter
+        const typeFilter = document.getElementById('typeFilter');
+        if (typeFilter) {
+            typeFilter.addEventListener('change', (e) => {
+                this.typeFilter = e.target.value;
+                this.applyFilters();
+                this.renderTrades();
+            });
+        }
+        
+        // Search
+        const searchInput = document.getElementById('searchTrades');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.searchTerm = e.target.value;
+                this.applyFilters();
+                this.renderTrades();
+            });
+        }
+        
+        // Sortable columns
+        const headers = document.querySelectorAll('.trades-table th');
+        headers.forEach(header => {
+            header.addEventListener('click', () => {
+                const sortKey = header.dataset.sort;
+                if (sortKey) {
+                    if (this.currentSort === sortKey) {
+                        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        this.currentSort = sortKey;
+                        this.sortDirection = 'asc';
+                    }
+                    this.applyFilters();
+                    this.renderTrades();
+                }
+            });
+        });
+        
+        // Chart period
+        const chartPeriod = document.getElementById('chartPeriod');
+        if (chartPeriod) {
+            chartPeriod.addEventListener('change', () => this.updatePerformanceChart());
+        }
+        
+        // Mobile menu
+        const menuBtn = document.querySelector('.mobile-menu-btn');
+        const sidebar = document.querySelector('.sidebar');
+        if (menuBtn && sidebar) {
+            menuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('show');
+            });
+        }
+    }
+
+    startPriceUpdates() {
+        this.updateInterval = setInterval(async () => {
+            await this.loadCurrentPrices();
+        }, 30000);
+    }
+
+    destroy() {
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+        }
     }
 }
 
-function startPriceUpdates() {
-    if (priceUpdateInterval) clearInterval(priceUpdateInterval);
-    
-    priceUpdateInterval = setInterval(async () => {
-        await fetchCurrentPrice();
-    }, 10000);
-}
+// Initialize when DOM is ready
+let tradesManager = null;
 
-function handleLogout() {
-    localStorage.removeItem('pocket_user');
-    sessionStorage.removeItem('pocket_user');
-    window.location.href = 'home.html';
-}
+document.addEventListener('DOMContentLoaded', () => {
+    tradesManager = new TradesManager();
+});
 
-// Make functions global
-window.handleLogout = handleLogout;
+// Make functions globally accessible
+window.closeTradeModal = (tradeId) => tradesManager?.showCloseTradeModal(tradeId);
+window.showTradeDetails = (tradeId) => tradesManager?.showTradeDetails(tradeId);
+window.closeCloseTradeModal = () => tradesManager?.closeCloseTradeModal();
+window.logout = () => { if (auth) auth.logout(); };
