@@ -1,408 +1,610 @@
-// Markets page functionality - Optimized for Guest, Registered, and Admin Users
+// Markets Page Controller - PocketTrading
 // File: js/markets.js
 
-let currentUser = null;
-let currentFilter = 'all';
-let searchQuery = '';
-let priceUpdateInterval = null;
-let allCryptoData = [];
-
-// Admin email
-const ADMIN_EMAIL = 'ephregojo@gmail.com';
-
-// Binance API
-const BINANCE_BASE_URL = 'https://api.binance.com/api/v3';
-
-// Top cryptocurrencies to display (with Binance symbols)
-const topCryptos = [
-    { symbol: 'BTC', name: 'Bitcoin', icon: '₿', binanceSymbol: 'BTCUSDT', category: 'large' },
-    { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', binanceSymbol: 'ETHUSDT', category: 'large' },
-    { symbol: 'BNB', name: 'Binance Coin', icon: 'B', binanceSymbol: 'BNBUSDT', category: 'large' },
-    { symbol: 'SOL', name: 'Solana', icon: 'S', binanceSymbol: 'SOLUSDT', category: 'large' },
-    { symbol: 'XRP', name: 'Ripple', icon: 'X', binanceSymbol: 'XRPUSDT', category: 'mid' },
-    { symbol: 'ADA', name: 'Cardano', icon: 'A', binanceSymbol: 'ADAUSDT', category: 'mid' },
-    { symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð', binanceSymbol: 'DOGEUSDT', category: 'meme' },
-    { symbol: 'DOT', name: 'Polkadot', icon: '●', binanceSymbol: 'DOTUSDT', category: 'mid' },
-    { symbol: 'LINK', name: 'Chainlink', icon: 'L', binanceSymbol: 'LINKUSDT', category: 'mid' },
-    { symbol: 'UNI', name: 'Uniswap', icon: 'U', binanceSymbol: 'UNIUSDT', category: 'defi' },
-    { symbol: 'AAVE', name: 'Aave', icon: 'A', binanceSymbol: 'AAVEUSDT', category: 'defi' },
-    { symbol: 'AVAX', name: 'Avalanche', icon: 'A', binanceSymbol: 'AVAXUSDT', category: 'mid' },
-    { symbol: 'MATIC', name: 'Polygon', icon: 'M', binanceSymbol: 'MATICUSDT', category: 'mid' },
-    { symbol: 'SHIB', name: 'Shiba Inu', icon: '🐕', binanceSymbol: 'SHIBUSDT', category: 'meme' }
-];
-
-// Symbol to ID mapping for TradingView
-const symbolToIdMap = {
-    'BTC': 'bitcoin',
-    'ETH': 'ethereum',
-    'BNB': 'binancecoin',
-    'SOL': 'solana',
-    'XRP': 'ripple',
-    'ADA': 'cardano',
-    'DOGE': 'dogecoin',
-    'DOT': 'polkadot',
-    'LINK': 'chainlink',
-    'UNI': 'uniswap',
-    'AAVE': 'aave',
-    'SHIB': 'shiba-inu',
-    'AVAX': 'avalanche-2',
-    'MATIC': 'matic-network'
-};
-
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('Markets page loaded');
-    
-    if (typeof supabaseDB === 'undefined') {
-        setTimeout(() => initMarketsPage(), 500);
-        return;
+class MarketsManager {
+    constructor() {
+        this.currentUser = null;
+        this.allMarkets = [];
+        this.filteredMarkets = [];
+        this.watchlist = [];
+        self.updateInterval = null;
+        this.currentCategory = 'all';
+        this.currentSort = 'rank';
+        this.searchTerm = '';
+        this.init();
     }
-    
-    await initMarketsPage();
-});
 
-async function initMarketsPage() {
-    await loadUser();
-    renderNavLinks();
-    renderUserInfo();
-    await loadMarketStats();
-    await loadMarketData();
-    setupEventListeners();
-    startPriceUpdates();
-}
+    async init() {
+        // Wait for auth to be ready
+        if (typeof auth === 'undefined') {
+            setTimeout(() => this.init(), 100);
+            return;
+        }
 
-async function loadUser() {
-    try {
-        const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
-        if (storedUser) {
-            currentUser = JSON.parse(storedUser);
-            
-            // Verify user still exists in cloud
-            const cloudUser = await supabaseDB.getUserByEmail(currentUser.email);
-            if (cloudUser) {
-                currentUser = cloudUser;
-                currentUser.isAdmin = (currentUser.email === ADMIN_EMAIL);
-                
-                // Update session
-                if (localStorage.getItem('pocket_user')) {
-                    localStorage.setItem('pocket_user', JSON.stringify(currentUser));
-                }
-                if (sessionStorage.getItem('pocket_user')) {
-                    sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
-                }
+        this.currentUser = auth.getUser();
+        
+        // Load user data if logged in
+        if (this.currentUser) {
+            await this.loadUserData();
+            this.setupUserInterface();
+            await this.loadWatchlist();
+        }
+        
+        await this.loadMarkets();
+        this.setupEventListeners();
+        this.startRealTimeUpdates();
+        this.updateMarketStats();
+    }
+
+    async loadUserData() {
+        try {
+            const userData = await supabaseDB.getUserByEmail(this.currentUser.email);
+            if (userData) {
+                this.currentUser = { ...this.currentUser, ...userData };
+            }
+        } catch (error) {
+            console.error('Error loading user data:', error);
+        }
+    }
+
+    setupUserInterface() {
+        const userElements = document.querySelectorAll('.user-only');
+        const userNameElements = document.querySelectorAll('.user-name');
+        const userEmailElements = document.querySelectorAll('.user-email');
+        
+        userElements.forEach(el => el.style.display = 'block');
+        
+        if (this.currentUser) {
+            userNameElements.forEach(el => el.textContent = this.currentUser.name || 'Trader');
+            userEmailElements.forEach(el => el.textContent = this.currentUser.email || '');
+        }
+        
+        // Admin elements
+        const adminElements = document.querySelectorAll('.admin-only');
+        if (this.currentUser?.isAdmin) {
+            adminElements.forEach(el => el.style.display = 'block');
+        }
+    }
+
+    async loadWatchlist() {
+        if (!this.currentUser) return;
+        
+        try {
+            const savedWatchlist = localStorage.getItem(`watchlist_${this.currentUser.id}`);
+            if (savedWatchlist) {
+                this.watchlist = JSON.parse(savedWatchlist);
             } else {
-                currentUser = null;
+                // Try to load from Supabase
+                const watchlistData = await supabaseDB.getUserWatchlist(this.currentUser.id);
+                if (watchlistData && watchlistData.length > 0) {
+                    this.watchlist = watchlistData;
+                } else {
+                    this.watchlist = [];
+                }
             }
-            console.log('User loaded:', currentUser?.email, 'Is Admin:', currentUser?.isAdmin);
-        } else {
-            console.log('Guest mode - no user logged in');
-            currentUser = null;
+            this.renderWatchlist();
+        } catch (error) {
+            console.error('Error loading watchlist:', error);
+            this.watchlist = [];
         }
-    } catch(e) {
-        console.log('Error loading user:', e);
-        currentUser = null;
     }
-}
 
-function renderNavLinks() {
-    const navLinks = document.getElementById('navLinks');
-    if (!navLinks) return;
-    
-    // Clear existing dynamic links (keep Home, Markets, Trades)
-    const existingLinks = navLinks.querySelectorAll('.nav-link:not([href="home.html"]):not([href="markets.html"]):not([href="trade.html"])');
-    existingLinks.forEach(link => link.remove());
-    
-    // Add My Profile link only for registered users
-    if (currentUser) {
-        const profileLink = document.createElement('a');
-        profileLink.href = 'profile.html';
-        profileLink.className = 'nav-link';
-        profileLink.textContent = 'My Profile';
-        navLinks.appendChild(profileLink);
+    saveWatchlist() {
+        if (!this.currentUser) return;
+        localStorage.setItem(`watchlist_${this.currentUser.id}`, JSON.stringify(this.watchlist));
+        this.renderWatchlist();
     }
-}
 
-function renderUserInfo() {
-    const userInfo = document.getElementById('userInfo');
-    if (!userInfo) return;
-    
-    if (currentUser) {
-        // Registered or Admin User - Show username and logout
-        const displayName = currentUser.name || currentUser.email.split('@')[0];
-        const adminBadge = currentUser.isAdmin ? '<span class="admin-badge">Admin</span>' : '';
-        
-        let adminPanelButton = '';
-        if (currentUser.isAdmin) {
-            adminPanelButton = '<a href="admin.html" class="login-btn" style="margin-left: 0.5rem;">Admin Panel</a>';
-        }
-        
-        userInfo.innerHTML = `
-            <span class="username">${displayName}${adminBadge}</span>
-            ${adminPanelButton}
-            <span class="logout-link" onclick="handleLogout()">Logout</span>
-        `;
-    } else {
-        // Guest User - Show Login and Sign Up buttons
-        userInfo.innerHTML = `
-            <div class="auth-buttons">
-                <a href="login.html" class="login-btn">Login</a>
-                <a href="register.html" class="signup-btn">Sign Up</a>
-            </div>
-        `;
-    }
-}
-
-async function loadMarketStats() {
-    try {
-        const response = await fetch(`${BINANCE_BASE_URL}/ticker/24hr?symbol=BTCUSDT`);
-        const btcData = await response.json();
-        const btcPrice = parseFloat(btcData.lastPrice);
-        const btcVolume = parseFloat(btcData.quoteVolume);
-        
-        // Approximate market cap (BTC price * ~19.5M coins)
-        const btcMarketCap = btcPrice * 19500000;
-        const estimatedTotalMarketCap = btcMarketCap * 1.72;
-        const estimatedTotalVolume = btcVolume * 8;
-        
-        document.getElementById('totalMarketCap').textContent = formatMarketCap(estimatedTotalMarketCap);
-        document.getElementById('totalVolume').textContent = formatVolume(estimatedTotalVolume);
-        document.getElementById('btcDominance').textContent = `${((btcMarketCap / estimatedTotalMarketCap) * 100).toFixed(1)}%`;
-        document.getElementById('activeCoins').textContent = topCryptos.length;
-        
-        // Random changes for display
-        const marketCapChange = ((Math.random() - 0.5) * 1).toFixed(1);
-        const volumeChange = ((Math.random() - 0.5) * 2).toFixed(1);
-        
-        const marketCapChangeElem = document.getElementById('marketCapChange');
-        marketCapChangeElem.textContent = `${marketCapChange >= 0 ? '+' : ''}${marketCapChange}%`;
-        marketCapChangeElem.className = `stat-change ${marketCapChange >= 0 ? 'positive' : 'negative'}`;
-        
-        const volumeChangeElem = document.getElementById('volumeChange');
-        volumeChangeElem.textContent = `${volumeChange >= 0 ? '+' : ''}${volumeChange}%`;
-        volumeChangeElem.className = `stat-change ${volumeChange >= 0 ? 'positive' : 'negative'}`;
-        
-    } catch (error) {
-        console.error('Error loading market stats:', error);
-    }
-}
-
-async function loadMarketData() {
-    try {
-        const cryptoDataWithPrices = [];
-        
-        for (const crypto of topCryptos) {
-            try {
-                const response = await fetch(`${BINANCE_BASE_URL}/ticker/24hr?symbol=${crypto.binanceSymbol}`);
-                if (!response.ok) continue;
-                const data = await response.json();
-                
-                cryptoDataWithPrices.push({
-                    ...crypto,
-                    price: parseFloat(data.lastPrice),
-                    change: parseFloat(data.priceChangePercent),
-                    volume: parseFloat(data.quoteVolume)
-                });
-                console.log(`Loaded ${crypto.symbol}: $${parseFloat(data.lastPrice)}`);
-            } catch (err) {
-                console.error(`Error fetching ${crypto.symbol}:`, err);
-                cryptoDataWithPrices.push({ ...crypto, price: 0, change: 0, volume: 0 });
+    async loadMarkets() {
+        try {
+            // Try to fetch from Supabase first
+            const markets = await supabaseDB.getAll('market_prices');
+            if (markets && markets.length > 0) {
+                this.allMarkets = markets;
+            } else {
+                // Use default markets
+                this.allMarkets = this.getDefaultMarkets();
             }
+            
+            this.filteredMarkets = [...this.allMarkets];
+            this.applyFilters();
+            this.renderMarkets();
+        } catch (error) {
+            console.error('Error loading markets:', error);
+            this.allMarkets = this.getDefaultMarkets();
+            this.filteredMarkets = [...this.allMarkets];
+            this.renderMarkets();
         }
-        
-        allCryptoData = cryptoDataWithPrices.filter(c => c.price > 0);
-        
-        if (allCryptoData.length === 0) {
-            console.log('No crypto data from API, using fallback');
-            renderFallbackData();
-        } else {
-            console.log(`Loaded ${allCryptoData.length} cryptocurrencies`);
-            renderMarketTable();
-        }
-        
-    } catch (error) {
-        console.error('Error loading market data:', error);
-        renderFallbackData();
     }
-}
 
-function renderMarketTable() {
-    const tbody = document.getElementById('marketTableBody');
-    if (!tbody) return;
-    
-    let filteredData = [...allCryptoData];
-    
-    if (currentFilter !== 'all') {
-        filteredData = filteredData.filter(crypto => crypto.category === currentFilter);
+    getDefaultMarkets() {
+        return [
+            { id: 1, symbol: 'BTC/USD', name: 'Bitcoin', category: 'crypto', price: 68432.50, change: 2.34, volume: '32.5B', high24h: 69200, low24h: 67800, marketCap: '1.35T', icon: '₿', rank: 1 },
+            { id: 2, symbol: 'ETH/USD', name: 'Ethereum', category: 'crypto', price: 3821.75, change: 1.87, volume: '18.2B', high24h: 3850, low24h: 3780, marketCap: '459B', icon: 'Ξ', rank: 2 },
+            { id: 3, symbol: 'SOL/USD', name: 'Solana', category: 'crypto', price: 168.42, change: 5.23, volume: '4.8B', high24h: 172, low24h: 162, marketCap: '72B', icon: '◎', rank: 3 },
+            { id: 4, symbol: 'XRP/USD', name: 'Ripple', category: 'crypto', price: 0.624, change: -0.45, volume: '1.2B', high24h: 0.63, low24h: 0.62, marketCap: '33.5B', icon: 'X', rank: 4 },
+            { id: 5, symbol: 'DOGE/USD', name: 'Dogecoin', category: 'crypto', price: 0.162, change: 8.91, volume: '892M', high24h: 0.168, low24h: 0.158, marketCap: '23.2B', icon: 'Ð', rank: 5 },
+            { id: 6, symbol: 'ADA/USD', name: 'Cardano', category: 'crypto', price: 0.483, change: -1.23, volume: '456M', high24h: 0.49, low24h: 0.478, marketCap: '17.1B', icon: 'A', rank: 6 },
+            { id: 7, symbol: 'AVAX/USD', name: 'Avalanche', category: 'crypto', price: 42.15, change: 3.45, volume: '678M', high24h: 43.2, low24h: 41.1, marketCap: '15.8B', icon: 'A', rank: 7 },
+            { id: 8, symbol: 'MATIC/USD', name: 'Polygon', category: 'crypto', price: 0.89, change: -2.11, volume: '345M', high24h: 0.91, low24h: 0.88, marketCap: '8.7B', icon: 'M', rank: 8 },
+            { id: 9, symbol: 'LINK/USD', name: 'Chainlink', category: 'crypto', price: 18.34, change: 1.56, volume: '234M', high24h: 18.6, low24h: 18.1, marketCap: '10.2B', icon: 'L', rank: 9 },
+            { id: 10, symbol: 'UNI/USD', name: 'Uniswap', category: 'crypto', price: 11.23, change: -0.89, volume: '167M', high24h: 11.4, low24h: 11.1, marketCap: '6.5B', icon: 'U', rank: 10 },
+            { id: 11, symbol: 'EUR/USD', name: 'Euro', category: 'forex', price: 1.092, change: 0.12, volume: '124B', icon: '€', rank: 11 },
+            { id: 12, symbol: 'GBP/USD', name: 'British Pound', category: 'forex', price: 1.284, change: -0.08, volume: '98B', icon: '£', rank: 12 },
+            { id: 13, symbol: 'AAPL', name: 'Apple Inc.', category: 'stocks', price: 192.45, change: 0.56, volume: '45M', icon: '🍎', rank: 13 },
+            { id: 14, symbol: 'GOOGL', name: 'Google', category: 'stocks', price: 142.67, change: -0.23, volume: '32M', icon: 'G', rank: 14 },
+            { id: 15, symbol: 'GOLD', name: 'Gold', category: 'commodities', price: 2345.60, change: 0.89, volume: '12B', icon: '🥇', rank: 15 }
+        ];
     }
-    
-    if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        filteredData = filteredData.filter(crypto => 
-            crypto.name.toLowerCase().includes(query) || 
-            crypto.symbol.toLowerCase().includes(query)
-        );
-    }
-    
-    if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="loading-state">No cryptocurrencies found</td--</td>';
-        return;
-    }
-    
-    let html = '';
-    for (const crypto of filteredData) {
-        const changeClass = crypto.change >= 0 ? 'positive' : 'negative';
-        const changeSign = crypto.change >= 0 ? '+' : '';
-        const marketCap = crypto.price * 10000000;
+
+    applyFilters() {
+        let filtered = [...this.allMarkets];
         
-        html += `
-            <tr>
-                <td>
-                    <div class="crypto-info" onclick="openTradingView('${crypto.symbol}')">
-                        <div class="crypto-icon">${crypto.icon}</div>
-                        <div>
-                            <div class="crypto-name">${crypto.name}</div>
-                            <div class="crypto-symbol">${crypto.symbol}</div>
+        // Apply category filter
+        if (this.currentCategory !== 'all') {
+            filtered = filtered.filter(m => m.category === this.currentCategory);
+        }
+        
+        // Apply search term
+        if (this.searchTerm) {
+            const term = this.searchTerm.toLowerCase();
+            filtered = filtered.filter(m => 
+                m.symbol.toLowerCase().includes(term) || 
+                m.name.toLowerCase().includes(term)
+            );
+        }
+        
+        // Apply sorting
+        filtered.sort((a, b) => {
+            switch(this.currentSort) {
+                case 'name':
+                    return a.name.localeCompare(b.name);
+                case 'price':
+                    return a.price - b.price;
+                case 'price-desc':
+                    return b.price - a.price;
+                case 'change':
+                    return b.change - a.change;
+                case 'volume':
+                    return parseFloat(b.volume) - parseFloat(a.volume);
+                default:
+                    return a.rank - b.rank;
+            }
+        });
+        
+        this.filteredMarkets = filtered;
+    }
+
+    renderMarkets() {
+        const grid = document.getElementById('marketsGrid');
+        if (!grid) return;
+        
+        if (this.filteredMarkets.length === 0) {
+            grid.innerHTML = `
+                <div class="empty-state" style="grid-column: 1/-1;">
+                    <div class="empty-state-icon">🔍</div>
+                    <p>No markets found</p>
+                    <small>Try adjusting your search or filters</small>
+                </div>
+            `;
+            return;
+        }
+        
+        grid.innerHTML = this.filteredMarkets.map(market => `
+            <div class="market-card" data-symbol="${market.symbol}">
+                <div class="card-header">
+                    <div class="market-info">
+                        <div class="market-icon">${market.icon || '📈'}</div>
+                        <div class="market-details">
+                            <h3>${market.symbol}</h3>
+                            <p>${market.name}</p>
                         </div>
                     </div>
-                </td>
-                <td>$${formatPrice(crypto.price)}</td>
-                <td>
-                    <span class="price-change ${changeClass}">
-                        ${changeSign}${crypto.change.toFixed(2)}%
-                    </span>
-                </td>
-                <td>${formatMarketCap(marketCap)}</td>
-                <td>
-                    <button class="btn-tradingview" onclick="event.stopPropagation(); openTradingView('${crypto.symbol}')">
-                        📊 TradingView
+                    <button class="favorite-btn ${this.isInWatchlist(market.symbol) ? 'active' : ''}" data-symbol="${market.symbol}" onclick="marketsManager.toggleWatchlist('${market.symbol}')">
+                        ${this.isInWatchlist(market.symbol) ? '★' : '☆'}
                     </button>
-                </td>
-            </tr>
+                </div>
+                <div class="card-price">
+                    <div class="current-price">$${market.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: market.price < 1 ? 4 : 2 })}</div>
+                    <div class="price-change ${market.change >= 0 ? 'positive' : 'negative'}">
+                        ${market.change >= 0 ? '▲' : '▼'} ${Math.abs(market.change)}%
+                    </div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <div class="stat-label-sm">24h High</div>
+                        <div class="stat-value-sm">$${market.high24h?.toLocaleString() || '—'}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label-sm">24h Low</div>
+                        <div class="stat-value-sm">$${market.low24h?.toLocaleString() || '—'}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label-sm">Volume</div>
+                        <div class="stat-value-sm">${market.volume || '—'}</div>
+                    </div>
+                </div>
+                <button class="trade-btn" onclick="marketsManager.openTradeModal('${market.symbol}', ${market.price})">
+                    Trade ${market.symbol.split('/')[0]}
+                </button>
+            </div>
+        `).join('');
+    }
+
+    renderWatchlist() {
+        const container = document.getElementById('watchlistContainer');
+        if (!container) return;
+        
+        if (this.watchlist.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⭐</div>
+                    <p>No markets in your watchlist yet</p>
+                    <small>Click the star icon on any market to add it to your watchlist</small>
+                </div>
+            `;
+            return;
+        }
+        
+        const watchlistMarkets = this.allMarkets.filter(m => this.watchlist.includes(m.symbol));
+        
+        if (watchlistMarkets.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⭐</div>
+                    <p>No markets in your watchlist yet</p>
+                    <small>Click the star icon on any market to add it to your watchlist</small>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = `
+            <table class="watchlist-table">
+                <thead>
+                    <tr>
+                        <th>Market</th>
+                        <th>Price</th>
+                        <th>24h Change</th>
+                        <th>Volume</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${watchlistMarkets.map(market => `
+                        <tr>
+                            <td>
+                                <div class="market-info" style="display: flex; align-items: center; gap: 12px;">
+                                    <div class="market-icon" style="width: 32px; height: 32px; font-size: 16px;">${market.icon || '📈'}</div>
+                                    <div>
+                                        <strong>${market.symbol}</strong><br>
+                                        <small style="color: #8B93A5;">${market.name}</small>
+                                    </div>
+                                </div>
+                             </td>
+                            <td class="current-price">$${market.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                            <td class="${market.change >= 0 ? 'positive' : 'negative'}">
+                                ${market.change >= 0 ? '+' : ''}${market.change}%
+                            </td>
+                            <td>${market.volume || '—'}</td>
+                            <td>
+                                <button class="remove-watchlist" onclick="marketsManager.removeFromWatchlist('${market.symbol}')">🗑️</button>
+                                <button class="trade-btn" style="margin-top: 4px; padding: 6px 12px; font-size: 12px;" onclick="marketsManager.openTradeModal('${market.symbol}', ${market.price})">Trade</button>
+                             </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
         `;
     }
-    
-    tbody.innerHTML = html;
-}
 
-function formatPrice(price) {
-    if (!price) return '0.00';
-    if (price < 0.01) return price.toFixed(6);
-    if (price < 1) return price.toFixed(4);
-    return price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-}
+    isInWatchlist(symbol) {
+        return this.watchlist.includes(symbol);
+    }
 
-function formatMarketCap(marketCap) {
-    if (!marketCap) return '$0';
-    if (marketCap >= 1e12) return `$${(marketCap / 1e12).toFixed(2)}T`;
-    if (marketCap >= 1e9) return `$${(marketCap / 1e9).toFixed(2)}B`;
-    if (marketCap >= 1e6) return `$${(marketCap / 1e6).toFixed(2)}M`;
-    return `$${marketCap.toFixed(0)}`;
-}
-
-function formatVolume(volume) {
-    if (volume >= 1e12) return `$${(volume / 1e12).toFixed(2)}T`;
-    if (volume >= 1e9) return `$${(volume / 1e9).toFixed(2)}B`;
-    if (volume >= 1e6) return `$${(volume / 1e6).toFixed(2)}M`;
-    return `$${volume.toFixed(0)}`;
-}
-
-function renderFallbackData() {
-    const fallbackData = [
-        { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 76295.52, change: -0.51, marketCap: 1516000000000 },
-        { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2450.73, change: 1.20, marketCap: 294000000000 },
-        { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 310.29, change: 0.89, marketCap: 51780000000 },
-        { symbol: 'SOL', name: 'Solana', icon: 'S', price: 101.72, change: 2.10, marketCap: 44690000000 },
-        { symbol: 'XRP', name: 'Ripple', icon: 'X', price: 0.6253, change: 1.50, marketCap: 33740000000 },
-        { symbol: 'ADA', name: 'Cardano', icon: 'A', price: 0.4915, change: 0.15, marketCap: 17050000000 },
-        { symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð', price: 0.1198, change: 0.24, marketCap: 17470000000 },
-        { symbol: 'DOT', name: 'Polkadot', icon: '●', price: 6.83, change: -0.25, marketCap: 9770000000 },
-        { symbol: 'LINK', name: 'Chainlink', icon: 'L', price: 14.50, change: 2.10, marketCap: 8500000000 },
-        { symbol: 'UNI', name: 'Uniswap', icon: 'U', price: 7.85, change: -1.50, marketCap: 5900000000 }
-    ];
-    
-    const tbody = document.getElementById('marketTableBody');
-    if (tbody) {
-        let html = '';
-        for (const crypto of fallbackData) {
-            const changeClass = crypto.change >= 0 ? 'positive' : 'negative';
-            const changeSign = crypto.change >= 0 ? '+' : '';
-            
-            html += `
-                <tr>
-                    <td>
-                        <div class="crypto-info" onclick="openTradingView('${crypto.symbol}')">
-                            <div class="crypto-icon">${crypto.icon}</div>
-                            <div>
-                                <div class="crypto-name">${crypto.name}</div>
-                                <div class="crypto-symbol">${crypto.symbol}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>$${formatPrice(crypto.price)}</td>
-                    <td>
-                        <span class="price-change ${changeClass}">
-                            ${changeSign}${crypto.change.toFixed(2)}%
-                        </span>
-                    </td>
-                    <td>${formatMarketCap(crypto.marketCap)}</td>
-                    <td>
-                        <button class="btn-tradingview" onclick="event.stopPropagation(); openTradingView('${crypto.symbol}')">
-                            📊 TradingView
-                        </button>
-                    </td>
-                </tr>
-            `;
+    toggleWatchlist(symbol) {
+        if (!this.currentUser) {
+            if (confirm('Please login to add markets to your watchlist. Go to login?')) {
+                window.location.href = 'login.html';
+            }
+            return;
         }
-        tbody.innerHTML = html;
+        
+        if (this.watchlist.includes(symbol)) {
+            this.watchlist = this.watchlist.filter(s => s !== symbol);
+            this.showNotification(`${symbol} removed from watchlist`, 'info');
+        } else {
+            if (this.watchlist.length >= 20) {
+                this.showNotification('Watchlist limit reached (20 items)', 'error');
+                return;
+            }
+            this.watchlist.push(symbol);
+            this.showNotification(`${symbol} added to watchlist`, 'success');
+        }
+        
+        this.saveWatchlist();
+        this.renderMarkets();
+        this.renderWatchlist();
     }
-}
 
-function setupEventListeners() {
-    const filterTabs = document.querySelectorAll('.filter-tab');
-    filterTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            filterTabs.forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            currentFilter = this.dataset.filter;
-            renderMarketTable();
+    removeFromWatchlist(symbol) {
+        this.watchlist = this.watchlist.filter(s => s !== symbol);
+        this.saveWatchlist();
+        this.renderMarkets();
+        this.renderWatchlist();
+        this.showNotification(`${symbol} removed from watchlist`, 'info');
+    }
+
+    updateMarketStats() {
+        const totalChange = this.allMarkets.reduce((sum, m) => sum + (m.change || 0), 0) / this.allMarkets.length;
+        const totalVolume = this.allMarkets.reduce((sum, m) => {
+            const vol = parseFloat(m.volume);
+            return sum + (isNaN(vol) ? 0 : vol);
+        }, 0);
+        
+        const totalMarketCap = this.allMarkets.reduce((sum, m) => {
+            const cap = parseFloat(m.marketCap);
+            return sum + (isNaN(cap) ? 0 : cap);
+        }, 0);
+        
+        const btcMarket = this.allMarkets.find(m => m.symbol === 'BTC/USD');
+        const btcDominance = btcMarket ? (parseFloat(btcMarket.marketCap) / totalMarketCap * 100).toFixed(1) : 48.2;
+        
+        const marketCapEl = document.getElementById('totalMarketCap');
+        const volumeEl = document.getElementById('totalVolume');
+        const dominanceEl = document.getElementById('btcDominance');
+        const changeEl = document.getElementById('marketCapChange');
+        
+        if (marketCapEl) marketCapEl.textContent = `$${(totalMarketCap / 1e12).toFixed(2)}T`;
+        if (volumeEl) volumeEl.textContent = `$${(totalVolume / 1e9).toFixed(1)}B`;
+        if (dominanceEl) dominanceEl.textContent = `${btcDominance}%`;
+        if (changeEl) {
+            changeEl.textContent = `${totalChange >= 0 ? '+' : ''}${totalChange.toFixed(1)}%`;
+            changeEl.className = `stat-change ${totalChange >= 0 ? 'positive' : 'negative'}`;
+        }
+    }
+
+    setupEventListeners() {
+        // Category filters
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.currentCategory = btn.dataset.category;
+                this.applyFilters();
+                this.renderMarkets();
+            });
         });
-    });
-    
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            searchQuery = this.value;
-            renderMarketTable();
+        
+        // Search input
+        const searchInput = document.getElementById('marketSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.searchTerm = e.target.value;
+                this.applyFilters();
+                this.renderMarkets();
+            });
+        }
+        
+        // Sort select
+        const sortSelect = document.getElementById('sortSelect');
+        if (sortSelect) {
+            sortSelect.addEventListener('change', (e) => {
+                this.currentSort = e.target.value;
+                this.applyFilters();
+                this.renderMarkets();
+            });
+        }
+        
+        // Clear watchlist button
+        const clearBtn = document.getElementById('clearWatchlistBtn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to clear your entire watchlist?')) {
+                    this.watchlist = [];
+                    this.saveWatchlist();
+                    this.renderMarkets();
+                    this.renderWatchlist();
+                    this.showNotification('Watchlist cleared', 'info');
+                }
+            });
+        }
+        
+        // Mobile menu
+        const menuBtn = document.querySelector('.mobile-menu-btn');
+        const sidebar = document.querySelector('.sidebar');
+        if (menuBtn && sidebar) {
+            menuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('show');
+            });
+        }
+        
+        // Trade modal close
+        const modal = document.getElementById('tradeModal');
+        const closeBtn = document.querySelector('.modal-close');
+        if (closeBtn) {
+            closeBtn.onclick = () => modal.style.display = 'none';
+        }
+        window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+        
+        // Trade form inputs
+        const tradeAmount = document.getElementById('tradeAmount');
+        const leverage = document.getElementById('leverage');
+        const tradeTypeBtns = document.querySelectorAll('.trade-type-btn');
+        
+        if (tradeAmount) tradeAmount.addEventListener('input', () => this.updateTradeEstimate());
+        if (leverage) leverage.addEventListener('change', () => this.updateTradeEstimate());
+        
+        tradeTypeBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                tradeTypeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tradeType').value = btn.dataset.type;
+                this.updateTradeEstimate();
+            });
         });
+        
+        const confirmBtn = document.getElementById('confirmTradeBtn');
+        if (confirmBtn) confirmBtn.addEventListener('click', () => this.executeTrade());
+    }
+
+    openTradeModal(symbol, currentPrice) {
+        if (!auth.isLoggedIn()) {
+            if (confirm('Please login to start trading. Go to login page?')) {
+                window.location.href = 'login.html';
+            }
+            return;
+        }
+        
+        const modal = document.getElementById('tradeModal');
+        const modalSymbol = document.getElementById('modalSymbol');
+        const modalPrice = document.getElementById('modalPrice');
+        const tradeSymbol = document.getElementById('tradeSymbol');
+        const currentPriceInput = document.getElementById('currentPrice');
+        const availableBalance = document.getElementById('availableBalance');
+        
+        if (modalSymbol) modalSymbol.textContent = symbol;
+        if (modalPrice) modalPrice.textContent = `$${currentPrice.toLocaleString()}`;
+        if (tradeSymbol) tradeSymbol.value = symbol;
+        if (currentPriceInput) currentPriceInput.value = currentPrice;
+        if (availableBalance) availableBalance.textContent = (this.currentUser?.balance || 0).toFixed(2);
+        
+        document.getElementById('tradeAmount').value = '';
+        document.getElementById('leverage').value = '1';
+        document.getElementById('tradeType').value = 'buy';
+        
+        document.querySelectorAll('.trade-type-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.type === 'buy') btn.classList.add('active');
+        });
+        
+        this.updateTradeEstimate();
+        modal.style.display = 'flex';
+    }
+
+    updateTradeEstimate() {
+        const amount = parseFloat(document.getElementById('tradeAmount')?.value) || 0;
+        const leverageVal = parseFloat(document.getElementById('leverage')?.value) || 1;
+        const positionSize = amount * leverageVal;
+        
+        const positionSizeEl = document.getElementById('positionSize');
+        const requiredMarginEl = document.getElementById('requiredMargin');
+        const estProfitEl = document.getElementById('estProfit');
+        const confirmBtn = document.getElementById('confirmTradeBtn');
+        
+        if (positionSizeEl) positionSizeEl.textContent = `$${positionSize.toFixed(2)}`;
+        if (requiredMarginEl) requiredMarginEl.textContent = `$${amount.toFixed(2)}`;
+        
+        const estProfit10 = positionSize * 0.10;
+        if (estProfitEl) estProfitEl.innerHTML = `<span style="color: #00D897;">+$${estProfit10.toFixed(2)}</span>`;
+        
+        const balance = this.currentUser?.balance || 0;
+        if (confirmBtn) {
+            if (amount > balance) {
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = 'Insufficient Balance';
+            } else if (amount < 10) {
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = 'Minimum $10';
+            } else {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Confirm Trade';
+            }
+        }
+    }
+
+    async executeTrade() {
+        const symbol = document.getElementById('tradeSymbol').value;
+        const amount = parseFloat(document.getElementById('tradeAmount').value);
+        const leverageVal = parseFloat(document.getElementById('leverage').value);
+        const tradeType = document.getElementById('tradeType').value;
+        const currentPrice = parseFloat(document.getElementById('currentPrice').value);
+        
+        if (amount > (this.currentUser?.balance || 0)) {
+            auth.showError('Insufficient balance');
+            return;
+        }
+        
+        const success = await auth.updateBalance(this.currentUser.id, -amount, {
+            type: 'trade_margin',
+            symbol: symbol,
+            amount: amount,
+            leverage: leverageVal,
+            trade_type: tradeType
+        });
+        
+        if (success) {
+            const trade = {
+                id: Date.now(),
+                user_id: this.currentUser.id,
+                symbol: symbol,
+                type: tradeType,
+                amount: amount,
+                leverage: leverageVal,
+                entry_price: currentPrice,
+                status: 'open',
+                created_at: new Date().toISOString()
+            };
+            
+            await supabaseDB.insert('trades', trade);
+            auth.showSuccess(`Trade opened: ${tradeType.toUpperCase()} ${amount} USD @ ${leverageVal}x`);
+            
+            document.getElementById('tradeModal').style.display = 'none';
+            await this.loadUserData();
+            
+            const availableBalance = document.getElementById('availableBalance');
+            if (availableBalance) availableBalance.textContent = (this.currentUser?.balance || 0).toFixed(2);
+        }
+    }
+
+    startRealTimeUpdates() {
+        this.updateInterval = setInterval(() => {
+            this.updateMarketPrices();
+        }, 30000);
+    }
+
+    async updateMarketPrices() {
+        try {
+            this.allMarkets = this.allMarkets.map(market => ({
+                ...market,
+                price: market.price * (1 + (Math.random() - 0.5) * 0.002),
+                change: market.change + (Math.random() - 0.5) * 0.3
+            }));
+            
+            this.applyFilters();
+            this.renderMarkets();
+            this.renderWatchlist();
+            this.updateMarketStats();
+        } catch (error) {
+            console.error('Error updating prices:', error);
+        }
+    }
+
+    showNotification(message, type) {
+        if (auth && auth.showNotification) {
+            auth.showNotification(message, type);
+        } else {
+            alert(message);
+        }
+    }
+
+    destroy() {
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+        }
     }
 }
 
-function startPriceUpdates() {
-    if (priceUpdateInterval) clearInterval(priceUpdateInterval);
-    
-    priceUpdateInterval = setInterval(async () => {
-        await loadMarketStats();
-        await loadMarketData();
-    }, 30000);
-}
+// Initialize when DOM is ready
+let marketsManager = null;
 
-function openTradingView(symbol) {
-    console.log('Opening TradingView for symbol:', symbol);
-    const coinId = symbolToIdMap[symbol];
-    
-    if (coinId) {
-        window.location.href = `trading-view.html?symbol=${coinId}`;
-    } else {
-        window.location.href = `trading-view.html?symbol=${symbol.toLowerCase()}`;
-    }
-}
+document.addEventListener('DOMContentLoaded', () => {
+    marketsManager = new MarketsManager();
+});
 
-function handleLogout() {
-    localStorage.removeItem('pocket_user');
-    sessionStorage.removeItem('pocket_user');
-    window.location.href = 'home.html';
-}
-
-// Make functions global
-window.openTradingView = openTradingView;
-window.handleLogout = handleLogout;
+// Make functions globally accessible
+window.toggleWatchlist = (symbol) => marketsManager?.toggleWatchlist(symbol);
+window.removeFromWatchlist = (symbol) => marketsManager?.removeFromWatchlist(symbol);
+window.openTradeModal = (symbol, price) => marketsManager?.openTradeModal(symbol, price);
+window.logout = () => { if (auth) auth.logout(); };
