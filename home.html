@@ -2,571 +2,915 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pocket Trading - Home</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>PocketTrading - Trade Smarter, Trade Better</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <div class="logo">
+                    <span class="logo-icon">📈</span>
+                    <span class="logo-text">PocketTrading</span>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="home.html" class="nav-item active">
+                    <span class="nav-icon">🏠</span>
+                    <span>Home</span>
+                </a>
+                <a href="markets.html" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span>Markets</span>
+                </a>
+                <a href="trades.html" class="nav-item">
+                    <span class="nav-icon">🔄</span>
+                    <span>Trades</span>
+                </a>
+                <a href="profile.html" class="nav-item">
+                    <span class="nav-icon">👤</span>
+                    <span>My Profile</span>
+                </a>
+                <a href="admin.html" class="nav-item admin-only" style="display: none;">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Admin Panel</span>
+                </a>
+            </nav>
+            
+            <div class="user-info-sidebar user-only" style="display: none;">
+                <div class="user-avatar">👤</div>
+                <div class="user-details">
+                    <div class="user-name-sidebar user-name">Ephrem Neng</div>
+                    <div class="user-email-sidebar user-email">ephrem@example.com</div>
+                </div>
+                <button onclick="logout()" class="logout-btn">Logout</button>
+            </div>
+            
+            <div class="guest-info-sidebar guest-only" style="display: none;">
+                <p>Welcome, Guest!</p>
+                <a href="login.html" class="login-link">Login / Register</a>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Mobile Header -->
+            <div class="mobile-header">
+                <button class="mobile-menu-btn">☰</button>
+                <div class="mobile-logo">PocketTrading</div>
+                <div class="mobile-placeholder"></div>
+            </div>
+            
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        Trade Smarter,<br>
+                        <span class="gradient-text">Trade Better</span>
+                    </h1>
+                    <p class="hero-subtitle">
+                        Empower your trading journey with real-time insights and expert analysis.
+                    </p>
+                    <button class="cta-button start-trading-btn">Start Trading →</button>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">Your Balance</div>
+                        <div class="stat-value user-balance">$0.00</div>
+                        <div class="stat-hint user-only" style="display: none;">Available for trading</div>
+                        <div class="stat-hint guest-only" style="display: none;">Login to start trading</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Trades</div>
+                        <div class="stat-value" id="totalTrades">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Win Rate</div>
+                        <div class="stat-value" id="winRate">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Profit To</div>
+                        <div class="stat-value" id="totalPnL">+$0.00</div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Deposit CTA for users with $0 balance -->
+            <div class="deposit-cta user-only" style="display: none;">
+                <div class="deposit-cta-content">
+                    <span class="deposit-icon">💰</span>
+                    <div class="deposit-text">
+                        <strong>Make a deposit to start trading</strong>
+                        <small>Fund your account and begin your trading journey</small>
+                    </div>
+                    <button id="depositBtn" class="deposit-cta-btn">Deposit Now</button>
+                </div>
+            </div>
+            
+            <!-- Quick Stats Overview -->
+            <div class="stats-overview user-only" style="display: none;">
+                <div class="stat-box">
+                    <div class="stat-box-icon">✅</div>
+                    <div class="stat-box-info">
+                        <div class="stat-box-label">Total executed</div>
+                        <div class="stat-box-value" id="totalExecuted">0</div>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-icon">🏆</div>
+                    <div class="stat-box-info">
+                        <div class="stat-box-label">Winning trades</div>
+                        <div class="stat-box-value" id="winningTrades">0</div>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-icon">📈</div>
+                    <div class="stat-box-info">
+                        <div class="stat-box-label">Total P&L</div>
+                        <div class="stat-box-value" id="totalProfitLoss">+$0.00</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chart Section -->
+            <section class="chart-section">
+                <div class="section-header">
+                    <h2>Market Overview</h2>
+                    <div class="timeframe-selector">
+                        <button class="time-btn active">1H</button>
+                        <button class="time-btn">4H</button>
+                        <button class="time-btn">1D</button>
+                        <button class="time-btn">1W</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="priceChart"></canvas>
+                </div>
+            </section>
+            
+            <!-- Markets Section -->
+            <section class="markets-section" id="marketsSection">
+                <div class="section-header">
+                    <h2>Popular Markets</h2>
+                    <div class="search-box">
+                        <input type="text" id="marketSearch" placeholder="Search markets..." class="search-input">
+                        <span class="search-icon">🔍</span>
+                    </div>
+                </div>
+                
+                <div class="markets-table-container">
+                    <table class="markets-table">
+                        <thead>
+                            <tr>
+                                <th>Market</th>
+                                <th>Price</th>
+                                <th>24h Change</th>
+                                <th>Volume</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="marketsTableBody">
+                            <!-- Markets loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <!-- Quick Actions -->
+            <div class="quick-actions user-only" style="display: none;">
+                <h3>Quick Actions</h3>
+                <div class="action-buttons">
+                    <button id="depositBtnQ" class="action-btn deposit">
+                        <span>💰</span> Deposit
+                    </button>
+                    <button id="withdrawBtn" class="action-btn withdraw">
+                        <span>💸</span> Withdraw
+                    </button>
+                    <button id="viewTradesBtn" class="action-btn trades">
+                        <span>📊</span> View Trades
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Features Section -->
+            <section class="features-section">
+                <div class="section-header">
+                    <h2>Why Trade With Us?</h2>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Lightning Fast</h3>
+                        <p>Execute trades in milliseconds with our high-performance infrastructure</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔒</div>
+                        <h3>Secure Platform</h3>
+                        <p>Bank-grade security with 2FA and cold storage for your funds</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📱</div>
+                        <h3>Mobile Ready</h3>
+                        <p>Trade anytime, anywhere with our fully responsive platform</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎓</div>
+                        <h3>Learn & Grow</h3>
+                        <p>Access educational resources and market insights daily</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Hidden form inputs for trade modal -->
+    <input type="hidden" id="tradeSymbol">
+    <input type="hidden" id="tradeType" value="buy">
+    <input type="hidden" id="currentPrice">
+    
+    <!-- Scripts -->
+    <script src="js/supabase-db.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/home.js"></script>
+    
     <style>
+        /* Additional styles specific to home page */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
-        :root {
-            --primary: #F7931A;
-            --primary-dark: #e67e22;
-            --primary-light: #f8b45a;
-            --dark-bg: #0A0E17;
-            --darker-bg: #06090F;
-            --card-bg: #151E2C;
-            --card-hover: #1A2535;
-            --text-primary: #FFFFFF;
-            --text-secondary: #A0AAB5;
-            --text-tertiary: #6B7A8A;
-            --success: #00D897;
-            --danger: #FF4757;
-            --warning: #FFA502;
-            --border: #2A3545;
-            --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-        }
-
+        
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
-            color: var(--text-primary);
-            line-height: 1.5;
+            background: #0A0F1A;
+            color: #FFFFFF;
+            overflow-x: hidden;
+        }
+        
+        .app-container {
+            display: flex;
             min-height: 100vh;
         }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        /* Top Navigation Bar */
-        .top-nav {
+        
+        /* Sidebar Styles */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #0F1420 0%, #0A0F1A 100%);
+            border-right: 1px solid rgba(255,255,255,0.1);
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-            flex-wrap: wrap;
-            gap: 1rem;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            z-index: 100;
         }
-
+        
+        .logo-area {
+            padding: 24px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
         .logo {
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-
-        .logo svg {
-            width: 32px;
-            height: 32px;
-        }
-
-        .logo span {
-            font-size: 1.3rem;
+            font-size: 20px;
             font-weight: 700;
         }
-
-        .nav-links {
+        
+        .logo-icon {
+            font-size: 28px;
+        }
+        
+        .logo-text {
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .nav-menu {
+            flex: 1;
+            padding: 20px;
             display: flex;
-            gap: 2rem;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .nav-item {
+            display: flex;
             align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .nav-link {
-            color: var(--text-secondary);
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: #8B93A5;
             text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s;
+            transition: all 0.2s;
         }
-
-        .nav-link:hover {
-            color: var(--primary);
+        
+        .nav-item:hover, .nav-item.active {
+            background: rgba(0, 216, 151, 0.1);
+            color: #00D897;
         }
-
-        /* User Info in Top Right */
-        .user-info {
+        
+        .nav-icon {
+            font-size: 20px;
+        }
+        
+        .user-info-sidebar, .guest-info-sidebar {
+            padding: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            gap: 1rem;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 12px;
         }
-
-        .username {
-            color: var(--text-primary);
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        .logout-link {
-            color: var(--danger);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .logout-link:hover {
-            text-decoration: underline;
-        }
-
-        /* Auth Buttons */
-        .auth-buttons {
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        .login-btn {
-            background: transparent;
-            color: var(--primary);
-            padding: 8px 20px;
-            border: 1px solid var(--primary);
-            border-radius: 8px;
-            font-size: 0.9rem;
+        
+        .user-name-sidebar {
             font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .user-email-sidebar {
+            font-size: 12px;
+            color: #8B93A5;
+            margin-bottom: 12px;
+        }
+        
+        .logout-btn {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255,71,87,0.2);
+            border: 1px solid rgba(255,71,87,0.3);
+            border-radius: 8px;
+            color: #FF4757;
             cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
+            font-weight: 500;
+            transition: all 0.2s;
         }
-
-        .login-btn:hover {
-            background: rgba(247, 147, 26, 0.1);
-            transform: translateY(-2px);
+        
+        .logout-btn:hover {
+            background: rgba(255,71,87,0.3);
         }
-
-        .signup-btn {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        
+        .login-link {
+            display: block;
+            text-align: center;
+            padding: 10px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            border-radius: 8px;
             color: white;
-            padding: 8px 20px;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            padding: 24px 32px;
+            overflow-x: hidden;
+        }
+        
+        /* Mobile Header */
+        .mobile-header {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: #0F1420;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .mobile-menu-btn {
+            background: none;
             border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-size: 24px;
             cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .signup-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
-        }
-
-        /* Admin Badge */
-        .admin-badge {
-            background: linear-gradient(135deg, var(--danger), #ff6b6b);
             color: white;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            margin-left: 8px;
         }
-
+        
         /* Hero Section */
         .hero-section {
-            margin-bottom: 3rem;
-            text-align: center;
+            background: linear-gradient(135deg, #0F1420 0%, #1A1F2E 100%);
+            border-radius: 24px;
+            padding: 48px;
+            margin-bottom: 32px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-
+        
         .hero-title {
-            font-size: 3.5rem;
+            font-size: 48px;
             font-weight: 800;
+            margin-bottom: 16px;
             line-height: 1.2;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, var(--text-primary), var(--primary));
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #00D897, #00B8A0);
             -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
             background-clip: text;
+            color: transparent;
         }
-
-        .hero-description {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-            margin-bottom: 2rem;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
+        
+        .hero-subtitle {
+            font-size: 18px;
+            color: #8B93A5;
+            margin-bottom: 32px;
+            max-width: 500px;
         }
-
-        .btn-start {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
+        
+        .cta-button {
             padding: 14px 32px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
             border: none;
-            border-radius: 12px;
-            font-size: 1rem;
+            border-radius: 40px;
+            color: white;
             font-weight: 600;
+            font-size: 16px;
             cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
+            transition: transform 0.2s;
         }
-
-        .btn-start:hover {
+        
+        .cta-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(247, 147, 26, 0.3);
         }
-
-        /* Stats Cards */
-        .stats-grid {
+        
+        .hero-stats {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 1.5rem;
-            margin-bottom: 3rem;
+            gap: 24px;
+            margin-top: 48px;
         }
-
+        
         .stat-card {
-            background: var(--card-bg);
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
             border-radius: 16px;
-            padding: 1.5rem;
-            transition: all 0.3s;
+            text-align: center;
         }
-
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow);
+        
+        .stat-label {
+            font-size: 14px;
+            color: #8B93A5;
+            margin-bottom: 8px;
         }
-
-        .stat-header {
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .stat-hint {
+            font-size: 12px;
+            color: #FFA502;
+            margin-top: 8px;
+        }
+        
+        /* Deposit CTA */
+        .deposit-cta {
+            background: linear-gradient(135deg, #FFA50220, #FF475720);
+            border: 1px solid rgba(255,165,2,0.3);
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 32px;
+        }
+        
+        .deposit-cta-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .deposit-icon {
+            font-size: 32px;
+        }
+        
+        .deposit-text {
+            flex: 1;
+        }
+        
+        .deposit-text strong {
+            display: block;
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+        
+        .deposit-text small {
+            color: #8B93A5;
+        }
+        
+        .deposit-cta-btn {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #FFA502, #FF8C00);
+            border: none;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        /* Stats Overview */
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .stat-box {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .stat-box-icon {
+            font-size: 32px;
+        }
+        
+        .stat-box-label {
+            font-size: 13px;
+            color: #8B93A5;
+            margin-bottom: 4px;
+        }
+        
+        .stat-box-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        /* Chart Section */
+        .chart-section, .markets-section, .features-section {
+            margin-bottom: 48px;
+        }
+        
+        .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
-            color: var(--text-secondary);
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
         }
-
-        .stat-label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .stat-value {
-            font-size: 2rem;
+        
+        .section-header h2, .section-header h3 {
+            font-size: 24px;
             font-weight: 700;
-            margin-bottom: 0.5rem;
         }
-
-        .stat-change {
-            font-size: 0.75rem;
-            color: var(--text-tertiary);
+        
+        .timeframe-selector {
+            display: flex;
+            gap: 8px;
         }
-
-        .stat-value.positive {
-            color: var(--success);
+        
+        .time-btn {
+            padding: 6px 16px;
+            background: rgba(255,255,255,0.05);
+            border: none;
+            border-radius: 20px;
+            color: #8B93A5;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-
-        .stat-value.negative {
-            color: var(--danger);
-        }
-
-        .stat-change.positive {
-            color: var(--success);
-        }
-
-        .stat-change.negative {
-            color: var(--danger);
-        }
-
-        /* Features Section */
-        .features-section {
-            margin-bottom: 3rem;
-        }
-
-        .section-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 2rem;
-            text-align: center;
-            background: linear-gradient(135deg, var(--primary), var(--text-primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .feature-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 1.5rem;
-            text-align: center;
-            transition: all 0.3s;
-            border: 1px solid var(--border);
-        }
-
-        .feature-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow);
-            border-color: var(--primary);
-        }
-
-        .feature-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .feature-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--primary);
-        }
-
-        .feature-description {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            line-height: 1.5;
-        }
-
-        /* CTA Section */
-        .cta-section {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border-radius: 24px;
-            padding: 3rem;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .cta-section::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 1%, transparent 1%);
-            background-size: 50px 50px;
-            animation: moveBackground 20s linear infinite;
-        }
-
-        @keyframes moveBackground {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(50px, 50px); }
-        }
-
-        .cta-title {
-            font-size: 2rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
+        
+        .time-btn.active, .time-btn:hover {
+            background: #00D897;
             color: white;
-            position: relative;
-            z-index: 1;
         }
-
-        .cta-description {
-            color: rgba(255,255,255,0.95);
-            margin-bottom: 1.5rem;
-            font-size: 1.1rem;
-            position: relative;
-            z-index: 1;
+        
+        .chart-container {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            height: 400px;
         }
-
-        .btn-cta {
-            background: white;
-            color: var(--primary);
-            padding: 14px 32px;
+        
+        /* Markets Table */
+        .search-box {
+            position: relative;
+        }
+        
+        .search-input {
+            padding: 10px 16px 10px 40px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 40px;
+            color: white;
+            width: 250px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .markets-table-container {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            overflow-x: auto;
+        }
+        
+        .markets-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .markets-table th, .markets-table td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .markets-table th {
+            color: #8B93A5;
+            font-weight: 500;
+            font-size: 13px;
+        }
+        
+        .market-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .market-symbol {
+            font-weight: 600;
+        }
+        
+        .market-name {
+            font-size: 12px;
+            color: #8B93A5;
+        }
+        
+        /* Quick Actions */
+        .quick-actions h3 {
+            margin-bottom: 16px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            padding: 12px 24px;
             border: none;
             border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 700;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-            position: relative;
-            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s;
         }
-
-        .btn-cta:hover {
+        
+        .action-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
-
-        @media (max-width: 968px) {
-            .stats-grid {
+        
+        .action-btn.deposit {
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            color: white;
+        }
+        
+        .action-btn.withdraw {
+            background: rgba(255,71,87,0.2);
+            border: 1px solid rgba(255,71,87,0.3);
+            color: #FF4757;
+        }
+        
+        .action-btn.trades {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+        
+        .feature-card {
+            background: rgba(255,255,255,0.05);
+            padding: 28px;
+            border-radius: 20px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-4px);
+        }
+        
+        .feature-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .feature-card h3 {
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+        
+        .feature-card p {
+            color: #8B93A5;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero-title {
+                font-size: 36px;
+            }
+            
+            .hero-stats {
                 grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding: 16px;
+            }
+            
+            .mobile-header {
+                display: flex;
+            }
+            
+            .hero-section {
+                padding: 24px;
             }
             
             .hero-title {
-                font-size: 2.5rem;
+                font-size: 28px;
             }
             
-            .cta-title {
-                font-size: 1.5rem;
-            }
-            
-            .container {
-                padding: 1.5rem;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .top-nav {
-                flex-direction: column;
-                justify-content: center;
-                text-align: center;
-            }
-            
-            .nav-links {
-                justify-content: center;
-            }
-            
-            .user-info {
-                justify-content: center;
-            }
-            
-            .auth-buttons {
-                justify-content: center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .stats-grid {
+            .hero-stats {
                 grid-template-columns: 1fr;
             }
             
-            .nav-links {
-                gap: 1rem;
+            .stats-overview {
+                grid-template-columns: 1fr;
             }
             
-            .hero-title {
-                font-size: 2rem;
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .search-input {
+                width: 100%;
+            }
+            
+            .markets-table th, .markets-table td {
+                padding: 12px;
             }
         }
+        
+        /* Modal styles for trade modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: #1E2A3A;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .modal-header h3 {
+            font-size: 20px;
+        }
+        
+        .modal-close {
+            font-size: 28px;
+            cursor: pointer;
+            color: #8B93A5;
+        }
+        
+        .modal-close:hover {
+            color: white;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #8B93A5;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            border: none;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .current-price-display {
+            background: rgba(0,216,151,0.1);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .trade-estimate {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        .estimate-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
     </style>
-</head>
-<body>
-    <div class="container">
-        <!-- Top Navigation Bar -->
-        <div class="top-nav">
-            <div class="logo">
-                <svg viewBox="0 0 40 40" fill="none">
-                    <rect width="40" height="40" rx="10" fill="#F7931A"/>
-                    <path d="M20 10L25 15L20 20L15 15L20 10Z" fill="white"/>
-                    <path d="M20 20L25 25L20 30L15 25L20 20Z" fill="white"/>
-                </svg>
-                <span>Pocket<span style="color: var(--primary);">Trading</span></span>
-            </div>
-            <div class="nav-links" id="navLinks">
-                <a href="home.html" class="nav-link" style="color: var(--primary);">Home</a>
-                <a href="markets.html" class="nav-link">Markets</a>
-                <a href="trade.html" class="nav-link">Trades</a>
-                <!-- My Profile link will be added here for registered users -->
-            </div>
-            <div class="user-info" id="userInfo"></div>
-        </div>
-
-        <!-- Hero Section -->
-        <div class="hero-section">
-            <h1 class="hero-title">Trade Smarter,<br>Trade Better</h1>
-            <p class="hero-description">Empower your trading journey with real-time insights and expert analysis.</p>
-            <a href="trade.html" class="btn-start">Start Trading →</a>
-        </div>
-
-        <!-- Stats Cards -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-label">Your Balance</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-                    </svg>
-                </div>
-                <div class="stat-value" id="userBalance">$0.00</div>
-                <div class="stat-change" id="balanceChange">Make a deposit to start</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-label">Total Trades</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 12h18M12 3v18M16 8l4 4-4 4M8 8l-4 4 4 4"/>
-                    </svg>
-                </div>
-                <div class="stat-value" id="totalTrades">0</div>
-                <div class="stat-change">Total executed</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-label">Win Rate</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 12l2 2 4-4M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-                    </svg>
-                </div>
-                <div class="stat-value" id="winRate">0%</div>
-                <div class="stat-change">Winning trades</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-label">Profit To</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 17v2h6v-2M3 7v2h6V7M13 5v2h6V5M13 11v2h6v-2M13 17v2h6v-2"/>
-                    </svg>
-                </div>
-                <div class="stat-value" id="totalProfit">$0.00</div>
-                <div class="stat-change">Total P&L</div>
-            </div>
-        </div>
-
-        <!-- Features Section -->
-        <div class="features-section">
-            <h2 class="section-title">Why Trade with Pocket Trading?</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
-                    <div class="feature-title">Lightning Fast Execution</div>
-                    <div class="feature-description">Execute trades in milliseconds with our ultra-low latency platform. Never miss a market opportunity again.</div>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🔒</div>
-                    <div class="feature-title">Bank-Grade Security</div>
-                    <div class="feature-description">Your funds are protected with military-grade encryption, cold storage, and multi-signature technology.</div>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <div class="feature-title">Professional Charts</div>
-                    <div class="feature-description">Access advanced charting tools, technical indicators, and real-time market data from top exchanges.</div>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">💎</div>
-                    <div class="feature-title">Zero Hidden Fees</div>
-                    <div class="feature-description">Transparent pricing with competitive spreads. What you see is what you pay - no surprises.</div>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📱</div>
-                    <div class="feature-title">Trade Anywhere</div>
-                    <div class="feature-description">Full-featured mobile trading with the same powerful tools as our desktop platform.</div>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🎯</div>
-                    <div class="feature-title">Smart Alerts</div>
-                    <div class="feature-description">Set price alerts and never miss a movement. Get notified instantly when your targets are hit.</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- CTA Section -->
-        <div class="cta-section">
-            <h3 class="cta-title">Ready to Master the Crypto Market?</h3>
-            <p class="cta-description">Join thousands of successful traders already using Pocket Trading to grow their portfolio.</p>
-            <a href="register.html" class="btn-cta">Launch Your Trading Journey →</a>
-        </div>
-    </div>
-
-    <script src="js/supabase.js"></script>
-    <script src="js/home.js"></script>
 </body>
 </html>
