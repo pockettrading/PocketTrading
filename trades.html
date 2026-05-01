@@ -126,6 +126,14 @@
             margin-bottom: 20px;
         }
 
+        .mobile-menu-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: white;
+            cursor: pointer;
+        }
+
         .page-header {
             margin-bottom: 32px;
         }
@@ -271,13 +279,6 @@
             .main-content { margin-left: 0; padding: 16px; }
             .mobile-header { display: flex; }
             .stats-cards { grid-template-columns: 1fr; }
-            .mobile-menu-btn {
-                background: none;
-                border: none;
-                font-size: 24px;
-                color: white;
-                cursor: pointer;
-            }
         }
     </style>
 </head>
@@ -295,7 +296,6 @@
                 <a href="markets.html" class="nav-item">📊 Markets</a>
                 <a href="trades.html" class="nav-item active">🔄 Trades</a>
                 <a href="profile.html" class="nav-item">👤 Profile</a>
-                <a href="admin.html" class="nav-item admin-only" style="display: none;">⚙️ Admin</a>
             </nav>
             <div class="user-info-sidebar">
                 <div class="user-avatar" id="sidebarAvatar">👤</div>
@@ -358,7 +358,7 @@
                         </tr>
                     </thead>
                     <tbody id="tradesList">
-                        <tr><td colspan="9"><div class="empty-state">Loading trades...</div></td></tr>
+                        <tr><td colspan="9"><div class="empty-state">Loading trades...</div></td><tr>
                     </tbody>
                 </table>
             </div>
@@ -373,54 +373,33 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', async () => {
-            // Wait for auth to load
-            await waitForAuth();
+            // Check if user is logged in via localStorage/sessionStorage
+            const storedUser = sessionStorage.getItem('pocket_user') || localStorage.getItem('pocket_user');
             
-            // Check if user is logged in
-            if (typeof auth !== 'undefined' && auth.isLoggedIn()) {
-                currentUser = auth.getUser();
+            if (storedUser) {
+                currentUser = JSON.parse(storedUser);
                 updateUserUI();
                 await loadUserTrades();
                 renderTrades();
+                updateStats();
             } else {
+                // Redirect to login if not logged in
                 window.location.href = 'login.html';
             }
         });
-
-        // Wait for auth to be available
-        function waitForAuth() {
-            return new Promise((resolve) => {
-                if (typeof auth !== 'undefined') {
-                    resolve();
-                } else {
-                    const checkInterval = setInterval(() => {
-                        if (typeof auth !== 'undefined') {
-                            clearInterval(checkInterval);
-                            resolve();
-                        }
-                    }, 100);
-                }
-            });
-        }
 
         // Update UI with user info
         function updateUserUI() {
             if (currentUser) {
                 document.getElementById('sidebarUserName').textContent = currentUser.name || 'Trader';
                 document.getElementById('sidebarUserEmail').textContent = currentUser.email || '';
-                
-                if (currentUser.email === 'ephremgojo@gmail.com') {
-                    const adminElements = document.querySelectorAll('.admin-only');
-                    adminElements.forEach(el => el.style.display = 'flex');
-                }
             }
         }
 
-        // Load user trades from localStorage or create demo trades
+        // Load user trades from localStorage
         async function loadUserTrades() {
             if (!currentUser) return;
             
-            // Try to load from localStorage first
             const savedTrades = localStorage.getItem(`trades_${currentUser.id}`);
             
             if (savedTrades && JSON.parse(savedTrades).length > 0) {
@@ -430,8 +409,6 @@
                 allTrades = createDemoTrades();
                 saveTrades();
             }
-            
-            updateStats();
         }
 
         // Create demo trades for testing
@@ -518,10 +495,17 @@
             const winningTrades = closedTrades.filter(t => (t.pnl || 0) > 0).length;
             const winRate = closedTrades.length > 0 ? (winningTrades / closedTrades.length * 100).toFixed(1) : 0;
             
-            document.getElementById('totalInvested').textContent = `$${totalInvested.toLocaleString()}`;
+            document.getElementById('totalInvested').innerHTML = `$${totalInvested.toLocaleString()}`;
             document.getElementById('totalPnL').innerHTML = `<span style="color: ${totalPnL >= 0 ? '#00D897' : '#FF4757'}">${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}</span>`;
             document.getElementById('winRate').textContent = `${winRate}%`;
             document.getElementById('totalTradesCount').textContent = allTrades.length;
+        }
+
+        // Format price
+        function formatPrice(price) {
+            if (!price) return '0.00';
+            if (price < 1) return price.toFixed(4);
+            return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
         // Render trades based on current tab
@@ -547,6 +531,7 @@
                 const pnl = trade.pnl || 0;
                 const pnlClass = pnl >= 0 ? 'positive' : 'negative';
                 const pnlSymbol = pnl >= 0 ? '+' : '';
+                const priceValue = currentPrice || trade.entry_price;
                 
                 return `
                     <tr>
@@ -556,8 +541,8 @@
                                 ${trade.type === 'buy' ? 'BUY/LONG' : 'SELL/SHORT'}
                             </span>
                         </td>
-                        <td>$${trade.entry_price.toLocaleString()}</td>
-                        <td>$${currentPrice.toLocaleString()}</td>
+                        <td>$${formatPrice(trade.entry_price)}</td>
+                        <td>$${formatPrice(priceValue)}</td>
                         <td>$${trade.amount.toLocaleString()}</td>
                         <td>${trade.leverage}x</td>
                         <td class="${pnlClass}">${pnlSymbol}$${Math.abs(pnl).toLocaleString()}</td>
@@ -575,7 +560,7 @@
         }
 
         // Close a trade
-        async function closeTrade(tradeId) {
+        function closeTrade(tradeId) {
             const trade = allTrades.find(t => t.id === tradeId);
             if (!trade || trade.status !== 'open') return;
             
@@ -585,33 +570,37 @@
                 trade.close_price = trade.current_price;
                 trade.closed_at = new Date().toISOString();
                 
-                // Update user balance with P&L
+                // Update user balance with P&L (if auth is available)
                 if (typeof auth !== 'undefined' && auth.updateBalance) {
-                    await auth.updateBalance(currentUser.id, trade.pnl, {
+                    auth.updateBalance(currentUser.id, trade.pnl, {
                         type: 'trade_close',
                         trade_id: tradeId,
                         symbol: trade.symbol,
                         pnl: trade.pnl
                     });
+                } else {
+                    // Manual balance update
+                    const newBalance = (currentUser.balance || 0) + trade.pnl;
+                    currentUser.balance = newBalance;
                     
-                    // Refresh user data
-                    currentUser = auth.getUser();
+                    // Update storage
+                    if (localStorage.getItem('pocket_user')) {
+                        const user = JSON.parse(localStorage.getItem('pocket_user'));
+                        user.balance = newBalance;
+                        localStorage.setItem('pocket_user', JSON.stringify(user));
+                    }
+                    if (sessionStorage.getItem('pocket_user')) {
+                        const user = JSON.parse(sessionStorage.getItem('pocket_user'));
+                        user.balance = newBalance;
+                        sessionStorage.setItem('pocket_user', JSON.stringify(user));
+                    }
                 }
                 
                 saveTrades();
                 updateStats();
                 renderTrades();
                 
-                showNotification(`Position closed! ${trade.pnl >= 0 ? 'Profit' : 'Loss'}: $${Math.abs(trade.pnl).toLocaleString()}`, 'success');
-            }
-        }
-
-        // Show notification
-        function showNotification(message, type) {
-            if (typeof auth !== 'undefined' && auth.showNotification) {
-                auth.showNotification(message, type);
-            } else {
-                alert(message);
+                alert(`Position closed! ${trade.pnl >= 0 ? 'Profit' : 'Loss'}: $${Math.abs(trade.pnl).toLocaleString()}`);
             }
         }
 
@@ -620,7 +609,7 @@
             currentTab = tab;
             
             // Update tab buttons
-            document.querySelectorAll('.tab-btn').forEach(btn => {
+            document.querySelectorAll('.tab-btn').forEach((btn, index) => {
                 btn.classList.remove('active');
             });
             
@@ -637,13 +626,9 @@
 
         // Handle logout
         function handleLogout() {
-            if (typeof auth !== 'undefined' && auth.logout) {
-                auth.logout();
-            } else {
-                localStorage.removeItem('pocket_user');
-                sessionStorage.removeItem('pocket_user');
-                window.location.href = 'home.html';
-            }
+            localStorage.removeItem('pocket_user');
+            sessionStorage.removeItem('pocket_user');
+            window.location.href = 'home.html';
         }
 
         // Make functions global for onclick handlers
