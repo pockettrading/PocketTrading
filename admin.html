@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pocket Trading - Admin Panel</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>PocketTrading - Admin Panel</title>
     <style>
         * {
             margin: 0;
@@ -12,313 +11,166 @@
             box-sizing: border-box;
         }
 
-        :root {
-            --primary: #F7931A;
-            --primary-dark: #e67e22;
-            --primary-light: #f8b45a;
-            --dark-bg: #0A0E17;
-            --darker-bg: #06090F;
-            --card-bg: #151E2C;
-            --card-hover: #1A2535;
-            --text-primary: #FFFFFF;
-            --text-secondary: #A0AAB5;
-            --text-tertiary: #6B7A8A;
-            --success: #00D897;
-            --danger: #FF4757;
-            --warning: #FFA502;
-            --border: #2A3545;
-            --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-        }
-
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
-            color: var(--text-primary);
-            line-height: 1.5;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
             min-height: 100vh;
+            color: #e0e0e0;
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 1.5rem;
-        }
-
-        /* Top Navigation Bar */
-        .top-nav {
+        /* Header */
+        .admin-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-            flex-wrap: wrap;
-            gap: 1rem;
+            padding: 1rem 2rem;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .logo {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 0.75rem;
         }
 
-        .logo svg {
-            width: 32px;
-            height: 32px;
+        .logo-icon {
+            font-size: 1.8rem;
         }
 
-        .logo span {
+        .logo-text {
             font-size: 1.3rem;
-            font-weight: 700;
+            font-weight: bold;
+            background: linear-gradient(135deg, #f59e0b, #dc2626);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
 
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
-            flex-wrap: wrap;
+        .admin-badge-header {
+            background: linear-gradient(135deg, #dc2626, #f59e0b);
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: bold;
         }
 
-        .nav-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-
-        .nav-link:hover {
-            color: var(--primary);
-        }
-
-        /* User Info */
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .username {
-            color: var(--text-primary);
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        .logout-link {
-            color: var(--danger);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.9rem;
+        .back-to-site {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
             cursor: pointer;
-        }
-
-        /* Admin Menu Tabs - Top Navigation */
-        .admin-tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 0.5rem;
-        }
-
-        .admin-tab {
-            padding: 8px 20px;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.3s;
-            border-radius: 8px;
+            transition: 0.2s;
+            text-decoration: none;
             font-size: 0.85rem;
-            font-weight: 500;
         }
 
-        .admin-tab:hover {
-            background: var(--card-hover);
-            color: var(--primary);
+        .back-to-site:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
-        .admin-tab.active {
-            background: rgba(247, 147, 26, 0.1);
-            color: var(--primary);
+        /* Main Container */
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
         }
 
         /* Stats Cards */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
             margin-bottom: 2rem;
         }
 
         .stat-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 1rem;
-            text-align: center;
+            background: rgba(20, 25, 55, 0.7);
+            backdrop-filter: blur(5px);
+            border-radius: 20px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8a8aa0;
+            margin-bottom: 0.5rem;
         }
 
         .stat-value {
             font-size: 2rem;
             font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
 
-        .stat-label {
-            font-size: 0.7rem;
-            color: var(--text-tertiary);
-            margin-top: 0.25rem;
-        }
-
-        /* Global Trade Control */
-        .global-control {
-            background: var(--darker-bg);
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .global-title {
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .global-subtitle {
-            font-size: 0.7rem;
-            color: var(--text-tertiary);
-            margin-bottom: 1rem;
-        }
-
-        .toggle-buttons {
+        /* Tabs */
+        .admin-tabs {
             display: flex;
-            gap: 1rem;
-        }
-
-        .toggle-btn {
-            flex: 1;
-            padding: 0.75rem;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .toggle-btn.win {
-            background: rgba(0, 216, 151, 0.2);
-            color: var(--success);
-            border: 1px solid var(--success);
-        }
-
-        .toggle-btn.win.active {
-            background: var(--success);
-            color: white;
-        }
-
-        .toggle-btn.lose {
-            background: rgba(255, 71, 87, 0.2);
-            color: var(--danger);
-            border: 1px solid var(--danger);
-        }
-
-        .toggle-btn.lose.active {
-            background: var(--danger);
-            color: white;
-        }
-
-        .database-value {
-            font-size: 0.7rem;
-            color: var(--text-tertiary);
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid var(--border);
-        }
-
-        /* Section Header */
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
             gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.5rem;
+            flex-wrap: wrap;
         }
 
-        .section-header h2 {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        /* Coins Grid */
-        .coins-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .coin-card {
-            background: var(--darker-bg);
-            border-radius: 10px;
-            padding: 0.75rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .coin-name {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .coin-symbol {
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
-
-        .coin-fullname {
-            font-size: 0.65rem;
-            color: var(--text-tertiary);
-        }
-
-        .coin-toggle {
-            display: flex;
-            gap: 4px;
-        }
-
-        .coin-win, .coin-lose {
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 0.7rem;
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: #8a8aa0;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: 0.2s;
+            border-radius: 40px;
         }
 
-        .coin-win {
-            background: rgba(0, 216, 151, 0.2);
-            color: var(--success);
+        .tab-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
         }
 
-        .coin-win.active {
-            background: var(--success);
+        .tab-btn.active {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
             color: white;
         }
 
-        .coin-lose {
-            background: rgba(255, 71, 87, 0.2);
-            color: var(--danger);
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
         }
 
-        .coin-lose.active {
-            background: var(--danger);
-            color: white;
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Tables */
-        .data-table {
+        .table-container {
+            background: rgba(20, 25, 55, 0.5);
+            border-radius: 20px;
             overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         table {
@@ -328,381 +180,336 @@
 
         th {
             text-align: left;
-            padding: 0.75rem;
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            border-bottom: 1px solid var(--border);
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            color: #c0c0ff;
+            font-weight: 600;
+            font-size: 0.85rem;
         }
 
         td {
-            padding: 0.75rem;
-            font-size: 0.8rem;
-            border-bottom: 1px solid var(--border);
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .status-pending {
-            background: rgba(255, 165, 2, 0.2);
-            color: var(--warning);
-            padding: 4px 8px;
-            border-radius: 20px;
-            font-size: 0.7rem;
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Status Badges */
+        .status-badge {
             display: inline-block;
-        }
-
-        .status-verified {
-            background: rgba(0, 216, 151, 0.2);
-            color: var(--success);
-            padding: 4px 8px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            display: inline-block;
-        }
-
-        .btn-edit {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 4px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.7rem;
-            margin-right: 4px;
-        }
-
-        .trade-outcome {
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
             font-weight: 600;
         }
 
-        .trade-outcome.won {
-            color: var(--success);
+        .status-verified {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
         }
 
-        .trade-outcome.lost {
-            color: var(--danger);
+        .status-pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 2rem;
-            color: var(--text-tertiary);
+        .status-rejected {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
         }
 
-        /* Form */
+        .status-active {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+        }
+
+        .status-suspended {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        /* Buttons */
+        .action-btn {
+            background: rgba(124, 58, 237, 0.3);
+            border: none;
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            margin: 0 0.2rem;
+            transition: 0.2s;
+        }
+
+        .action-btn:hover {
+            background: rgba(124, 58, 237, 0.6);
+        }
+
+        .action-btn.danger {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .action-btn.danger:hover {
+            background: rgba(239, 68, 68, 0.6);
+        }
+
+        .action-btn.success {
+            background: rgba(34, 197, 94, 0.3);
+        }
+
+        .action-btn.success:hover {
+            background: rgba(34, 197, 94, 0.6);
+        }
+
+        /* Forms */
+        .admin-form {
+            background: rgba(20, 25, 55, 0.7);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
         .form-group {
             margin-bottom: 1rem;
         }
 
         .form-group label {
             display: block;
-            font-size: 0.75rem;
-            margin-bottom: 0.25rem;
-            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            color: #c0c0ff;
+            font-size: 0.85rem;
         }
 
-        .form-group input {
+        .form-group input, .form-group select, .form-group textarea {
             width: 100%;
-            padding: 10px;
-            background: var(--darker-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
             color: white;
+            font-size: 0.9rem;
         }
 
-        @media (max-width: 968px) {
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .coins-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .container {
-                padding: 1rem;
-            }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #7c3aed;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(124, 58, 237, 0.4);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1f3a, #0a0e27);
+            border-radius: 32px;
+            max-width: 500px;
+            width: 90%;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Logs container */
+        .logs-container {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #a0a0b0;
+        }
+
+        .log-time {
+            color: #7c3aed;
         }
 
         @media (max-width: 768px) {
-            .top-nav {
-                flex-direction: column;
-                text-align: center;
+            .admin-container {
+                padding: 1rem;
             }
-            
-            .nav-links {
-                justify-content: center;
+            .stats-grid {
+                grid-template-columns: 1fr;
             }
-            
-            .user-info {
-                justify-content: center;
-            }
-            
             .admin-tabs {
-                justify-content: center;
+                gap: 0.25rem;
+            }
+            .tab-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.85rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Top Navigation Bar -->
-        <div class="top-nav">
-            <div class="logo">
-                <svg viewBox="0 0 40 40" fill="none">
-                    <rect width="40" height="40" rx="10" fill="#F7931A"/>
-                    <path d="M20 10L25 15L20 20L15 15L20 10Z" fill="white"/>
-                    <path d="M20 20L25 25L20 30L15 25L20 20Z" fill="white"/>
-                </svg>
-                <span>Pocket<span style="color: var(--primary);">Trading</span></span>
-            </div>
-            <div class="nav-links">
-                <a href="home.html" class="nav-link">Home</a>
-                <a href="markets.html" class="nav-link">Markets</a>
-                <a href="trade.html" class="nav-link">Trades</a>
-                <a href="profile.html" class="nav-link">My Profile</a>
-                <a href="admin.html" class="nav-link" style="color: var(--primary);">Admin</a>
-            </div>
-            <div class="user-info" id="userInfo"></div>
+    <div class="admin-header">
+        <div class="logo">
+            <span class="logo-icon">🛡️</span>
+            <span class="logo-text">PocketTrading Admin</span>
         </div>
-
-        <!-- Admin Tabs (Top Navigation Menu) -->
-        <div class="admin-tabs" id="adminTabs">
-            <button class="admin-tab active" data-section="dashboard">📊 Dashboard</button>
-            <button class="admin-tab" data-section="global">🎮 Global Trade Control</button>
-            <button class="admin-tab" data-section="perCoin">💰 Per-Coin Control</button>
-            <button class="admin-tab" data-section="users">👥 All Users</button>
-            <button class="admin-tab" data-section="withdrawals">💸 Withdrawal Addresses</button>
-            <button class="admin-tab" data-section="pendingKYC">✓ Pending KYC</button>
-            <button class="admin-tab" data-section="pendingDeposits">💰 Pending Deposits</button>
-            <button class="admin-tab" data-section="pendingWithdrawals">📤 Pending Withdrawals</button>
-            <button class="admin-tab" data-section="recentTrades">📈 Recent Trades</button>
-            <button class="admin-tab" data-section="wallet">⚙️ Wallet Settings</button>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span class="admin-badge-header">Administrator</span>
+            <button class="back-to-site" onclick="window.location.href='profile.html'">← Back to Site</button>
         </div>
+    </div>
 
-        <!-- Dashboard Section -->
-        <div id="dashboardSection" class="admin-section">
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value" id="totalUsers">0</div>
-                    <div class="stat-label">Total Users</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="totalTrades">0</div>
-                    <div class="stat-label">Total Trades</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="pendingKYC">0</div>
-                    <div class="stat-label">Pending KYC</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="pendingDeposits">0</div>
-                    <div class="stat-label">Pending Deposits</div>
-                </div>
+    <div class="admin-container">
+        <!-- Stats Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value" id="totalUsers">0</div>
             </div>
-
-            <div class="global-control">
-                <div class="global-title">GLOBAL TRADE OUTCOME CONTROL</div>
-                <div class="global-subtitle">This setting affects ALL new trades across all coins</div>
-                <div class="toggle-buttons">
-                    <button class="toggle-btn lose" id="globalLoseBtn" onclick="setGlobalMode('LOSE')">LOSE</button>
-                    <button class="toggle-btn win" id="globalWinBtn" onclick="setGlobalMode('WIN')">WIN</button>
-                </div>
-                <div class="database-value" id="globalModeDisplay">GLOBAL MODE: WIN</div>
+            <div class="stat-card">
+                <div class="stat-label">Total Volume (24h)</div>
+                <div class="stat-value" id="totalVolume">$0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Pending KYC</div>
+                <div class="stat-value" id="pendingKYC">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Traders</div>
+                <div class="stat-value" id="activeTraders">0</div>
             </div>
         </div>
 
-        <!-- Global Trade Control Section -->
-        <div id="globalSection" class="admin-section" style="display: none;">
-            <div class="global-control">
-                <div class="global-title">GLOBAL TRADE OUTCOME CONTROL</div>
-                <div class="global-subtitle">This setting affects ALL new trades across all coins</div>
-                <div class="toggle-buttons">
-                    <button class="toggle-btn lose" id="globalLoseBtn2" onclick="setGlobalMode('LOSE')">LOSE</button>
-                    <button class="toggle-btn win" id="globalWinBtn2" onclick="setGlobalMode('WIN')">WIN</button>
+        <!-- Tabs -->
+        <div class="admin-tabs">
+            <button class="tab-btn active" data-tab="users">👥 Users</button>
+            <button class="tab-btn" data-tab="kyc">📋 KYC Reviews</button>
+            <button class="tab-btn" data-tab="trades">💹 Trades</button>
+            <button class="tab-btn" data-tab="announcements">📢 Announcements</button>
+            <button class="tab-btn" data-tab="logs">📜 System Logs</button>
+        </div>
+
+        <!-- Users Tab -->
+        <div id="users" class="tab-content active">
+            <div class="admin-form">
+                <h3 style="margin-bottom: 1rem;">➕ Add New User</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <input type="text" id="newUsername" placeholder="Username" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.75rem; color: white;">
+                    <input type="email" id="newEmail" placeholder="Email" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.75rem; color: white;">
+                    <input type="text" id="newFullName" placeholder="Full Name" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.75rem; color: white;">
+                    <button id="addUserBtn" class="submit-btn">Add User</button>
                 </div>
-                <div class="database-value" id="globalModeDisplay2">GLOBAL MODE: WIN</div>
             </div>
-        </div>
-
-        <!-- Per-Coin Control Section -->
-        <div id="perCoinSection" class="admin-section" style="display: none;">
-            <div class="section-header">
-                <h2>PER-COIN TRADE CONTROL</h2>
-                <div class="global-subtitle">Override global setting for specific cryptocurrencies</div>
-            </div>
-            <div class="coins-grid" id="coinsGrid">
-                <!-- Coins will be populated by JavaScript -->
-            </div>
-        </div>
-
-        <!-- All Users Section -->
-        <div id="usersSection" class="admin-section" style="display: none;">
-            <div class="section-header">
-                <h2>All Users</h2>
-            </div>
-            <div class="data-table">
+            <div class="table-container">
                 <table>
                     <thead>
-                        <tr>
-                            <th>Email</th>
-                            <th>Full Name</th>
-                            <th>Balance</th>
-                            <th>KYC Status</th>
-                            <th>Joined</th>
-                            <th>Actions</th>
-                        </tr>
+                        <tr><th>ID</th><th>Username</th><th>Email</th><th>Full Name</th><th>Balance</th><th>Status</th><th>Actions</th></tr>
                     </thead>
-                    <tbody id="usersTableBody">
-                        <tr><td colspan="6" class="empty-state">No users found</td--</tr>
-                    </tbody>
+                    <tbody id="usersTableBody"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Withdrawal Addresses Section -->
-        <div id="withdrawalsSection" class="admin-section" style="display: none;">
-            <div class="section-header">
-                <h2>All Withdrawal Addresses</h2>
-                <div class="global-subtitle">⚠️ Manage all saved withdrawal addresses.</div>
-            </div>
-            <div class="data-table">
+        <!-- KYC Tab -->
+        <div id="kyc" class="tab-content">
+            <div class="table-container">
                 <table>
                     <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Address</th>
-                            <th>Currency</th>
-                            <th>Status</th>
-                            <th>Date Added</th>
-                            <th>Actions</th>
-                        </tr>
+                        <tr><th>User</th><th>Full Name</th><th>Document Type</th><th>Submitted</th><th>Status</th><th>Actions</th></tr>
                     </thead>
-                    <tbody id="withdrawalsTableBody">
-                        <tr><td colspan="6" class="empty-state">No saved addresses found</td--</tr>
-                    </tbody>
+                    <tbody id="kycTableBody"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Pending KYC Section -->
-        <div id="pendingKYCSection" class="admin-section" style="display: none;">
-            <div class="section-header">
-                <h2>Pending KYC Verification Requests</h2>
-            </div>
-            <div class="data-table">
+        <!-- Trades Tab -->
+        <div id="trades" class="tab-content">
+            <div class="table-container">
                 <table>
                     <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>User</th>
-                            <th>Full Name</th>
-                            <th>ID Type</th>
-                            <th>Actions</th>
-                        </tr>
+                        <tr><th>ID</th><th>User</th><th>Pair</th><th>Type</th><th>Amount</th><th>Price</th><th>Total</th><th>Date</th></tr>
                     </thead>
-                    <tbody id="kycTableBody">
-                        <tr><td colspan="5" class="empty-state">No pending KYC requests</td--</tr>
-                    </tbody>
+                    <tbody id="tradesTableBody"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Pending Deposits Section -->
-        <div id="pendingDepositsSection" class="admin-section" style="display: none;">
-            <div class="section-header">
-                <h2>Pending Deposits</h2>
-            </div>
-            <div class="data-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>User</th>
-                            <th>Amount</th>
-                            <th>Currency</th>
-                            <th>Proof</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="depositsTableBody">
-                        <tr><td colspan="6" class="empty-state">No pending deposits</td--</tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Pending Withdrawals Section -->
-        <div id="pendingWithdrawalsSection" class="admin-section" style="display: none;">
-            <div class="section-header">
-                <h2>Pending Withdrawals</h2>
-            </div>
-            <div class="data-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>User</th>
-                            <th>Amount</th>
-                            <th>Currency</th>
-                            <th>Wallet Address</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="pendingWithdrawalsTableBody">
-                        <tr><td colspan="6" class="empty-state">No pending withdrawals</td--</tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Recent Trades Section -->
-        <div id="recentTradesSection" class="admin-section" style="display: none;">
-            <div class="section-header">
-                <h2>Recent Trades (Auto-Settled)</h2>
-            </div>
-            <div class="data-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Coin</th>
-                            <th>Amount</th>
-                            <th>Outcome</th>
-                            <th>Profit</th>
-                            <th>Settled</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tradesTableBody">
-                        <tr><td colspan="6" class="empty-state">No trades found</td--</tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Wallet Settings Section -->
-        <div id="walletSection" class="admin-section" style="display: none;">
-            <div class="section-header">
-                <h2>Wallet Settings</h2>
-            </div>
-            <div class="global-control">
-                <div class="global-title">Cryptocurrency Wallet Addresses</div>
+        <!-- Announcements Tab -->
+        <div id="announcements" class="tab-content">
+            <div class="admin-form">
+                <h3 style="margin-bottom: 1rem;">📢 Post Announcement</h3>
                 <div class="form-group">
-                    <label>Ethereum (ETH) Address</label>
-                    <input type="text" id="adminEthAddress" placeholder="0x...">
+                    <label>Title</label>
+                    <input type="text" id="announcementTitle" placeholder="Announcement title">
                 </div>
                 <div class="form-group">
-                    <label>Bitcoin (BTC) Address</label>
-                    <input type="text" id="adminBtcAddress" placeholder="bc1...">
+                    <label>Content</label>
+                    <textarea id="announcementContent" rows="4" placeholder="Announcement details..."></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Tether (USDT) Address</label>
-                    <input type="text" id="adminUsdtAddress" placeholder="0x...">
+                    <label>Priority</label>
+                    <select id="announcementPriority">
+                        <option value="info">ℹ️ Info</option>
+                        <option value="warning">⚠️ Warning</option>
+                        <option value="urgent">🚨 Urgent</option>
+                    </select>
                 </div>
-                <button class="toggle-btn win" onclick="saveWalletSettings()" style="width: auto; padding: 10px 20px;">Save Addresses</button>
+                <button id="postAnnouncementBtn" class="submit-btn">Post Announcement</button>
+            </div>
+            <div id="announcementsList" style="margin-top: 1.5rem;"></div>
+        </div>
+
+        <!-- Logs Tab -->
+        <div id="logs" class="tab-content">
+            <div class="logs-container" id="logsContainer">
+                <div class="log-entry">📋 System ready. Admin panel initialized.</div>
             </div>
         </div>
     </div>
 
-    <script src="js/supabase.js"></script>
-    <script src="js/admin.js"></script>
+    <script src="admin.js"></script>
 </body>
 </html>
