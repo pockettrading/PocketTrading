@@ -116,9 +116,92 @@
             text-decoration: underline;
         }
 
+        /* Auth Buttons */
+        .auth-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .login-btn {
+            background: transparent;
+            color: var(--primary);
+            padding: 8px 20px;
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .login-btn:hover {
+            background: rgba(247, 147, 26, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .signup-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .signup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
+        }
+
+        /* Admin Badge */
+        .admin-badge {
+            background: linear-gradient(135deg, var(--danger), #ff6b6b);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        /* Login Prompt */
+        .login-prompt {
+            text-align: center;
+            padding: 3rem;
+            background: var(--card-bg);
+            border-radius: 20px;
+            max-width: 500px;
+            margin: 2rem auto;
+        }
+
+        .login-prompt h3 {
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            font-weight: 500;
+        }
+
+        .login-prompt p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .login-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
         /* Deposit Container */
         .deposit-container {
-            max-width: 1000px;
+            max-width: 800px;
             margin: 0 auto;
         }
 
@@ -365,77 +448,16 @@
                 <a href="home.html" class="nav-link">Home</a>
                 <a href="markets.html" class="nav-link">Markets</a>
                 <a href="trade.html" class="nav-link">Trades</a>
-                <a href="profile.html" class="nav-link">My Profile</a>
             </div>
             <div class="user-info" id="userInfo"></div>
         </div>
 
-        <div class="deposit-container">
-            <div class="deposit-header">
-                <h1>Deposit Funds</h1>
-                <p>Add funds to your trading account securely</p>
-            </div>
-
-            <!-- Crypto Cards -->
-            <div class="crypto-cards" id="cryptoCards">
-                <div class="crypto-card" data-crypto="ETH">
-                    <div class="crypto-icon">⟠</div>
-                    <div class="crypto-name">Ethereum</div>
-                    <div class="crypto-address" id="ethAddress">Loading...</div>
-                    <button class="copy-btn" onclick="copyAddress('eth')">Copy Address</button>
-                </div>
-                <div class="crypto-card" data-crypto="BTC">
-                    <div class="crypto-icon">₿</div>
-                    <div class="crypto-name">Bitcoin</div>
-                    <div class="crypto-address" id="btcAddress">Loading...</div>
-                    <button class="copy-btn" onclick="copyAddress('btc')">Copy Address</button>
-                </div>
-                <div class="crypto-card" data-crypto="USDT">
-                    <div class="crypto-icon">₮</div>
-                    <div class="crypto-name">Tether (ERC-20)</div>
-                    <div class="crypto-address" id="usdtAddress">Loading...</div>
-                    <button class="copy-btn" onclick="copyAddress('usdt')">Copy Address</button>
-                </div>
-            </div>
-
-            <!-- Deposit Form -->
-            <div class="deposit-form" id="depositForm">
-                <form id="depositFormElement">
-                    <div class="form-group">
-                        <label>Amount (USDT)</label>
-                        <input type="number" id="depositAmount" placeholder="Enter amount in USDT" min="10" step="10">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Currency</label>
-                        <select id="currencySelect">
-                            <option value="ETH">Ethereum (ETH) - ERC-20</option>
-                            <option value="BTC">Bitcoin (BTC)</option>
-                            <option value="USDT">Tether (USDT) - ERC-20</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Upload Proof of Payment (Screenshot)</label>
-                        <div class="file-upload" onclick="document.getElementById('proofFile').click()">
-                            <div class="upload-icon">📸</div>
-                            <div class="upload-text">Click to upload screenshot of your payment</div>
-                            <div class="upload-text" style="font-size: 0.7rem; margin-top: 0.5rem;">Supported: JPG, PNG (Max 5MB)</div>
-                        </div>
-                        <input type="file" id="proofFile" accept="image/jpeg,image/png" style="display: none;">
-                        <div id="fileName" class="file-name"></div>
-                    </div>
-
-                    <button type="submit" class="btn-submit" id="submitBtn">Submit Deposit Request</button>
-
-                    <div class="warning-note">
-                        <p>⚠️ Your deposit will be approved after reviewing. Please upload valid proof of payment.</p>
-                    </div>
-                </form>
-            </div>
+        <div id="depositContent">
+            <!-- Content will be populated by JavaScript based on login status -->
         </div>
     </div>
 
+    <script src="js/supabase.js"></script>
     <script src="js/deposit.js"></script>
 </body>
 </html>
