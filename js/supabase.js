@@ -1,159 +1,328 @@
-// Supabase Cloud Database Connection
-// File: js/supabase.js
-// REPLACE THE ANON KEY BELOW WITH YOUR COMPLETE KEY FROM SUPABASE
+// Supabase Database Wrapper for PocketTrading
+// File: js/supabase-db.js
 
-const SUPABASE_URL = 'https://nzjgknwwenrczxzrnhjr.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56amdrbnd3ZW5yY3p4enJuaGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NzY5NjksImV4cCI6MjA5MzE1Mjk2OX0.3Fb_VO5kYYBQF0T_2G19fcvnk91l-DOQZA_SKG8Xuao';  // ← REPLACE THIS
+// Supabase configuration
+// IMPORTANT: Replace these with your actual Supabase credentials
+const SUPABASE_URL = 'https://your-project.supabase.co';
+const SUPABASE_ANON_KEY = 'your-anon-key';
 
-class SupabaseClient {
+class SupabaseDB {
     constructor() {
-        this.url = SUPABASE_URL;
-        this.headers = {
-            'apikey': SUPABASE_ANON_KEY,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-        };
+        this.supabase = null;
+        this.isConnected = false;
+        this.init();
     }
 
-    async get(table, filters = {}) {
-        let queryString = '';
-        if (Object.keys(filters).length > 0) {
-            queryString = '?' + Object.entries(filters)
-                .map(([key, value]) => `${key}=eq.${encodeURIComponent(value)}`)
-                .join('&');
+    async init() {
+        // Check if Supabase is available
+        if (typeof supabase !== 'undefined') {
+            this.supabase = supabase;
+            this.isConnected = true;
+            console.log('Supabase connected');
+        } else {
+            console.warn('Supabase client not loaded, using localStorage fallback');
+            this.isConnected = false;
         }
-        
-        const response = await fetch(`${this.url}/rest/v1/${table}${queryString}`, {
-            method: 'GET',
-            headers: this.headers
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return await response.json();
     }
 
-    async insert(table, data) {
-        const response = await fetch(`${this.url}/rest/v1/${table}`, {
-            method: 'POST',
-            headers: this.headers,
-            body: JSON.stringify(data)
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+    // Get all users
+    async getAllUsers() {
+        if (this.isConnected && this.supabase) {
+            try {
+                const { data, error } = await this.supabase
+                    .from('custom_users')
+                    .select('*');
+                if (!error && data) return data;
+            } catch (e) {
+                console.warn('Supabase error, using localStorage');
+            }
         }
-        return await response.json();
+        // Fallback to localStorage
+        return this.getLocalUsers();
     }
 
-    async update(table, id, data) {
-        const response = await fetch(`${this.url}/rest/v1/${table}?id=eq.${id}`, {
-            method: 'PATCH',
-            headers: this.headers,
-            body: JSON.stringify(data)
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+    // Get user by email
+    async getUserByEmail(email) {
+        if (this.isConnected && this.supabase) {
+            try {
+                const { data, error } = await this.supabase
+                    .from('custom_users')
+                    .select('*')
+                    .eq('email', email)
+                    .single();
+                if (!error && data) return data;
+            } catch (e) {
+                console.warn('Supabase error, using localStorage');
+            }
         }
-        return await response.json();
+        // Fallback to localStorage
+        return this.getLocalUserByEmail(email);
     }
 
-    async delete(table, id) {
-        const response = await fetch(`${this.url}/rest/v1/${table}?id=eq.${id}`, {
-            method: 'DELETE',
-            headers: this.headers
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+    // Get user trades
+    async getUserTrades(userId) {
+        if (this.isConnected && this.supabase) {
+            try {
+                const { data, error } = await this.supabase
+                    .from('trades')
+                    .select('*')
+                    .eq('user_id', userId);
+                if (!error && data) return data;
+            } catch (e) {
+                console.warn('Supabase error, using localStorage');
+            }
         }
+        // Fallback to localStorage
+        return this.getLocalTrades(userId);
+    }
+
+    // Get all trades
+    async getAllTrades() {
+        if (this.isConnected && this.supabase) {
+            try {
+                const { data, error } = await this.supabase
+                    .from('trades')
+                    .select('*');
+                if (!error && data) return data;
+            } catch (e) {
+                console.warn('Supabase error, using localStorage');
+            }
+        }
+        return this.getLocalAllTrades();
+    }
+
+    // Get all from table
+    async getAll(tableName) {
+        if (this.isConnected && this.supabase) {
+            try {
+                const { data, error } = await this.supabase
+                    .from(tableName)
+                    .select('*');
+                if (!error && data) return data;
+            } catch (e) {
+                console.warn('Supabase error, using localStorage');
+            }
+        }
+        return this.getLocalData(tableName);
+    }
+
+    // Insert data
+    async insert(tableName, data) {
+        if (this.isConnected && this.supabase) {
+            try {
+                const { error } = await this.supabase
+                    .from(tableName)
+                    .insert(data);
+                if (!error) return true;
+            } catch (e) {
+                console.warn('Supabase error, using localStorage');
+            }
+        }
+        // Fallback to localStorage
+        return this.insertLocal(tableName, data);
+    }
+
+    // Update data
+    async update(tableName, id, updates) {
+        if (this.isConnected && this.supabase) {
+            try {
+                const { error } = await this.supabase
+                    .from(tableName)
+                    .update(updates)
+                    .eq('id', id);
+                if (!error) return true;
+            } catch (e) {
+                console.warn('Supabase error, using localStorage');
+            }
+        }
+        return this.updateLocal(tableName, id, updates);
+    }
+
+    // Delete data
+    async delete(tableName, id) {
+        if (this.isConnected && this.supabase) {
+            try {
+                const { error } = await this.supabase
+                    .from(tableName)
+                    .delete()
+                    .eq('id', id);
+                if (!error) return true;
+            } catch (e) {
+                console.warn('Supabase error, using localStorage');
+            }
+        }
+        return this.deleteLocal(tableName, id);
+    }
+
+    // Update user balance
+    async updateUserBalance(userId, newBalance) {
+        if (this.isConnected && this.supabase) {
+            try {
+                const { error } = await this.supabase
+                    .from('custom_users')
+                    .update({ balance: newBalance })
+                    .eq('id', userId);
+                if (!error) return true;
+            } catch (e) {
+                console.warn('Supabase error');
+            }
+        }
+        return this.updateLocalBalance(userId, newBalance);
+    }
+
+    // Update user KYC status
+    async updateUserKYCStatus(userId, status) {
+        if (this.isConnected && this.supabase) {
+            try {
+                const { error } = await this.supabase
+                    .from('custom_users')
+                    .update({ kyc_status: status })
+                    .eq('id', userId);
+                if (!error) return true;
+            } catch (e) {
+                console.warn('Supabase error');
+            }
+        }
+        return this.updateLocalKYC(userId, status);
+    }
+
+    // Get user watchlist
+    async getUserWatchlist(userId) {
+        if (this.isConnected && this.supabase) {
+            try {
+                const { data, error } = await this.supabase
+                    .from('watchlist')
+                    .select('*')
+                    .eq('user_id', userId);
+                if (!error && data) return data;
+            } catch (e) {
+                console.warn('Supabase error');
+            }
+        }
+        return this.getLocalWatchlist(userId);
+    }
+
+    // Get user activities
+    async getUserActivities(userId) {
+        if (this.isConnected && this.supabase) {
+            try {
+                const { data, error } = await this.supabase
+                    .from('user_activities')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .order('created_at', { ascending: false });
+                if (!error && data) return data;
+            } catch (e) {
+                console.warn('Supabase error');
+            }
+        }
+        return this.getLocalActivities(userId);
+    }
+
+    // ============ LOCAL STORAGE FALLBACK METHODS ============
+
+    getLocalUsers() {
+        const users = localStorage.getItem('pockettrading_users');
+        return users ? JSON.parse(users) : [];
+    }
+
+    getLocalUserByEmail(email) {
+        const users = this.getLocalUsers();
+        return users.find(u => u.email === email) || null;
+    }
+
+    getLocalTrades(userId) {
+        const trades = localStorage.getItem(`trades_${userId}`);
+        return trades ? JSON.parse(trades) : [];
+    }
+
+    getLocalAllTrades() {
+        const allTrades = [];
+        const users = this.getLocalUsers();
+        users.forEach(user => {
+            const userTrades = this.getLocalTrades(user.id);
+            allTrades.push(...userTrades);
+        });
+        return allTrades;
+    }
+
+    getLocalData(tableName) {
+        const data = localStorage.getItem(`pockettrading_${tableName}`);
+        return data ? JSON.parse(data) : [];
+    }
+
+    insertLocal(tableName, data) {
+        const existing = this.getLocalData(tableName);
+        existing.push(data);
+        localStorage.setItem(`pockettrading_${tableName}`, JSON.stringify(existing));
         return true;
     }
 
-    // User methods
-    async getUserByEmail(email) {
-        const users = await this.get('custom_users', { email: email });
-        return users.length > 0 ? users[0] : null;
-    }
-
-    async getAllUsers() {
-        return await this.get('custom_users');
-    }
-
-    async updateUserKYCStatus(userId, status) {
-        return await this.update('custom_users', userId, { kyc_status: status });
-    }
-
-    async updateUserBalance(userId, newBalance) {
-        return await this.update('custom_users', userId, { balance: newBalance });
-    }
-
-    // Transaction methods
-    async getUserTransactions(userId) {
-        return await this.get('transactions', { user_id: userId });
-    }
-
-    async getAllTransactions() {
-        return await this.get('transactions');
-    }
-
-    // Deposit requests
-    async getDepositRequests(status = null) {
-        if (status) {
-            return await this.get('deposit_requests', { status: status });
+    updateLocal(tableName, id, updates) {
+        const items = this.getLocalData(tableName);
+        const index = items.findIndex(i => i.id === id);
+        if (index !== -1) {
+            items[index] = { ...items[index], ...updates };
+            localStorage.setItem(`pockettrading_${tableName}`, JSON.stringify(items));
+            return true;
         }
-        return await this.get('deposit_requests');
+        return false;
     }
 
-    // Withdrawal requests
-    async getWithdrawalRequests(status = null) {
-        if (status) {
-            return await this.get('withdrawal_requests', { status: status });
+    deleteLocal(tableName, id) {
+        const items = this.getLocalData(tableName);
+        const filtered = items.filter(i => i.id !== id);
+        localStorage.setItem(`pockettrading_${tableName}`, JSON.stringify(filtered));
+        return true;
+    }
+
+    updateLocalBalance(userId, newBalance) {
+        const users = this.getLocalUsers();
+        const userIndex = users.findIndex(u => u.id === userId);
+        if (userIndex !== -1) {
+            users[userIndex].balance = newBalance;
+            localStorage.setItem('pockettrading_users', JSON.stringify(users));
+            
+            // Update session
+            const sessionUser = JSON.parse(localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user') || '{}');
+            if (sessionUser.id === userId) {
+                sessionUser.balance = newBalance;
+                if (localStorage.getItem('pocket_user')) {
+                    localStorage.setItem('pocket_user', JSON.stringify(sessionUser));
+                }
+                if (sessionStorage.getItem('pocket_user')) {
+                    sessionStorage.setItem('pocket_user', JSON.stringify(sessionUser));
+                }
+            }
+            return true;
         }
-        return await this.get('withdrawal_requests');
+        return false;
     }
 
-    // KYC requests
-    async getKYCRequests(status = null) {
-        if (status) {
-            return await this.get('kyc_requests', { status: status });
+    updateLocalKYC(userId, status) {
+        const users = this.getLocalUsers();
+        const userIndex = users.findIndex(u => u.id === userId);
+        if (userIndex !== -1) {
+            users[userIndex].kyc_status = status;
+            localStorage.setItem('pockettrading_users', JSON.stringify(users));
+            return true;
         }
-        return await this.get('kyc_requests');
+        return false;
     }
 
-    // Wallet settings
-    async getWalletSettings() {
-        const settings = await this.get('wallet_settings');
-        return settings.length > 0 ? settings[0] : null;
+    getLocalWatchlist(userId) {
+        const watchlist = localStorage.getItem(`watchlist_${userId}`);
+        return watchlist ? JSON.parse(watchlist) : [];
     }
 
-    async updateWalletSettings(settings) {
-        const existing = await this.getWalletSettings();
-        if (existing && existing.id) {
-            return await this.update('wallet_settings', existing.id, settings);
-        } else {
-            return await this.insert('wallet_settings', settings);
-        }
-    }
-
-    // Global settings
-    async getGlobalSettings() {
-        const settings = await this.get('global_settings');
-        return settings.length > 0 ? settings[0] : null;
-    }
-
-    async updateGlobalSettings(settings) {
-        const existing = await this.getGlobalSettings();
-        if (existing && existing.id) {
-            return await this.update('global_settings', existing.id, settings);
-        } else {
-            return await this.insert('global_settings', settings);
-        }
+    getLocalActivities(userId) {
+        const activities = localStorage.getItem(`activities_${userId}`);
+        return activities ? JSON.parse(activities) : [];
     }
 }
 
-const supabaseDB = new SupabaseClient();
+// Initialize the database wrapper
+const supabaseDB = new SupabaseDB();
+
+// Export for use in other files
 window.supabaseDB = supabaseDB;
-console.log('Supabase client initialized');
