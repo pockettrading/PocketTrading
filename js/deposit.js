@@ -1,451 +1,235 @@
-// Deposit page functionality - Supabase Integration
+// Deposit Page Controller - PocketTrading
 // File: js/deposit.js
 
-let currentUser = null;
-let selectedCrypto = 'ETH';
-let selectedFile = null;
-
-// Admin email
-const ADMIN_EMAIL = 'ephregojo@gmail.com';
-
-// Wallet addresses (loaded from Supabase)
-let walletAddresses = {
-    ETH: '',
-    BTC: '',
-    USDT: ''
-};
-
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('Deposit page loaded');
-    
-    if (typeof supabaseDB === 'undefined') {
-        setTimeout(() => initDepositPage(), 500);
-        return;
+class DepositManager {
+    constructor() {
+        this.currentUser = null;
+        this.selectedCurrency = 'USDT';
+        this.selectedMethod = 'crypto';
+        this.cryptoAddresses = {
+            USDT: 'TX8xKJk3g5xVHhRq2LpN7mY9wQeRtYuIoP',
+            BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+            ETH: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5',
+            SOL: '5vEt4uR6LrY7ZxVkQpWnM8jHsK9cFdGtYhJkLzXcVb'
+        };
+        this.networkFees = {
+            USDT: 1.00,
+            BTC: 0.0002,
+            ETH: 0.005,
+            SOL: 0.01
+        };
+        this.init();
     }
-    
-    await initDepositPage();
-});
 
-async function initDepositPage() {
-    await loadUser();
-    renderNavLinks();
-    renderUserInfo();
-    await loadWalletAddresses();
-    
-    if (!currentUser) {
-        renderLoginPrompt();
-    } else {
-        renderDepositInterface();
-        setupEventListeners();
-        updateAddressDisplay();
-    }
-}
-
-async function loadUser() {
-    try {
-        const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
-        if (storedUser) {
-            currentUser = JSON.parse(storedUser);
-            
-            // Verify user still exists in cloud
-            const cloudUser = await supabaseDB.getUserByEmail(currentUser.email);
-            if (cloudUser) {
-                currentUser = cloudUser;
-                currentUser.isAdmin = (currentUser.email === ADMIN_EMAIL);
-                
-                // Update session
-                if (localStorage.getItem('pocket_user')) {
-                    localStorage.setItem('pocket_user', JSON.stringify(currentUser));
-                }
-                if (sessionStorage.getItem('pocket_user')) {
-                    sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
-                }
-            } else {
-                currentUser = null;
-            }
-            console.log('User loaded:', currentUser?.email, 'Is Admin:', currentUser?.isAdmin);
-        } else {
-            console.log('Guest mode - no user logged in');
-            currentUser = null;
+    async init() {
+        if (typeof auth === 'undefined') {
+            setTimeout(() => this.init(), 100);
+            return;
         }
-    } catch(e) {
-        console.log('Error loading user:', e);
-        currentUser = null;
-    }
-}
 
-function renderNavLinks() {
-    const navLinks = document.getElementById('navLinks');
-    if (!navLinks) return;
-    
-    // Clear existing dynamic links (keep Home, Markets, Trades)
-    const existingLinks = navLinks.querySelectorAll('.nav-link:not([href="home.html"]):not([href="markets.html"]):not([href="trade.html"])');
-    existingLinks.forEach(link => link.remove());
-    
-    // Add My Profile link only for registered users
-    if (currentUser) {
-        const profileLink = document.createElement('a');
-        profileLink.href = 'profile.html';
-        profileLink.className = 'nav-link';
-        profileLink.textContent = 'My Profile';
-        navLinks.appendChild(profileLink);
-    }
-}
-
-function renderUserInfo() {
-    const userInfo = document.getElementById('userInfo');
-    if (!userInfo) return;
-    
-    if (currentUser) {
-        const displayName = currentUser.name || currentUser.email.split('@')[0];
-        const adminBadge = currentUser.isAdmin ? '<span class="admin-badge">Admin</span>' : '';
+        this.currentUser = auth.getUser();
         
-        let adminPanelButton = '';
-        if (currentUser.isAdmin) {
-            adminPanelButton = '<a href="admin.html" class="login-btn" style="margin-left: 0.5rem;">Admin Panel</a>';
+        if (!this.currentUser) {
+            window.location.href = 'login.html';
+            return;
         }
+
+        this.setupUI();
+        this.setupEventListeners();
+    }
+
+    setupUI() {
+        this.updateBalanceDisplay();
+        this.updateSummary();
+    }
+
+    updateBalanceDisplay() {
+        const balance = this.currentUser.balance || 0;
+        const balanceEl = document.getElementById('currentBalance');
+        if (balanceEl) balanceEl.textContent = `$${balance.toLocaleString()}`;
+    }
+
+    updateSummary() {
+        const amount = parseFloat(document.getElementById('depositAmount')?.value) || 0;
+        const fee = this.selectedMethod === 'crypto' ? (this.networkFees[this.selectedCurrency] || 1) : 0;
+        const total = amount + fee;
         
-        userInfo.innerHTML = `
-            <span class="username">${displayName}${adminBadge}</span>
-            ${adminPanelButton}
-            <span class="logout-link" onclick="handleLogout()">Logout</span>
-        `;
-    } else {
-        userInfo.innerHTML = `
-            <div class="auth-buttons">
-                <a href="login.html" class="login-btn">Login</a>
-                <a href="register.html" class="signup-btn">Sign Up</a>
-            </div>
-        `;
+        const summaryAmount = document.getElementById('summaryAmount');
+        const networkFee = document.getElementById('networkFee');
+        const totalAmount = document.getElementById('totalAmount');
+        
+        if (summaryAmount) summaryAmount.textContent = `$${amount.toFixed(2)}`;
+        if (networkFee) networkFee.textContent = `$${fee.toFixed(2)}`;
+        if (totalAmount) totalAmount.textContent = `$${total.toFixed(2)}`;
     }
-}
 
-function renderLoginPrompt() {
-    const container = document.getElementById('depositContent');
-    if (!container) return;
-    
-    container.innerHTML = `
-        <div class="login-prompt">
-            <h3>🔒 Login Required</h3>
-            <p>Please login or create an account to deposit funds</p>
-            <div class="login-buttons">
-                <a href="login.html" class="btn-login" style="background: transparent; color: var(--primary); padding: 10px 28px; border: 1px solid var(--primary); border-radius: 10px; text-decoration: none; font-weight: 500;">Login</a>
-                <a href="register.html" class="btn-signup" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; padding: 10px 28px; border: none; border-radius: 10px; text-decoration: none; font-weight: 500;">Sign Up</a>
-            </div>
-        </div>
-    `;
-}
-
-async function loadWalletAddresses() {
-    try {
-        const settings = await supabaseDB.getWalletSettings();
-        if (settings) {
-            walletAddresses = {
-                ETH: settings.eth_address || '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0',
-                BTC: settings.btc_address || 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-                USDT: settings.usdt_address || '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0'
-            };
-        }
-    } catch (error) {
-        console.error('Error loading wallet addresses:', error);
+    updateCryptoAddress() {
+        const address = this.cryptoAddresses[this.selectedCurrency] || this.cryptoAddresses['USDT'];
+        const addressEl = document.getElementById('cryptoAddress');
+        const addressLabel = document.querySelector('#cryptoAddressSection .address-label');
+        
+        if (addressEl) addressEl.textContent = address;
+        if (addressLabel) addressLabel.textContent = `Send ${this.selectedCurrency} (TRC20) to this address:`;
     }
-}
 
-function renderDepositInterface() {
-    const container = document.getElementById('depositContent');
-    if (!container) return;
-    
-    container.innerHTML = `
-        <div class="deposit-container">
-            <div class="deposit-header">
-                <h1>Deposit Funds</h1>
-                <p>Add funds to your trading account securely</p>
-            </div>
-
-            <!-- Crypto Cards -->
-            <div class="crypto-cards" id="cryptoCards">
-                <div class="crypto-card active" data-crypto="ETH">
-                    <div class="crypto-icon">⟠</div>
-                    <div class="crypto-name">Ethereum</div>
-                    <div class="crypto-address" id="ethAddress">${walletAddresses.ETH.substring(0, 20)}...</div>
-                    <button class="copy-btn" onclick="copyAddress('eth')">Copy Address</button>
-                </div>
-                <div class="crypto-card" data-crypto="BTC">
-                    <div class="crypto-icon">₿</div>
-                    <div class="crypto-name">Bitcoin</div>
-                    <div class="crypto-address" id="btcAddress">${walletAddresses.BTC.substring(0, 20)}...</div>
-                    <button class="copy-btn" onclick="copyAddress('btc')">Copy Address</button>
-                </div>
-                <div class="crypto-card" data-crypto="USDT">
-                    <div class="crypto-icon">₮</div>
-                    <div class="crypto-name">Tether (ERC-20)</div>
-                    <div class="crypto-address" id="usdtAddress">${walletAddresses.USDT.substring(0, 20)}...</div>
-                    <button class="copy-btn" onclick="copyAddress('usdt')">Copy Address</button>
-                </div>
-            </div>
-
-            <!-- Deposit Form -->
-            <div class="deposit-form">
-                <form id="depositFormElement">
-                    <div class="form-group">
-                        <label>Amount (USDT)</label>
-                        <input type="number" id="depositAmount" placeholder="Enter amount in USDT" min="10" step="10" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Currency</label>
-                        <select id="currencySelect">
-                            <option value="ETH">Ethereum (ETH) - ERC-20</option>
-                            <option value="BTC">Bitcoin (BTC)</option>
-                            <option value="USDT">Tether (USDT) - ERC-20</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Upload Proof of Payment (Screenshot)</label>
-                        <div class="file-upload" onclick="document.getElementById('proofFile').click()">
-                            <div class="upload-icon">📸</div>
-                            <div class="upload-text">Click to upload screenshot of your payment</div>
-                            <div class="upload-text" style="font-size: 0.7rem; margin-top: 0.5rem;">Supported: JPG, PNG (Max 5MB)</div>
-                        </div>
-                        <input type="file" id="proofFile" accept="image/jpeg,image/png" style="display: none;">
-                        <div id="fileName" class="file-name"></div>
-                    </div>
-
-                    <button type="submit" class="btn-submit" id="submitBtn">Submit Deposit Request</button>
-
-                    <div class="warning-note">
-                        <p>⚠️ Your deposit will be approved after reviewing. Please upload valid proof of payment.</p>
-                    </div>
-                </form>
-            </div>
-        </div>
-    `;
-}
-
-function setupEventListeners() {
-    // Crypto card selection
-    const cryptoCards = document.querySelectorAll('.crypto-card');
-    cryptoCards.forEach(card => {
-        card.addEventListener('click', () => {
-            cryptoCards.forEach(c => c.classList.remove('active'));
-            card.classList.add('active');
-            selectedCrypto = card.dataset.crypto;
-            
-            // Update currency select
-            const currencySelect = document.getElementById('currencySelect');
-            if (currencySelect) {
-                currencySelect.value = selectedCrypto;
-            }
-        });
-    });
-    
-    // Currency select change
-    const currencySelect = document.getElementById('currencySelect');
-    if (currencySelect) {
-        currencySelect.addEventListener('change', (e) => {
-            selectedCrypto = e.target.value;
-            cryptoCards.forEach(card => {
-                if (card.dataset.crypto === selectedCrypto) {
-                    card.classList.add('active');
-                } else {
-                    card.classList.remove('active');
-                }
+    setupEventListeners() {
+        // Currency selector
+        document.querySelectorAll('.currency-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.currency-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.selectedCurrency = btn.dataset.currency;
+                this.updateCryptoAddress();
+                this.updateSummary();
             });
         });
+        
+        // Preset amounts
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const amount = btn.dataset.amount;
+                const amountInput = document.getElementById('depositAmount');
+                if (amountInput) amountInput.value = amount;
+                this.updateSummary();
+            });
+        });
+        
+        // Amount input
+        const amountInput = document.getElementById('depositAmount');
+        if (amountInput) amountInput.addEventListener('input', () => this.updateSummary());
+        
+        // Payment method
+        document.querySelectorAll('.method-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                document.querySelectorAll('.method-option').forEach(o => o.classList.remove('active'));
+                opt.classList.add('active');
+                this.selectedMethod = opt.dataset.method;
+                
+                const cryptoSection = document.getElementById('cryptoAddressSection');
+                const cardForm = document.getElementById('cardForm');
+                const bankInfo = document.getElementById('bankInfo');
+                
+                if (cryptoSection) cryptoSection.style.display = this.selectedMethod === 'crypto' ? 'block' : 'none';
+                if (cardForm) cardForm.style.display = this.selectedMethod === 'card' ? 'block' : 'none';
+                if (bankInfo) bankInfo.style.display = this.selectedMethod === 'bank' ? 'block' : 'none';
+                
+                this.updateSummary();
+            });
+        });
+        
+        // Submit button
+        const submitBtn = document.getElementById('submitDeposit');
+        if (submitBtn) submitBtn.addEventListener('click', () => this.submitDeposit());
+        
+        // Mobile menu
+        const mobileBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        if (mobileBtn && mobileMenu) {
+            mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('show'));
+        }
     }
-    
-    // File upload
-    const fileInput = document.getElementById('proofFile');
-    if (fileInput) {
-        fileInput.addEventListener('change', handleFileUpload);
-    }
-    
-    // Form submission
-    const depositForm = document.getElementById('depositFormElement');
-    if (depositForm) {
-        depositForm.addEventListener('submit', submitDepositRequest);
-    }
-}
 
-function handleFileUpload(event) {
-    const file = event.target.files[0];
-    const fileNameSpan = document.getElementById('fileName');
-    
-    if (file) {
-        if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
-            alert('Please upload JPG or PNG image');
-            event.target.value = '';
+    async submitDeposit() {
+        const amount = parseFloat(document.getElementById('depositAmount')?.value);
+        
+        if (!amount || amount < 10) {
+            alert('Please enter a valid amount (minimum $10)');
             return;
         }
         
-        if (file.size > 5 * 1024 * 1024) {
-            alert('File size must be less than 5MB');
-            event.target.value = '';
-            return;
+        if (this.selectedMethod === 'card') {
+            const cardNumber = document.getElementById('cardNumber')?.value;
+            const expiryDate = document.getElementById('expiryDate')?.value;
+            const cvv = document.getElementById('cvv')?.value;
+            const cardholderName = document.getElementById('cardholderName')?.value;
+            
+            if (!cardNumber || !expiryDate || !cvv || !cardholderName) {
+                alert('Please fill in all card details');
+                return;
+            }
         }
         
-        selectedFile = file;
-        if (fileNameSpan) {
-            fileNameSpan.textContent = `✅ ${file.name}`;
-            fileNameSpan.style.color = 'var(--success)';
-        }
-    } else {
-        selectedFile = null;
-        if (fileNameSpan) fileNameSpan.textContent = '';
-    }
-}
-
-async function submitDepositRequest(event) {
-    event.preventDefault();
-    
-    if (!currentUser) {
-        alert('Please login to deposit');
-        window.location.href = 'login.html';
-        return;
-    }
-    
-    const amount = parseFloat(document.getElementById('depositAmount').value);
-    const currency = document.getElementById('currencySelect').value;
-    
-    if (!amount || amount <= 0) {
-        alert('Please enter a valid amount');
-        return;
-    }
-    
-    if (amount < 10) {
-        alert('Minimum deposit amount is $10 USDT');
-        return;
-    }
-    
-    if (!selectedFile) {
-        alert('Please upload a screenshot of your payment');
-        return;
-    }
-    
-    // Get wallet address for selected currency
-    let walletAddress = '';
-    switch(currency) {
-        case 'ETH':
-            walletAddress = walletAddresses.ETH;
-            break;
-        case 'BTC':
-            walletAddress = walletAddresses.BTC;
-            break;
-        case 'USDT':
-            walletAddress = walletAddresses.USDT;
-            break;
-    }
-    
-    // Create deposit request in Supabase
-    const depositRequest = {
-        id: Date.now(),
-        user_id: currentUser.id,
-        user_email: currentUser.email,
-        user_name: currentUser.name,
-        amount: amount,
-        currency: currency,
-        wallet_address: walletAddress,
-        screenshot: selectedFile.name,
-        status: 'pending',
-        date: new Date().toISOString()
-    };
-    
-    try {
-        await supabaseDB.insert('deposit_requests', depositRequest);
+        const fee = this.selectedMethod === 'crypto' ? (this.networkFees[this.selectedCurrency] || 1) : 0;
+        const total = amount + fee;
         
-        // Add to user's pending deposits
-        if (!currentUser.pendingDeposits) currentUser.pendingDeposits = [];
-        currentUser.pendingDeposits.push({
-            id: depositRequest.id,
+        const depositRequest = {
+            id: Date.now(),
+            user_id: this.currentUser.id,
+            user_email: this.currentUser.email,
+            user_name: this.currentUser.name,
             amount: amount,
-            currency: currency,
+            currency: this.selectedCurrency,
+            method: this.selectedMethod,
+            fee: fee,
+            total: total,
             status: 'pending',
             date: new Date().toISOString()
-        });
+        };
         
-        // Add transaction record
-        if (!currentUser.transactions) currentUser.transactions = [];
-        currentUser.transactions.unshift({
-            id: Date.now(),
-            type: 'deposit',
-            amount: amount,
-            currency: currency,
-            status: 'pending',
-            date: new Date().toISOString(),
-            description: `Deposit request of $${amount} via ${currency} - Pending Approval`
-        });
+        // Save to localStorage
+        const existingRequests = JSON.parse(localStorage.getItem('deposit_requests') || '[]');
+        existingRequests.push(depositRequest);
+        localStorage.setItem('deposit_requests', JSON.stringify(existingRequests));
         
-        // Save user data
-        saveUserData();
+        // Save to user's deposit history
+        const userDeposits = JSON.parse(localStorage.getItem(`deposits_${this.currentUser.id}`) || '[]');
+        userDeposits.push(depositRequest);
+        localStorage.setItem(`deposits_${this.currentUser.id}`, JSON.stringify(userDeposits));
         
-        alert(`Deposit request submitted! Amount: $${amount} ${currency}\n\nAdmin will review and approve within 24 hours.`);
+        alert(`Deposit request submitted!\nAmount: $${amount.toFixed(2)} ${this.selectedCurrency}\nMethod: ${this.selectedMethod.toUpperCase()}\n\nYour deposit will be processed within 5-30 minutes.`);
         
         // Reset form
-        document.getElementById('depositAmount').value = '';
-        document.getElementById('proofFile').value = '';
-        document.getElementById('fileName').textContent = '';
-        selectedFile = null;
+        const amountInput = document.getElementById('depositAmount');
+        if (amountInput) amountInput.value = '';
+        this.updateSummary();
         
-        // Redirect to dashboard after 2 seconds
-        setTimeout(() => {
-            window.location.href = 'dashboard.html';
-        }, 2000);
-        
-    } catch (error) {
-        console.error('Error submitting deposit request:', error);
-        alert('Failed to submit deposit request. Please try again.');
+        // Auto-approve for admin and demo users
+        if (this.currentUser.email === 'ephremgojo@gmail.com' || this.currentUser.email === 'demo@example.com') {
+            const newBalance = (this.currentUser.balance || 0) + amount;
+            this.currentUser.balance = newBalance;
+            
+            if (typeof auth !== 'undefined' && auth.updateBalance) {
+                await auth.updateBalance(this.currentUser.id, amount, {
+                    type: 'deposit',
+                    amount: amount,
+                    status: 'auto_approved'
+                });
+            }
+            
+            // Update storage
+            if (localStorage.getItem('pocket_user')) {
+                const user = JSON.parse(localStorage.getItem('pocket_user'));
+                user.balance = newBalance;
+                localStorage.setItem('pocket_user', JSON.stringify(user));
+            }
+            if (sessionStorage.getItem('pocket_user')) {
+                const user = JSON.parse(sessionStorage.getItem('pocket_user'));
+                user.balance = newBalance;
+                sessionStorage.setItem('pocket_user', JSON.stringify(user));
+            }
+            
+            this.updateBalanceDisplay();
+            alert(`✅ Deposit auto-approved! New balance: $${newBalance.toFixed(2)}`);
+        }
+    }
+
+    copyAddress() {
+        const address = document.getElementById('cryptoAddress')?.textContent;
+        if (address) {
+            navigator.clipboard.writeText(address);
+            alert('Address copied to clipboard!');
+        }
     }
 }
 
-function updateAddressDisplay() {
-    const ethElem = document.getElementById('ethAddress');
-    const btcElem = document.getElementById('btcAddress');
-    const usdtElem = document.getElementById('usdtAddress');
-    
-    if (ethElem) ethElem.textContent = walletAddresses.ETH.substring(0, 20) + '...';
-    if (btcElem) btcElem.textContent = walletAddresses.BTC.substring(0, 20) + '...';
-    if (usdtElem) usdtElem.textContent = walletAddresses.USDT.substring(0, 20) + '...';
-}
+// Initialize
+let depositManager = null;
+document.addEventListener('DOMContentLoaded', () => {
+    depositManager = new DepositManager();
+});
 
-function copyAddress(crypto) {
-    let address = '';
-    switch(crypto) {
-        case 'eth':
-            address = walletAddresses.ETH;
-            break;
-        case 'btc':
-            address = walletAddresses.BTC;
-            break;
-        case 'usdt':
-            address = walletAddresses.USDT;
-            break;
-    }
-    
-    navigator.clipboard.writeText(address).then(() => {
-        alert('Address copied to clipboard!');
-    }).catch(() => {
-        alert('Failed to copy address');
-    });
-}
-
-function saveUserData() {
-    // Update in localStorage for session consistency
-    if (localStorage.getItem('pocket_user')) {
-        localStorage.setItem('pocket_user', JSON.stringify(currentUser));
-    }
-    if (sessionStorage.getItem('pocket_user')) {
-        sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
-    }
-}
-
-function handleLogout() {
-    localStorage.removeItem('pocket_user');
-    sessionStorage.removeItem('pocket_user');
-    window.location.href = 'home.html';
-}
-
-// Make functions global
-window.copyAddress = copyAddress;
-window.handleLogout = handleLogout;
+window.copyAddress = () => depositManager?.copyAddress();
+window.handleLogout = () => {
+    if (typeof auth !== 'undefined' && auth.logout) auth.logout();
+    else { localStorage.clear(); sessionStorage.clear(); window.location.href = 'home.html'; }
+};
