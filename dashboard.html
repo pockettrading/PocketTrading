@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pocket Trading - Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Dashboard - PocketTrading</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -12,495 +13,664 @@
             box-sizing: border-box;
         }
 
-        :root {
-            --primary: #F7931A;
-            --primary-dark: #e67e22;
-            --primary-light: #f8b45a;
-            --dark-bg: #0A0E17;
-            --darker-bg: #06090F;
-            --card-bg: #151E2C;
-            --card-hover: #1A2535;
-            --text-primary: #FFFFFF;
-            --text-secondary: #A0AAB5;
-            --text-tertiary: #6B7A8A;
-            --success: #00D897;
-            --danger: #FF4757;
-            --warning: #FFA502;
-            --border: #2A3545;
-            --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-        }
-
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
-            color: var(--text-primary);
-            line-height: 1.5;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
+            background: #0A0F1A;
+            color: #FFFFFF;
+            overflow-x: hidden;
         }
 
         /* Top Navigation Bar */
-        .top-nav {
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 20, 32, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            padding: 0 32px;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-            flex-wrap: wrap;
-            gap: 1rem;
+            height: 70px;
         }
 
         .logo {
             display: flex;
             align-items: center;
             gap: 10px;
+            text-decoration: none;
         }
 
-        .logo svg {
-            width: 32px;
-            height: 32px;
+        .logo-icon { font-size: 28px; }
+        .logo-text {
+            font-size: 20px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
 
-        .logo span {
-            font-size: 1.3rem;
-            font-weight: 700;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
+        .nav-links { display: flex; gap: 8px; align-items: center; }
         .nav-link {
-            color: var(--text-secondary);
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: #8B93A5;
             text-decoration: none;
             font-weight: 500;
-            transition: all 0.3s;
+            transition: all 0.2s;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(0, 216, 151, 0.1);
+            color: #00D897;
         }
 
-        .nav-link:hover {
-            color: var(--primary);
-        }
-
-        /* User Info in Top Right */
+        .user-section { display: flex; align-items: center; gap: 16px; }
         .user-info {
             display: flex;
             align-items: center;
-            gap: 1rem;
-        }
-
-        .username {
-            color: var(--text-primary);
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        .logout-link {
-            color: var(--danger);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.9rem;
+            gap: 12px;
+            padding: 6px 16px 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 40px;
             cursor: pointer;
-            transition: all 0.3s;
         }
-
-        .logout-link:hover {
-            text-decoration: underline;
-        }
-
-        /* Auth Buttons */
-        .auth-buttons {
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            border-radius: 50%;
             display: flex;
-            gap: 0.75rem;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
         }
-
-        .login-btn {
-            background: transparent;
-            color: var(--primary);
-            padding: 8px 20px;
-            border: 1px solid var(--primary);
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .login-btn:hover {
-            background: rgba(247, 147, 26, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .signup-btn {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            padding: 8px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .signup-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
-        }
-
-        /* Admin Badge */
+        .user-name { font-size: 14px; font-weight: 600; }
         .admin-badge {
-            background: linear-gradient(135deg, var(--danger), #ff6b6b);
-            color: white;
+            font-size: 10px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
             padding: 2px 8px;
             border-radius: 20px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            margin-left: 8px;
+            color: white;
+            margin-left: 6px;
         }
-
-        /* Login Prompt */
-        .login-prompt {
-            text-align: center;
-            padding: 3rem;
-            background: var(--card-bg);
-            border-radius: 20px;
-            max-width: 500px;
-            margin: 2rem auto;
-        }
-
-        .login-prompt h3 {
-            margin-bottom: 1rem;
-            font-size: 1.3rem;
+        .admin-link {
+            padding: 8px 16px;
+            background: rgba(0, 216, 151, 0.1);
+            border-radius: 40px;
+            color: #00D897;
+            text-decoration: none;
+            font-size: 13px;
             font-weight: 500;
         }
-
-        .login-prompt p {
-            color: var(--text-secondary);
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
+        .logout-btn {
+            padding: 8px 20px;
+            background: rgba(255, 71, 87, 0.15);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-radius: 40px;
+            color: #FF4757;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: white;
+            cursor: pointer;
+        }
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 70px;
+            left: 0;
+            right: 0;
+            background: #0F1420;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            z-index: 999;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .mobile-menu.show { display: flex; }
+        .mobile-nav-link {
+            padding: 12px;
+            color: #8B93A5;
+            text-decoration: none;
+            border-radius: 12px;
         }
 
-        .login-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
+        /* Main Content */
+        .main-content {
+            margin-top: 70px;
+            padding: 32px;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        /* Stats Cards */
+        /* Welcome Section */
+        .welcome-section {
+            background: linear-gradient(135deg, rgba(0, 216, 151, 0.1), rgba(0, 184, 160, 0.05));
+            border-radius: 24px;
+            padding: 32px;
+            margin-bottom: 32px;
+            border: 1px solid rgba(0, 216, 151, 0.2);
+        }
+        .welcome-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .welcome-subtitle {
+            color: #8B93A5;
+            font-size: 14px;
+        }
+
+        /* Stats Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            gap: 20px;
+            margin-bottom: 32px;
         }
-
         .stat-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 1.5rem;
-            transition: all 0.3s;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.2s;
         }
+        .stat-card:hover { transform: translateY(-2px); }
+        .stat-icon { font-size: 32px; margin-bottom: 12px; }
+        .stat-label { font-size: 13px; color: #8B93A5; margin-bottom: 8px; }
+        .stat-value { font-size: 28px; font-weight: 700; }
+        .stat-change { font-size: 12px; margin-top: 4px; }
+        .positive { color: #00D897; }
+        .negative { color: #FF4757; }
 
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow);
-        }
-
-        .stat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            color: var(--text-secondary);
-        }
-
-        .stat-label {
-            font-size: 0.85rem;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-change {
-            font-size: 0.75rem;
-            color: var(--text-tertiary);
-        }
-
-        .stat-value.positive {
-            color: var(--success);
-        }
-
-        .stat-value.negative {
-            color: var(--danger);
-        }
-
-        .stat-change.positive {
-            color: var(--success);
-        }
-
-        .stat-change.negative {
-            color: var(--danger);
-        }
-
-        /* Trading Section */
-        .trading-section {
+        /* Charts Row */
+        .charts-row {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 32px;
         }
-
-        .chart-container,
-        .market-data {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 1.5rem;
+        .chart-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .chart-container { height: 250px; }
 
+        /* Quick Actions */
+        .quick-actions {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
         .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
         }
-
-        .section-header h2 {
-            font-size: 1.2rem;
+        .section-header h3 { font-size: 18px; font-weight: 600; }
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            padding: 10px 24px;
+            border-radius: 40px;
             font-weight: 600;
-        }
-
-        .timeframe-select {
-            background: var(--darker-bg);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            padding: 6px 12px;
-            border-radius: 8px;
             cursor: pointer;
-            font-size: 0.8rem;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .action-btn.deposit {
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            color: white;
+            border: none;
+        }
+        .action-btn.withdraw {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .action-btn.trade {
+            background: rgba(0, 216, 151, 0.15);
+            border: 1px solid rgba(0, 216, 151, 0.3);
+            color: #00D897;
         }
 
-        .chart-placeholder {
-            min-height: 300px;
+        /* Recent Activity & Top Markets */
+        .bottom-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
         }
-
-        canvas {
+        .activity-card, .markets-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .activity-list {
             max-height: 300px;
-            width: 100%;
+            overflow-y: auto;
         }
-
-        /* Crypto List */
-        .crypto-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .crypto-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            background: var(--darker-bg);
-            border-radius: 12px;
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-
-        .crypto-item:hover {
-            background: var(--card-hover);
-            transform: translateX(4px);
-        }
-
-        .crypto-info {
+        .activity-item {
             display: flex;
             align-items: center;
             gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
-
-        .crypto-icon {
-            font-size: 1.5rem;
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
         }
-
-        .crypto-symbol {
-            font-weight: 600;
+        .activity-details { flex: 1; }
+        .activity-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+        .activity-date { font-size: 11px; color: #5A6475; }
+        .activity-amount { font-weight: 600; }
+        .market-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
+        .market-name { font-weight: 500; }
+        .market-price { font-family: monospace; }
 
-        .crypto-name {
-            font-size: 0.7rem;
-            color: var(--text-tertiary);
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .charts-row { grid-template-columns: 1fr; }
+            .bottom-row { grid-template-columns: 1fr; }
         }
-
-        .crypto-price {
-            text-align: right;
-        }
-
-        .crypto-price-value {
-            font-weight: 600;
-        }
-
-        .crypto-change {
-            font-size: 0.75rem;
-        }
-
-        .crypto-change.positive {
-            color: var(--success);
-        }
-
-        .crypto-change.negative {
-            color: var(--danger);
-        }
-
-        /* Transactions Section */
-        .transactions-section {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 1.5rem;
-        }
-
-        .transactions-table {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            text-align: left;
-            padding: 1rem;
-            color: var(--text-secondary);
-            font-weight: 500;
-            font-size: 0.8rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.85rem;
-        }
-
-        .transaction-type {
-            text-transform: capitalize;
-            font-weight: 500;
-        }
-
-        .transaction-type.buy,
-        .transaction-type.deposit {
-            color: var(--success);
-        }
-
-        .transaction-type.sell,
-        .transaction-type.withdraw {
-            color: var(--danger);
-        }
-
-        .positive-amount {
-            color: var(--success);
-        }
-
-        .negative-amount {
-            color: var(--danger);
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        .status-completed {
-            background: rgba(0, 216, 151, 0.1);
-            color: var(--success);
-        }
-
-        .status-pending {
-            background: rgba(255, 165, 2, 0.1);
-            color: var(--warning);
-        }
-
-        @media (max-width: 968px) {
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .trading-section {
-                grid-template-columns: 1fr;
-            }
-            
-            .container {
-                padding: 1.5rem;
-            }
-        }
-
         @media (max-width: 768px) {
-            .top-nav {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .nav-links {
-                justify-content: center;
-            }
-            
-            .user-info {
-                justify-content: center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
+            .nav-links, .user-section { display: none; }
+            .mobile-menu-btn { display: block; }
+            .main-content { padding: 16px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .welcome-title { font-size: 22px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Top Navigation Bar -->
-        <div class="top-nav">
-            <div class="logo">
-                <svg viewBox="0 0 40 40" fill="none">
-                    <rect width="40" height="40" rx="10" fill="#F7931A"/>
-                    <path d="M20 10L25 15L20 20L15 15L20 10Z" fill="white"/>
-                    <path d="M20 20L25 25L20 30L15 25L20 20Z" fill="white"/>
-                </svg>
-                <span>Pocket<span style="color: var(--primary);">Trading</span></span>
-            </div>
-            <div class="nav-links" id="navLinks">
-                <a href="home.html" class="nav-link">Home</a>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="dashboard.html" class="logo"><span class="logo-icon">📈</span><span class="logo-text">PocketTrading</span></a>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link active">Dashboard</a>
                 <a href="markets.html" class="nav-link">Markets</a>
-                <a href="trade.html" class="nav-link">Trades</a>
+                <a href="trades.html" class="nav-link">Trades</a>
+                <a href="profile.html" class="nav-link">My Profile</a>
             </div>
-            <div class="user-info" id="userInfo"></div>
+            <div class="user-section" id="userSection"></div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        </div>
+    </nav>
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="dashboard.html" class="mobile-nav-link">📊 Dashboard</a>
+        <a href="markets.html" class="mobile-nav-link">📈 Markets</a>
+        <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+        <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
+        <div id="mobileUserSection"></div>
+    </div>
+
+    <div class="main-content">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <h1 class="welcome-title" id="welcomeMessage">Welcome back, Trader! 👋</h1>
+            <p class="welcome-subtitle">Here's an overview of your trading activity and account status.</p>
         </div>
 
-        <div id="dashboardContent">
-            <!-- Content will be populated by JavaScript based on login status -->
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-label">Account Balance</div>
+                <div class="stat-value" id="accountBalance">$0.00</div>
+                <div class="stat-change positive" id="balanceChange">+0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-label">Total Trades</div>
+                <div class="stat-value" id="totalTrades">0</div>
+                <div class="stat-change" id="tradesChange">Total executed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-label">Win Rate</div>
+                <div class="stat-value" id="winRate">0%</div>
+                <div class="stat-change positive" id="winRateChange">+0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-label">Total P&L</div>
+                <div class="stat-value" id="totalPnL">$0.00</div>
+                <div class="stat-change" id="pnlChange">All time</div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-row">
+            <div class="chart-card">
+                <div class="chart-title">PnL Performance</div>
+                <div class="chart-container">
+                    <canvas id="pnlChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Trade Distribution</div>
+                <div class="chart-container">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <div class="section-header">
+                <h3>Quick Actions</h3>
+                <div class="action-buttons">
+                    <a href="deposit.html" class="action-btn deposit">💰 Deposit Funds</a>
+                    <a href="withdraw.html" class="action-btn withdraw">💸 Withdraw Funds</a>
+                    <a href="trades.html" class="action-btn trade">🚀 Start Trading</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Row -->
+        <div class="bottom-row">
+            <!-- Recent Activity -->
+            <div class="activity-card">
+                <div class="section-header">
+                    <h3>Recent Activity</h3>
+                    <span style="font-size: 12px; color: #8B93A5;">Last 7 days</span>
+                </div>
+                <div class="activity-list" id="activityList">
+                    <div style="text-align: center; padding: 20px; color: #8B93A5;">Loading activities...</div>
+                </div>
+            </div>
+
+            <!-- Top Markets -->
+            <div class="markets-card">
+                <div class="section-header">
+                    <h3>Top Markets</h3>
+                    <span style="font-size: 12px; color: #8B93A5;">By volume</span>
+                </div>
+                <div id="topMarketsList">
+                    <div style="text-align: center; padding: 20px; color: #8B93A5;">Loading markets...</div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="js/supabase.js"></script>
-    <script src="js/dashboard.js"></script>
+    <script src="js/supabase-db.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        let currentUser = null;
+        let userTrades = [];
+        let pnlChart = null;
+        let distributionChart = null;
+
+        // Sample market data
+        const topMarkets = [
+            { name: 'BTC/USD', price: 78312.00, change: 2.34, volume: '32.5B' },
+            { name: 'ETH/USD', price: 2297.32, change: 1.29, volume: '18.2B' },
+            { name: 'SOL/USD', price: 168.42, change: 5.23, volume: '4.8B' },
+            { name: 'XRP/USD', price: 0.624, change: -0.45, volume: '1.2B' },
+            { name: 'DOGE/USD', price: 0.162, change: 8.91, volume: '892M' }
+        ];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await waitForAuth();
+            if (typeof auth !== 'undefined') currentUser = auth.getUser();
+            
+            if (!currentUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            setupNavigation();
+            await loadUserData();
+            await loadTrades();
+            updateDashboard();
+            initCharts();
+            renderActivities();
+            renderTopMarkets();
+            setupEventListeners();
+        });
+
+        function waitForAuth() {
+            return new Promise((resolve) => {
+                if (typeof auth !== 'undefined') resolve();
+                else setTimeout(() => resolve(), 100);
+            });
+        }
+
+        function setupNavigation() {
+            const userSection = document.getElementById('userSection');
+            const mobileUserSection = document.getElementById('mobileUserSection');
+            const isAdmin = currentUser.email === 'ephremgojo@gmail.com';
+            const userName = currentUser.name || currentUser.email.split('@')[0];
+            
+            userSection.innerHTML = `
+                <div class="user-info">
+                    <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
+                    <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
+                </div>
+                ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin</a>' : ''}
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            `;
+            
+            mobileUserSection.innerHTML = `
+                <div style="padding:12px;color:white;border-bottom:1px solid rgba(255,255,255,0.1);">
+                    <strong>${userName}</strong> ${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}
+                </div>
+                ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            `;
+            
+            document.getElementById('welcomeMessage').textContent = `Welcome back, ${userName}! 👋`;
+        }
+
+        async function loadUserData() {
+            try {
+                if (typeof supabaseDB !== 'undefined') {
+                    const userData = await supabaseDB.getUserByEmail(currentUser.email);
+                    if (userData) currentUser = { ...currentUser, ...userData };
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+
+        async function loadTrades() {
+            try {
+                const trades = JSON.parse(localStorage.getItem(`trades_${currentUser.id}`) || '[]');
+                userTrades = trades;
+            } catch (error) {
+                console.error('Error loading trades:', error);
+                userTrades = [];
+            }
+        }
+
+        function updateDashboard() {
+            const balance = currentUser.balance || 0;
+            const totalTrades = userTrades.length;
+            const closedTrades = userTrades.filter(t => t.status === 'closed');
+            const winningTrades = closedTrades.filter(t => (t.pnl || 0) > 0).length;
+            const winRate = closedTrades.length > 0 ? (winningTrades / closedTrades.length * 100).toFixed(1) : 0;
+            const totalPnL = userTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+            
+            document.getElementById('accountBalance').innerHTML = `$${balance.toLocaleString()}`;
+            document.getElementById('totalTrades').textContent = totalTrades;
+            document.getElementById('winRate').textContent = `${winRate}%`;
+            document.getElementById('totalPnL').innerHTML = `<span class="${totalPnL >= 0 ? 'positive' : 'negative'}">${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}</span>`;
+        }
+
+        function initCharts() {
+            const pnlCtx = document.getElementById('pnlChart')?.getContext('2d');
+            const distCtx = document.getElementById('distributionChart')?.getContext('2d');
+            
+            if (!pnlCtx || !distCtx) return;
+            
+            // Generate PnL data from trades
+            const last7Days = [];
+            const dailyPnL = [];
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                last7Days.push(date.toLocaleDateString());
+                
+                const dayPnL = userTrades.filter(t => {
+                    const tradeDate = new Date(t.created_at);
+                    return tradeDate.toLocaleDateString() === date.toLocaleDateString() && t.status === 'closed';
+                }).reduce((sum, t) => sum + (t.pnl || 0), 0);
+                dailyPnL.push(dayPnL);
+            }
+            
+            pnlChart = new Chart(pnlCtx, {
+                type: 'line',
+                data: {
+                    labels: last7Days,
+                    datasets: [{
+                        label: 'Daily P&L',
+                        data: dailyPnL,
+                        borderColor: '#00D897',
+                        backgroundColor: 'rgba(0, 216, 151, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#FFFFFF' } } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } }
+                    }
+                }
+            });
+            
+            // Trade distribution (wins vs losses)
+            const closedTrades = userTrades.filter(t => t.status === 'closed');
+            const wins = closedTrades.filter(t => (t.pnl || 0) > 0).length;
+            const losses = closedTrades.filter(t => (t.pnl || 0) <= 0).length;
+            
+            distributionChart = new Chart(distCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Winning Trades', 'Losing Trades'],
+                    datasets: [{
+                        data: [wins, losses],
+                        backgroundColor: ['#00D897', '#FF4757'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#FFFFFF' } } }
+                }
+            });
+        }
+
+        function renderActivities() {
+            const activityList = document.getElementById('activityList');
+            
+            // Generate activities from trades
+            const activities = [];
+            userTrades.slice(-10).reverse().forEach(trade => {
+                activities.push({
+                    type: 'trade',
+                    title: `${trade.type?.toUpperCase() || 'Trade'} ${trade.symbol || 'Market'}`,
+                    amount: trade.amount || 0,
+                    date: trade.created_at,
+                    icon: trade.type === 'buy' ? '📈' : '📉'
+                });
+            });
+            
+            if (activities.length === 0) {
+                activityList.innerHTML = '<div style="text-align: center; padding: 20px; color: #8B93A5;">No recent activity. Start trading!</div>';
+                return;
+            }
+            
+            activityList.innerHTML = activities.map(activity => `
+                <div class="activity-item">
+                    <div class="activity-icon">${activity.icon}</div>
+                    <div class="activity-details">
+                        <div class="activity-title">${activity.title}</div>
+                        <div class="activity-date">${new Date(activity.date).toLocaleDateString()}</div>
+                    </div>
+                    <div class="activity-amount positive">$${activity.amount.toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderTopMarkets() {
+            const container = document.getElementById('topMarketsList');
+            container.innerHTML = topMarkets.map(market => `
+                <div class="market-item">
+                    <div class="market-name">${market.name}</div>
+                    <div class="market-price">$${market.price.toLocaleString()}</div>
+                    <div class="${market.change >= 0 ? 'positive' : 'negative'}">${market.change >= 0 ? '▲' : '▼'} ${Math.abs(market.change)}%</div>
+                </div>
+            `).join('');
+        }
+
+        function setupEventListeners() {
+            const mobileBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileBtn && mobileMenu) {
+                mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('show'));
+            }
+        }
+
+        window.handleLogout = function() {
+            if (typeof auth !== 'undefined' && auth.logout) {
+                auth.logout();
+            } else {
+                localStorage.removeItem('pocket_user');
+                sessionStorage.removeItem('pocket_user');
+                window.location.href = 'home.html';
+            }
+        };
+    </script>
 </body>
 </html>
