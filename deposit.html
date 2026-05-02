@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pocket Trading - Deposit</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Deposit Funds - PocketTrading</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,452 +12,823 @@
             box-sizing: border-box;
         }
 
-        :root {
-            --primary: #F7931A;
-            --primary-dark: #e67e22;
-            --primary-light: #f8b45a;
-            --dark-bg: #0A0E17;
-            --darker-bg: #06090F;
-            --card-bg: #151E2C;
-            --card-hover: #1A2535;
-            --text-primary: #FFFFFF;
-            --text-secondary: #A0AAB5;
-            --text-tertiary: #6B7A8A;
-            --success: #00D897;
-            --danger: #FF4757;
-            --warning: #FFA502;
-            --border: #2A3545;
-            --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-        }
-
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
-            color: var(--text-primary);
-            line-height: 1.5;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
+            background: #0A0F1A;
+            color: #FFFFFF;
+            overflow-x: hidden;
         }
 
         /* Top Navigation Bar */
-        .top-nav {
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 20, 32, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            padding: 0 32px;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-            flex-wrap: wrap;
-            gap: 1rem;
+            height: 70px;
         }
 
         .logo {
             display: flex;
             align-items: center;
             gap: 10px;
+            text-decoration: none;
         }
 
-        .logo svg {
-            width: 32px;
-            height: 32px;
+        .logo-icon { font-size: 28px; }
+        .logo-text {
+            font-size: 20px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
 
-        .logo span {
-            font-size: 1.3rem;
-            font-weight: 700;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
+        .nav-links { display: flex; gap: 8px; align-items: center; }
         .nav-link {
-            color: var(--text-secondary);
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: #8B93A5;
             text-decoration: none;
             font-weight: 500;
-            transition: all 0.3s;
+            transition: all 0.2s;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(0, 216, 151, 0.1);
+            color: #00D897;
         }
 
-        .nav-link:hover {
-            color: var(--primary);
-        }
-
-        /* User Info in Top Right */
+        .user-section { display: flex; align-items: center; gap: 16px; }
         .user-info {
             display: flex;
             align-items: center;
-            gap: 1rem;
-        }
-
-        .username {
-            color: var(--text-primary);
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        .logout-link {
-            color: var(--danger);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.9rem;
+            gap: 12px;
+            padding: 6px 16px 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 40px;
             cursor: pointer;
-            transition: all 0.3s;
         }
-
-        .logout-link:hover {
-            text-decoration: underline;
-        }
-
-        /* Auth Buttons */
-        .auth-buttons {
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        .login-btn {
-            background: transparent;
-            color: var(--primary);
-            padding: 8px 20px;
-            border: 1px solid var(--primary);
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .login-btn:hover {
-            background: rgba(247, 147, 26, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .signup-btn {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            padding: 8px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .signup-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
-        }
-
-        /* Admin Badge */
-        .admin-badge {
-            background: linear-gradient(135deg, var(--danger), #ff6b6b);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            margin-left: 8px;
-        }
-
-        /* Login Prompt */
-        .login-prompt {
-            text-align: center;
-            padding: 3rem;
-            background: var(--card-bg);
-            border-radius: 20px;
-            max-width: 500px;
-            margin: 2rem auto;
-        }
-
-        .login-prompt h3 {
-            margin-bottom: 1rem;
-            font-size: 1.3rem;
-            font-weight: 500;
-        }
-
-        .login-prompt p {
-            color: var(--text-secondary);
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
-        }
-
-        .login-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-        }
-
-        /* Deposit Container */
-        .deposit-container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .deposit-header {
-            margin-bottom: 2rem;
-        }
-
-        .deposit-header h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .deposit-header p {
-            color: var(--text-secondary);
-        }
-
-        /* Crypto Cards */
-        .crypto-cards {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .crypto-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 1.5rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid var(--border);
-            position: relative;
-        }
-
-        .crypto-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--primary);
-            box-shadow: var(--shadow);
-        }
-
-        .crypto-card.active {
-            border-color: var(--primary);
-            background: rgba(247, 147, 26, 0.1);
-        }
-
-        .crypto-card.active::before {
-            content: '✓';
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: var(--primary);
-            color: white;
-            width: 24px;
-            height: 24px;
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 18px;
+        }
+        .user-name { font-size: 14px; font-weight: 600; }
+        .admin-badge {
+            font-size: 10px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            padding: 2px 8px;
+            border-radius: 20px;
+            color: white;
+            margin-left: 6px;
+        }
+        .admin-link {
+            padding: 8px 16px;
+            background: rgba(0, 216, 151, 0.1);
+            border-radius: 40px;
+            color: #00D897;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .logout-btn {
+            padding: 8px 20px;
+            background: rgba(255, 71, 87, 0.15);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-radius: 40px;
+            color: #FF4757;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: white;
+            cursor: pointer;
+        }
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 70px;
+            left: 0;
+            right: 0;
+            background: #0F1420;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            z-index: 999;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .mobile-menu.show { display: flex; }
+        .mobile-nav-link {
+            padding: 12px;
+            color: #8B93A5;
+            text-decoration: none;
+            border-radius: 12px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 70px;
+            padding: 32px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Deposit Card */
+        .deposit-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .card-header p {
+            color: #8B93A5;
             font-size: 14px;
         }
 
-        .crypto-icon {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
+        .card-body {
+            padding: 24px;
         }
 
-        .crypto-name {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .crypto-address {
-            font-size: 0.7rem;
-            font-family: monospace;
-            color: var(--text-tertiary);
-            margin: 0.5rem 0;
-            word-break: break-all;
-            background: var(--darker-bg);
-            padding: 6px;
-            border-radius: 6px;
-        }
-
-        .copy-btn {
-            background: var(--darker-bg);
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.7rem;
-            transition: all 0.3s;
-            margin-top: 0.5rem;
-        }
-
-        .copy-btn:hover {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: white;
-        }
-
-        /* Deposit Form */
-        .deposit-form {
-            background: var(--card-bg);
+        /* Balance Display */
+        .balance-display {
+            background: rgba(0, 216, 151, 0.1);
             border-radius: 16px;
-            padding: 1.5rem;
+            padding: 16px;
+            margin-bottom: 24px;
+            text-align: center;
+            border: 1px solid rgba(0, 216, 151, 0.2);
+        }
+        .balance-label {
+            font-size: 13px;
+            color: #8B93A5;
+            margin-bottom: 8px;
+        }
+        .balance-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: #00D897;
         }
 
+        /* Form Styles */
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 24px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-size: 14px;
             font-weight: 500;
+            color: #D1D5DB;
         }
 
-        .form-group input,
-        .form-group select {
-            width: 100%;
+        .currency-selector {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .currency-btn {
+            flex: 1;
             padding: 12px;
-            background: var(--darker-bg);
-            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
-            color: var(--text-primary);
-            font-size: 0.9rem;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .file-upload {
-            border: 2px dashed var(--border);
-            border-radius: 12px;
-            padding: 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .file-upload:hover {
-            border-color: var(--primary);
-            background: rgba(247, 147, 26, 0.05);
-        }
-
-        .upload-icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .upload-text {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-        }
-
-        .file-name {
-            margin-top: 0.5rem;
-            font-size: 0.75rem;
-            color: var(--success);
-        }
-
-        .btn-submit {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s;
+            text-align: center;
         }
 
-        .btn-submit:hover {
+        .currency-btn.active {
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            border-color: transparent;
+        }
+
+        .currency-btn:hover {
+            border-color: #00D897;
+        }
+
+        .amount-input {
+            width: 100%;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            color: white;
+            font-size: 24px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .amount-input:focus {
+            outline: none;
+            border-color: #00D897;
+        }
+
+        .preset-amounts {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            flex: 1;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 40px;
+            color: #8B93A5;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover {
+            border-color: #00D897;
+            color: #00D897;
+        }
+
+        /* Payment Methods */
+        .payment-methods {
+            margin-bottom: 24px;
+        }
+
+        .method-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #D1D5DB;
+        }
+
+        .method-options {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .method-option {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .method-option.active {
+            border-color: #00D897;
+            background: rgba(0, 216, 151, 0.1);
+        }
+
+        .method-option:hover {
+            border-color: #00D897;
+        }
+
+        .method-icon { font-size: 28px; }
+        .method-name { font-weight: 500; }
+
+        /* Crypto Address Section */
+        .crypto-address {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .address-label {
+            font-size: 12px;
+            color: #8B93A5;
+            margin-bottom: 8px;
+        }
+
+        .address-value {
+            font-size: 14px;
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 12px;
+            border-radius: 12px;
+            word-break: break-all;
+            margin-bottom: 12px;
+        }
+
+        .copy-btn {
+            padding: 8px 20px;
+            background: rgba(0, 216, 151, 0.15);
+            border: 1px solid rgba(0, 216, 151, 0.3);
+            border-radius: 40px;
+            color: #00D897;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        /* Summary */
+        .summary {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+
+        .summary-row.total {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 8px;
+            padding-top: 12px;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            border: none;
+            border-radius: 40px;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .submit-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 216, 151, 0.3);
         }
 
-        .btn-submit:disabled {
+        .submit-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
 
-        .warning-note {
-            margin-top: 1rem;
-            padding: 1rem;
-            background: rgba(255, 165, 2, 0.1);
-            border-radius: 12px;
+        /* Info Text */
+        .info-text {
             text-align: center;
+            font-size: 12px;
+            color: #5A6475;
+            margin-top: 20px;
         }
 
-        .warning-note p {
-            color: var(--warning);
-            font-size: 0.8rem;
-            margin: 0;
-        }
-
+        /* Responsive */
         @media (max-width: 768px) {
-            .crypto-cards {
-                grid-template-columns: 1fr;
-            }
-            
-            .container {
-                padding: 1rem;
-            }
-            
-            .top-nav {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .nav-links {
-                justify-content: center;
-            }
-            
-            .user-info {
-                justify-content: center;
-            }
+            .nav-links, .user-section { display: none; }
+            .mobile-menu-btn { display: block; }
+            .main-content { padding: 16px; }
+            .currency-selector { gap: 8px; }
+            .currency-btn { padding: 8px; font-size: 12px; }
+            .method-options { flex-direction: column; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Top Navigation Bar -->
-        <div class="top-nav">
-            <div class="logo">
-                <svg viewBox="0 0 40 40" fill="none">
-                    <rect width="40" height="40" rx="10" fill="#F7931A"/>
-                    <path d="M20 10L25 15L20 20L15 15L20 10Z" fill="white"/>
-                    <path d="M20 20L25 25L20 30L15 25L20 20Z" fill="white"/>
-                </svg>
-                <span>Pocket<span style="color: var(--primary);">Trading</span></span>
-            </div>
-            <div class="nav-links" id="navLinks">
-                <a href="home.html" class="nav-link">Home</a>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="dashboard.html" class="logo"><span class="logo-icon">📈</span><span class="logo-text">PocketTrading</span></a>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
                 <a href="markets.html" class="nav-link">Markets</a>
-                <a href="trade.html" class="nav-link">Trades</a>
+                <a href="trades.html" class="nav-link">Trades</a>
+                <a href="profile.html" class="nav-link">My Profile</a>
             </div>
-            <div class="user-info" id="userInfo"></div>
+            <div class="user-section" id="userSection"></div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
         </div>
+    </nav>
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="dashboard.html" class="mobile-nav-link">📊 Dashboard</a>
+        <a href="markets.html" class="mobile-nav-link">📈 Markets</a>
+        <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+        <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
+        <div id="mobileUserSection"></div>
+    </div>
 
-        <div id="depositContent">
-            <!-- Content will be populated by JavaScript based on login status -->
+    <div class="main-content">
+        <div class="deposit-card">
+            <div class="card-header">
+                <h1>Deposit Funds</h1>
+                <p>Add funds to your trading account</p>
+            </div>
+            <div class="card-body">
+                <!-- Current Balance -->
+                <div class="balance-display">
+                    <div class="balance-label">Current Balance</div>
+                    <div class="balance-value" id="currentBalance">$0.00</div>
+                </div>
+
+                <!-- Currency Selection -->
+                <div class="form-group">
+                    <label>Select Currency</label>
+                    <div class="currency-selector" id="currencySelector">
+                        <button class="currency-btn active" data-currency="USDT">USDT</button>
+                        <button class="currency-btn" data-currency="BTC">BTC</button>
+                        <button class="currency-btn" data-currency="ETH">ETH</button>
+                        <button class="currency-btn" data-currency="SOL">SOL</button>
+                    </div>
+                </div>
+
+                <!-- Amount Input -->
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="depositAmount" class="amount-input" placeholder="Enter amount" min="10" step="10">
+                    <div class="preset-amounts">
+                        <button class="preset-btn" data-amount="50">$50</button>
+                        <button class="preset-btn" data-amount="100">$100</button>
+                        <button class="preset-btn" data-amount="500">$500</button>
+                        <button class="preset-btn" data-amount="1000">$1,000</button>
+                    </div>
+                </div>
+
+                <!-- Payment Method -->
+                <div class="payment-methods">
+                    <div class="method-title">Payment Method</div>
+                    <div class="method-options" id="methodOptions">
+                        <div class="method-option active" data-method="crypto">
+                            <span class="method-icon">🪙</span>
+                            <span class="method-name">Cryptocurrency</span>
+                        </div>
+                        <div class="method-option" data-method="card">
+                            <span class="method-icon">💳</span>
+                            <span class="method-name">Credit Card</span>
+                        </div>
+                        <div class="method-option" data-method="bank">
+                            <span class="method-icon">🏦</span>
+                            <span class="method-name">Bank Transfer</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Crypto Address (shown for crypto method) -->
+                <div id="cryptoAddressSection" class="crypto-address">
+                    <div class="address-label">Send USDT (TRC20) to this address:</div>
+                    <div class="address-value" id="cryptoAddress">TX8xKJk3g5xVHhRq2LpN7mY9wQeRtYuIoP</div>
+                    <button class="copy-btn" onclick="copyAddress()">📋 Copy Address</button>
+                </div>
+
+                <!-- Credit Card Form (hidden by default) -->
+                <div id="cardForm" style="display: none;">
+                    <div class="form-group">
+                        <label>Card Number</label>
+                        <input type="text" id="cardNumber" class="amount-input" style="font-size: 16px;" placeholder="1234 5678 9012 3456">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label>Expiry Date</label>
+                            <input type="text" id="expiryDate" placeholder="MM/YY">
+                        </div>
+                        <div class="form-group">
+                            <label>CVV</label>
+                            <input type="password" id="cvv" placeholder="123" maxlength="4">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Cardholder Name</label>
+                        <input type="text" id="cardholderName" placeholder="Name on card">
+                    </div>
+                </div>
+
+                <!-- Bank Transfer Info (hidden by default) -->
+                <div id="bankInfo" style="display: none;" class="crypto-address">
+                    <div class="address-label">Bank Transfer Details</div>
+                    <div class="address-value">
+                        Bank: First Global Bank<br>
+                        Account Name: PocketTrading Ltd<br>
+                        Account Number: 1234567890<br>
+                        Routing Number: 021000021<br>
+                        SWIFT: FGBAUS33<br>
+                        Reference: DEPOSIT_[Your Email]
+                    </div>
+                </div>
+
+                <!-- Summary -->
+                <div class="summary">
+                    <div class="summary-row">
+                        <span>Deposit Amount</span>
+                        <span id="summaryAmount">$0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Network Fee</span>
+                        <span id="networkFee">$0.00</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total to Pay</span>
+                        <span id="totalAmount" style="color: #00D897;">$0.00</span>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button class="submit-btn" id="submitDeposit">Submit Deposit Request</button>
+                <div class="info-text">
+                    ⏱️ Deposits are processed within 5-30 minutes. Minimum deposit: $10
+                </div>
+            </div>
         </div>
     </div>
 
-    <script src="js/supabase.js"></script>
-    <script src="js/deposit.js"></script>
+    <script src="js/supabase-db.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        let currentUser = null;
+        let selectedCurrency = 'USDT';
+        let selectedMethod = 'crypto';
+
+        // Crypto addresses for different currencies
+        const cryptoAddresses = {
+            USDT: 'TX8xKJk3g5xVHhRq2LpN7mY9wQeRtYuIoP',
+            BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+            ETH: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5',
+            SOL: '5vEt4uR6LrY7ZxVkQpWnM8jHsK9cFdGtYhJkLzXcVb'
+        };
+
+        const networkFees = {
+            USDT: 1.00,
+            BTC: 0.0002,
+            ETH: 0.005,
+            SOL: 0.01
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await waitForAuth();
+            if (typeof auth !== 'undefined') currentUser = auth.getUser();
+            
+            if (!currentUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            setupNavigation();
+            updateBalanceDisplay();
+            setupEventListeners();
+            updateSummary();
+        });
+
+        function waitForAuth() {
+            return new Promise((resolve) => {
+                if (typeof auth !== 'undefined') resolve();
+                else setTimeout(() => resolve(), 100);
+            });
+        }
+
+        function setupNavigation() {
+            const userSection = document.getElementById('userSection');
+            const mobileUserSection = document.getElementById('mobileUserSection');
+            const isAdmin = currentUser.email === 'ephremgojo@gmail.com';
+            const userName = currentUser.name || currentUser.email.split('@')[0];
+            
+            userSection.innerHTML = `
+                <div class="user-info">
+                    <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
+                    <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
+                </div>
+                ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin</a>' : ''}
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            `;
+            
+            mobileUserSection.innerHTML = `
+                <div style="padding:12px;color:white;border-bottom:1px solid rgba(255,255,255,0.1);">
+                    <strong>${userName}</strong> ${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}
+                </div>
+                ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            `;
+        }
+
+        function updateBalanceDisplay() {
+            const balance = currentUser.balance || 0;
+            document.getElementById('currentBalance').textContent = `$${balance.toLocaleString()}`;
+        }
+
+        function updateSummary() {
+            const amount = parseFloat(document.getElementById('depositAmount').value) || 0;
+            const fee = selectedMethod === 'crypto' ? (networkFees[selectedCurrency] || 1) : 0;
+            const total = amount + fee;
+            
+            document.getElementById('summaryAmount').textContent = `$${amount.toFixed(2)}`;
+            document.getElementById('networkFee').textContent = `$${fee.toFixed(2)}`;
+            document.getElementById('totalAmount').textContent = `$${total.toFixed(2)}`;
+        }
+
+        function updateCryptoAddress() {
+            const address = cryptoAddresses[selectedCurrency] || cryptoAddresses['USDT'];
+            document.getElementById('cryptoAddress').textContent = address;
+            const addressLabel = document.querySelector('#cryptoAddressSection .address-label');
+            if (addressLabel) {
+                addressLabel.textContent = `Send ${selectedCurrency} (TRC20) to this address:`;
+            }
+        }
+
+        function setupEventListeners() {
+            // Currency selector
+            document.querySelectorAll('.currency-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.currency-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectedCurrency = btn.dataset.currency;
+                    updateCryptoAddress();
+                    updateSummary();
+                });
+            });
+            
+            // Preset amounts
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const amount = btn.dataset.amount;
+                    document.getElementById('depositAmount').value = amount;
+                    updateSummary();
+                });
+            });
+            
+            // Amount input
+            document.getElementById('depositAmount').addEventListener('input', updateSummary);
+            
+            // Payment method
+            document.querySelectorAll('.method-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    document.querySelectorAll('.method-option').forEach(o => o.classList.remove('active'));
+                    opt.classList.add('active');
+                    selectedMethod = opt.dataset.method;
+                    
+                    // Show/hide relevant sections
+                    document.getElementById('cryptoAddressSection').style.display = selectedMethod === 'crypto' ? 'block' : 'none';
+                    document.getElementById('cardForm').style.display = selectedMethod === 'card' ? 'block' : 'none';
+                    document.getElementById('bankInfo').style.display = selectedMethod === 'bank' ? 'block' : 'none';
+                    
+                    updateSummary();
+                });
+            });
+            
+            // Submit button
+            document.getElementById('submitDeposit').addEventListener('click', submitDeposit);
+            
+            // Mobile menu
+            const mobileBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileBtn && mobileMenu) {
+                mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('show'));
+            }
+        }
+
+        async function submitDeposit() {
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            
+            if (!amount || amount < 10) {
+                alert('Please enter a valid amount (minimum $10)');
+                return;
+            }
+            
+            if (selectedMethod === 'card') {
+                const cardNumber = document.getElementById('cardNumber').value;
+                const expiryDate = document.getElementById('expiryDate').value;
+                const cvv = document.getElementById('cvv').value;
+                const cardholderName = document.getElementById('cardholderName').value;
+                
+                if (!cardNumber || !expiryDate || !cvv || !cardholderName) {
+                    alert('Please fill in all card details');
+                    return;
+                }
+            }
+            
+            const fee = selectedMethod === 'crypto' ? (networkFees[selectedCurrency] || 1) : 0;
+            const total = amount + fee;
+            
+            // Create deposit request
+            const depositRequest = {
+                id: Date.now(),
+                user_id: currentUser.id,
+                user_email: currentUser.email,
+                user_name: currentUser.name,
+                amount: amount,
+                currency: selectedCurrency,
+                method: selectedMethod,
+                fee: fee,
+                total: total,
+                status: 'pending',
+                date: new Date().toISOString()
+            };
+            
+            // Save to localStorage
+            const existingRequests = JSON.parse(localStorage.getItem('deposit_requests') || '[]');
+            existingRequests.push(depositRequest);
+            localStorage.setItem('deposit_requests', JSON.stringify(existingRequests));
+            
+            // Also save to user's personal deposit history
+            const userDeposits = JSON.parse(localStorage.getItem(`deposits_${currentUser.id}`) || '[]');
+            userDeposits.push(depositRequest);
+            localStorage.setItem(`deposits_${currentUser.id}`, JSON.stringify(userDeposits));
+            
+            // Try to save to Supabase
+            if (typeof supabaseDB !== 'undefined') {
+                try {
+                    await supabaseDB.insert('deposit_requests', depositRequest);
+                } catch (e) {
+                    console.log('Supabase save failed, using localStorage only');
+                }
+            }
+            
+            alert(`Deposit request submitted!\nAmount: $${amount.toFixed(2)} ${selectedCurrency}\nMethod: ${selectedMethod.toUpperCase()}\n\nYour deposit will be processed within 5-30 minutes.`);
+            
+            // Reset form
+            document.getElementById('depositAmount').value = '';
+            updateSummary();
+            
+            // Refresh balance (in case of auto-approval for demo)
+            if (currentUser.email === 'ephremgojo@gmail.com' || currentUser.email === 'demo@example.com') {
+                // Auto-approve for admin and demo user for testing
+                const newBalance = (currentUser.balance || 0) + amount;
+                currentUser.balance = newBalance;
+                
+                if (typeof auth !== 'undefined' && auth.updateBalance) {
+                    await auth.updateBalance(currentUser.id, amount, {
+                        type: 'deposit',
+                        amount: amount,
+                        status: 'auto_approved'
+                    });
+                }
+                
+                // Update storage
+                if (localStorage.getItem('pocket_user')) {
+                    const user = JSON.parse(localStorage.getItem('pocket_user'));
+                    user.balance = newBalance;
+                    localStorage.setItem('pocket_user', JSON.stringify(user));
+                }
+                if (sessionStorage.getItem('pocket_user')) {
+                    const user = JSON.parse(sessionStorage.getItem('pocket_user'));
+                    user.balance = newBalance;
+                    sessionStorage.setItem('pocket_user', JSON.stringify(user));
+                }
+                
+                updateBalanceDisplay();
+                alert(`✅ Deposit auto-approved! New balance: $${newBalance.toFixed(2)}`);
+            }
+        }
+
+        window.copyAddress = function() {
+            const address = document.getElementById('cryptoAddress').textContent;
+            navigator.clipboard.writeText(address);
+            alert('Address copied to clipboard!');
+        };
+
+        window.handleLogout = function() {
+            if (typeof auth !== 'undefined' && auth.logout) {
+                auth.logout();
+            } else {
+                localStorage.removeItem('pocket_user');
+                sessionStorage.removeItem('pocket_user');
+                window.location.href = 'home.html';
+            }
+        };
+    </script>
 </body>
 </html>
