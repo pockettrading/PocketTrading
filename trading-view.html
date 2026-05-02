@@ -2,591 +2,363 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pocket Trading - Advanced Trading View</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>TradingView - PocketTrading</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- TradingView Widget -->
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0A0F1A; color: #FFFFFF; overflow-x: hidden; }
+        
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 20, 32, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            padding: 0 32px;
         }
-
-        :root {
-            --primary: #F7931A;
-            --primary-dark: #e67e22;
-            --primary-light: #f8b45a;
-            --dark-bg: #0A0E17;
-            --darker-bg: #06090F;
-            --card-bg: #151E2C;
-            --card-hover: #1A2535;
-            --text-primary: #FFFFFF;
-            --text-secondary: #A0AAB5;
-            --text-tertiary: #6B7A8A;
-            --success: #00D897;
-            --danger: #FF4757;
-            --warning: #FFA502;
-            --border: #2A3545;
-            --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-            --bid-color: #00D897;
-            --ask-color: #FF4757;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
-            color: var(--text-primary);
-            line-height: 1.5;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1600px;
+        .nav-container {
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 1rem;
-        }
-
-        /* Top Navigation Bar */
-        .top-nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-            flex-wrap: wrap;
-            gap: 1rem;
+            height: 60px;
         }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .logo svg {
-            width: 32px;
-            height: 32px;
-        }
-
-        .logo span {
-            font-size: 1.3rem;
-            font-weight: 700;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .nav-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-
-        .nav-link:hover {
-            color: var(--primary);
-        }
-
-        /* User Info in Top Right */
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .username {
-            color: var(--text-primary);
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        .logout-link {
-            color: var(--danger);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .logout-link:hover {
-            text-decoration: underline;
-        }
-
-        /* Main Trading Grid */
-        .trading-grid {
-            display: grid;
-            grid-template-columns: 1fr 320px 320px;
-            gap: 1rem;
-        }
-
-        /* Chart Section */
-        .chart-section {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 1rem;
-        }
-
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .symbol-info {
-            display: flex;
-            align-items: baseline;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .symbol-name {
-            font-size: 1.3rem;
-            font-weight: 700;
-        }
-
-        .current-price {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        .price-change {
-            font-size: 0.85rem;
-            padding: 4px 10px;
-            border-radius: 20px;
-        }
-
-        .price-change.positive {
-            background: rgba(0, 216, 151, 0.1);
-            color: var(--success);
-        }
-
-        .price-change.negative {
-            background: rgba(255, 71, 87, 0.1);
-            color: var(--danger);
-        }
-
-        .timeframe-selector {
-            display: flex;
-            gap: 0.25rem;
-            background: var(--darker-bg);
-            padding: 0.25rem;
-            border-radius: 12px;
-        }
-
-        .timeframe-btn {
-            padding: 6px 12px;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        .timeframe-btn:hover {
-            color: var(--primary);
-        }
-
-        .timeframe-btn.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        #chart {
-            width: 100%;
-            height: 450px;
-        }
-
-        /* Market Stats Row */
-        .market-stats-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border);
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-label {
-            font-size: 0.7rem;
-            color: var(--text-tertiary);
-            margin-bottom: 0.25rem;
-        }
-
-        .stat-value {
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        /* Order Book Section */
-        .orderbook-section {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .section-title {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border);
-            text-align: center;
-        }
-
-        .orderbook-header {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 0.5rem;
-            font-size: 0.7rem;
-            color: var(--text-tertiary);
-            margin-bottom: 0.5rem;
-            padding: 0.5rem;
-            text-align: right;
-        }
-
-        .orderbook-header span:first-child {
-            text-align: left;
-        }
-
-        .orderbook-asks {
-            max-height: 200px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column-reverse;
-        }
-
-        .orderbook-bids {
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .orderbook-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 0.5rem;
-            font-size: 0.75rem;
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            text-align: right;
-        }
-
-        .orderbook-row span:first-child {
-            text-align: left;
-        }
-
-        .orderbook-row:hover {
-            background: var(--card-hover);
-        }
-
-        .orderbook-bid {
-            color: var(--bid-color);
-        }
-
-        .orderbook-ask {
-            color: var(--ask-color);
-        }
-
-        .orderbook-spread {
-            text-align: center;
-            margin: 0.5rem 0;
-            padding: 0.5rem;
-            background: var(--darker-bg);
-            border-radius: 8px;
-            font-size: 0.75rem;
-        }
-
+        .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .logo-icon { font-size: 24px; }
+        .logo-text { font-size: 18px; font-weight: 800; background: linear-gradient(135deg, #00D897, #00B8A0); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .nav-links { display: flex; gap: 8px; }
+        .nav-link { padding: 6px 16px; border-radius: 40px; color: #8B93A5; text-decoration: none; font-size: 14px; }
+        .nav-link:hover, .nav-link.active { background: rgba(0, 216, 151, 0.1); color: #00D897; }
+        .user-section { display: flex; align-items: center; gap: 12px; }
+        .logout-btn { padding: 6px 16px; background: rgba(255,71,87,0.15); border: 1px solid rgba(255,71,87,0.3); border-radius: 40px; color: #FF4757; cursor: pointer; font-size: 13px; }
+        .mobile-menu-btn { display: none; background: none; border: none; font-size: 24px; color: white; cursor: pointer; }
+        
+        /* Main Layout */
+        .main-content { margin-top: 60px; padding: 16px; max-width: 1600px; margin-left: auto; margin-right: auto; }
+        .trading-layout { display: flex; gap: 16px; flex-wrap: wrap; }
+        .chart-section { flex: 2; min-width: 300px; }
+        .info-section { flex: 1; min-width: 280px; }
+        
+        /* Market Header */
+        .market-header { background: rgba(255,255,255,0.05); border-radius: 16px; padding: 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .market-title { font-size: 24px; font-weight: 700; }
+        .market-price { font-size: 28px; font-weight: 800; }
+        .market-change { font-size: 16px; margin-left: 12px; }
+        
+        /* Timeframes */
+        .timeframes { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .time-btn { padding: 6px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; color: #8B93A5; cursor: pointer; font-size: 12px; }
+        .time-btn.active { background: #00D897; color: white; border-color: transparent; }
+        
+        /* Chart Container */
+        .chart-container { background: #131722; border-radius: 16px; overflow: hidden; height: 500px; margin-bottom: 16px; }
+        #tv_chart_container { width: 100%; height: 100%; }
+        
+        /* Order Book */
+        .order-book { background: rgba(255,255,255,0.05); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+        .section-title { font-size: 14px; color: #8B93A5; margin-bottom: 12px; font-weight: 600; }
+        .order-book-table { width: 100%; font-size: 12px; }
+        .order-book-table td { padding: 4px 0; }
+        .order-book-table .ask { color: #FF4757; }
+        .order-book-table .bid { color: #00D897; }
+        .order-book-table .price { font-weight: 600; }
+        .order-book-table .total { text-align: right; }
+        
         /* Trading Panel */
-        .trading-panel {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 1rem;
+        .trading-panel { background: rgba(255,255,255,0.05); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+        .trade-type-buttons { display: flex; gap: 12px; margin-bottom: 16px; }
+        .trade-btn { flex: 1; padding: 10px; border: none; border-radius: 40px; font-weight: 700; cursor: pointer; }
+        .trade-btn.buy { background: #00D897; color: white; }
+        .trade-btn.buy.active { background: #00B887; box-shadow: 0 0 10px rgba(0,216,151,0.5); }
+        .trade-btn.sell { background: #FF4757; color: white; }
+        .trade-btn.sell.active { background: #E03545; box-shadow: 0 0 10px rgba(255,71,87,0.5); }
+        .amount-input { width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; font-size: 16px; margin: 12px 0; }
+        .percent-buttons { display: flex; gap: 8px; margin-bottom: 16px; }
+        .percent-btn { flex: 1; padding: 8px; background: rgba(255,255,255,0.05); border: none; border-radius: 8px; color: #8B93A5; cursor: pointer; }
+        .trade-summary { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; margin: 12px 0; font-size: 13px; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .confirm-trade { width: 100%; padding: 12px; background: linear-gradient(135deg, #00D897, #00B8A0); border: none; border-radius: 40px; color: white; font-weight: 700; cursor: pointer; }
+        .confirm-trade:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* Price Alerts & Addresses */
+        .alerts-section, .addresses-section { background: rgba(255,255,255,0.05); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+        .add-btn { padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.2); border-radius: 8px; color: #00D897; cursor: pointer; text-align: center; font-size: 12px; }
+        
+        @media (max-width: 900px) {
+            .trading-layout { flex-direction: column; }
+            .chart-container { height: 350px; }
+            .market-price { font-size: 20px; }
         }
-
-        .trade-tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .trade-tab {
-            flex: 1;
-            padding: 10px;
-            background: var(--darker-bg);
-            border: none;
-            border-radius: 8px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-            font-size: 0.9rem;
-        }
-
-        .trade-tab.buy.active {
-            background: rgba(0, 216, 151, 0.2);
-            color: var(--success);
-        }
-
-        .trade-tab.sell.active {
-            background: rgba(255, 71, 87, 0.2);
-            color: var(--danger);
-        }
-
-        .input-group {
-            margin-bottom: 1rem;
-        }
-
-        .input-group label {
-            display: block;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.25rem;
-        }
-
-        .amount-input {
-            width: 100%;
-            padding: 12px;
-            background: var(--darker-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 1rem;
-        }
-
-        .quick-amounts {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-
-        .quick-amount {
-            flex: 1;
-            padding: 6px;
-            background: var(--darker-bg);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 0.7rem;
-            transition: all 0.3s;
-        }
-
-        .quick-amount:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        .order-summary {
-            background: var(--darker-bg);
-            padding: 0.75rem;
-            border-radius: 8px;
-            margin: 1rem 0;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .summary-row.total {
-            margin-top: 0.5rem;
-            padding-top: 0.5rem;
-            border-top: 1px solid var(--border);
-            font-weight: 700;
-        }
-
-        .trade-btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.9rem;
-        }
-
-        .trade-btn.buy {
-            background: linear-gradient(135deg, var(--success), #00b894);
-            color: white;
-        }
-
-        .trade-btn.sell {
-            background: linear-gradient(135deg, var(--danger), #ff6b6b);
-            color: white;
-        }
-
-        .trade-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .trade-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            filter: brightness(1.05);
-        }
-
-        .login-prompt {
-            text-align: center;
-            margin-top: 1rem;
-            padding: 0.75rem;
-            background: rgba(247, 147, 26, 0.1);
-            border-radius: 8px;
-        }
-
-        .login-prompt a {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 1rem;
-            color: var(--text-tertiary);
-        }
-
-        @media (max-width: 1200px) {
-            .trading-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
-            }
-            
-            .top-nav {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .nav-links {
-                justify-content: center;
-            }
-            
-            .user-info {
-                justify-content: center;
-            }
-            
-            .market-stats-row {
-                grid-template-columns: repeat(2, 1fr);
-            }
+        @media (max-width: 600px) {
+            .nav-links, .user-section { display: none; }
+            .mobile-menu-btn { display: block; }
+            .main-content { padding: 12px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Top Navigation Bar -->
-        <div class="top-nav">
-            <div class="logo">
-                <svg viewBox="0 0 40 40" fill="none">
-                    <rect width="40" height="40" rx="10" fill="#F7931A"/>
-                    <path d="M20 10L25 15L20 20L15 15L20 10Z" fill="white"/>
-                    <path d="M20 20L25 25L20 30L15 25L20 20Z" fill="white"/>
-                </svg>
-                <span>Pocket<span style="color: var(--primary);">Trading</span></span>
-            </div>
-            <div class="nav-links" id="navLinks">
-                <a href="home.html" class="nav-link">Home</a>
-                <a href="markets.html" class="nav-link">Markets</a>
-                <a href="trade.html" class="nav-link">Trades</a>
-                <!-- My Profile link will be added here for logged-in users -->
-            </div>
-            <div class="user-info" id="userInfo"></div>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="home.html" class="logo"><span class="logo-icon">📈</span><span class="logo-text">PocketTrading</span></a>
+            <div class="nav-links"><a href="home.html" class="nav-link">Home</a><a href="markets.html" class="nav-link">Markets</a><a href="trades.html" class="nav-link">Trades</a><a href="profile.html" class="nav-link">My Profile</a></div>
+            <div class="user-section" id="userSection"></div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <div class="market-header" id="marketHeader">
+            <div><span class="market-title" id="marketTitle">BTC/USD</span><span class="market-change" id="marketChange">+2.34%</span></div>
+            <div><span class="market-price" id="marketPrice">$78,312.00</span></div>
         </div>
 
-        <!-- Trading Grid -->
-        <div class="trading-grid">
-            <!-- Left: Chart Section -->
+        <div class="trading-layout">
             <div class="chart-section">
-                <div class="chart-header">
-                    <div class="symbol-info">
-                        <span class="symbol-name" id="symbolName">BTC/USDT</span>
-                        <span class="current-price" id="currentPrice">$0.00</span>
-                        <span class="price-change" id="priceChange">0.00%</span>
-                    </div>
-                    <div class="timeframe-selector">
-                        <button class="timeframe-btn" data-interval="1m">1m</button>
-                        <button class="timeframe-btn" data-interval="5m">5m</button>
-                        <button class="timeframe-btn" data-interval="15m">15m</button>
-                        <button class="timeframe-btn active" data-interval="1h">1h</button>
-                        <button class="timeframe-btn" data-interval="4h">4h</button>
-                        <button class="timeframe-btn" data-interval="1d">1d</button>
-                        <button class="timeframe-btn" data-interval="1w">1w</button>
-                    </div>
+                <div class="timeframes" id="timeframes">
+                    <button class="time-btn active" data-interval="1">1m</button>
+                    <button class="time-btn" data-interval="5">5m</button>
+                    <button class="time-btn" data-interval="15">15m</button>
+                    <button class="time-btn" data-interval="60">1h</button>
+                    <button class="time-btn" data-interval="240">4h</button>
+                    <button class="time-btn" data-interval="1D">1d</button>
+                    <button class="time-btn" data-interval="1W">1w</button>
                 </div>
-                <div id="chart"></div>
-                
-                <!-- Market Stats -->
-                <div class="market-stats-row">
-                    <div class="stat-item">
-                        <div class="stat-label">24h High</div>
-                        <div class="stat-value" id="high24h">$0.00</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">24h Low</div>
-                        <div class="stat-value" id="low24h">$0.00</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">24h Volume</div>
-                        <div class="stat-value" id="volume24h">$0</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Market Cap</div>
-                        <div class="stat-value" id="marketCap">$0</div>
-                    </div>
-                </div>
+                <div class="chart-container"><div id="tv_chart_container"></div></div>
             </div>
 
-            <!-- Center: Order Book -->
-            <div class="orderbook-section">
-                <div class="section-title">ORDER BOOK</div>
-                <div class="orderbook-header">
-                    <span>Price (USDT)</span>
-                    <span>Amount</span>
-                    <span>Total</span>
+            <div class="info-section">
+                <!-- Order Book -->
+                <div class="order-book">
+                    <div class="section-title">ORDER BOOK</div>
+                    <table class="order-book-table" id="orderBookTable">
+                        <tbody id="orderBookBody"></tbody>
+                    </table>
                 </div>
-                <div class="orderbook-asks" id="asksContainer">
-                    <div class="loading">Loading asks...</div>
-                </div>
-                <div class="orderbook-spread" id="orderbookSpread">
-                    Spread: $0.00 (0.00%)
-                </div>
-                <div class="orderbook-bids" id="bidsContainer">
-                    <div class="loading">Loading bids...</div>
-                </div>
-            </div>
 
-            <!-- Right: Trading Panel -->
-            <div class="trading-panel" id="tradingPanel">
-                <div class="loading">Loading trading panel...</div>
+                <!-- Trading Panel (Only for logged-in users) -->
+                <div class="trading-panel" id="tradingPanel" style="display: none;">
+                    <div class="section-title">Place Trade</div>
+                    <div class="trade-type-buttons">
+                        <button class="trade-btn buy active" data-type="buy">BUY</button>
+                        <button class="trade-btn sell" data-type="sell">SELL</button>
+                    </div>
+                    <input type="number" id="tradeAmount" class="amount-input" placeholder="Amount (USDT)" min="10" step="10">
+                    <div class="percent-buttons">
+                        <button class="percent-btn" data-percent="25">25%</button>
+                        <button class="percent-btn" data-percent="50">50%</button>
+                        <button class="percent-btn" data-percent="75">75%</button>
+                        <button class="percent-btn" data-percent="100">100%</button>
+                    </div>
+                    <div class="trade-summary" id="tradeSummary">
+                        <div class="summary-row"><span>Available:</span><span id="availableBalance">0.00 USDT</span></div>
+                        <div class="summary-row"><span>Fee (2%):</span><span id="feeAmount">0.00 USDT</span></div>
+                        <div class="summary-row"><span>Total:</span><span id="totalAmount">0.00 USDT</span></div>
+                    </div>
+                    <button class="confirm-trade" id="confirmTrade">Confirm Trade</button>
+                </div>
+
+                <!-- Guest Message -->
+                <div class="trading-panel" id="guestPanel" style="display: none;">
+                    <div class="section-title">Login to Trade</div>
+                    <p style="color: #8B93A5; font-size: 13px; margin-bottom: 16px;">Please login or register to start trading.</p>
+                    <a href="login.html" class="confirm-trade" style="display: block; text-align: center; text-decoration: none;">Login / Register</a>
+                </div>
+
+                <!-- Price Alerts -->
+                <div class="alerts-section">
+                    <div class="section-title">Price Alerts <button class="add-btn" style="float: right; padding: 4px 12px;" onclick="addAlert()">+Add</button></div>
+                    <div id="alertsList"><div style="color: #5A6475; font-size: 12px;">No alerts</div></div>
+                </div>
+
+                <!-- Saved Addresses -->
+                <div class="addresses-section">
+                    <div class="section-title">Saved Addresses <button class="add-btn" style="float: right; padding: 4px 12px;" onclick="addAddress()">+Add</button></div>
+                    <div id="addressesList"><div style="color: #5A6475; font-size: 12px;">No addresses</div></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <script src="js/trading-view.js"></script>
+    <script src="js/supabase-db.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        let currentUser = null;
+        let currentSymbol = 'BTC';
+        let currentPrice = 78312.00;
+        let currentChange = 2.34;
+        let currentTradeType = 'buy';
+        let tvWidget = null;
+
+        const symbols = { BTC: { name: 'BTC/USD', pair: 'BINANCE:BTCUSDT' }, ETH: { name: 'ETH/USD', pair: 'BINANCE:ETHUSDT' }, SOL: { name: 'SOL/USD', pair: 'BINANCE:SOLUSDT' }, XRP: { name: 'XRP/USD', pair: 'BINANCE:XRPUSDT' }, DOGE: { name: 'DOGE/USD', pair: 'BINANCE:DOGEUSDT' } };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const symbolParam = urlParams.get('symbol');
+            if (symbolParam && symbols[symbolParam.toUpperCase()]) currentSymbol = symbolParam.toUpperCase();
+            
+            await waitForAuth();
+            if (typeof auth !== 'undefined') currentUser = auth.getUser();
+            setupNavigation();
+            initTradingView();
+            loadUserBalance();
+            setupEventListeners();
+            updateOrderBook();
+            setInterval(updateOrderBook, 5000);
+        });
+
+        function waitForAuth() { return new Promise(r => { if (typeof auth !== 'undefined') r(); else setTimeout(() => r(), 100); }); }
+
+        function setupNavigation() {
+            const userSection = document.getElementById('userSection');
+            const tradingPanel = document.getElementById('tradingPanel');
+            const guestPanel = document.getElementById('guestPanel');
+            if (currentUser) {
+                userSection.innerHTML = `<div class="user-info"><div class="user-name">${currentUser.name || currentUser.email.split('@')[0]}</div></div><button class="logout-btn" onclick="handleLogout()">Logout</button>`;
+                tradingPanel.style.display = 'block';
+                guestPanel.style.display = 'none';
+            } else {
+                userSection.innerHTML = `<a href="login.html" style="color:#00D897; text-decoration:none;">Login</a>`;
+                tradingPanel.style.display = 'none';
+                guestPanel.style.display = 'block';
+            }
+            document.getElementById('marketTitle').textContent = symbols[currentSymbol]?.name || `${currentSymbol}/USD`;
+            updateMarketData();
+        }
+
+        async function loadUserBalance() {
+            if (currentUser) document.getElementById('availableBalance').textContent = `${(currentUser.balance || 0).toFixed(2)} USDT`;
+        }
+
+        function updateMarketData() {
+            // Simulate price updates
+            setInterval(() => {
+                const change = (Math.random() - 0.5) * 50;
+                currentPrice = Math.max(0.01, currentPrice + change);
+                currentChange = currentChange + (Math.random() - 0.5) * 0.5;
+                document.getElementById('marketPrice').textContent = `$${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                document.getElementById('marketChange').textContent = `${currentChange >= 0 ? '+' : ''}${currentChange.toFixed(2)}%`;
+                document.getElementById('marketChange').style.color = currentChange >= 0 ? '#00D897' : '#FF4757';
+            }, 3000);
+        }
+
+        function initTradingView() {
+            const pair = symbols[currentSymbol]?.pair || 'BINANCE:BTCUSDT';
+            if (tvWidget) tvWidget.remove();
+            new TradingView.widget({
+                container_id: "tv_chart_container",
+                width: "100%",
+                height: "100%",
+                symbol: pair,
+                interval: "1",
+                timezone: "Etc/UTC",
+                theme: "dark",
+                style: "1",
+                locale: "en",
+                toolbar_bg: "#131722",
+                enable_publishing: false,
+                hide_side_toolbar: false,
+                allow_symbol_change: false,
+                studies: ["RSI@tv-basicstudies", "MACD@tv-basicstudies", "Volume@tv-basicstudies"],
+                save_image: false,
+                autosize: true
+            });
+        }
+
+        function updateOrderBook() {
+            const basePrice = currentPrice;
+            const bids = [];
+            const asks = [];
+            for (let i = 1; i <= 10; i++) {
+                bids.push({ price: basePrice - i * (basePrice * 0.0005), amount: (Math.random() * 2).toFixed(4), total: (Math.random() * 100).toFixed(2) });
+                asks.push({ price: basePrice + i * (basePrice * 0.0005), amount: (Math.random() * 2).toFixed(4), total: (Math.random() * 100).toFixed(2) });
+            }
+            const orderBookBody = document.getElementById('orderBookBody');
+            orderBookBody.innerHTML = `<tr style="color:#FF4757;"><td class="price">Price(USDT)</td><td>Amount</td><td class="total">Total</td></tr>`;
+            asks.slice().reverse().forEach(a => { orderBookBody.innerHTML += `<tr class="ask"><td class="price">${a.price.toFixed(2)}</td><td>${a.amount}</td><td class="total">${a.total}</td></tr>`; });
+            orderBookBody.innerHTML += `<tr><td colspan="3" style="text-align:center; padding:8px;">Spread: ${(asks[0]?.price - bids[0]?.price).toFixed(2)} (${((asks[0]?.price - bids[0]?.price) / basePrice * 100).toFixed(2)}%)</td></tr>`;
+            bids.forEach(b => { orderBookBody.innerHTML += `<tr class="bid"><td class="price">${b.price.toFixed(2)}</td><td>${b.amount}</td><td class="total">${b.total}</td></tr>`; });
+        }
+
+        function setupEventListeners() {
+            document.querySelectorAll('.trade-btn').forEach(btn => btn.addEventListener('click', () => {
+                document.querySelectorAll('.trade-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentTradeType = btn.dataset.type;
+                updateTradeSummary();
+            }));
+            document.querySelectorAll('.percent-btn').forEach(btn => btn.addEventListener('click', () => {
+                const percent = parseInt(btn.dataset.percent) / 100;
+                const balance = currentUser?.balance || 0;
+                document.getElementById('tradeAmount').value = (balance * percent).toFixed(2);
+                updateTradeSummary();
+            }));
+            document.getElementById('tradeAmount').addEventListener('input', () => updateTradeSummary());
+            document.getElementById('confirmTrade').addEventListener('click', executeTrade);
+            document.querySelectorAll('.time-btn').forEach(btn => btn.addEventListener('click', () => {
+                document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (tvWidget) tvWidget.setInterval(btn.dataset.interval);
+            }));
+            document.getElementById('mobileMenuBtn').addEventListener('click', () => {});
+        }
+
+        function updateTradeSummary() {
+            const amount = parseFloat(document.getElementById('tradeAmount').value) || 0;
+            const fee = amount * 0.02;
+            const total = amount + fee;
+            document.getElementById('feeAmount').textContent = `${fee.toFixed(2)} USDT`;
+            document.getElementById('totalAmount').textContent = `${total.toFixed(2)} USDT`;
+            const balance = currentUser?.balance || 0;
+            document.getElementById('confirmTrade').disabled = total > balance || amount < 10;
+        }
+
+        async function executeTrade() {
+            if (!currentUser) { window.location.href = 'login.html'; return; }
+            const amount = parseFloat(document.getElementById('tradeAmount').value);
+            if (amount < 10) { alert('Minimum trade amount is $10'); return; }
+            const fee = amount * 0.02;
+            const total = amount + fee;
+            if (total > (currentUser.balance || 0)) { alert('Insufficient balance'); return; }
+            
+            const newBalance = (currentUser.balance || 0) - total;
+            currentUser.balance = newBalance;
+            if (auth?.updateBalance) await auth.updateBalance(currentUser.id, -total, { type: 'trade', symbol: currentSymbol, amount: amount, trade_type: currentTradeType });
+            
+            const trade = { id: Date.now(), user_id: currentUser.id, symbol: currentSymbol, type: currentTradeType, amount: amount, entry_price: currentPrice, fee: fee, status: 'open', created_at: new Date().toISOString() };
+            const trades = JSON.parse(localStorage.getItem(`trades_${currentUser.id}`) || '[]');
+            trades.push(trade);
+            localStorage.setItem(`trades_${currentUser.id}`, JSON.stringify(trades));
+            
+            alert(`Trade executed! ${currentTradeType.toUpperCase()} $${amount} ${currentSymbol}/USD`);
+            document.getElementById('tradeAmount').value = '';
+            updateTradeSummary();
+            loadUserBalance();
+            
+            setTimeout(() => {
+                const isWin = Math.random() < 0.55;
+                const winAmount = amount * (isWin ? 1.8 : 0);
+                if (isWin) {
+                    const winBalance = currentUser.balance + winAmount;
+                    if (auth?.updateBalance) auth.updateBalance(currentUser.id, winAmount, { type: 'trade_win' });
+                    alert(`🎉 WIN! You won $${winAmount.toFixed(2)} on ${currentSymbol}!`);
+                } else alert(`😢 LOSS! You lost $${amount.toFixed(2)} on ${currentSymbol}`);
+                loadUserBalance();
+            }, 60000);
+        }
+
+        function addAlert() { alert('Price alert feature - set notification when price reaches target'); }
+        function addAddress() { alert('Save wallet address for quick withdrawals'); }
+        window.handleLogout = () => { if (auth?.logout) auth.logout(); else { localStorage.clear(); sessionStorage.clear(); window.location.href = 'home.html'; } };
+        window.addAlert = addAlert;
+        window.addAddress = addAddress;
+    </script>
 </body>
 </html>
