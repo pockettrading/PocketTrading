@@ -19,261 +19,250 @@
             overflow-x: hidden;
         }
 
-        /* App Container */
-        .app-container {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        /* Sidebar Styles */
-        .sidebar {
-            width: 260px;
-            background: linear-gradient(180deg, #0F1420 0%, #0A0F1A 100%);
-            border-right: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
+        /* Top Navigation Bar */
+        .navbar {
             position: fixed;
-            height: 100vh;
-            left: 0;
             top: 0;
-            z-index: 100;
+            left: 0;
+            right: 0;
+            background: rgba(15, 20, 32, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            padding: 0 32px;
         }
 
-        .logo-area {
-            padding: 24px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
         }
 
         .logo {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 20px;
-            font-weight: 700;
+            text-decoration: none;
         }
 
-        .logo-icon {
-            font-size: 28px;
-        }
-
+        .logo-icon { font-size: 28px; }
         .logo-text {
+            font-size: 20px;
+            font-weight: 800;
             background: linear-gradient(135deg, #00D897, #00B8A0);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
         }
 
-        .nav-menu {
-            flex: 1;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+        .nav-links { display: flex; gap: 8px; align-items: center; }
+        .nav-link {
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: #8B93A5;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(0, 216, 151, 0.1);
+            color: #00D897;
         }
 
-        .nav-item {
+        .user-section { display: flex; align-items: center; gap: 16px; }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 16px 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 40px;
+            cursor: pointer;
+        }
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .user-name { font-size: 14px; font-weight: 600; }
+        .admin-badge {
+            font-size: 10px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            padding: 2px 8px;
+            border-radius: 20px;
+            color: white;
+            margin-left: 6px;
+        }
+        .admin-link {
+            padding: 8px 16px;
+            background: rgba(0, 216, 151, 0.1);
+            border-radius: 40px;
+            color: #00D897;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .logout-btn {
+            padding: 8px 20px;
+            background: rgba(255, 71, 87, 0.15);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-radius: 40px;
+            color: #FF4757;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .guest-buttons { display: flex; gap: 12px; }
+        .btn-login, .btn-register {
+            padding: 8px 24px;
+            border-radius: 40px;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .btn-login {
+            background: transparent;
+            border: 1px solid rgba(0, 216, 151, 0.5);
+            color: #00D897;
+        }
+        .btn-register {
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            color: white;
+        }
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: white;
+            cursor: pointer;
+        }
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 70px;
+            left: 0;
+            right: 0;
+            background: #0F1420;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            z-index: 999;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .mobile-menu.show { display: flex; }
+        .mobile-nav-link {
+            padding: 12px;
+            color: #8B93A5;
+            text-decoration: none;
+            border-radius: 12px;
+        }
+
+        /* Main Layout */
+        .main-content {
+            margin-top: 70px;
+            padding: 24px 32px;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .profile-layout {
+            display: flex;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+
+        /* Left Sidebar */
+        .profile-sidebar {
+            width: 260px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            height: fit-content;
+        }
+
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .sidebar-item {
             display: flex;
             align-items: center;
             gap: 12px;
             padding: 12px 16px;
             border-radius: 12px;
             color: #8B93A5;
-            text-decoration: none;
+            cursor: pointer;
             transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 500;
         }
 
-        .nav-item:hover, .nav-item.active {
-            background: rgba(0, 216, 151, 0.1);
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #FFFFFF;
+        }
+
+        .sidebar-item.active {
+            background: rgba(0, 216, 151, 0.15);
             color: #00D897;
         }
 
-        .nav-icon {
-            font-size: 20px;
-        }
+        .sidebar-icon { font-size: 18px; }
 
-        .user-info-sidebar {
-            padding: 20px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .user-avatar {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, #00D897, #00B8A0);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            margin-bottom: 12px;
-        }
-
-        .user-name-sidebar {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .user-email-sidebar {
-            font-size: 12px;
-            color: #8B93A5;
-            margin-bottom: 12px;
-        }
-
-        .logout-btn {
-            width: 100%;
-            padding: 10px;
-            background: rgba(255,71,87,0.2);
-            border: 1px solid rgba(255,71,87,0.3);
-            border-radius: 8px;
-            color: #FF4757;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .logout-btn:hover {
-            background: rgba(255,71,87,0.3);
-        }
-
-        /* Main Content */
-        .main-content {
+        /* Right Content */
+        .profile-content {
             flex: 1;
-            margin-left: 260px;
-            padding: 24px 32px;
-            overflow-x: hidden;
+            min-width: 300px;
         }
 
-        /* Mobile Header */
-        .mobile-header {
-            display: none;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px;
-            background: #0F1420;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 20px;
+        /* Content Header */
+        .content-header {
+            margin-bottom: 24px;
         }
 
-        .mobile-menu-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: white;
-        }
-
-        /* Page Header */
-        .page-header {
-            margin-bottom: 32px;
-        }
-
-        .page-header h1 {
-            font-size: 32px;
+        .content-header h2 {
+            font-size: 28px;
             font-weight: 700;
             margin-bottom: 8px;
         }
 
-        .page-header p {
+        .content-header p {
             color: #8B93A5;
             font-size: 14px;
         }
 
-        /* Profile Grid */
-        .profile-grid {
-            display: grid;
-            grid-template-columns: 1fr 1.5fr;
-            gap: 24px;
-        }
-
-        /* Profile Card */
-        .profile-card {
-            background: rgba(255,255,255,0.05);
-            border-radius: 24px;
-            padding: 32px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .profile-avatar-section {
-            text-align: center;
+        /* Cards */
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
             margin-bottom: 24px;
         }
 
-        .profile-avatar {
-            width: 120px;
-            height: 120px;
-            background: linear-gradient(135deg, #00D897, #00B8A0);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            margin: 0 auto 16px;
-            cursor: pointer;
-            transition: transform 0.2s;
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .profile-avatar:hover {
-            transform: scale(1.05);
-        }
-
-        .profile-name {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .profile-email {
-            color: #8B93A5;
-            font-size: 14px;
-            margin-bottom: 16px;
-        }
-
-        .kyc-status {
-            display: inline-block;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 12px;
+        .card-header h3 {
+            font-size: 18px;
             font-weight: 600;
         }
 
-        .kyc-verified {
-            background: rgba(0, 216, 151, 0.2);
-            color: #00D897;
-        }
-
-        .kyc-pending {
-            background: rgba(255, 165, 2, 0.2);
-            color: #FFA502;
-        }
-
-        .kyc-none {
-            background: rgba(255, 71, 87, 0.2);
-            color: #FF4757;
-        }
-
-        /* Stats Row */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-top: 24px;
-            padding-top: 24px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: #8B93A5;
+        .card-body {
+            padding: 24px;
         }
 
         /* Form Styles */
@@ -285,11 +274,10 @@
             display: block;
             margin-bottom: 8px;
             font-size: 13px;
-            font-weight: 500;
-            color: #D1D5DB;
+            color: #8B93A5;
         }
 
-        .form-group input, .form-group select, .form-group textarea {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 12px 16px;
             background: rgba(255, 255, 255, 0.05);
@@ -297,18 +285,11 @@
             border-radius: 12px;
             color: white;
             font-size: 14px;
-            transition: all 0.3s;
         }
 
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: #00D897;
-            background: rgba(0, 216, 151, 0.05);
-        }
-
-        .form-group input:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
         }
 
         .form-row {
@@ -318,39 +299,81 @@
         }
 
         .btn-save {
-            width: 100%;
-            padding: 12px;
+            padding: 12px 24px;
             background: linear-gradient(135deg, #00D897, #00B8A0);
             border: none;
             border-radius: 40px;
             color: white;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            width: 100%;
+        }
+
+        /* Stat Grid */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            text-align: center;
+        }
+
+        .stat-item {
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #8B93A5;
+        }
+
+        /* KYC Badge */
+        .kyc-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .kyc-verified { background: rgba(0, 216, 151, 0.2); color: #00D897; }
+        .kyc-pending { background: rgba(255, 165, 2, 0.2); color: #FFA502; }
+        .kyc-none { background: rgba(255, 71, 87, 0.2); color: #FF4757; }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
             margin-top: 16px;
         }
-
-        .btn-save:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 216, 151, 0.3);
+        .btn-deposit {
+            flex: 1;
+            padding: 10px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            border: none;
+            border-radius: 40px;
+            color: white;
+            cursor: pointer;
+        }
+        .btn-withdraw {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 40px;
+            color: white;
+            cursor: pointer;
         }
 
-        /* KYC Section */
-        .kyc-card {
-            background: rgba(255,255,255,0.05);
-            border-radius: 24px;
-            padding: 32px;
-            border: 1px solid rgba(255,255,255,0.1);
-            margin-top: 24px;
-        }
-
-        .kyc-card h3 {
-            margin-bottom: 20px;
-            font-size: 20px;
-        }
-
+        /* Upload Area */
         .upload-area {
-            border: 2px dashed rgba(255,255,255,0.2);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
             border-radius: 16px;
             padding: 32px;
             text-align: center;
@@ -358,477 +381,290 @@
             transition: all 0.2s;
             margin-bottom: 20px;
         }
-
         .upload-area:hover {
             border-color: #00D897;
             background: rgba(0, 216, 151, 0.05);
         }
+        .file-input { display: none; }
 
-        .upload-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
+        /* Table */
+        .trades-table {
+            width: 100%;
+            border-collapse: collapse;
         }
-
-        .file-input {
-            display: none;
+        .trades-table th, .trades-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
-
-        /* Activity Timeline */
-        .activity-card {
-            background: rgba(255,255,255,0.05);
-            border-radius: 24px;
-            padding: 32px;
-            border: 1px solid rgba(255,255,255,0.1);
-            margin-top: 24px;
-        }
-
-        .activity-card h3 {
-            margin-bottom: 20px;
-            font-size: 20px;
-        }
-
-        .timeline {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .timeline-item {
-            display: flex;
-            gap: 16px;
-            padding: 16px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .timeline-icon {
-            width: 40px;
-            height: 40px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-
-        .timeline-content {
-            flex: 1;
-        }
-
-        .timeline-title {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .timeline-desc {
-            font-size: 13px;
+        .trades-table th {
             color: #8B93A5;
-        }
-
-        .timeline-date {
-            font-size: 11px;
-            color: #5A6475;
+            font-weight: 500;
+            font-size: 12px;
         }
 
         /* Danger Zone */
         .danger-zone {
-            margin-top: 24px;
-            background: rgba(255,71,87,0.1);
-            border: 1px solid rgba(255,71,87,0.2);
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.2);
             border-radius: 16px;
             padding: 20px;
+            margin-top: 24px;
         }
-
-        .danger-zone h4 {
-            color: #FF4757;
-            margin-bottom: 8px;
-        }
-
-        .danger-zone p {
-            font-size: 13px;
-            color: #8B93A5;
-            margin-bottom: 16px;
-        }
-
+        .danger-zone h4 { color: #FF4757; margin-bottom: 8px; }
+        .danger-zone p { font-size: 13px; color: #8B93A5; margin-bottom: 16px; }
         .btn-danger {
-            padding: 8px 20px;
-            background: rgba(255,71,87,0.2);
-            border: 1px solid rgba(255,71,87,0.3);
-            border-radius: 8px;
+            padding: 10px 20px;
+            background: rgba(255, 71, 87, 0.2);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-radius: 40px;
             color: #FF4757;
             cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-danger:hover {
-            background: rgba(255,71,87,0.3);
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background: #1E2A3A;
-            border-radius: 24px;
-            width: 90%;
-            max-width: 450px;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .modal-header h3 {
-            font-size: 20px;
-        }
-
-        .modal-close {
-            font-size: 28px;
-            cursor: pointer;
-            color: #8B93A5;
-        }
-
-        .modal-body {
-            padding: 20px;
-        }
-
-        .modal-body input {
-            width: 100%;
-            padding: 12px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            color: white;
-            margin: 16px 0;
         }
 
         /* Responsive */
-        @media (max-width: 1024px) {
-            .profile-grid {
-                grid-template-columns: 1fr;
-            }
+        @media (max-width: 900px) {
+            .profile-layout { flex-direction: column; }
+            .profile-sidebar { width: 100%; }
+            .sidebar-menu { flex-direction: row; flex-wrap: wrap; }
+            .stat-grid { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
         }
-
         @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s;
-            }
-
-            .sidebar.show {
-                transform: translateX(0);
-            }
-
-            .main-content {
-                margin-left: 0;
-                padding: 16px;
-            }
-
-            .mobile-header {
-                display: flex;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .stats-row {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
+            .nav-links, .user-section { display: none; }
+            .mobile-menu-btn { display: block; }
+            .main-content { padding: 16px; }
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <div class="logo-area">
-                <div class="logo">
-                    <span class="logo-icon">📈</span>
-                    <span class="logo-text">PocketTrading</span>
-                </div>
-            </div>
-            
-            <nav class="nav-menu">
-                <a href="home.html" class="nav-item">
-                    <span class="nav-icon">🏠</span>
-                    <span>Home</span>
-                </a>
-                <a href="markets.html" class="nav-item">
-                    <span class="nav-icon">📊</span>
-                    <span>Markets</span>
-                </a>
-                <a href="trades.html" class="nav-item">
-                    <span class="nav-icon">🔄</span>
-                    <span>Trades</span>
-                </a>
-                <a href="profile.html" class="nav-item active">
-                    <span class="nav-icon">👤</span>
-                    <span>My Profile</span>
-                </a>
-                <a href="admin.html" class="nav-item admin-only" style="display: none;">
-                    <span class="nav-icon">⚙️</span>
-                    <span>Admin Panel</span>
-                </a>
-            </nav>
-            
-            <div class="user-info-sidebar">
-                <div class="user-avatar">👤</div>
-                <div class="user-name-sidebar" id="sidebarUserName">Trader</div>
-                <div class="user-email-sidebar" id="sidebarUserEmail"></div>
-                <button onclick="logout()" class="logout-btn">Logout</button>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Mobile Header -->
-            <div class="mobile-header">
-                <button class="mobile-menu-btn">☰</button>
-                <div class="mobile-logo">PocketTrading</div>
-                <div class="mobile-placeholder"></div>
-            </div>
-
-            <!-- Page Header -->
-            <div class="page-header">
-                <h1>My Profile</h1>
-                <p>Manage your account settings and personal information</p>
-            </div>
-
-            <div class="profile-grid">
-                <!-- Left Column - Profile Info -->
-                <div>
-                    <div class="profile-card">
-                        <div class="profile-avatar-section">
-                            <div class="profile-avatar" id="profileAvatar" onclick="changeAvatar()">
-                                👤
-                            </div>
-                            <h2 class="profile-name" id="profileName">Trader Name</h2>
-                            <div class="profile-email" id="profileEmail">trader@example.com</div>
-                            <span class="kyc-status" id="kycStatus">Not Verified</span>
-                        </div>
-                        
-                        <div class="stats-row">
-                            <div class="stat-item">
-                                <div class="stat-value" id="statBalance">$0.00</div>
-                                <div class="stat-label">Balance</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value" id="statTrades">0</div>
-                                <div class="stat-label">Total Trades</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value" id="statWinRate">0%</div>
-                                <div class="stat-label">Win Rate</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Danger Zone -->
-                    <div class="danger-zone">
-                        <h4>⚠️ Danger Zone</h4>
-                        <p>Once you delete your account, all data will be permanently removed.</p>
-                        <button class="btn-danger" onclick="showDeleteAccountModal()">Delete Account</button>
-                    </div>
-                </div>
-
-                <!-- Right Column - Settings -->
-                <div>
-                    <div class="profile-card">
-                        <h3 style="margin-bottom: 20px;">Personal Information</h3>
-                        <form id="profileForm">
-                            <div class="form-group">
-                                <label>Full Name</label>
-                                <input type="text" id="fullName" placeholder="Enter your full name">
-                            </div>
-                            <div class="form-group">
-                                <label>Email Address</label>
-                                <input type="email" id="email" placeholder="Enter your email" disabled>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Phone Number</label>
-                                    <input type="tel" id="phone" placeholder="+1 234 567 8900">
-                                </div>
-                                <div class="form-group">
-                                    <label>Country</label>
-                                    <select id="country">
-                                        <option value="">Select Country</option>
-                                        <option value="US">United States</option>
-                                        <option value="UK">United Kingdom</option>
-                                        <option value="CA">Canada</option>
-                                        <option value="AU">Australia</option>
-                                        <option value="DE">Germany</option>
-                                        <option value="FR">France</option>
-                                        <option value="JP">Japan</option>
-                                        <option value="SG">Singapore</option>
-                                        <option value="AE">UAE</option>
-                                        <option value="IN">India</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Time Zone</label>
-                                <select id="timezone">
-                                    <option value="UTC-8">Pacific Time (UTC-8)</option>
-                                    <option value="UTC-5">Eastern Time (UTC-5)</option>
-                                    <option value="UTC+0">UTC (GMT)</option>
-                                    <option value="UTC+1">Central European Time</option>
-                                    <option value="UTC+8">Singapore/Hong Kong</option>
-                                    <option value="UTC+10">Australian Eastern Time</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn-save">Save Changes</button>
-                        </form>
-                    </div>
-
-                    <!-- Change Password Section -->
-                    <div class="profile-card" style="margin-top: 24px;">
-                        <h3 style="margin-bottom: 20px;">Security</h3>
-                        <div class="form-group">
-                            <label>Current Password</label>
-                            <input type="password" id="currentPassword" placeholder="Enter current password">
-                        </div>
-                        <div class="form-group">
-                            <label>New Password</label>
-                            <input type="password" id="newPassword" placeholder="Enter new password">
-                        </div>
-                        <div class="form-group">
-                            <label>Confirm New Password</label>
-                            <input type="password" id="confirmPassword" placeholder="Confirm new password">
-                        </div>
-                        <button onclick="changePassword()" class="btn-save">Update Password</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- KYC Section -->
-            <div class="kyc-card" id="kycSection">
-                <h3>Identity Verification (KYC)</h3>
-                <p style="color: #8B93A5; margin-bottom: 20px;">Verify your identity to increase withdrawal limits and access all features.</p>
-                
-                <div id="kycForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Full Name (as on ID)</label>
-                            <input type="text" id="kycFullName" placeholder="Full name">
-                        </div>
-                        <div class="form-group">
-                            <label>Date of Birth</label>
-                            <input type="date" id="kycDob">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>ID Type</label>
-                        <select id="kycIdType">
-                            <option value="">Select ID Type</option>
-                            <option value="passport">Passport</option>
-                            <option value="drivers_license">Driver's License</option>
-                            <option value="national_id">National ID Card</option>
-                        </select>
-                    </div>
-                    
-                    <div class="upload-area" onclick="document.getElementById('idFront').click()">
-                        <div class="upload-icon">📄</div>
-                        <p>Click to upload front side of ID</p>
-                        <small style="color: #8B93A5;">JPG, PNG or PDF (max 5MB)</small>
-                        <input type="file" id="idFront" class="file-input" accept="image/*,.pdf">
-                    </div>
-                    
-                    <div class="upload-area" onclick="document.getElementById('idBack').click()">
-                        <div class="upload-icon">📄</div>
-                        <p>Click to upload back side of ID</p>
-                        <small style="color: #8B93A5;">JPG, PNG or PDF (max 5MB)</small>
-                        <input type="file" id="idBack" class="file-input" accept="image/*,.pdf">
-                    </div>
-                    
-                    <div class="upload-area" onclick="document.getElementById('selfie').click()">
-                        <div class="upload-icon">🤳</div>
-                        <p>Upload selfie with ID</p>
-                        <small style="color: #8B93A5;">Clear photo holding your ID</small>
-                        <input type="file" id="selfie" class="file-input" accept="image/*">
-                    </div>
-                    
-                    <button onclick="submitKYC()" class="btn-save">Submit KYC Application</button>
-                </div>
-                
-                <div id="kycStatusMessage" style="display: none; text-align: center; padding: 40px;">
-                    <div style="font-size: 48px; margin-bottom: 16px;">⏳</div>
-                    <h4>KYC Verification Pending</h4>
-                    <p style="color: #8B93A5; margin-top: 8px;">Your documents are being reviewed. This usually takes 24-48 hours.</p>
-                </div>
-            </div>
-
-            <!-- Activity Timeline -->
-            <div class="activity-card">
-                <h3>Recent Activity</h3>
-                <div class="timeline" id="activityTimeline">
-                    <div class="timeline-item">
-                        <div class="timeline-icon">🔄</div>
-                        <div class="timeline-content">
-                            <div class="timeline-title">Loading activity...</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Change Avatar Modal -->
-    <div id="avatarModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Choose Avatar</h3>
-                <span class="modal-close" onclick="closeAvatarModal()">&times;</span>
-            </div>
-            <div class="modal-body" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-                <div class="avatar-option" onclick="setAvatar('👤')" style="font-size: 40px; text-align: center; cursor: pointer; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 12px;">👤</div>
-                <div class="avatar-option" onclick="setAvatar('🐂')" style="font-size: 40px; text-align: center; cursor: pointer; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 12px;">🐂</div>
-                <div class="avatar-option" onclick="setAvatar('🐻')" style="font-size: 40px; text-align: center; cursor: pointer; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 12px;">🐻</div>
-                <div class="avatar-option" onclick="setAvatar('🦅')" style="font-size: 40px; text-align: center; cursor: pointer; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 12px;">🦅</div>
-                <div class="avatar-option" onclick="setAvatar('🐺')" style="font-size: 40px; text-align: center; cursor: pointer; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 12px;">🐺</div>
-                <div class="avatar-option" onclick="setAvatar('🦁')" style="font-size: 40px; text-align: center; cursor: pointer; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 12px;">🦁</div>
-                <div class="avatar-option" onclick="setAvatar('🐉')" style="font-size: 40px; text-align: center; cursor: pointer; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 12px;">🐉</div>
-                <div class="avatar-option" onclick="setAvatar('🚀')" style="font-size: 40px; text-align: center; cursor: pointer; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 12px;">🚀</div>
-            </div>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="home.html" class="logo"><span class="logo-icon">📈</span><span class="logo-text">PocketTrading</span></a>
+            <div class="nav-links"><a href="home.html" class="nav-link">Home</a><a href="markets.html" class="nav-link">Markets</a><a href="trades.html" class="nav-link">Trades</a><a href="profile.html" class="nav-link active">My Profile</a></div>
+            <div class="user-section" id="userSection"></div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
         </div>
-    </div>
+    </nav>
+    <div class="mobile-menu" id="mobileMenu"><a href="home.html" class="mobile-nav-link">🏠 Home</a><a href="markets.html" class="mobile-nav-link">📊 Markets</a><a href="trades.html" class="mobile-nav-link">🔄 Trades</a><a href="profile.html" class="mobile-nav-link">👤 My Profile</a><div id="mobileUserSection"></div></div>
 
-    <!-- Delete Account Modal -->
-    <div id="deleteModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Delete Account</h3>
-                <span class="modal-close" onclick="closeDeleteModal()">&times;</span>
+    <div class="main-content">
+        <div class="profile-layout">
+            <!-- Left Sidebar -->
+            <div class="profile-sidebar">
+                <div class="sidebar-menu">
+                    <div class="sidebar-item active" data-tab="profile">
+                        <span class="sidebar-icon">👤</span> User Profile
+                    </div>
+                    <div class="sidebar-item" data-tab="history">
+                        <span class="sidebar-icon">📊</span> Trade History
+                    </div>
+                    <div class="sidebar-item" data-tab="kyc">
+                        <span class="sidebar-icon">🔒</span> KYC Verification
+                    </div>
+                    <div class="sidebar-item" data-tab="update">
+                        <span class="sidebar-icon">✏️</span> Update Profile
+                    </div>
+                    <div class="sidebar-item" data-tab="support">
+                        <span class="sidebar-icon">💬</span> Customer Support
+                    </div>
+                </div>
             </div>
-            <div class="modal-body">
-                <p style="color: #FF4757; margin-bottom: 16px;">⚠️ This action cannot be undone!</p>
-                <p>Type <strong>DELETE</strong> to confirm:</p>
-                <input type="text" id="deleteConfirm" placeholder="DELETE">
-                <button onclick="deleteAccount()" class="btn-danger" style="width: 100%; margin-top: 16px;">Permanently Delete Account</button>
+
+            <!-- Right Content -->
+            <div class="profile-content">
+                <!-- User Profile Tab -->
+                <div id="profileTab" class="tab-content active">
+                    <div class="content-header"><h2>Profile</h2><p>View your personal information and account status</p></div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                        <div class="card"><div class="card-header"><h3>Personal Information</h3></div><div class="card-body"><div class="form-group"><label>Full Name</label><div id="displayName" style="padding: 12px 0; font-weight: 500;">Loading...</div></div><div class="form-group"><label>Email</label><div id="displayEmail" style="padding: 12px 0;">Loading...</div></div><div class="form-group"><label>Member Since</label><div id="displayMemberSince" style="padding: 12px 0;">Loading...</div></div></div></div>
+                        <div class="card"><div class="card-header"><h3>Account Balance</h3></div><div class="card-body"><div style="font-size: 36px; font-weight: 800;" id="displayBalance">$0</div><div style="margin-top: 8px;"><span class="kyc-badge" id="displayKyc">Pending</span></div><div class="action-buttons"><button class="btn-deposit" onclick="window.location.href='deposit.html'">Deposit</button><button class="btn-withdraw" onclick="window.location.href='withdraw.html'">Withdraw Funds</button></div></div></div>
+                    </div>
+                    
+                    <div class="card"><div class="card-header"><h3>Trading Statistics</h3></div><div class="card-body"><div class="stat-grid"><div class="stat-item"><div class="stat-value" id="statTotalTrades">0</div><div class="stat-label">Total Trades</div></div><div class="stat-item"><div class="stat-value" id="statWinRate">0%</div><div class="stat-label">Win Rate</div></div><div class="stat-item"><div class="stat-value" id="statTotalVolume">$0</div><div class="stat-label">Total Volume</div></div></div></div></div>
+                </div>
+
+                <!-- Trade History Tab -->
+                <div id="historyTab" class="tab-content" style="display: none;">
+                    <div class="content-header"><h2>Trade History</h2><p>View all your past trades</p></div>
+                    <div class="card"><div class="card-header"><h3>Your Trades</h3></div><div class="card-body"><div style="overflow-x: auto;"><table class="trades-table"><thead><tr><th>Date</th><th>Market</th><th>Type</th><th>Amount</th><th>P&L</th><th>Status</th></tr></thead><tbody id="tradeHistoryBody"><tr><td colspan="6" style="text-align:center;">Loading trades...</td></tr></tbody></table></div></div></div>
+                </div>
+
+                <!-- KYC Verification Tab -->
+                <div id="kycTab" class="tab-content" style="display: none;">
+                    <div class="content-header"><h2>KYC Verification</h2><p>Verify your identity to increase withdrawal limits</p></div>
+                    <div class="card"><div class="card-header"><h3>Identity Verification</h3></div><div class="card-body" id="kycForm"><div class="form-group"><label>Full Name (as on ID)</label><input type="text" id="kycFullName" placeholder="Enter full name"></div><div class="form-group"><label>Date of Birth</label><input type="date" id="kycDob"></div><div class="form-group"><label>ID Type</label><select id="kycIdType"><option value="">Select ID Type</option><option value="passport">Passport</option><option value="drivers_license">Driver's License</option><option value="national_id">National ID</option></select></div><div class="upload-area" onclick="document.getElementById('idFront').click()"><div class="upload-icon">📄</div><p>Upload Front Side of ID</p><input type="file" id="idFront" class="file-input" accept="image/*"></div><div class="upload-area" onclick="document.getElementById('idBack').click()"><div class="upload-icon">📄</div><p>Upload Back Side of ID</p><input type="file" id="idBack" class="file-input" accept="image/*"></div><button class="btn-save" onclick="submitKYC()">Submit KYC Application</button></div><div id="kycPendingMessage" style="display: none; text-align: center; padding: 40px;"><div style="font-size: 48px;">⏳</div><h4>KYC Verification Pending</h4><p>Your documents are being reviewed. This usually takes 24-48 hours.</p></div></div>
+                </div>
+
+                <!-- Update Profile Tab -->
+                <div id="updateTab" class="tab-content" style="display: none;">
+                    <div class="content-header"><h2>Update Profile</h2><p>Manage your account settings</p></div>
+                    <div class="card"><div class="card-header"><h3>Personal Information</h3></div><div class="card-body"><form id="updateProfileForm"><div class="form-group"><label>Full Name</label><input type="text" id="updateFullName" placeholder="Enter full name"></div><div class="form-group"><label>Phone Number</label><input type="tel" id="updatePhone" placeholder="+1 234 567 8900"></div><div class="form-group"><label>Country</label><select id="updateCountry"><option value="">Select Country</option><option value="US">United States</option><option value="UK">United Kingdom</option><option value="CA">Canada</option><option value="AU">Australia</option><option value="IN">India</option></select></div><div class="form-group"><label>Current Password</label><input type="password" id="currentPassword" placeholder="Enter current password"></div><div class="form-group"><label>New Password</label><input type="password" id="newPassword" placeholder="Enter new password"></div><div class="form-group"><label>Confirm Password</label><input type="password" id="confirmNewPassword" placeholder="Confirm new password"></div><button type="submit" class="btn-save">Save Changes</button></form></div></div>
+                    <div class="danger-zone"><h4>⚠️ Danger Zone</h4><p>Once you delete your account, all data will be permanently removed.</p><button class="btn-danger" onclick="deleteAccount()">Delete Account</button></div>
+                </div>
+
+                <!-- Customer Support Tab -->
+                <div id="supportTab" class="tab-content" style="display: none;">
+                    <div class="content-header"><h2>Customer Support</h2><p>Get help from our support team</p></div>
+                    <div class="card"><div class="card-header"><h3>Contact Support</h3></div><div class="card-body"><div class="form-group"><label>Subject</label><input type="text" id="supportSubject" placeholder="What is your issue about?"></div><div class="form-group"><label>Message</label><textarea id="supportMessage" rows="5" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; color:white;" placeholder="Describe your issue..."></textarea></div><button class="btn-save" onclick="sendSupport()">Send Message</button></div></div>
+                    <div class="card"><div class="card-header"><h3>FAQ</h3></div><div class="card-body"><div style="margin-bottom: 16px;"><strong>How do I deposit funds?</strong><p style="color:#8B93A5; font-size:13px; margin-top:4px;">Go to Profile → Deposit button to add funds to your account.</p></div><div style="margin-bottom: 16px;"><strong>How long do withdrawals take?</strong><p style="color:#8B93A5; font-size:13px; margin-top:4px;">Withdrawals are processed within 24-48 hours after approval.</p></div><div><strong>What is the minimum trade amount?</strong><p style="color:#8B93A5; font-size:13px; margin-top:4px;">Minimum trade amount is $10 USD.</p></div></div></div>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/profile.js"></script>
+    <script>
+        let currentUser = null;
+        let userTrades = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await waitForAuth();
+            if (typeof auth !== 'undefined') currentUser = auth.getUser();
+            if (!currentUser) { window.location.href = 'login.html'; return; }
+            setupNavigation();
+            loadUserData();
+            loadTrades();
+            setupEventListeners();
+        });
+
+        function waitForAuth() { return new Promise(r => { if (typeof auth !== 'undefined') r(); else setTimeout(() => r(), 100); }); }
+
+        function setupNavigation() {
+            const userSection = document.getElementById('userSection');
+            const mobileUserSection = document.getElementById('mobileUserSection');
+            const isAdmin = currentUser.email === 'ephremgojo@gmail.com';
+            const userName = currentUser.name || currentUser.email.split('@')[0];
+            userSection.innerHTML = `<div class="user-info"><div class="user-avatar">${userName.charAt(0)}</div><div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div></div>${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin</a>' : ''}<button class="logout-btn" onclick="handleLogout()">Logout</button>`;
+            mobileUserSection.innerHTML = `<div style="padding:12px;color:white;"><strong>${userName}</strong> ${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin</a>' : ''}<button class="logout-btn" onclick="handleLogout()">Logout</button>`;
+        }
+
+        function loadUserData() {
+            document.getElementById('displayName').textContent = currentUser.name || 'N/A';
+            document.getElementById('displayEmail').textContent = currentUser.email;
+            document.getElementById('displayMemberSince').textContent = currentUser.created_at ? new Date(currentUser.created_at).toLocaleDateString() : 'N/A';
+            document.getElementById('displayBalance').textContent = `$${(currentUser.balance || 0).toLocaleString()}`;
+            const kycStatus = currentUser.kyc_status || 'pending';
+            const kycSpan = document.getElementById('displayKyc');
+            kycSpan.textContent = kycStatus === 'verified' ? 'Verified ✓' : (kycStatus === 'pending' ? 'Pending Review' : 'Not Verified');
+            kycSpan.className = `kyc-badge kyc-${kycStatus === 'verified' ? 'verified' : (kycStatus === 'pending' ? 'pending' : 'none')}`;
+            document.getElementById('updateFullName').value = currentUser.name || '';
+            document.getElementById('updatePhone').value = currentUser.phone || '';
+            document.getElementById('updateCountry').value = currentUser.country || '';
+            document.getElementById('kycFullName').value = currentUser.name || '';
+        }
+
+        function loadTrades() {
+            const trades = JSON.parse(localStorage.getItem(`trades_${currentUser.id}`) || '[]');
+            userTrades = trades;
+            const totalTrades = trades.length;
+            const closedTrades = trades.filter(t => t.status === 'closed');
+            const winningTrades = closedTrades.filter(t => (t.pnl || 0) > 0).length;
+            const winRate = closedTrades.length > 0 ? (winningTrades / closedTrades.length * 100).toFixed(1) : 0;
+            const totalVolume = trades.reduce((sum, t) => sum + (t.amount || 0), 0);
+            document.getElementById('statTotalTrades').textContent = totalTrades;
+            document.getElementById('statWinRate').textContent = `${winRate}%`;
+            document.getElementById('statTotalVolume').textContent = `$${totalVolume.toLocaleString()}`;
+            
+            const tbody = document.getElementById('tradeHistoryBody');
+            if (trades.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No trades yet</td></tr>'; return; }
+            tbody.innerHTML = trades.slice().reverse().map(t => `<tr><td>${new Date(t.created_at).toLocaleDateString()}</td><td>${t.symbol || 'N/A'}</td><td class="${t.type === 'buy' ? 'positive' : 'negative'}">${t.type?.toUpperCase() || 'N/A'}</td><td>$${(t.amount || 0).toLocaleString()}</td><td class="${(t.pnl || 0) >= 0 ? 'positive' : 'negative'}">${(t.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(t.pnl || 0).toLocaleString()}</td><td><span class="kyc-badge ${t.status === 'open' ? 'kyc-pending' : 'kyc-verified'}">${t.status || 'N/A'}</span></td></tr>`).join('');
+        }
+
+        function setupEventListeners() {
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    const tab = item.dataset.tab;
+                    document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+                    if (tab === 'profile') document.getElementById('profileTab').style.display = 'block';
+                    if (tab === 'history') document.getElementById('historyTab').style.display = 'block';
+                    if (tab === 'kyc') document.getElementById('kycTab').style.display = 'block';
+                    if (tab === 'update') document.getElementById('updateTab').style.display = 'block';
+                    if (tab === 'support') document.getElementById('supportTab').style.display = 'block';
+                });
+            });
+            document.getElementById('updateProfileForm').addEventListener('submit', async (e) => { e.preventDefault(); await updateProfile(); });
+            document.getElementById('mobileMenuBtn').addEventListener('click', () => document.getElementById('mobileMenu').classList.toggle('show'));
+        }
+
+        async function updateProfile() {
+            const fullName = document.getElementById('updateFullName').value;
+            const phone = document.getElementById('updatePhone').value;
+            const country = document.getElementById('updateCountry').value;
+            const currentPass = document.getElementById('currentPassword').value;
+            const newPass = document.getElementById('newPassword').value;
+            const confirmPass = document.getElementById('confirmNewPassword').value;
+            
+            if (newPass && newPass !== confirmPass) { alert('New passwords do not match'); return; }
+            if (newPass && newPass.length < 8) { alert('Password must be at least 8 characters'); return; }
+            if (currentPass && currentPass !== currentUser.password) { alert('Current password is incorrect'); return; }
+            
+            currentUser.name = fullName;
+            currentUser.phone = phone;
+            currentUser.country = country;
+            if (newPass) currentUser.password = newPass;
+            
+            if (localStorage.getItem('pocket_user')) localStorage.setItem('pocket_user', JSON.stringify(currentUser));
+            if (sessionStorage.getItem('pocket_user')) sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
+            
+            const users = JSON.parse(localStorage.getItem('pockettrading_users') || '[]');
+            const index = users.findIndex(u => u.id === currentUser.id);
+            if (index !== -1) users[index] = currentUser;
+            localStorage.setItem('pockettrading_users', JSON.stringify(users));
+            
+            alert('Profile updated successfully!');
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmNewPassword').value = '';
+            loadUserData();
+        }
+
+        function submitKYC() {
+            const fullName = document.getElementById('kycFullName').value;
+            const dob = document.getElementById('kycDob').value;
+            const idType = document.getElementById('kycIdType').value;
+            if (!fullName || !dob || !idType) { alert('Please fill all fields'); return; }
+            currentUser.kyc_status = 'pending';
+            if (localStorage.getItem('pocket_user')) localStorage.setItem('pocket_user', JSON.stringify(currentUser));
+            const users = JSON.parse(localStorage.getItem('pockettrading_users') || '[]');
+            const index = users.findIndex(u => u.id === currentUser.id);
+            if (index !== -1) users[index] = currentUser;
+            localStorage.setItem('pockettrading_users', JSON.stringify(users));
+            document.getElementById('kycForm').style.display = 'none';
+            document.getElementById('kycPendingMessage').style.display = 'block';
+            alert('KYC documents submitted for review!');
+            loadUserData();
+        }
+
+        function sendSupport() {
+            const subject = document.getElementById('supportSubject').value;
+            const message = document.getElementById('supportMessage').value;
+            if (!subject || !message) { alert('Please fill all fields'); return; }
+            alert(`Support ticket submitted!\nSubject: ${subject}\nMessage: ${message}\n\nWe will respond within 24 hours.`);
+            document.getElementById('supportSubject').value = '';
+            document.getElementById('supportMessage').value = '';
+        }
+
+        function deleteAccount() {
+            if (confirm('Are you sure you want to delete your account? This cannot be undone!')) {
+                localStorage.removeItem('pocket_user');
+                sessionStorage.removeItem('pocket_user');
+                localStorage.removeItem(`trades_${currentUser.id}`);
+                const users = JSON.parse(localStorage.getItem('pockettrading_users') || '[]');
+                const filtered = users.filter(u => u.id !== currentUser.id);
+                localStorage.setItem('pockettrading_users', JSON.stringify(filtered));
+                window.location.href = 'home.html';
+            }
+        }
+
+        window.handleLogout = () => { if (auth?.logout) auth.logout(); else { localStorage.clear(); sessionStorage.clear(); window.location.href = 'home.html'; } };
+        window.submitKYC = submitKYC;
+        window.sendSupport = sendSupport;
+        window.deleteAccount = deleteAccount;
+    </script>
 </body>
 </html>
