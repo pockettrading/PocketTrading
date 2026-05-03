@@ -58,7 +58,12 @@
             color: transparent;
         }
 
-        .nav-links { display: flex; gap: 8px; align-items: center; }
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
         .nav-link {
             padding: 8px 20px;
             border-radius: 40px;
@@ -72,7 +77,11 @@
             color: #00D897;
         }
 
-        .user-section { display: flex; align-items: center; gap: 16px; }
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
         .user-info {
             display: flex;
             align-items: center;
@@ -92,7 +101,10 @@
             justify-content: center;
             font-size: 18px;
         }
-        .user-name { font-size: 14px; font-weight: 600; }
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
         .admin-badge {
             font-size: 10px;
             background: linear-gradient(135deg, #00D897, #00B8A0);
@@ -103,7 +115,8 @@
         }
         .admin-link {
             padding: 8px 16px;
-            background: rgba(0, 216, 151, 0.1);
+            background: rgba(0, 216, 151, 0.15);
+            border: 1px solid rgba(0, 216, 151, 0.3);
             border-radius: 40px;
             color: #00D897;
             text-decoration: none;
@@ -119,6 +132,34 @@
             cursor: pointer;
             font-weight: 500;
         }
+        .guest-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .btn-login, .btn-register {
+            padding: 8px 24px;
+            border-radius: 40px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-login {
+            background: transparent;
+            border: 1px solid rgba(0, 216, 151, 0.5);
+            color: #00D897;
+        }
+        .btn-login:hover {
+            background: rgba(0, 216, 151, 0.1);
+        }
+        .btn-register {
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            color: white;
+        }
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 216, 151, 0.3);
+        }
+
         .mobile-menu-btn {
             display: none;
             background: none;
@@ -148,17 +189,19 @@
             border-radius: 12px;
         }
 
-        /* Main Content */
+        /* Main Content - Wider Form */
         .main-content {
             margin-top: 70px;
             padding: 32px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 70px);
         }
 
-        /* Deposit Card */
         .deposit-card {
+            max-width: 700px;
+            width: 100%;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 24px;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -170,13 +213,11 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             background: rgba(0, 0, 0, 0.2);
         }
-
         .card-header h1 {
             font-size: 28px;
             font-weight: 700;
             margin-bottom: 8px;
         }
-
         .card-header p {
             color: #8B93A5;
             font-size: 14px;
@@ -206,26 +247,13 @@
             color: #00D897;
         }
 
-        /* Form Styles */
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            color: #D1D5DB;
-        }
-
+        /* Currency Selector */
         .currency-selector {
             display: flex;
             gap: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             flex-wrap: wrap;
         }
-
         .currency-btn {
             flex: 1;
             padding: 12px;
@@ -236,41 +264,46 @@
             cursor: pointer;
             transition: all 0.2s;
             text-align: center;
+            font-weight: 600;
         }
-
         .currency-btn.active {
             background: linear-gradient(135deg, #00D897, #00B8A0);
             border-color: transparent;
         }
-
         .currency-btn:hover {
             border-color: #00D897;
         }
 
+        /* Amount Input */
+        .amount-section {
+            margin-bottom: 24px;
+        }
+        .amount-label {
+            font-size: 13px;
+            color: #8B93A5;
+            margin-bottom: 8px;
+            display: block;
+        }
         .amount-input {
             width: 100%;
-            padding: 16px;
+            padding: 14px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            border-radius: 12px;
             color: white;
-            font-size: 24px;
+            font-size: 18px;
             font-weight: 600;
-            text-align: center;
         }
-
         .amount-input:focus {
             outline: none;
             border-color: #00D897;
         }
-
         .preset-amounts {
             display: flex;
             gap: 12px;
             margin-top: 12px;
             flex-wrap: wrap;
         }
-
         .preset-btn {
             flex: 1;
             padding: 8px;
@@ -282,54 +315,10 @@
             font-size: 14px;
             transition: all 0.2s;
         }
-
         .preset-btn:hover {
             border-color: #00D897;
             color: #00D897;
         }
-
-        /* Payment Methods */
-        .payment-methods {
-            margin-bottom: 24px;
-        }
-
-        .method-title {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #D1D5DB;
-        }
-
-        .method-options {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        .method-option {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 16px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .method-option.active {
-            border-color: #00D897;
-            background: rgba(0, 216, 151, 0.1);
-        }
-
-        .method-option:hover {
-            border-color: #00D897;
-        }
-
-        .method-icon { font-size: 28px; }
-        .method-name { font-weight: 500; }
 
         /* Crypto Address Section */
         .crypto-address {
@@ -339,13 +328,11 @@
             margin-bottom: 24px;
             text-align: center;
         }
-
         .address-label {
             font-size: 12px;
             color: #8B93A5;
             margin-bottom: 8px;
         }
-
         .address-value {
             font-size: 14px;
             font-family: monospace;
@@ -355,7 +342,6 @@
             word-break: break-all;
             margin-bottom: 12px;
         }
-
         .copy-btn {
             padding: 8px 20px;
             background: rgba(0, 216, 151, 0.15);
@@ -366,33 +352,39 @@
             font-size: 13px;
         }
 
-        /* Summary */
+        /* Summary Row */
         .summary {
             background: rgba(0, 0, 0, 0.2);
             border-radius: 16px;
             padding: 16px;
             margin-bottom: 24px;
-        }
-
-        .summary-row {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
-            font-size: 14px;
+            flex-wrap: wrap;
+            gap: 16px;
         }
-
-        .summary-row.total {
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            margin-top: 8px;
-            padding-top: 12px;
+        .summary-item {
+            flex: 1;
+            text-align: center;
+        }
+        .summary-label {
+            font-size: 12px;
+            color: #8B93A5;
+            margin-bottom: 4px;
+        }
+        .summary-value {
+            font-size: 18px;
             font-weight: 700;
-            font-size: 16px;
+        }
+        .summary-value.total {
+            color: #00D897;
+            font-size: 20px;
         }
 
         /* Submit Button */
         .submit-btn {
             width: 100%;
-            padding: 16px;
+            padding: 14px;
             background: linear-gradient(135deg, #00D897, #00B8A0);
             border: none;
             border-radius: 40px;
@@ -402,19 +394,11 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-
         .submit-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(0, 216, 151, 0.3);
         }
 
-        .submit-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Info Text */
         .info-text {
             text-align: center;
             font-size: 12px;
@@ -424,36 +408,28 @@
 
         /* Responsive */
         @media (max-width: 768px) {
-            .nav-links, .user-section { display: none; }
+            .nav-links, .user-section, .guest-buttons { display: none; }
             .mobile-menu-btn { display: block; }
             .main-content { padding: 16px; }
-            .currency-selector { gap: 8px; }
-            .currency-btn { padding: 8px; font-size: 12px; }
-            .method-options { flex-direction: column; }
+            .deposit-card { max-width: 100%; }
+            .summary { flex-direction: column; }
+            .summary-item { text-align: left; }
         }
     </style>
 </head>
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <a href="dashboard.html" class="logo"><span class="logo-icon">📈</span><span class="logo-text">PocketTrading</span></a>
-            <div class="nav-links">
-                <a href="dashboard.html" class="nav-link">Dashboard</a>
-                <a href="markets.html" class="nav-link">Markets</a>
-                <a href="trades.html" class="nav-link">Trades</a>
-                <a href="profile.html" class="nav-link">My Profile</a>
-            </div>
-            <div class="user-section" id="userSection"></div>
+            <a href="index.html" class="logo">
+                <span class="logo-icon">📈</span>
+                <span class="logo-text">PocketTrading</span>
+            </a>
+            <div class="nav-links" id="navLinks"></div>
+            <div id="rightNav"></div>
             <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
         </div>
     </nav>
-    <div class="mobile-menu" id="mobileMenu">
-        <a href="dashboard.html" class="mobile-nav-link">📊 Dashboard</a>
-        <a href="markets.html" class="mobile-nav-link">📈 Markets</a>
-        <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
-        <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
-        <div id="mobileUserSection"></div>
-    </div>
+    <div class="mobile-menu" id="mobileMenu"></div>
 
     <div class="main-content">
         <div class="deposit-card">
@@ -462,26 +438,19 @@
                 <p>Add funds to your trading account</p>
             </div>
             <div class="card-body">
-                <!-- Current Balance -->
                 <div class="balance-display">
                     <div class="balance-label">Current Balance</div>
                     <div class="balance-value" id="currentBalance">$0.00</div>
                 </div>
 
-                <!-- Currency Selection -->
-                <div class="form-group">
-                    <label>Select Currency</label>
-                    <div class="currency-selector" id="currencySelector">
-                        <button class="currency-btn active" data-currency="USDT">USDT</button>
-                        <button class="currency-btn" data-currency="BTC">BTC</button>
-                        <button class="currency-btn" data-currency="ETH">ETH</button>
-                        <button class="currency-btn" data-currency="SOL">SOL</button>
-                    </div>
+                <div class="currency-selector" id="currencySelector">
+                    <button class="currency-btn active" data-currency="USDT">USDT</button>
+                    <button class="currency-btn" data-currency="BTC">BTC</button>
+                    <button class="currency-btn" data-currency="ETH">ETH</button>
                 </div>
 
-                <!-- Amount Input -->
-                <div class="form-group">
-                    <label>Amount</label>
+                <div class="amount-section">
+                    <div class="amount-label">Amount</div>
                     <input type="number" id="depositAmount" class="amount-input" placeholder="Enter amount" min="10" step="10">
                     <div class="preset-amounts">
                         <button class="preset-btn" data-amount="50">$50</button>
@@ -491,84 +460,27 @@
                     </div>
                 </div>
 
-                <!-- Payment Method -->
-                <div class="payment-methods">
-                    <div class="method-title">Payment Method</div>
-                    <div class="method-options" id="methodOptions">
-                        <div class="method-option active" data-method="crypto">
-                            <span class="method-icon">🪙</span>
-                            <span class="method-name">Cryptocurrency</span>
-                        </div>
-                        <div class="method-option" data-method="card">
-                            <span class="method-icon">💳</span>
-                            <span class="method-name">Credit Card</span>
-                        </div>
-                        <div class="method-option" data-method="bank">
-                            <span class="method-icon">🏦</span>
-                            <span class="method-name">Bank Transfer</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Crypto Address (shown for crypto method) -->
-                <div id="cryptoAddressSection" class="crypto-address">
-                    <div class="address-label">Send USDT (TRC20) to this address:</div>
+                <div class="crypto-address" id="cryptoAddressSection">
+                    <div class="address-label" id="addressLabel">Send USDT (TRC20) to this address:</div>
                     <div class="address-value" id="cryptoAddress">TX8xKJk3g5xVHhRq2LpN7mY9wQeRtYuIoP</div>
                     <button class="copy-btn" onclick="copyAddress()">📋 Copy Address</button>
                 </div>
 
-                <!-- Credit Card Form (hidden by default) -->
-                <div id="cardForm" style="display: none;">
-                    <div class="form-group">
-                        <label>Card Number</label>
-                        <input type="text" id="cardNumber" class="amount-input" style="font-size: 16px;" placeholder="1234 5678 9012 3456">
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                        <div class="form-group">
-                            <label>Expiry Date</label>
-                            <input type="text" id="expiryDate" placeholder="MM/YY">
-                        </div>
-                        <div class="form-group">
-                            <label>CVV</label>
-                            <input type="password" id="cvv" placeholder="123" maxlength="4">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Cardholder Name</label>
-                        <input type="text" id="cardholderName" placeholder="Name on card">
-                    </div>
-                </div>
-
-                <!-- Bank Transfer Info (hidden by default) -->
-                <div id="bankInfo" style="display: none;" class="crypto-address">
-                    <div class="address-label">Bank Transfer Details</div>
-                    <div class="address-value">
-                        Bank: First Global Bank<br>
-                        Account Name: PocketTrading Ltd<br>
-                        Account Number: 1234567890<br>
-                        Routing Number: 021000021<br>
-                        SWIFT: FGBAUS33<br>
-                        Reference: DEPOSIT_[Your Email]
-                    </div>
-                </div>
-
-                <!-- Summary -->
                 <div class="summary">
-                    <div class="summary-row">
-                        <span>Deposit Amount</span>
-                        <span id="summaryAmount">$0.00</span>
+                    <div class="summary-item">
+                        <div class="summary-label">Deposit Amount</div>
+                        <div class="summary-value" id="summaryAmount">$0.00</div>
                     </div>
-                    <div class="summary-row">
-                        <span>Network Fee</span>
-                        <span id="networkFee">$0.00</span>
+                    <div class="summary-item">
+                        <div class="summary-label">Network Fee</div>
+                        <div class="summary-value" id="networkFee">$1.00</div>
                     </div>
-                    <div class="summary-row total">
-                        <span>Total to Pay</span>
-                        <span id="totalAmount" style="color: #00D897;">$0.00</span>
+                    <div class="summary-item">
+                        <div class="summary-label">Total to Pay</div>
+                        <div class="summary-value total" id="totalAmount">$1.00</div>
                     </div>
                 </div>
 
-                <!-- Submit Button -->
                 <button class="submit-btn" id="submitDeposit">Submit Deposit Request</button>
                 <div class="info-text">
                     ⏱️ Deposits are processed within 5-30 minutes. Minimum deposit: $10
@@ -582,21 +494,18 @@
     <script>
         let currentUser = null;
         let selectedCurrency = 'USDT';
-        let selectedMethod = 'crypto';
-
-        // Crypto addresses for different currencies
-        const cryptoAddresses = {
+        
+        // Default addresses (will be overridden by admin settings)
+        let cryptoAddresses = {
             USDT: 'TX8xKJk3g5xVHhRq2LpN7mY9wQeRtYuIoP',
             BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-            ETH: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5',
-            SOL: '5vEt4uR6LrY7ZxVkQpWnM8jHsK9cFdGtYhJkLzXcVb'
+            ETH: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5'
         };
-
+        
         const networkFees = {
             USDT: 1.00,
             BTC: 0.0002,
-            ETH: 0.005,
-            SOL: 0.01
+            ETH: 0.005
         };
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -608,6 +517,7 @@
                 return;
             }
             
+            await loadCryptoAddresses();
             setupNavigation();
             updateBalanceDisplay();
             setupEventListeners();
@@ -621,27 +531,62 @@
             });
         }
 
+        async function loadCryptoAddresses() {
+            try {
+                // Load from localStorage first
+                const savedAddresses = localStorage.getItem('crypto_deposit_addresses');
+                if (savedAddresses) {
+                    cryptoAddresses = JSON.parse(savedAddresses);
+                }
+                
+                // Try to load from Supabase
+                if (typeof supabaseDB !== 'undefined') {
+                    const settings = await supabaseDB.getAll('platform_settings');
+                    const addressSetting = settings?.find(s => s.key === 'crypto_deposit_addresses');
+                    if (addressSetting && addressSetting.value) {
+                        cryptoAddresses = JSON.parse(addressSetting.value);
+                        localStorage.setItem('crypto_deposit_addresses', JSON.stringify(cryptoAddresses));
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading crypto addresses:', error);
+            }
+            updateCryptoAddress();
+        }
+
         function setupNavigation() {
-            const userSection = document.getElementById('userSection');
-            const mobileUserSection = document.getElementById('mobileUserSection');
+            const navLinks = document.getElementById('navLinks');
+            const rightNav = document.getElementById('rightNav');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
             const isAdmin = currentUser.email === 'ephremgojo@gmail.com';
             const userName = currentUser.name || currentUser.email.split('@')[0];
             
-            userSection.innerHTML = `
-                <div class="user-info">
-                    <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
-                    <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
-                </div>
-                ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin</a>' : ''}
-                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            navLinks.innerHTML = `
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="markets.html" class="nav-link">Markets</a>
+                <a href="trades.html" class="nav-link">Trades</a>
+                <a href="profile.html" class="nav-link">My Profile</a>
             `;
             
-            mobileUserSection.innerHTML = `
-                <div style="padding:12px;color:white;border-bottom:1px solid rgba(255,255,255,0.1);">
-                    <strong>${userName}</strong> ${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}
+            rightNav.innerHTML = `
+                <div class="user-section">
+                    <div class="user-info">
+                        <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
+                        <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
+                    </div>
+                    ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
+                    <button class="logout-btn" onclick="handleLogout()">Logout</button>
                 </div>
+            `;
+            
+            mobileMenu.innerHTML = `
+                <a href="index.html" class="mobile-nav-link">🏠 Home</a>
+                <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
+                <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+                <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
                 ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
-                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+                <button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>
             `;
         }
 
@@ -650,27 +595,31 @@
             document.getElementById('currentBalance').textContent = `$${balance.toLocaleString()}`;
         }
 
-        function updateSummary() {
-            const amount = parseFloat(document.getElementById('depositAmount').value) || 0;
-            const fee = selectedMethod === 'crypto' ? (networkFees[selectedCurrency] || 1) : 0;
-            const total = amount + fee;
-            
-            document.getElementById('summaryAmount').textContent = `$${amount.toFixed(2)}`;
-            document.getElementById('networkFee').textContent = `$${fee.toFixed(2)}`;
-            document.getElementById('totalAmount').textContent = `$${total.toFixed(2)}`;
-        }
-
         function updateCryptoAddress() {
             const address = cryptoAddresses[selectedCurrency] || cryptoAddresses['USDT'];
-            document.getElementById('cryptoAddress').textContent = address;
-            const addressLabel = document.querySelector('#cryptoAddressSection .address-label');
+            const addressEl = document.getElementById('cryptoAddress');
+            const addressLabel = document.getElementById('addressLabel');
+            
+            if (addressEl) addressEl.textContent = address;
             if (addressLabel) {
-                addressLabel.textContent = `Send ${selectedCurrency} (TRC20) to this address:`;
+                let network = 'TRC20';
+                if (selectedCurrency === 'BTC') network = 'BTC';
+                if (selectedCurrency === 'ETH') network = 'ERC20';
+                addressLabel.textContent = `Send ${selectedCurrency} (${network}) to this address:`;
             }
         }
 
+        function updateSummary() {
+            const amount = parseFloat(document.getElementById('depositAmount').value) || 0;
+            const fee = networkFees[selectedCurrency] || 1;
+            const total = amount + fee;
+            
+            document.getElementById('summaryAmount').textContent = `$${amount.toFixed(2)}`;
+            document.getElementById('networkFee').textContent = `$${fee.toFixed(4)}`;
+            document.getElementById('totalAmount').textContent = `$${total.toFixed(4)}`;
+        }
+
         function setupEventListeners() {
-            // Currency selector
             document.querySelectorAll('.currency-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.currency-btn').forEach(b => b.classList.remove('active'));
@@ -681,7 +630,6 @@
                 });
             });
             
-            // Preset amounts
             document.querySelectorAll('.preset-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const amount = btn.dataset.amount;
@@ -690,29 +638,9 @@
                 });
             });
             
-            // Amount input
             document.getElementById('depositAmount').addEventListener('input', updateSummary);
-            
-            // Payment method
-            document.querySelectorAll('.method-option').forEach(opt => {
-                opt.addEventListener('click', () => {
-                    document.querySelectorAll('.method-option').forEach(o => o.classList.remove('active'));
-                    opt.classList.add('active');
-                    selectedMethod = opt.dataset.method;
-                    
-                    // Show/hide relevant sections
-                    document.getElementById('cryptoAddressSection').style.display = selectedMethod === 'crypto' ? 'block' : 'none';
-                    document.getElementById('cardForm').style.display = selectedMethod === 'card' ? 'block' : 'none';
-                    document.getElementById('bankInfo').style.display = selectedMethod === 'bank' ? 'block' : 'none';
-                    
-                    updateSummary();
-                });
-            });
-            
-            // Submit button
             document.getElementById('submitDeposit').addEventListener('click', submitDeposit);
             
-            // Mobile menu
             const mobileBtn = document.getElementById('mobileMenuBtn');
             const mobileMenu = document.getElementById('mobileMenu');
             if (mobileBtn && mobileMenu) {
@@ -728,22 +656,9 @@
                 return;
             }
             
-            if (selectedMethod === 'card') {
-                const cardNumber = document.getElementById('cardNumber').value;
-                const expiryDate = document.getElementById('expiryDate').value;
-                const cvv = document.getElementById('cvv').value;
-                const cardholderName = document.getElementById('cardholderName').value;
-                
-                if (!cardNumber || !expiryDate || !cvv || !cardholderName) {
-                    alert('Please fill in all card details');
-                    return;
-                }
-            }
-            
-            const fee = selectedMethod === 'crypto' ? (networkFees[selectedCurrency] || 1) : 0;
+            const fee = networkFees[selectedCurrency] || 1;
             const total = amount + fee;
             
-            // Create deposit request
             const depositRequest = {
                 id: Date.now(),
                 user_id: currentUser.id,
@@ -751,66 +666,42 @@
                 user_name: currentUser.name,
                 amount: amount,
                 currency: selectedCurrency,
-                method: selectedMethod,
                 fee: fee,
                 total: total,
                 status: 'pending',
                 date: new Date().toISOString()
             };
             
-            // Save to localStorage
             const existingRequests = JSON.parse(localStorage.getItem('deposit_requests') || '[]');
             existingRequests.push(depositRequest);
             localStorage.setItem('deposit_requests', JSON.stringify(existingRequests));
             
-            // Also save to user's personal deposit history
             const userDeposits = JSON.parse(localStorage.getItem(`deposits_${currentUser.id}`) || '[]');
             userDeposits.push(depositRequest);
             localStorage.setItem(`deposits_${currentUser.id}`, JSON.stringify(userDeposits));
             
-            // Try to save to Supabase
             if (typeof supabaseDB !== 'undefined') {
                 try {
                     await supabaseDB.insert('deposit_requests', depositRequest);
                 } catch (e) {
-                    console.log('Supabase save failed, using localStorage only');
+                    console.log('Supabase save failed');
                 }
             }
             
-            alert(`Deposit request submitted!\nAmount: $${amount.toFixed(2)} ${selectedCurrency}\nMethod: ${selectedMethod.toUpperCase()}\n\nYour deposit will be processed within 5-30 minutes.`);
+            alert(`Deposit request submitted!\nAmount: $${amount.toFixed(2)} ${selectedCurrency}\n\nYour deposit will be processed within 5-30 minutes.`);
             
-            // Reset form
             document.getElementById('depositAmount').value = '';
             updateSummary();
             
-            // Refresh balance (in case of auto-approval for demo)
-            if (currentUser.email === 'ephremgojo@gmail.com' || currentUser.email === 'demo@example.com') {
-                // Auto-approve for admin and demo user for testing
+            // Auto-approve for admin/demo users
+            if (currentUser.email === 'ephremgojo@gmail.com') {
                 const newBalance = (currentUser.balance || 0) + amount;
                 currentUser.balance = newBalance;
-                
                 if (typeof auth !== 'undefined' && auth.updateBalance) {
-                    await auth.updateBalance(currentUser.id, amount, {
-                        type: 'deposit',
-                        amount: amount,
-                        status: 'auto_approved'
-                    });
+                    await auth.updateBalance(currentUser.id, amount, { type: 'deposit', auto_approved: true });
                 }
-                
-                // Update storage
-                if (localStorage.getItem('pocket_user')) {
-                    const user = JSON.parse(localStorage.getItem('pocket_user'));
-                    user.balance = newBalance;
-                    localStorage.setItem('pocket_user', JSON.stringify(user));
-                }
-                if (sessionStorage.getItem('pocket_user')) {
-                    const user = JSON.parse(sessionStorage.getItem('pocket_user'));
-                    user.balance = newBalance;
-                    sessionStorage.setItem('pocket_user', JSON.stringify(user));
-                }
-                
                 updateBalanceDisplay();
-                alert(`✅ Deposit auto-approved! New balance: $${newBalance.toFixed(2)}`);
+                alert(`✅ Auto-approved! New balance: $${newBalance.toFixed(2)}`);
             }
         }
 
@@ -821,13 +712,8 @@
         };
 
         window.handleLogout = function() {
-            if (typeof auth !== 'undefined' && auth.logout) {
-                auth.logout();
-            } else {
-                localStorage.removeItem('pocket_user');
-                sessionStorage.removeItem('pocket_user');
-                window.location.href = 'home.html';
-            }
+            if (typeof auth !== 'undefined' && auth.logout) auth.logout();
+            else { localStorage.clear(); sessionStorage.clear(); window.location.href = 'index.html'; }
         };
     </script>
 </body>
