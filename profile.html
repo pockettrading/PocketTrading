@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Dashboard - PocketTrading</title>
+    <title>My Profile - PocketTrading</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -59,7 +59,12 @@
             color: transparent;
         }
 
-        .nav-links { display: flex; gap: 8px; align-items: center; }
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
         .nav-link {
             padding: 8px 20px;
             border-radius: 40px;
@@ -73,7 +78,12 @@
             color: #00D897;
         }
 
-        .user-section { display: flex; align-items: center; gap: 12px; }
+        /* User Section - Logged In */
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
         .user-info {
             display: flex;
             align-items: center;
@@ -93,7 +103,10 @@
             justify-content: center;
             font-size: 18px;
         }
-        .user-name { font-size: 14px; font-weight: 600; }
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
         .admin-badge {
             font-size: 10px;
             background: linear-gradient(135deg, #00D897, #00B8A0);
@@ -101,6 +114,16 @@
             border-radius: 20px;
             color: white;
             margin-left: 6px;
+        }
+        .admin-link {
+            padding: 8px 16px;
+            background: rgba(0, 216, 151, 0.15);
+            border: 1px solid rgba(0, 216, 151, 0.3);
+            border-radius: 40px;
+            color: #00D897;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
         }
         .logout-btn {
             padding: 8px 20px;
@@ -111,6 +134,8 @@
             cursor: pointer;
             font-weight: 500;
         }
+
+        /* Mobile Menu */
         .mobile-menu-btn {
             display: none;
             background: none;
@@ -440,6 +465,15 @@
             font-size: 14px;
         }
 
+        /* Recent Activity */
+        .activity-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
         /* Responsive */
         @media (max-width: 900px) {
             .profile-layout { flex-direction: column; }
@@ -463,23 +497,12 @@
                 <span class="logo-icon">📈</span>
                 <span class="logo-text">PocketTrading</span>
             </a>
-            <div class="nav-links">
-                <a href="index.html" class="nav-link">Home</a>
-                <a href="markets.html" class="nav-link">Markets</a>
-                <a href="trades.html" class="nav-link">Trades</a>
-                <a href="profile.html" class="nav-link active">My Profile</a>
-            </div>
-            <div class="user-section" id="userSection"></div>
+            <div class="nav-links" id="navLinks"></div>
+            <div id="rightNav"></div>
             <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
         </div>
     </nav>
-    <div class="mobile-menu" id="mobileMenu">
-        <a href="index.html" class="mobile-nav-link">🏠 Home</a>
-        <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
-        <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
-        <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
-        <div id="mobileUserSection"></div>
-    </div>
+    <div class="mobile-menu" id="mobileMenu"></div>
 
     <div class="main-content">
         <div class="profile-layout">
@@ -565,7 +588,6 @@
                         </div>
                     </div>
 
-                    <!-- Recent Activity -->
                     <div class="card">
                         <div class="card-header"><h3>Recent Activity</h3></div>
                         <div class="card-body">
@@ -628,7 +650,13 @@
         document.addEventListener('DOMContentLoaded', async () => {
             await waitForAuth();
             if (typeof auth !== 'undefined') currentUser = auth.getUser();
-            if (!currentUser) { window.location.href = 'login.html'; return; }
+            
+            // Redirect to login if not authenticated
+            if (!currentUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
             setupNavigation();
             await loadUserData();
             await loadTrades();
@@ -641,27 +669,48 @@
             document.getElementById('dashboardTab').style.display = 'block';
         });
 
-        function waitForAuth() { return new Promise(r => { if (typeof auth !== 'undefined') r(); else setTimeout(() => r(), 100); }); }
+        function waitForAuth() {
+            return new Promise((resolve) => {
+                if (typeof auth !== 'undefined') resolve();
+                else setTimeout(() => resolve(), 100);
+            });
+        }
 
         function setupNavigation() {
-            const userSection = document.getElementById('userSection');
-            const mobileUserSection = document.getElementById('mobileUserSection');
+            const navLinks = document.getElementById('navLinks');
+            const rightNav = document.getElementById('rightNav');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
             const isAdmin = currentUser.email === 'ephremgojo@gmail.com';
             const userName = currentUser.name || currentUser.email.split('@')[0];
             
-            userSection.innerHTML = `
-                <div class="user-info">
-                    <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
-                    <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
-                </div>
-                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            // Desktop navigation for logged-in users
+            navLinks.innerHTML = `
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="markets.html" class="nav-link">Markets</a>
+                <a href="trades.html" class="nav-link">Trades</a>
+                <a href="profile.html" class="nav-link active">My Profile</a>
             `;
             
-            mobileUserSection.innerHTML = `
-                <div style="padding:12px;color:white;border-bottom:1px solid rgba(255,255,255,0.1);">
-                    <strong>${userName}</strong> ${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}
+            rightNav.innerHTML = `
+                <div class="user-section">
+                    <div class="user-info">
+                        <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
+                        <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
+                    </div>
+                    ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
+                    <button class="logout-btn" onclick="handleLogout()">Logout</button>
                 </div>
-                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            `;
+            
+            // Mobile menu
+            mobileMenu.innerHTML = `
+                <a href="index.html" class="mobile-nav-link">🏠 Home</a>
+                <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
+                <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+                <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
+                ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
+                <button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>
             `;
             
             document.getElementById('welcomeMessage').innerHTML = `Welcome back, ${userName}! 👋`;
@@ -697,8 +746,20 @@
             document.getElementById('statTotalVolume').textContent = `$${totalVolume.toLocaleString()}`;
             
             const tbody = document.getElementById('tradeHistoryBody');
-            if (trades.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No trades yet</td></tr>'; return; }
-            tbody.innerHTML = trades.slice().reverse().map(t => `<tr><td>${new Date(t.created_at).toLocaleDateString()})</td><td>${t.symbol || 'N/A'}</td><td class="${t.type === 'buy' ? 'positive' : 'negative'}">${t.type?.toUpperCase() || 'N/A'}</td><td>$${(t.amount || 0).toLocaleString()}</td><td class="${(t.pnl || 0) >= 0 ? 'positive' : 'negative'}">${(t.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(t.pnl || 0).toLocaleString()}</td><td><span class="kyc-badge ${t.status === 'open' ? 'kyc-pending' : 'kyc-verified'}">${t.status || 'N/A'}</span></td>`).join('');
+            if (trades.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No trades yet</td></tr>';
+                return;
+            }
+            tbody.innerHTML = trades.slice().reverse().map(t => `
+                <tr>
+                    <td>${new Date(t.created_at).toLocaleDateString()}</td>
+                    <td>${t.symbol || 'N/A'}</td>
+                    <td class="${t.type === 'buy' ? 'positive' : 'negative'}">${t.type?.toUpperCase() || 'N/A'}</td>
+                    <td>$${(t.amount || 0).toLocaleString()}</td>
+                    <td class="${(t.pnl || 0) >= 0 ? 'positive' : 'negative'}">${(t.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(t.pnl || 0).toLocaleString()}</td>
+                    <td><span class="kyc-badge ${t.status === 'open' ? 'kyc-pending' : 'kyc-verified'}">${t.status || 'N/A'}</span></td>
+                </tr>
+            `).join('');
         }
 
         function updateDashboard() {
@@ -759,7 +820,7 @@
                 return;
             }
             container.innerHTML = recentTrades.map(t => `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <div class="activity-item">
                     <div><strong>${t.symbol || 'Trade'}</strong><br><small style="color:#8B93A5">${t.type?.toUpperCase()}</small></div>
                     <div>$${(t.amount || 0).toLocaleString()}</div>
                     <div class="${(t.pnl || 0) >= 0 ? 'positive' : 'negative'}">${(t.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(t.pnl || 0).toLocaleString()}</div>
@@ -782,8 +843,17 @@
                     if (tab === 'support') document.getElementById('supportTab').style.display = 'block';
                 });
             });
-            document.getElementById('updateProfileForm').addEventListener('submit', async (e) => { e.preventDefault(); await updateProfile(); });
-            document.getElementById('mobileMenuBtn').addEventListener('click', () => document.getElementById('mobileMenu').classList.toggle('show'));
+            
+            document.getElementById('updateProfileForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await updateProfile();
+            });
+            
+            const mobileBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileBtn && mobileMenu) {
+                mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('show'));
+            }
         }
 
         async function updateProfile() {
@@ -857,7 +927,10 @@
             }
         }
 
-        window.handleLogout = () => { if (auth?.logout) auth.logout(); else { localStorage.clear(); sessionStorage.clear(); window.location.href = 'index.html'; } };
+        window.handleLogout = () => {
+            if (typeof auth !== 'undefined' && auth.logout) auth.logout();
+            else { localStorage.clear(); sessionStorage.clear(); window.location.href = 'index.html'; }
+        };
         window.submitKYC = submitKYC;
         window.sendSupport = sendSupport;
         window.deleteAccount = deleteAccount;
