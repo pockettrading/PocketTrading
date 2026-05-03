@@ -1,501 +1,340 @@
-// Withdraw page functionality - Supabase Integration
+// Withdrawal Page Controller - PocketTrading
 // File: js/withdraw.js
 
-let currentUser = null;
-let withdrawAmount = 0;
-
-// Admin email
-const ADMIN_EMAIL = 'ephregojo@gmail.com';
-
-// Withdrawal limits
-const MIN_WITHDRAW = 100;
-const MAX_WITHDRAW_PER_DAY = 10000;
-const WITHDRAW_FEE_PERCENT = 0.5;
-
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('Withdraw page loaded');
-    
-    if (typeof supabaseDB === 'undefined') {
-        setTimeout(() => initWithdrawPage(), 500);
-        return;
+class WithdrawManager {
+    constructor() {
+        this.currentUser = null;
+        this.selectedCurrency = 'USDT';
+        this.withdrawalFee = 1.5;
+        this.minWithdrawal = 10;
+        this.init();
     }
-    
-    await initWithdrawPage();
-});
 
-async function initWithdrawPage() {
-    await loadUser();
-    renderNavLinks();
-    renderUserInfo();
-    
-    if (!currentUser) {
-        renderLoginPrompt();
-    } else {
-        renderWithdrawInterface();
-        setupEventListeners();
-        await loadUserBalance();
+    async init() {
+        await this.waitForAuth();
+        if (typeof auth !== 'undefined') this.currentUser = auth.getUser();
+        
+        if (!this.currentUser) {
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        await this.loadSettings();
+        this.setupNavigation();
+        this.updateBalanceDisplay();
+        this.setupEventListeners();
+        this.updateSummary();
     }
-}
 
-async function loadUser() {
-    try {
-        const storedUser = localStorage.getItem('pocket_user') || sessionStorage.getItem('pocket_user');
-        if (storedUser) {
-            currentUser = JSON.parse(storedUser);
+    waitForAuth() {
+        return new Promise((resolve) => {
+            if (typeof auth !== 'undefined') resolve();
+            else setTimeout(() => resolve(), 100);
+        });
+    }
+
+    async loadSettings() {
+        try {
+            const settings = JSON.parse(localStorage.getItem('platform_settings') || '{}');
+            this.withdrawalFee = parseFloat(settings.withdrawalFee) || 1.5;
+            this.minWithdrawal = parseInt(settings.minTradeAmount) || 10;
             
-            // Verify user still exists in cloud
-            const cloudUser = await supabaseDB.getUserByEmail(currentUser.email);
-            if (cloudUser) {
-                currentUser = cloudUser;
-                currentUser.isAdmin = (currentUser.email === ADMIN_EMAIL);
-                
-                // Update session
-                if (localStorage.getItem('pocket_user')) {
-                    localStorage.setItem('pocket_user', JSON.stringify(currentUser));
-                }
-                if (sessionStorage.getItem('pocket_user')) {
-                    sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
-                }
-            } else {
-                currentUser = null;
-            }
-            console.log('User loaded:', currentUser?.email, 'Is Admin:', currentUser?.isAdmin);
-        } else {
-            console.log('Guest mode - no user logged in');
-            currentUser = null;
+            const feePercentEl = document.getElementById('feePercent');
+            if (feePercentEl) feePercentEl.textContent = this.withdrawalFee;
+        } catch (error) {
+            console.error('Error loading settings:', error);
         }
-    } catch(e) {
-        console.log('Error loading user:', e);
-        currentUser = null;
     }
-}
 
-function renderNavLinks() {
-    const navLinks = document.getElementById('navLinks');
-    if (!navLinks) return;
-    
-    // Clear existing dynamic links (keep Home, Markets, Trades)
-    const existingLinks = navLinks.querySelectorAll('.nav-link:not([href="home.html"]):not([href="markets.html"]):not([href="trade.html"])');
-    existingLinks.forEach(link => link.remove());
-    
-    // Add My Profile link only for registered users
-    if (currentUser) {
-        const profileLink = document.createElement('a');
-        profileLink.href = 'profile.html';
-        profileLink.className = 'nav-link';
-        profileLink.textContent = 'My Profile';
-        navLinks.appendChild(profileLink);
-    }
-}
-
-function renderUserInfo() {
-    const userInfo = document.getElementById('userInfo');
-    if (!userInfo) return;
-    
-    if (currentUser) {
-        const displayName = currentUser.name || currentUser.email.split('@')[0];
-        const adminBadge = currentUser.isAdmin ? '<span class="admin-badge">Admin</span>' : '';
+    setupNavigation() {
+        const navLinks = document.getElementById('navLinks');
+        const rightNav = document.getElementById('rightNav');
+        const mobileMenu = document.getElementById('mobileMenu');
         
-        let adminPanelButton = '';
-        if (currentUser.isAdmin) {
-            adminPanelButton = '<a href="admin.html" class="login-btn" style="margin-left: 0.5rem;">Admin Panel</a>';
-        }
+        const isAdmin = this.currentUser.email === 'ephremgojo@gmail.com';
+        const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
         
-        userInfo.innerHTML = `
-            <span class="username">${displayName}${adminBadge}</span>
-            ${adminPanelButton}
-            <span class="logout-link" onclick="handleLogout()">Logout</span>
+        navLinks.innerHTML = `
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="markets.html" class="nav-link">Markets</a>
+            <a href="trades.html" class="nav-link">Trades</a>
+            <a href="profile.html" class="nav-link">My Profile</a>
         `;
-    } else {
-        userInfo.innerHTML = `
-            <div class="auth-buttons">
-                <a href="login.html" class="login-btn">Login</a>
-                <a href="register.html" class="signup-btn">Sign Up</a>
-            </div>
-        `;
-    }
-}
-
-function renderLoginPrompt() {
-    const container = document.getElementById('withdrawContent');
-    if (!container) return;
-    
-    container.innerHTML = `
-        <div class="login-prompt">
-            <h3>🔒 Login Required</h3>
-            <p>Please login or create an account to withdraw funds</p>
-            <div class="login-buttons">
-                <a href="login.html" class="btn-login" style="background: transparent; color: var(--primary); padding: 10px 28px; border: 1px solid var(--primary); border-radius: 10px; text-decoration: none; font-weight: 500;">Login</a>
-                <a href="register.html" class="btn-signup" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; padding: 10px 28px; border: none; border-radius: 10px; text-decoration: none; font-weight: 500;">Sign Up</a>
-            </div>
-        </div>
-    `;
-}
-
-function renderWithdrawInterface() {
-    const container = document.getElementById('withdrawContent');
-    if (!container) return;
-    
-    const currentBalance = currentUser.balance || 0;
-    
-    container.innerHTML = `
-        <div class="withdraw-container">
-            <div class="withdraw-header">
-                <h1>Withdraw Funds</h1>
-                <p>Withdraw your funds securely to your wallet</p>
-            </div>
-
-            <div class="withdraw-card">
-                <div class="balance-info">
-                    <span class="balance-label">Available Balance</span>
-                    <span class="balance-amount" id="availableBalance">$${currentBalance.toFixed(2)}</span>
+        
+        rightNav.innerHTML = `
+            <div class="user-section">
+                <div class="user-info">
+                    <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
+                    <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
                 </div>
-
-                <form id="withdrawForm">
-                    <div class="form-group">
-                        <label>Amount (USDT)</label>
-                        <input type="number" id="withdrawAmount" placeholder="Enter amount" min="100" step="10">
-                        <div class="quick-amounts">
-                            <button type="button" class="quick-amount" data-amount="100">$100</button>
-                            <button type="button" class="quick-amount" data-amount="500">$500</button>
-                            <button type="button" class="quick-amount" data-amount="1000">$1,000</button>
-                            <button type="button" class="quick-amount" data-amount="5000">$5,000</button>
-                            <button type="button" class="quick-amount" data-amount="10000">$10,000</button>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Select Cryptocurrency</label>
-                        <select id="withdrawCrypto">
-                            <option value="BTC">Bitcoin (BTC)</option>
-                            <option value="ETH">Ethereum (ETH)</option>
-                            <option value="USDT">Tether (USDT) - ERC-20</option>
-                            <option value="BNB">Binance Coin (BNB)</option>
-                            <option value="SOL">Solana (SOL)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Wallet Address</label>
-                        <input type="text" id="walletAddress" placeholder="Enter your cryptocurrency wallet address">
-                        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: 0.25rem;">
-                            Make sure to enter the correct address for the selected cryptocurrency
-                        </div>
-                    </div>
-
-                    <div class="limit-info">
-                        <div class="limit-row">
-                            <span class="limit-label">Minimum Withdrawal:</span>
-                            <span class="limit-value">$100</span>
-                        </div>
-                        <div class="limit-row">
-                            <span class="limit-label">Maximum Withdrawal:</span>
-                            <span class="limit-value">$10,000 per day</span>
-                        </div>
-                        <div class="limit-row">
-                            <span class="limit-label">Withdrawal Fee:</span>
-                            <span class="limit-value">0.5% (min $1, max $50)</span>
-                        </div>
-                        <div class="limit-row">
-                            <span class="limit-label">You'll Receive:</span>
-                            <span class="limit-value" id="receiveAmount">$0.00</span>
-                        </div>
-                        <div class="limit-row">
-                            <span class="limit-label">Processing Time:</span>
-                            <span class="limit-value">24-48 hours</span>
-                        </div>
-                    </div>
-
-                    <div id="warningMessage" class="warning-message" style="display: none;">
-                        <p>⚠️ Insufficient balance for withdrawal</p>
-                    </div>
-
-                    <button type="submit" class="btn-submit" id="withdrawBtn">Request Withdrawal</button>
-
-                    <div class="info-note">
-                        <p>⚠️ Withdrawal requests will be processed within 24-48 hours after admin approval.</p>
-                    </div>
-                </form>
+                ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
             </div>
-        </div>
-    `;
-}
-
-function setupEventListeners() {
-    // Amount input
-    const amountInput = document.getElementById('withdrawAmount');
-    if (amountInput) {
-        amountInput.addEventListener('input', function() {
-            validateWithdrawAmount();
-        });
+        `;
+        
+        mobileMenu.innerHTML = `
+            <a href="index.html" class="mobile-nav-link">🏠 Home</a>
+            <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
+            <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+            <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
+            ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
+            <button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>
+        `;
     }
-    
-    // Quick amount buttons
-    const quickBtns = document.querySelectorAll('.quick-amount');
-    quickBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const amount = parseInt(this.dataset.amount);
-            if (amountInput) {
-                amountInput.value = amount;
-                validateWithdrawAmount();
+
+    updateBalanceDisplay() {
+        const balance = this.currentUser.balance || 0;
+        const balanceEl = document.getElementById('currentBalance');
+        if (balanceEl) {
+            balanceEl.textContent = `$${balance.toLocaleString()}`;
+            if (balance < this.minWithdrawal) {
+                balanceEl.style.color = '#FF4757';
+            } else {
+                balanceEl.style.color = '#00D897';
             }
-        });
-    });
-    
-    // Wallet address input
-    const walletAddress = document.getElementById('walletAddress');
-    if (walletAddress) {
-        walletAddress.addEventListener('input', function() {
-            validateWithdrawAmount();
-        });
+        }
     }
-    
-    // Form submission
-    const withdrawForm = document.getElementById('withdrawForm');
-    if (withdrawForm) {
-        withdrawForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            processWithdrawal();
-        });
-    }
-}
 
-async function loadUserBalance() {
-    // Refresh user data from Supabase
-    const cloudUser = await supabaseDB.getUserByEmail(currentUser.email);
-    if (cloudUser) {
-        currentUser.balance = cloudUser.balance;
-        const balanceSpan = document.getElementById('availableBalance');
-        if (balanceSpan) {
-            balanceSpan.textContent = `$${currentUser.balance.toFixed(2)}`;
-        }
-    }
-}
-
-function getTodayWithdrawals() {
-    const today = new Date().toDateString();
-    const withdrawals = (currentUser.withdrawals || []).filter(w => 
-        new Date(w.date).toDateString() === today && w.status !== 'rejected'
-    );
-    return withdrawals.reduce((sum, w) => sum + w.amount, 0);
-}
-
-function validateWithdrawAmount() {
-    const amountInput = document.getElementById('withdrawAmount');
-    const warningMsg = document.getElementById('warningMessage');
-    const withdrawBtn = document.getElementById('withdrawBtn');
-    const receiveAmountSpan = document.getElementById('receiveAmount');
-    const walletAddress = document.getElementById('walletAddress').value;
-    
-    let amount = parseFloat(amountInput?.value || 0);
-    
-    if (isNaN(amount)) amount = 0;
-    withdrawAmount = amount;
-    
-    const currentBalance = currentUser.balance || 0;
-    const todayWithdrawn = getTodayWithdrawals();
-    const remainingDailyLimit = MAX_WITHDRAW_PER_DAY - todayWithdrawn;
-    
-    // Calculate fee and receive amount
-    let fee = amount * (WITHDRAW_FEE_PERCENT / 100);
-    fee = Math.min(Math.max(fee, 1), 50);
-    const receiveAmount = amount - fee;
-    
-    if (receiveAmountSpan) {
-        receiveAmountSpan.textContent = `$${receiveAmount.toFixed(2)} (Fee: $${fee.toFixed(2)})`;
-    }
-    
-    // Validate
-    if (amount <= 0) {
-        if (warningMsg) warningMsg.style.display = 'none';
-        if (withdrawBtn) withdrawBtn.disabled = true;
-        return false;
-    }
-    
-    if (!walletAddress) {
-        if (warningMsg) {
-            warningMsg.style.display = 'block';
-            warningMsg.innerHTML = '<p>⚠️ Please enter your wallet address</p>';
-        }
-        if (withdrawBtn) withdrawBtn.disabled = true;
-        return false;
-    }
-    
-    if (amount < MIN_WITHDRAW) {
-        if (warningMsg) {
-            warningMsg.style.display = 'block';
-            warningMsg.innerHTML = `<p>⚠️ Minimum withdrawal amount is $${MIN_WITHDRAW}</p>`;
-        }
-        if (withdrawBtn) withdrawBtn.disabled = true;
-        return false;
-    }
-    
-    if (amount > remainingDailyLimit) {
-        if (warningMsg) {
-            warningMsg.style.display = 'block';
-            warningMsg.innerHTML = `<p>⚠️ Daily withdrawal limit remaining: $${remainingDailyLimit.toFixed(2)}</p>`;
-        }
-        if (withdrawBtn) withdrawBtn.disabled = true;
-        return false;
-    }
-    
-    if (amount > currentBalance) {
-        if (warningMsg) {
-            warningMsg.style.display = 'block';
-            warningMsg.innerHTML = `<p>⚠️ Insufficient balance. Available: $${currentBalance.toFixed(2)}</p>`;
-        }
-        if (withdrawBtn) withdrawBtn.disabled = true;
-        return false;
-    }
-    
-    if (warningMsg) warningMsg.style.display = 'none';
-    if (withdrawBtn) withdrawBtn.disabled = false;
-    return true;
-}
-
-async function processWithdrawal() {
-    if (!validateWithdrawAmount()) return;
-    
-    const walletAddress = document.getElementById('walletAddress').value;
-    const cryptoSelect = document.getElementById('withdrawCrypto');
-    const crypto = cryptoSelect.value;
-    const cryptoName = getCryptoName(crypto);
-    const amount = withdrawAmount;
-    const currentBalance = currentUser.balance || 0;
-    
-    if (amount > currentBalance) {
-        alert('Insufficient balance');
-        return;
-    }
-    
-    // Calculate fee
-    let fee = amount * (WITHDRAW_FEE_PERCENT / 100);
-    fee = Math.min(Math.max(fee, 1), 50);
-    const receiveAmount = amount - fee;
-    
-    // Process withdrawal - deduct balance immediately
-    currentUser.balance -= amount;
-    
-    // Create withdrawal request in Supabase
-    const withdrawalRequest = {
-        id: Date.now(),
-        user_id: currentUser.id,
-        user_email: currentUser.email,
-        user_name: currentUser.name,
-        amount: amount,
-        fee: fee,
-        receive_amount: receiveAmount,
-        crypto: crypto,
-        crypto_name: cryptoName,
-        wallet_address: walletAddress,
-        status: 'pending',
-        date: new Date().toISOString()
-    };
-    
-    try {
-        // Save withdrawal request to Supabase
-        await supabaseDB.insert('withdrawal_requests', withdrawalRequest);
+    updateSummary() {
+        const amount = parseFloat(document.getElementById('withdrawAmount').value) || 0;
+        const fee = (amount * this.withdrawalFee) / 100;
+        const receiveAmount = amount - fee;
         
-        // Update user balance in Supabase
-        await supabaseDB.updateUserBalance(currentUser.id, currentUser.balance);
+        const summaryAmount = document.getElementById('summaryAmount');
+        const feeAmount = document.getElementById('feeAmount');
+        const receiveAmountEl = document.getElementById('receiveAmount');
+        const submitBtn = document.getElementById('submitWithdraw');
         
-        // Add to withdrawal history
-        if (!currentUser.withdrawals) currentUser.withdrawals = [];
-        currentUser.withdrawals.push({
-            id: withdrawalRequest.id,
+        if (summaryAmount) summaryAmount.textContent = `$${amount.toFixed(2)}`;
+        if (feeAmount) feeAmount.textContent = `$${fee.toFixed(4)}`;
+        if (receiveAmountEl) receiveAmountEl.textContent = `$${receiveAmount.toFixed(4)}`;
+        
+        // Validate
+        const balance = this.currentUser.balance || 0;
+        if (submitBtn) {
+            if (amount < this.minWithdrawal && amount > 0) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = `Minimum $${this.minWithdrawal}`;
+            } else if (amount > balance) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Insufficient Balance';
+            } else if (!amount || amount <= 0) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Enter Amount';
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Request Withdrawal';
+            }
+        }
+    }
+
+    setupEventListeners() {
+        // Currency selector
+        document.querySelectorAll('.currency-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.currency-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.selectedCurrency = btn.dataset.currency;
+                this.updateSummary();
+            });
+        });
+        
+        // Preset amounts
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const amount = btn.dataset.amount;
+                const amountInput = document.getElementById('withdrawAmount');
+                if (amountInput) amountInput.value = amount;
+                this.updateSummary();
+            });
+        });
+        
+        // Amount input
+        const amountInput = document.getElementById('withdrawAmount');
+        if (amountInput) amountInput.addEventListener('input', () => this.updateSummary());
+        
+        // Wallet address input validation
+        const walletInput = document.getElementById('walletAddress');
+        if (walletInput) {
+            walletInput.addEventListener('input', () => {
+                const submitBtn = document.getElementById('submitWithdraw');
+                if (submitBtn && !submitBtn.disabled) {
+                    if (!walletInput.value.trim()) {
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = 'Enter Wallet Address';
+                    } else if (parseFloat(document.getElementById('withdrawAmount').value) > 0) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Request Withdrawal';
+                    }
+                }
+            });
+        }
+        
+        // Submit button
+        const submitBtn = document.getElementById('submitWithdraw');
+        if (submitBtn) submitBtn.addEventListener('click', () => this.submitWithdrawal());
+        
+        // Mobile menu
+        const mobileBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        if (mobileBtn && mobileMenu) {
+            mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('show'));
+        }
+    }
+
+    async submitWithdrawal() {
+        const amount = parseFloat(document.getElementById('withdrawAmount').value);
+        const walletAddress = document.getElementById('walletAddress').value.trim();
+        
+        if (!amount || amount < this.minWithdrawal) {
+            this.showNotification(`Minimum withdrawal amount is $${this.minWithdrawal}`, 'error');
+            return;
+        }
+        
+        if (amount > (this.currentUser.balance || 0)) {
+            this.showNotification('Insufficient balance', 'error');
+            return;
+        }
+        
+        if (!walletAddress) {
+            this.showNotification('Please enter your wallet address', 'error');
+            return;
+        }
+        
+        const fee = (amount * this.withdrawalFee) / 100;
+        const receiveAmount = amount - fee;
+        
+        const withdrawalRequest = {
+            id: Date.now(),
+            user_id: this.currentUser.id,
+            user_email: this.currentUser.email,
+            user_name: this.currentUser.name,
             amount: amount,
-            fee: fee,
-            receiveAmount: receiveAmount,
-            crypto: crypto,
-            walletAddress: walletAddress,
+            crypto: this.selectedCurrency,
+            wallet_address: walletAddress,
+            fee: this.withdrawalFee,
+            fee_amount: fee,
+            receive_amount: receiveAmount,
             status: 'pending',
             date: new Date().toISOString()
-        });
+        };
         
-        // Add transaction record
-        if (!currentUser.transactions) currentUser.transactions = [];
-        currentUser.transactions.unshift({
-            id: Date.now(),
-            type: 'withdraw',
-            amount: amount,
-            fee: fee,
-            crypto: crypto,
-            status: 'pending',
-            date: new Date().toISOString(),
-            description: `Withdrawal request of $${amount} to ${cryptoName} wallet - Pending Admin Approval`
-        });
+        // Save to localStorage
+        const existingRequests = JSON.parse(localStorage.getItem('withdrawal_requests') || '[]');
+        existingRequests.push(withdrawalRequest);
+        localStorage.setItem('withdrawal_requests', JSON.stringify(existingRequests));
         
-        // Save user data locally
-        saveUserData();
+        // Save to user's withdrawal history
+        const userWithdrawals = JSON.parse(localStorage.getItem(`withdrawals_${this.currentUser.id}`) || '[]');
+        userWithdrawals.push(withdrawalRequest);
+        localStorage.setItem(`withdrawals_${this.currentUser.id}`, JSON.stringify(userWithdrawals));
         
-        alert(`Withdrawal request submitted! Amount: $${amount.toFixed(2)} (Fee: $${fee.toFixed(2)}). Admin will process within 24-48 hours.`);
+        // Try to save to Supabase
+        if (typeof supabaseDB !== 'undefined') {
+            try {
+                await supabaseDB.insert('withdrawal_requests', withdrawalRequest);
+            } catch (e) {
+                console.log('Supabase save failed, using localStorage only');
+            }
+        }
+        
+        this.showNotification(`Withdrawal request submitted!\nAmount: $${amount.toFixed(2)} ${this.selectedCurrency}\nFee: $${fee.toFixed(4)}\nYou will receive: $${receiveAmount.toFixed(4)}\n\nYour withdrawal will be processed within 24-48 hours.`, 'success');
         
         // Reset form
-        resetForm();
+        document.getElementById('withdrawAmount').value = '';
+        document.getElementById('walletAddress').value = '';
+        this.updateSummary();
         
-        // Update balance display
-        await loadUserBalance();
+        // Auto-approve for admin user (testing purposes only)
+        if (this.currentUser.email === 'ephremgojo@gmail.com') {
+            const newBalance = (this.currentUser.balance || 0) - amount;
+            this.currentUser.balance = newBalance;
+            
+            if (typeof auth !== 'undefined' && auth.updateBalance) {
+                await auth.updateBalance(this.currentUser.id, -amount, {
+                    type: 'withdrawal',
+                    amount: amount,
+                    status: 'auto_approved'
+                });
+            }
+            
+            // Update storage
+            if (localStorage.getItem('pocket_user')) {
+                const user = JSON.parse(localStorage.getItem('pocket_user'));
+                user.balance = newBalance;
+                localStorage.setItem('pocket_user', JSON.stringify(user));
+            }
+            if (sessionStorage.getItem('pocket_user')) {
+                const user = JSON.parse(sessionStorage.getItem('pocket_user'));
+                user.balance = newBalance;
+                sessionStorage.setItem('pocket_user', JSON.stringify(user));
+            }
+            
+            this.updateBalanceDisplay();
+            this.showNotification(`✅ Auto-approved! New balance: $${newBalance.toFixed(2)}`, 'success');
+        }
+    }
+
+    showNotification(message, type) {
+        // Remove existing notification
+        const existing = document.querySelector('.notification');
+        if (existing) existing.remove();
         
-        // Redirect to dashboard after 3 seconds
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'error' ? '#FF4757' : '#00D897'};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            font-weight: 500;
+            max-width: 350px;
+        `;
+        
+        document.body.appendChild(notification);
+        
         setTimeout(() => {
-            window.location.href = 'dashboard.html';
-        }, 3000);
-        
-    } catch (error) {
-        console.error('Error submitting withdrawal request:', error);
-        alert('Failed to submit withdrawal request. Please try again.');
-        
-        // Refund the balance if database operation failed
-        currentUser.balance += amount;
-        saveUserData();
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
     }
 }
 
-function getCryptoName(symbol) {
-    const names = {
-        BTC: 'Bitcoin',
-        ETH: 'Ethereum',
-        USDT: 'Tether',
-        BNB: 'Binance Coin',
-        SOL: 'Solana'
-    };
-    return names[symbol] || symbol;
-}
-
-function resetForm() {
-    const amountInput = document.getElementById('withdrawAmount');
-    const walletAddress = document.getElementById('walletAddress');
-    const cryptoSelect = document.getElementById('withdrawCrypto');
-    const warningMsg = document.getElementById('warningMessage');
-    const receiveAmountSpan = document.getElementById('receiveAmount');
-    
-    if (amountInput) amountInput.value = '';
-    if (walletAddress) walletAddress.value = '';
-    if (cryptoSelect) cryptoSelect.value = 'BTC';
-    if (warningMsg) warningMsg.style.display = 'none';
-    if (receiveAmountSpan) receiveAmountSpan.textContent = '$0.00';
-    
-    withdrawAmount = 0;
-    const withdrawBtn = document.getElementById('withdrawBtn');
-    if (withdrawBtn) withdrawBtn.disabled = true;
-}
-
-function saveUserData() {
-    // Update in localStorage for session consistency
-    if (localStorage.getItem('pocket_user')) {
-        localStorage.setItem('pocket_user', JSON.stringify(currentUser));
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
     }
-    if (sessionStorage.getItem('pocket_user')) {
-        sessionStorage.setItem('pocket_user', JSON.stringify(currentUser));
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
     }
-}
+`;
+document.head.appendChild(style);
 
-function handleLogout() {
-    localStorage.removeItem('pocket_user');
-    sessionStorage.removeItem('pocket_user');
-    window.location.href = 'home.html';
-}
+// Initialize
+let withdrawManager = null;
+document.addEventListener('DOMContentLoaded', () => {
+    withdrawManager = new WithdrawManager();
+});
 
-// Make functions global
-window.handleLogout = handleLogout;
+// Global logout function
+window.handleLogout = function() {
+    if (typeof auth !== 'undefined' && auth.logout) {
+        auth.logout();
+    } else {
+        localStorage.removeItem('pocket_user');
+        sessionStorage.removeItem('pocket_user');
+        window.location.href = 'index.html';
+    }
+};
