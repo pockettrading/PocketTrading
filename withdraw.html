@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pocket Trading - Withdraw</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Withdraw Funds - PocketTrading</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,425 +12,458 @@
             box-sizing: border-box;
         }
 
-        :root {
-            --primary: #F7931A;
-            --primary-dark: #e67e22;
-            --primary-light: #f8b45a;
-            --dark-bg: #0A0E17;
-            --darker-bg: #06090F;
-            --card-bg: #151E2C;
-            --card-hover: #1A2535;
-            --text-primary: #FFFFFF;
-            --text-secondary: #A0AAB5;
-            --text-tertiary: #6B7A8A;
-            --success: #00D897;
-            --danger: #FF4757;
-            --warning: #FFA502;
-            --border: #2A3545;
-            --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-        }
-
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
-            color: var(--text-primary);
-            line-height: 1.5;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
+            background: #0A0F1A;
+            color: #FFFFFF;
+            overflow-x: hidden;
         }
 
         /* Top Navigation Bar */
-        .top-nav {
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 20, 32, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            padding: 0 32px;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-            flex-wrap: wrap;
-            gap: 1rem;
+            height: 70px;
         }
 
         .logo {
             display: flex;
             align-items: center;
             gap: 10px;
+            text-decoration: none;
         }
 
-        .logo svg {
-            width: 32px;
-            height: 32px;
-        }
-
-        .logo span {
-            font-size: 1.3rem;
-            font-weight: 700;
+        .logo-icon { font-size: 28px; }
+        .logo-text {
+            font-size: 20px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
 
         .nav-links {
             display: flex;
-            gap: 2rem;
+            gap: 8px;
             align-items: center;
             flex-wrap: wrap;
         }
-
         .nav-link {
-            color: var(--text-secondary);
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: #8B93A5;
             text-decoration: none;
             font-weight: 500;
-            transition: all 0.3s;
+            transition: all 0.2s;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(0, 216, 151, 0.1);
+            color: #00D897;
         }
 
-        .nav-link:hover {
-            color: var(--primary);
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
-
-        /* User Info in Top Right */
         .user-info {
             display: flex;
             align-items: center;
-            gap: 1rem;
-        }
-
-        .username {
-            color: var(--text-primary);
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        .logout-link {
-            color: var(--danger);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.9rem;
+            gap: 12px;
+            padding: 6px 16px 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 40px;
             cursor: pointer;
-            transition: all 0.3s;
         }
-
-        .logout-link:hover {
-            text-decoration: underline;
-        }
-
-        /* Auth Buttons */
-        .auth-buttons {
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            border-radius: 50%;
             display: flex;
-            gap: 0.75rem;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
         }
-
-        .login-btn {
-            background: transparent;
-            color: var(--primary);
-            padding: 8px 20px;
-            border: 1px solid var(--primary);
-            border-radius: 8px;
-            font-size: 0.9rem;
+        .user-name {
+            font-size: 14px;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
         }
-
-        .login-btn:hover {
-            background: rgba(247, 147, 26, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .signup-btn {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            padding: 8px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .signup-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
-        }
-
-        /* Admin Badge */
         .admin-badge {
-            background: linear-gradient(135deg, var(--danger), #ff6b6b);
-            color: white;
+            font-size: 10px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
             padding: 2px 8px;
             border-radius: 20px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            margin-left: 8px;
+            color: white;
+            margin-left: 6px;
         }
-
-        /* Login Prompt */
-        .login-prompt {
-            text-align: center;
-            padding: 3rem;
-            background: var(--card-bg);
-            border-radius: 20px;
-            max-width: 500px;
-            margin: 2rem auto;
-        }
-
-        .login-prompt h3 {
-            margin-bottom: 1rem;
-            font-size: 1.3rem;
+        .admin-link {
+            padding: 8px 16px;
+            background: rgba(0, 216, 151, 0.15);
+            border: 1px solid rgba(0, 216, 151, 0.3);
+            border-radius: 40px;
+            color: #00D897;
+            text-decoration: none;
+            font-size: 13px;
             font-weight: 500;
         }
-
-        .login-prompt p {
-            color: var(--text-secondary);
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
-        }
-
-        .login-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-        }
-
-        /* Withdraw Container */
-        .withdraw-container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .withdraw-header {
-            margin-bottom: 2rem;
-        }
-
-        .withdraw-header h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .withdraw-header p {
-            color: var(--text-secondary);
-        }
-
-        /* Withdraw Card */
-        .withdraw-card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            padding: 1.5rem;
-        }
-
-        .balance-info {
-            background: var(--darker-bg);
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .balance-label {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        .balance-amount {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 12px;
-            background: var(--darker-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            color: var(--text-primary);
-            font-size: 0.9rem;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .quick-amounts {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .quick-amount {
-            flex: 1;
-            padding: 8px;
-            background: var(--darker-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-secondary);
+        .logout-btn {
+            padding: 8px 20px;
+            background: rgba(255, 71, 87, 0.15);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-radius: 40px;
+            color: #FF4757;
             cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.75rem;
-            text-align: center;
+            font-weight: 500;
         }
 
-        .quick-amount:hover {
-            border-color: var(--primary);
-            color: var(--primary);
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: white;
+            cursor: pointer;
         }
-
-        .limit-info {
-            background: var(--darker-bg);
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 70px;
+            left: 0;
+            right: 0;
+            background: #0F1420;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            z-index: 999;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .mobile-menu.show { display: flex; }
+        .mobile-nav-link {
+            padding: 12px;
+            color: #8B93A5;
+            text-decoration: none;
             border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
         }
 
-        .limit-row {
+        /* Main Content - Wider Form */
+        .main-content {
+            margin-top: 70px;
+            padding: 32px;
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-            font-size: 0.8rem;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 70px);
         }
 
-        .limit-label {
-            color: var(--text-secondary);
+        .withdraw-card {
+            max-width: 700px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
         }
 
-        .limit-value {
+        .card-header {
+            padding: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .card-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .card-header p {
+            color: #8B93A5;
+            font-size: 14px;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        /* Balance Display */
+        .balance-display {
+            background: rgba(0, 216, 151, 0.1);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 24px;
+            text-align: center;
+            border: 1px solid rgba(0, 216, 151, 0.2);
+        }
+        .balance-label {
+            font-size: 13px;
+            color: #8B93A5;
+            margin-bottom: 8px;
+        }
+        .balance-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: #00D897;
+        }
+
+        /* Currency Selector */
+        .currency-selector {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .currency-btn {
+            flex: 1;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
             font-weight: 600;
         }
-
-        .warning-message {
-            background: rgba(255, 71, 87, 0.1);
-            border-left: 3px solid var(--danger);
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
+        .currency-btn.active {
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            border-color: transparent;
+        }
+        .currency-btn:hover {
+            border-color: #00D897;
         }
 
-        .warning-message p {
-            color: var(--danger);
-            font-size: 0.8rem;
-            margin: 0;
+        /* Amount Input */
+        .amount-section {
+            margin-bottom: 24px;
         }
-
-        .btn-submit {
+        .amount-label {
+            font-size: 13px;
+            color: #8B93A5;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .amount-input {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            border: none;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
-            font-size: 1rem;
+            color: white;
+            font-size: 18px;
             font-weight: 600;
+        }
+        .amount-input:focus {
+            outline: none;
+            border-color: #00D897;
+        }
+        .preset-amounts {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .preset-btn {
+            flex: 1;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 40px;
+            color: #8B93A5;
             cursor: pointer;
-            transition: all 0.3s;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .preset-btn:hover {
+            border-color: #00D897;
+            color: #00D897;
         }
 
-        .btn-submit:hover {
+        /* Wallet Address Input */
+        .wallet-section {
+            margin-bottom: 24px;
+        }
+        .wallet-label {
+            font-size: 13px;
+            color: #8B93A5;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .wallet-input {
+            width: 100%;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            font-family: monospace;
+        }
+        .wallet-input:focus {
+            outline: none;
+            border-color: #00D897;
+        }
+
+        /* Summary Row */
+        .summary {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .summary-item {
+            flex: 1;
+            text-align: center;
+        }
+        .summary-label {
+            font-size: 12px;
+            color: #8B93A5;
+            margin-bottom: 4px;
+        }
+        .summary-value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .summary-value.total {
+            color: #FF4757;
+            font-size: 20px;
+        }
+        .summary-value.receive {
+            color: #00D897;
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #FF4757, #FF6B6B);
+            border: none;
+            border-radius: 40px;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .submit-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
+            box-shadow: 0 8px 25px rgba(255, 71, 87, 0.3);
         }
-
-        .btn-submit:disabled {
+        .submit-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
 
-        .info-note {
-            margin-top: 1rem;
-            padding: 1rem;
-            background: rgba(255, 165, 2, 0.1);
-            border-radius: 12px;
+        .info-text {
             text-align: center;
+            font-size: 12px;
+            color: #5A6475;
+            margin-top: 20px;
         }
 
-        .info-note p {
-            color: var(--warning);
-            font-size: 0.8rem;
-            margin: 0;
-        }
-
+        /* Responsive */
         @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
-            }
-            
-            .top-nav {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .nav-links {
-                justify-content: center;
-            }
-            
-            .user-info {
-                justify-content: center;
-            }
-            
-            .balance-info {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .quick-amounts {
-                flex-wrap: wrap;
-            }
+            .nav-links, .user-section { display: none; }
+            .mobile-menu-btn { display: block; }
+            .main-content { padding: 16px; }
+            .withdraw-card { max-width: 100%; }
+            .summary { flex-direction: column; }
+            .summary-item { text-align: left; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Top Navigation Bar -->
-        <div class="top-nav">
-            <div class="logo">
-                <svg viewBox="0 0 40 40" fill="none">
-                    <rect width="40" height="40" rx="10" fill="#F7931A"/>
-                    <path d="M20 10L25 15L20 20L15 15L20 10Z" fill="white"/>
-                    <path d="M20 20L25 25L20 30L15 25L20 20Z" fill="white"/>
-                </svg>
-                <span>Pocket<span style="color: var(--primary);">Trading</span></span>
-            </div>
-            <div class="nav-links" id="navLinks">
-                <a href="home.html" class="nav-link">Home</a>
-                <a href="markets.html" class="nav-link">Markets</a>
-                <a href="trade.html" class="nav-link">Trades</a>
-            </div>
-            <div class="user-info" id="userInfo"></div>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <span class="logo-icon">📈</span>
+                <span class="logo-text">PocketTrading</span>
+            </a>
+            <div class="nav-links" id="navLinks"></div>
+            <div id="rightNav"></div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
         </div>
+    </nav>
+    <div class="mobile-menu" id="mobileMenu"></div>
 
-        <div id="withdrawContent">
-            <!-- Content will be populated by JavaScript based on login status -->
+    <div class="main-content">
+        <div class="withdraw-card">
+            <div class="card-header">
+                <h1>Withdraw Funds</h1>
+                <p>Withdraw your funds to your cryptocurrency wallet</p>
+            </div>
+            <div class="card-body">
+                <div class="balance-display">
+                    <div class="balance-label">Available Balance</div>
+                    <div class="balance-value" id="currentBalance">$0.00</div>
+                </div>
+
+                <div class="currency-selector" id="currencySelector">
+                    <button class="currency-btn active" data-currency="USDT">USDT</button>
+                    <button class="currency-btn" data-currency="BTC">BTC</button>
+                    <button class="currency-btn" data-currency="ETH">ETH</button>
+                </div>
+
+                <div class="amount-section">
+                    <div class="amount-label">Withdrawal Amount</div>
+                    <input type="number" id="withdrawAmount" class="amount-input" placeholder="Enter amount" min="10" step="10">
+                    <div class="preset-amounts">
+                        <button class="preset-btn" data-amount="50">$50</button>
+                        <button class="preset-btn" data-amount="100">$100</button>
+                        <button class="preset-btn" data-amount="500">$500</button>
+                        <button class="preset-btn" data-amount="1000">$1,000</button>
+                    </div>
+                </div>
+
+                <div class="wallet-section">
+                    <div class="wallet-label">Wallet Address</div>
+                    <input type="text" id="walletAddress" class="wallet-input" placeholder="Enter your cryptocurrency wallet address">
+                </div>
+
+                <div class="summary">
+                    <div class="summary-item">
+                        <div class="summary-label">Withdrawal Amount</div>
+                        <div class="summary-value" id="summaryAmount">$0.00</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Withdrawal Fee (<span id="feePercent">1.5</span>%)</div>
+                        <div class="summary-value" id="feeAmount">$0.00</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">You Will Receive</div>
+                        <div class="summary-value receive" id="receiveAmount">$0.00</div>
+                    </div>
+                </div>
+
+                <button class="submit-btn" id="submitWithdraw">Request Withdrawal</button>
+                <div class="info-text">
+                    ⏱️ Withdrawals are processed within 24-48 hours. Minimum withdrawal: $10
+                </div>
+            </div>
         </div>
     </div>
 
-    <script src="js/supabase.js"></script>
+    <script src="js/supabase-db.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/withdraw.js"></script>
 </body>
 </html>
