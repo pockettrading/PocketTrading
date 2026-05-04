@@ -395,11 +395,7 @@
                 <span class="logo-icon">📈</span>
                 <span class="logo-text">PocketTrading</span>
             </a>
-            <div class="nav-links" id="navLinks">
-                <a href="index.html" class="nav-link">Home</a>
-                <a href="markets.html" class="nav-link">Markets</a>
-                <a href="trades.html" class="nav-link">Trades</a>
-            </div>
+            <div class="nav-links" id="navLinks"></div>
             <div id="rightNav"></div>
             <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
         </div>
@@ -475,50 +471,60 @@
         }
 
         function setupNavigation() {
+            const navLinks = document.getElementById('navLinks');
             const rightNav = document.getElementById('rightNav');
             const mobileMenu = document.getElementById('mobileMenu');
-            const navLinks = document.getElementById('navLinks');
             
             if (currentUser) {
                 const isAdmin = currentUser.email === 'ephremgojo@gmail.com';
                 const userName = currentUser.name || currentUser.email.split('@')[0];
                 
-                if (navLinks) {
-                    navLinks.innerHTML = `
-                        <a href="index.html" class="nav-link">Home</a>
-                        <a href="markets.html" class="nav-link">Markets</a>
-                        <a href="trades.html" class="nav-link">Trades</a>
-                        <a href="profile.html" class="nav-link">My Profile</a>
-                    `;
-                }
+                // Common nav links for all logged-in users
+                navLinks.innerHTML = `
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="markets.html" class="nav-link">Markets</a>
+                    <a href="trades.html" class="nav-link">Trades</a>
+                    <a href="profile.html" class="nav-link">My Profile</a>
+                `;
                 
-                rightNav.innerHTML = `
+                // Right side - user info and logout
+                let rightNavHtml = `
                     <div class="user-section">
                         <div class="user-info">
                             <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
                             <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
                         </div>
-                        ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
-                        <button class="logout-btn" onclick="handleLogout()">Logout</button>
-                    </div>
                 `;
                 
-                mobileMenu.innerHTML = `
+                if (isAdmin) {
+                    rightNavHtml += `<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>`;
+                }
+                
+                rightNavHtml += `<button class="logout-btn" onclick="handleLogout()">Logout</button></div>`;
+                rightNav.innerHTML = rightNavHtml;
+                
+                // Mobile menu
+                let mobileMenuHtml = `
                     <a href="index.html" class="mobile-nav-link">🏠 Home</a>
                     <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
                     <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
                     <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
-                    ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
-                    <button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>
                 `;
-            } else {
-                if (navLinks) {
-                    navLinks.innerHTML = `
-                        <a href="index.html" class="nav-link">Home</a>
-                        <a href="markets.html" class="nav-link">Markets</a>
-                        <a href="trades.html" class="nav-link">Trades</a>
-                    `;
+                
+                if (isAdmin) {
+                    mobileMenuHtml += `<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>`;
                 }
+                
+                mobileMenuHtml += `<button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>`;
+                mobileMenu.innerHTML = mobileMenuHtml;
+                
+            } else {
+                // Guest user nav
+                navLinks.innerHTML = `
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="markets.html" class="nav-link">Markets</a>
+                    <a href="trades.html" class="nav-link">Trades</a>
+                `;
                 
                 rightNav.innerHTML = `
                     <div class="guest-buttons">
