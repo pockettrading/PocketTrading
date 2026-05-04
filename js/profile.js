@@ -1,43 +1,55 @@
 // Profile Page Controller - PocketTrading
 // File: js/profile.js
+// Pure Supabase - No localStorage
 
 class ProfileManager {
     constructor() {
         this.currentUser = null;
         this.userTrades = [];
-        this.activities = [];
-        this.kycStatus = 'pending';
-        this.selectedAvatar = '👤';
+        this.userActivities = [];
+        this.pnlChart = null;
+        this.distributionChart = null;
         this.init();
     }
 
     async init() {
-        if (typeof auth === 'undefined') {
-            setTimeout(() => this.init(), 100);
-            return;
-        }
-
+        await this.waitForDependencies();
+        
         this.currentUser = auth.getUser();
         
         if (!this.currentUser) {
             window.location.href = 'login.html';
             return;
         }
-
+        
         await this.loadUserData();
         await this.loadUserTrades();
-        await this.loadActivities();
-        this.setupUserInterface();
+        await this.loadUserActivities();
+        this.setupNavigation();
+        this.updateUI();
+        this.renderDashboard();
+        this.renderTradeHistory();
+        this.initCharts();
         this.setupEventListeners();
-        this.loadSavedAvatar();
+    }
+
+    async waitForDependencies() {
+        return new Promise((resolve) => {
+            const check = setInterval(() => {
+                if (typeof auth !== 'undefined' && typeof supabaseDB !== 'undefined') {
+                    clearInterval(check);
+                    resolve();
+                }
+            }, 100);
+        });
     }
 
     async loadUserData() {
         try {
-            const userData = await supabaseDB.getUserByEmail(this.currentUser.email);
+            const userData = await supabaseDB.getUserById(this.currentUser.id);
             if (userData) {
                 this.currentUser = { ...this.currentUser, ...userData };
-                this.kycStatus = this.currentUser.kyc_status || 'pending';
+                this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
             }
         } catch (error) {
             console.error('Error loading user data:', error);
@@ -53,181 +65,437 @@ class ProfileManager {
         }
     }
 
-    async loadActivities() {
+    async loadUserActivities() {
         try {
-            // Load activities from Supabase
-            const activities = await supabaseDB.getUserActivities(this.currentUser.id);
-            if (activities && activities.length > 0) {
-                this.activities = activities;
-            } else {
-                this.activities = this.getDemoActivities();
-            }
-            this.renderActivities();
+            this.userActivities = await supabaseDB.getUserActivities(this.currentUser.id, 10);
         } catch (error) {
             console.error('Error loading activities:', error);
-            this.activities = this.getDemoActivities();
-            this.renderActivities();
+            this.userActivities = [];
         }
     }
 
-    getDemoActivities() {
-        const now = new Date();
-        return [
-            {
-                id: 1,
-                type: 'login',
-                title: 'Account Login',
-                description: 'You logged into your account',
-                date: now.toISOString(),
-                icon: '🔐'
-            },
-            {
-                id: 2,
-                type: 'trade',
-                title: 'Trade Opened',
-                description: 'Opened BTC/USD long position',
-                date: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-                icon: '📈'
-            },
-            {
-                id: 3,
-                type: 'deposit',
-                title: 'Deposit Request',
-                description: 'Deposit request submitted - pending approval',
-                date: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-                icon: '💰'
-            }
-        ];
-    }
-
-    setupUserInterface() {
-        // Fill profile information
-        const profileName = document.getElementById('profileName');
-        const profileEmail = document.getElementById('profileEmail');
-        const sidebarUserName = document.getElementById('sidebarUserName');
-        const sidebarUserEmail = document.getElementById('sidebarUserEmail');
-        const fullName = document.getElementById('fullName');
-        const email = document.getElementById('email');
-        const phone = document.getElementById('phone');
-        const country = document.getElementById('country');
-        const timezone = document.getElementById('timezone');
+    setupNavigation() {
+        const navLinks = document.getElementById('navLinks');
+        const rightNav = document.getElementById('rightNav');
+        const mobileMenu = document.getElementById('mobileMenu');
         
-        if (profileName) profileName.textContent = this.currentUser.name || 'Trader';
-        if (profileEmail) profileEmail.textContent = this.currentUser.email;
-        if (sidebarUserName) sidebarUserName.textContent = this.currentUser.name || 'Trader';
-        if (sidebarUserEmail) sidebarUserEmail.textContent = this.currentUser.email;
-        if (fullName) fullName.value = this.currentUser.name || '';
-        if (email) email.value = this.currentUser.email;
-        if (phone) phone.value = this.currentUser.phone || '';
-        if (country) country.value = this.currentUser.country || '';
-        if (timezone) timezone.value = this.currentUser.timezone || 'UTC+0';
+        const isAdmin = this.currentUser.email === 'ephremgojo@gmail.com';
+        const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
         
-        // Update stats
-        this.updateStats();
-        
-        // Update KYC section
-        this.updateKYCSection();
-        
-        // Update avatar
-        const avatarElement = document.getElementById('profileAvatar');
-        if (avatarElement) {
-            avatarElement.textContent = this.selectedAvatar;
+        if (navLinks) {
+            navLinks.innerHTML = `
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="markets.html" class="nav-link">Markets</a>
+                <a href="trades.html" class="nav-link">Trades</a>
+                <a href="profile.html" class="nav-link active">My Profile</a>
+            `;
         }
         
-        // Admin elements
-        if (this.currentUser.isAdmin) {
-            const adminElements = document.querySelectorAll('.admin-only');
-            adminElements.forEach(el => el.style.display = 'block');
-        }
-    }
-
-    updateStats() {
-        const totalTrades = this.userTrades.length;
-        const winningTrades = this.userTrades.filter(t => (t.pnl || 0) > 0).length;
-        const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100).toFixed(1) : 0;
-        
-        const statBalance = document.getElementById('statBalance');
-        const statTrades = document.getElementById('statTrades');
-        const statWinRate = document.getElementById('statWinRate');
-        
-        if (statBalance) statBalance.textContent = `$${(this.currentUser.balance || 0).toFixed(2)}`;
-        if (statTrades) statTrades.textContent = totalTrades;
-        if (statWinRate) statWinRate.textContent = `${winRate}%`;
-    }
-
-    updateKYCSection() {
-        const kycStatusSpan = document.getElementById('kycStatus');
-        const kycForm = document.getElementById('kycForm');
-        const kycStatusMessage = document.getElementById('kycStatusMessage');
-        
-        if (this.kycStatus === 'verified') {
-            if (kycStatusSpan) {
-                kycStatusSpan.textContent = 'Verified ✓';
-                kycStatusSpan.className = 'kyc-status kyc-verified';
-            }
-            if (kycForm) kycForm.style.display = 'none';
-            if (kycStatusMessage) {
-                kycStatusMessage.style.display = 'block';
-                kycStatusMessage.innerHTML = `
-                    <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
-                    <h4>Identity Verified</h4>
-                    <p style="color: #00D897; margin-top: 8px;">Your account is fully verified</p>
-                `;
-            }
-        } else if (this.kycStatus === 'pending') {
-            if (kycStatusSpan) {
-                kycStatusSpan.textContent = 'Pending Review';
-                kycStatusSpan.className = 'kyc-status kyc-pending';
-            }
-            if (kycForm) kycForm.style.display = 'block';
-        } else {
-            if (kycStatusSpan) {
-                kycStatusSpan.textContent = 'Not Verified';
-                kycStatusSpan.className = 'kyc-status kyc-none';
-            }
-            if (kycForm) kycForm.style.display = 'block';
-        }
-    }
-
-    renderActivities() {
-        const timeline = document.getElementById('activityTimeline');
-        if (!timeline) return;
-        
-        if (this.activities.length === 0) {
-            timeline.innerHTML = `
-                <div class="timeline-item">
-                    <div class="timeline-icon">📭</div>
-                    <div class="timeline-content">
-                        <div class="timeline-title">No recent activity</div>
-                        <div class="timeline-desc">Start trading to see activity here</div>
+        if (rightNav) {
+            rightNav.innerHTML = `
+                <div class="user-section">
+                    <div class="user-info">
+                        <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
+                        <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
                     </div>
+                    ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
+                    <button class="logout-btn" onclick="handleLogout()">Logout</button>
                 </div>
             `;
+        }
+        
+        if (mobileMenu) {
+            mobileMenu.innerHTML = `
+                <a href="index.html" class="mobile-nav-link">🏠 Home</a>
+                <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
+                <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+                <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
+                ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
+                <button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>
+            `;
+        }
+        
+        // Update welcome message
+        const welcomeMsg = document.getElementById('welcomeMessage');
+        if (welcomeMsg) {
+            welcomeMsg.innerHTML = `Welcome back, ${userName}! 👋`;
+        }
+    }
+
+    updateUI() {
+        // Update profile display
+        const displayName = document.getElementById('displayName');
+        const displayEmail = document.getElementById('displayEmail');
+        const displayMemberSince = document.getElementById('displayMemberSince');
+        const profileBalance = document.getElementById('profileBalance');
+        const displayKyc = document.getElementById('displayKyc');
+        
+        if (displayName) displayName.textContent = this.currentUser.name || 'N/A';
+        if (displayEmail) displayEmail.textContent = this.currentUser.email;
+        if (displayMemberSince) {
+            displayMemberSince.textContent = this.currentUser.created_at 
+                ? new Date(this.currentUser.created_at).toLocaleDateString() 
+                : 'N/A';
+        }
+        if (profileBalance) profileBalance.textContent = `$${(this.currentUser.balance || 0).toLocaleString()}`;
+        
+        if (displayKyc) {
+            const kycStatus = this.currentUser.kyc_status || 'pending';
+            displayKyc.textContent = kycStatus === 'verified' ? 'Verified ✓' : (kycStatus === 'pending' ? 'Pending Review' : 'Not Verified');
+            displayKyc.className = `kyc-badge kyc-${kycStatus === 'verified' ? 'verified' : (kycStatus === 'pending' ? 'pending' : 'none')}`;
+        }
+        
+        // Update form fields
+        const updateFullName = document.getElementById('updateFullName');
+        const updatePhone = document.getElementById('updatePhone');
+        const updateCountry = document.getElementById('updateCountry');
+        const kycFullName = document.getElementById('kycFullName');
+        
+        if (updateFullName) updateFullName.value = this.currentUser.name || '';
+        if (updatePhone) updatePhone.value = this.currentUser.phone || '';
+        if (updateCountry) updateCountry.value = this.currentUser.country || '';
+        if (kycFullName) kycFullName.value = this.currentUser.name || '';
+    }
+
+    renderDashboard() {
+        // Update dashboard stats
+        const dashBalance = document.getElementById('dashBalance');
+        const dashTotalTrades = document.getElementById('dashTotalTrades');
+        const dashWinRate = document.getElementById('dashWinRate');
+        const dashPnL = document.getElementById('dashPnL');
+        
+        const totalTrades = this.userTrades.length;
+        const closedTrades = this.userTrades.filter(t => t.status === 'closed');
+        const winningTrades = closedTrades.filter(t => (t.pnl || 0) > 0).length;
+        const winRate = closedTrades.length > 0 ? (winningTrades / closedTrades.length * 100).toFixed(1) : 0;
+        const totalPnL = this.userTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+        
+        if (dashBalance) dashBalance.innerHTML = `$${(this.currentUser.balance || 0).toLocaleString()}`;
+        if (dashTotalTrades) dashTotalTrades.textContent = totalTrades;
+        if (dashWinRate) dashWinRate.textContent = `${winRate}%`;
+        if (dashPnL) {
+            dashPnL.innerHTML = `<span class="${totalPnL >= 0 ? 'positive' : 'negative'}">${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}</span>`;
+        }
+        
+        // Update profile stats
+        const statTotalTrades = document.getElementById('statTotalTrades');
+        const statWinRate = document.getElementById('statWinRate');
+        const statTotalVolume = document.getElementById('statTotalVolume');
+        const totalVolume = this.userTrades.reduce((sum, t) => sum + (t.amount || 0), 0);
+        
+        if (statTotalTrades) statTotalTrades.textContent = totalTrades;
+        if (statWinRate) statWinRate.textContent = `${winRate}%`;
+        if (statTotalVolume) statTotalVolume.textContent = `$${totalVolume.toLocaleString()}`;
+        
+        // Render recent activity
+        this.renderRecentActivity();
+    }
+
+    renderRecentActivity() {
+        const container = document.getElementById('recentActivityList');
+        if (!container) return;
+        
+        if (this.userActivities.length === 0) {
+            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #8B93A5;">No recent activity. Start trading!</div>';
             return;
         }
         
-        timeline.innerHTML = this.activities.slice(0, 10).map(activity => `
-            <div class="timeline-item">
-                <div class="timeline-icon">${activity.icon || this.getActivityIcon(activity.type)}</div>
-                <div class="timeline-content">
-                    <div class="timeline-title">${activity.title}</div>
-                    <div class="timeline-desc">${activity.description}</div>
-                    <div class="timeline-date">${this.formatDate(activity.date)}</div>
-                </div>
+        container.innerHTML = this.userActivities.slice(0, 5).map(activity => `
+            <div class="activity-item">
+                <div><strong>${activity.title || activity.type}</strong><br><small style="color:#8B93A5">${activity.description || ''}</small></div>
+                <div class="${activity.type === 'trade_win' ? 'positive' : (activity.type === 'trade_loss' ? 'negative' : '')}"></div>
+                <div><small>${this.formatDate(activity.created_at)}</small></div>
             </div>
         `).join('');
     }
 
-    getActivityIcon(type) {
-        const icons = {
-            'login': '🔐',
-            'trade': '📈',
-            'deposit': '💰',
-            'withdraw': '💸',
-            'kyc': '📋',
-            'profile': '👤'
+    renderTradeHistory() {
+        const tbody = document.getElementById('tradeHistoryBody');
+        if (!tbody) return;
+        
+        if (this.userTrades.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No trades yet</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = this.userTrades.slice().reverse().map(trade => `
+            <tr>
+                <td>${new Date(trade.created_at).toLocaleDateString()}</td>
+                <td>${trade.symbol}/USD</td>
+                <td class="${trade.type === 'buy' ? 'positive' : 'negative'}">${trade.type?.toUpperCase() || 'N/A'}</td>
+                <td>$${(trade.amount || 0).toLocaleString()}</td>
+                <td class="${(trade.pnl || 0) >= 0 ? 'positive' : 'negative'}">${(trade.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(trade.pnl || 0).toLocaleString()}</td>
+                <td><span class="kyc-badge ${trade.status === 'open' ? 'kyc-pending' : 'kyc-verified'}">${trade.status || 'N/A'}</span></td>
+            </tr>
+        `).join('');
+    }
+
+    initCharts() {
+        const pnlCtx = document.getElementById('pnlChart')?.getContext('2d');
+        const distCtx = document.getElementById('distributionChart')?.getContext('2d');
+        
+        if (pnlCtx) {
+            const last7Days = [];
+            const dailyPnL = [];
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                last7Days.push(date.toLocaleDateString());
+                
+                const dayPnL = this.userTrades.filter(t => {
+                    const tradeDate = new Date(t.created_at);
+                    return tradeDate.toLocaleDateString() === date.toLocaleDateString() && t.status === 'closed';
+                }).reduce((sum, t) => sum + (t.pnl || 0), 0);
+                dailyPnL.push(dayPnL);
+            }
+            
+            this.pnlChart = new Chart(pnlCtx, {
+                type: 'line',
+                data: {
+                    labels: last7Days,
+                    datasets: [{
+                        label: 'Daily P&L',
+                        data: dailyPnL,
+                        borderColor: '#00D897',
+                        backgroundColor: 'rgba(0,216,151,0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#FFFFFF' } } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } }
+                    }
+                }
+            });
+        }
+        
+        if (distCtx) {
+            const closedTrades = this.userTrades.filter(t => t.status === 'closed');
+            const wins = closedTrades.filter(t => (t.pnl || 0) > 0).length;
+            const losses = closedTrades.filter(t => (t.pnl || 0) <= 0).length;
+            
+            this.distributionChart = new Chart(distCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Winning Trades', 'Losing Trades'],
+                    datasets: [{
+                        data: [wins, losses],
+                        backgroundColor: ['#00D897', '#FF4757'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#FFFFFF' } } }
+                }
+            });
+        }
+    }
+
+    async updateProfile(e) {
+        e.preventDefault();
+        
+        const fullName = document.getElementById('updateFullName').value;
+        const phone = document.getElementById('updatePhone').value;
+        const country = document.getElementById('updateCountry').value;
+        const currentPass = document.getElementById('currentPassword').value;
+        const newPass = document.getElementById('newPassword').value;
+        const confirmPass = document.getElementById('confirmNewPassword').value;
+        
+        if (newPass && newPass !== confirmPass) {
+            this.showNotification('New passwords do not match', 'error');
+            return;
+        }
+        if (newPass && newPass.length < 8) {
+            this.showNotification('Password must be at least 8 characters', 'error');
+            return;
+        }
+        if (currentPass && currentPass !== this.currentUser.password) {
+            this.showNotification('Current password is incorrect', 'error');
+            return;
+        }
+        
+        const updates = {
+            name: fullName,
+            phone: phone,
+            country: country,
+            updated_at: new Date().toISOString()
         };
-        return icons[type] || '📌';
+        
+        if (newPass) updates.password = newPass;
+        
+        try {
+            await supabaseDB.updateUser(this.currentUser.id, updates);
+            this.currentUser = { ...this.currentUser, ...updates };
+            
+            this.showNotification('Profile updated successfully!', 'success');
+            
+            // Clear password fields
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmNewPassword').value = '';
+            
+            // Update UI
+            this.updateUI();
+            this.setupNavigation();
+            
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            this.showNotification('Failed to update profile', 'error');
+        }
+    }
+
+    async submitKYC() {
+        const fullName = document.getElementById('kycFullName').value;
+        const dob = document.getElementById('kycDob').value;
+        const idType = document.getElementById('kycIdType').value;
+        const idFront = document.getElementById('idFront')?.files[0];
+        const idBack = document.getElementById('idBack')?.files[0];
+        
+        if (!fullName || !dob || !idType) {
+            this.showNotification('Please fill all fields', 'error');
+            return;
+        }
+        
+        try {
+            // Update user KYC status
+            await supabaseDB.updateUserKYCStatus(this.currentUser.id, 'pending');
+            
+            // Create KYC request record
+            await supabaseDB.createKYCRequest({
+                id: Date.now(),
+                user_id: this.currentUser.id,
+                user_email: this.currentUser.email,
+                full_name: fullName,
+                dob: dob,
+                id_type: idType,
+                status: 'pending',
+                date: new Date().toISOString()
+            });
+            
+            // Create activity
+            await supabaseDB.createUserActivity({
+                id: Date.now(),
+                user_id: this.currentUser.id,
+                type: 'kyc',
+                title: 'KYC Submitted',
+                description: 'Identity verification documents submitted',
+                created_at: new Date().toISOString()
+            });
+            
+            this.currentUser.kyc_status = 'pending';
+            this.updateUI();
+            
+            // Hide form, show pending message
+            const kycForm = document.getElementById('kycForm');
+            const kycPendingMessage = document.getElementById('kycPendingMessage');
+            if (kycForm) kycForm.style.display = 'none';
+            if (kycPendingMessage) kycPendingMessage.style.display = 'block';
+            
+            this.showNotification('KYC documents submitted for review!', 'success');
+            
+        } catch (error) {
+            console.error('Error submitting KYC:', error);
+            this.showNotification('Failed to submit KYC', 'error');
+        }
+    }
+
+    async sendSupport() {
+        const subject = document.getElementById('supportSubject').value;
+        const message = document.getElementById('supportMessage').value;
+        
+        if (!subject || !message) {
+            this.showNotification('Please fill all fields', 'error');
+            return;
+        }
+        
+        // Create activity record for support ticket
+        await supabaseDB.createUserActivity({
+            id: Date.now(),
+            user_id: this.currentUser.id,
+            type: 'support',
+            title: 'Support Ticket',
+            description: `Subject: ${subject}`,
+            created_at: new Date().toISOString()
+        });
+        
+        this.showNotification(`Support ticket submitted!\nSubject: ${subject}\n\nWe will respond within 24 hours.`, 'success');
+        
+        document.getElementById('supportSubject').value = '';
+        document.getElementById('supportMessage').value = '';
+    }
+
+    async deleteAccount() {
+        if (!confirm('Are you sure you want to delete your account? This cannot be undone!')) return;
+        
+        try {
+            // Delete all user trades
+            for (const trade of this.userTrades) {
+                await supabaseDB.delete('trades', trade.id);
+            }
+            
+            // Delete user activities
+            for (const activity of this.userActivities) {
+                await supabaseDB.delete('user_activities', activity.id);
+            }
+            
+            // Delete user
+            await supabaseDB.deleteUser(this.currentUser.id);
+            
+            // Clear session
+            sessionStorage.removeItem('pocket_user_id');
+            localStorage.removeItem('pocket_user_id');
+            
+            this.showNotification('Account deleted successfully', 'success');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
+            
+        } catch (error) {
+            console.error('Error deleting account:', error);
+            this.showNotification('Failed to delete account', 'error');
+        }
+    }
+
+    setupEventListeners() {
+        // Sidebar tabs
+        const sidebarItems = document.querySelectorAll('.sidebar-item');
+        sidebarItems.forEach(item => {
+            item.addEventListener('click', () => {
+                sidebarItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                const tab = item.dataset.tab;
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.style.display = 'none';
+                });
+                if (tab === 'dashboard') document.getElementById('dashboardTab').style.display = 'block';
+                if (tab === 'profile') document.getElementById('profileTab').style.display = 'block';
+                if (tab === 'history') document.getElementById('historyTab').style.display = 'block';
+                if (tab === 'kyc') document.getElementById('kycTab').style.display = 'block';
+                if (tab === 'update') document.getElementById('updateTab').style.display = 'block';
+                if (tab === 'support') document.getElementById('supportTab').style.display = 'block';
+            });
+        });
+        
+        // Update profile form
+        const updateForm = document.getElementById('updateProfileForm');
+        if (updateForm) {
+            updateForm.addEventListener('submit', (e) => this.updateProfile(e));
+        }
+        
+        // Mobile menu
+        const mobileBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        if (mobileBtn && mobileMenu) {
+            mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('show'));
+        }
     }
 
     formatDate(dateString) {
@@ -245,286 +513,16 @@ class ProfileManager {
         return date.toLocaleDateString();
     }
 
-    async saveProfileChanges(e) {
-        e.preventDefault();
-        
-        const fullName = document.getElementById('fullName').value;
-        const phone = document.getElementById('phone').value;
-        const country = document.getElementById('country').value;
-        const timezone = document.getElementById('timezone').value;
-        
-        const updates = {
-            name: fullName,
-            phone: phone,
-            country: country,
-            timezone: timezone,
-            updated_at: new Date().toISOString()
-        };
-        
-        try {
-            await supabaseDB.update('custom_users', this.currentUser.id, updates);
-            
-            // Update current user object
-            this.currentUser = { ...this.currentUser, ...updates };
-            
-            // Update session storage
-            if (localStorage.getItem('pocket_user')) {
-                localStorage.setItem('pocket_user', JSON.stringify(this.currentUser));
-            }
-            if (sessionStorage.getItem('pocket_user')) {
-                sessionStorage.setItem('pocket_user', JSON.stringify(this.currentUser));
-            }
-            
-            // Update UI
-            const profileName = document.getElementById('profileName');
-            const sidebarUserName = document.getElementById('sidebarUserName');
-            if (profileName) profileName.textContent = fullName;
-            if (sidebarUserName) sidebarUserName.textContent = fullName;
-            
-            auth.showSuccess('Profile updated successfully!');
-            this.addActivity('profile', 'Profile Updated', 'Your profile information was updated');
-        } catch (error) {
-            console.error('Error updating profile:', error);
-            auth.showError('Failed to update profile');
+    showNotification(message, type) {
+        if (typeof auth !== 'undefined' && auth.showNotification) {
+            auth.showNotification(message, type);
+        } else {
+            alert(message);
         }
-    }
-
-    async changePassword() {
-        const currentPassword = document.getElementById('currentPassword').value;
-        const newPassword = document.getElementById('newPassword').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-        
-        if (!currentPassword || !newPassword || !confirmPassword) {
-            auth.showError('Please fill in all password fields');
-            return;
-        }
-        
-        if (newPassword !== confirmPassword) {
-            auth.showError('New passwords do not match');
-            return;
-        }
-        
-        if (newPassword.length < 8) {
-            auth.showError('Password must be at least 8 characters');
-            return;
-        }
-        
-        if (this.currentUser.password !== currentPassword) {
-            auth.showError('Current password is incorrect');
-            return;
-        }
-        
-        try {
-            await supabaseDB.update('custom_users', this.currentUser.id, {
-                password: newPassword,
-                updated_at: new Date().toISOString()
-            });
-            
-            this.currentUser.password = newPassword;
-            
-            // Update session storage
-            if (localStorage.getItem('pocket_user')) {
-                localStorage.setItem('pocket_user', JSON.stringify(this.currentUser));
-            }
-            if (sessionStorage.getItem('pocket_user')) {
-                sessionStorage.setItem('pocket_user', JSON.stringify(this.currentUser));
-            }
-            
-            document.getElementById('currentPassword').value = '';
-            document.getElementById('newPassword').value = '';
-            document.getElementById('confirmPassword').value = '';
-            
-            auth.showSuccess('Password changed successfully!');
-            this.addActivity('profile', 'Password Changed', 'Your account password was updated');
-        } catch (error) {
-            console.error('Error changing password:', error);
-            auth.showError('Failed to change password');
-        }
-    }
-
-    async submitKYC() {
-        const fullName = document.getElementById('kycFullName').value;
-        const dob = document.getElementById('kycDob').value;
-        const idType = document.getElementById('kycIdType').value;
-        const idFront = document.getElementById('idFront').files[0];
-        const idBack = document.getElementById('idBack').files[0];
-        const selfie = document.getElementById('selfie').files[0];
-        
-        if (!fullName || !dob || !idType) {
-            auth.showError('Please fill in all KYC fields');
-            return;
-        }
-        
-        if (!idFront || !idBack || !selfie) {
-            auth.showError('Please upload all required documents');
-            return;
-        }
-        
-        // Simulate file upload (in production, upload to cloud storage)
-        auth.showSuccess('KYC documents submitted for review!');
-        
-        try {
-            await supabaseDB.update('custom_users', this.currentUser.id, {
-                kyc_status: 'pending',
-                kyc_submitted_at: new Date().toISOString(),
-                kyc_full_name: fullName,
-                kyc_dob: dob,
-                kyc_id_type: idType
-            });
-            
-            await supabaseDB.insert('kyc_requests', {
-                id: Date.now(),
-                user_id: this.currentUser.id,
-                user_email: this.currentUser.email,
-                full_name: fullName,
-                dob: dob,
-                id_type: idType,
-                status: 'pending',
-                date: new Date().toISOString()
-            });
-            
-            this.kycStatus = 'pending';
-            this.updateKYCSection();
-            this.addActivity('kyc', 'KYC Submitted', 'Identity verification documents submitted');
-            
-            // Clear form
-            document.getElementById('kycFullName').value = '';
-            document.getElementById('kycDob').value = '';
-            document.getElementById('kycIdType').value = '';
-            document.getElementById('idFront').value = '';
-            document.getElementById('idBack').value = '';
-            document.getElementById('selfie').value = '';
-            
-        } catch (error) {
-            console.error('Error submitting KYC:', error);
-            auth.showError('Failed to submit KYC');
-        }
-    }
-
-    async addActivity(type, title, description) {
-        const activity = {
-            id: Date.now(),
-            user_id: this.currentUser.id,
-            type: type,
-            title: title,
-            description: description,
-            date: new Date().toISOString(),
-            icon: this.getActivityIcon(type)
-        };
-        
-        await supabaseDB.insert('user_activities', activity);
-        this.activities.unshift(activity);
-        this.renderActivities();
-    }
-
-    changeAvatar() {
-        const modal = document.getElementById('avatarModal');
-        modal.style.display = 'flex';
-    }
-
-    setAvatar(avatar) {
-        this.selectedAvatar = avatar;
-        const avatarElement = document.getElementById('profileAvatar');
-        if (avatarElement) avatarElement.textContent = avatar;
-        
-        localStorage.setItem(`avatar_${this.currentUser.id}`, avatar);
-        
-        this.closeAvatarModal();
-        auth.showSuccess('Avatar updated!');
-    }
-
-    loadSavedAvatar() {
-        const savedAvatar = localStorage.getItem(`avatar_${this.currentUser?.id}`);
-        if (savedAvatar) {
-            this.selectedAvatar = savedAvatar;
-            const avatarElement = document.getElementById('profileAvatar');
-            if (avatarElement) avatarElement.textContent = savedAvatar;
-        }
-    }
-
-    closeAvatarModal() {
-        const modal = document.getElementById('avatarModal');
-        modal.style.display = 'none';
-    }
-
-    showDeleteAccountModal() {
-        const modal = document.getElementById('deleteModal');
-        modal.style.display = 'flex';
-    }
-
-    closeDeleteModal() {
-        const modal = document.getElementById('deleteModal');
-        modal.style.display = 'none';
-        document.getElementById('deleteConfirm').value = '';
-    }
-
-    async deleteAccount() {
-        const confirmText = document.getElementById('deleteConfirm').value;
-        
-        if (confirmText !== 'DELETE') {
-            auth.showError('Please type DELETE to confirm');
-            return;
-        }
-        
-        if (confirm('Are you absolutely sure? This will delete all your data permanently.')) {
-            try {
-                // Delete user trades
-                const userTrades = await supabaseDB.getUserTrades(this.currentUser.id);
-                for (const trade of userTrades) {
-                    await supabaseDB.delete('trades', trade.id);
-                }
-                
-                // Delete user activities
-                const userActivities = await supabaseDB.getUserActivities(this.currentUser.id);
-                for (const activity of userActivities) {
-                    await supabaseDB.delete('user_activities', activity.id);
-                }
-                
-                // Delete user
-                await supabaseDB.delete('custom_users', this.currentUser.id);
-                
-                // Clear storage and logout
-                localStorage.removeItem('pocket_user');
-                sessionStorage.removeItem('pocket_user');
-                localStorage.removeItem(`avatar_${this.currentUser.id}`);
-                localStorage.removeItem(`watchlist_${this.currentUser.id}`);
-                
-                auth.showSuccess('Account deleted successfully');
-                setTimeout(() => {
-                    window.location.href = 'home.html';
-                }, 2000);
-            } catch (error) {
-                console.error('Error deleting account:', error);
-                auth.showError('Failed to delete account');
-            }
-        }
-    }
-
-    setupEventListeners() {
-        const profileForm = document.getElementById('profileForm');
-        if (profileForm) {
-            profileForm.addEventListener('submit', (e) => this.saveProfileChanges(e));
-        }
-        
-        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
-        const sidebar = document.querySelector('.sidebar');
-        if (mobileMenuBtn && sidebar) {
-            mobileMenuBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('show');
-            });
-        }
-        
-        // Close modals when clicking outside
-        window.onclick = (e) => {
-            const avatarModal = document.getElementById('avatarModal');
-            const deleteModal = document.getElementById('deleteModal');
-            if (e.target === avatarModal) this.closeAvatarModal();
-            if (e.target === deleteModal) this.closeDeleteModal();
-        };
     }
 }
 
-// Initialize
+// Initialize when DOM is ready
 let profileManager = null;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -532,12 +530,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Global functions
-function changeAvatar() { profileManager?.changeAvatar(); }
-function setAvatar(avatar) { profileManager?.setAvatar(avatar); }
-function closeAvatarModal() { profileManager?.closeAvatarModal(); }
-function changePassword() { profileManager?.changePassword(); }
-function submitKYC() { profileManager?.submitKYC(); }
-function showDeleteAccountModal() { profileManager?.showDeleteAccountModal(); }
-function closeDeleteModal() { profileManager?.closeDeleteModal(); }
-function deleteAccount() { profileManager?.deleteAccount(); }
-function logout() { if (auth) auth.logout(); }
+window.submitKYC = () => profileManager?.submitKYC();
+window.sendSupport = () => profileManager?.sendSupport();
+window.deleteAccount = () => profileManager?.deleteAccount();
+window.handleLogout = function() {
+    if (typeof auth !== 'undefined' && auth.logout) {
+        auth.logout();
+    } else {
+        window.location.href = 'index.html';
+    }
+};
