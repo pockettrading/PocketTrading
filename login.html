@@ -20,71 +20,16 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            overflow-x: hidden;
+            padding: 20px;
         }
 
-        /* Animated background */
-        .bg-shapes {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            z-index: 0;
-        }
-
-        .shape {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(60px);
-            opacity: 0.3;
-            animation: float 10s ease-in-out infinite;
-        }
-
-        .shape-1 {
-            width: 400px;
-            height: 400px;
-            background: #00D897;
-            top: -150px;
-            right: -150px;
-            animation-delay: 0s;
-        }
-
-        .shape-2 {
-            width: 300px;
-            height: 300px;
-            background: #FF4757;
-            bottom: -100px;
-            left: -100px;
-            animation-delay: 2s;
-        }
-
-        .shape-3 {
-            width: 250px;
-            height: 250px;
-            background: #FFA502;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            animation-delay: 4s;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0); }
-            50% { transform: translate(20px, -20px); }
-        }
-
-        /* Container */
         .container {
             position: relative;
             z-index: 1;
             width: 100%;
             max-width: 450px;
-            padding: 20px;
         }
 
-        /* Main Card */
         .auth-card {
             background: rgba(20, 25, 40, 0.95);
             backdrop-filter: blur(20px);
@@ -94,17 +39,11 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        /* Logo */
         .logo {
             text-align: center;
             margin-bottom: 32px;
         }
-
-        .logo-icon {
-            font-size: 48px;
-            margin-bottom: 8px;
-        }
-
+        .logo-icon { font-size: 48px; margin-bottom: 8px; }
         .logo-text {
             font-size: 28px;
             font-weight: 800;
@@ -114,7 +53,6 @@
             color: transparent;
         }
 
-        /* Tabs */
         .auth-tabs {
             display: flex;
             gap: 12px;
@@ -123,7 +61,6 @@
             padding: 4px;
             border-radius: 60px;
         }
-
         .tab-btn {
             flex: 1;
             padding: 12px;
@@ -136,33 +73,26 @@
             transition: all 0.3s;
             font-size: 16px;
         }
-
         .tab-btn.active {
             background: linear-gradient(135deg, #00D897, #00B8A0);
             color: white;
-            box-shadow: 0 4px 15px rgba(0, 216, 151, 0.3);
         }
 
-        /* Forms */
         .auth-form {
             display: none;
         }
-
         .auth-form.active {
             display: block;
             animation: fadeIn 0.3s ease-out;
         }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Form Groups */
         .form-group {
             margin-bottom: 20px;
         }
-
         .form-group label {
             display: block;
             margin-bottom: 8px;
@@ -170,19 +100,16 @@
             font-weight: 500;
             color: #D1D5DB;
         }
-
         .input-wrapper {
             position: relative;
             display: flex;
             align-items: center;
         }
-
         .input-icon {
             position: absolute;
             left: 16px;
             font-size: 18px;
         }
-
         .form-group input {
             width: 100%;
             padding: 14px 16px 14px 48px;
@@ -190,28 +117,14 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
             color: white;
-            font-size: 14px;
+            font-size: 16px;
             transition: all 0.3s;
         }
-
         .form-group input:focus {
             outline: none;
             border-color: #00D897;
             background: rgba(0, 216, 151, 0.05);
         }
-
-        .form-group input::placeholder {
-            color: #5A6475;
-        }
-
-        .form-group input.error {
-            border-color: #FF4757;
-        }
-
-        .form-group input.valid {
-            border-color: #00D897;
-        }
-
         .password-toggle {
             position: absolute;
             right: 16px;
@@ -222,37 +135,14 @@
             font-size: 18px;
         }
 
-        /* Password Strength */
-        .password-strength {
-            margin-top: 8px;
-        }
-
-        .strength-bar-container {
-            height: 4px;
-            background: #2A3545;
-            border-radius: 2px;
-            overflow: hidden;
-            margin-top: 8px;
-        }
-
-        .strength-bar {
-            height: 100%;
-            transition: width 0.3s;
-            border-radius: 2px;
-        }
-
-        .strength-weak { color: #FF4757; }
-        .strength-medium { color: #FFA502; }
-        .strength-strong { color: #00D897; }
-
-        /* Checkbox & Options */
         .form-options {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
         }
-
         .checkbox-label {
             display: flex;
             align-items: center;
@@ -261,18 +151,12 @@
             font-size: 13px;
             color: #D1D5DB;
         }
-
-        .checkbox-label input {
-            width: auto;
-        }
-
         .forgot-link {
             color: #00D897;
             text-decoration: none;
             font-size: 13px;
         }
 
-        /* Submit Button */
         .submit-btn {
             width: 100%;
             padding: 14px;
@@ -285,111 +169,50 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-
         .submit-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(0, 216, 151, 0.3);
         }
 
-        .submit-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Terms Text */
         .terms-text {
             text-align: center;
             font-size: 12px;
             color: #6B7280;
             margin-top: 24px;
         }
-
         .terms-text a {
             color: #00D897;
             text-decoration: none;
         }
 
-        /* Notification */
         .notification {
             position: fixed;
             top: 20px;
-            right: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             padding: 12px 20px;
             border-radius: 12px;
             font-size: 14px;
             z-index: 10000;
-            animation: slideIn 0.3s ease-out;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            font-weight: 500;
-            max-width: 350px;
+            animation: slideDown 0.3s ease-out;
+            max-width: 90%;
+            text-align: center;
+        }
+        .notification-success { background: rgba(0, 216, 151, 0.95); color: white; }
+        .notification-error { background: rgba(255, 71, 87, 0.95); color: white; }
+
+        @keyframes slideDown {
+            from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
         }
 
-        .notification-success {
-            background: rgba(0, 216, 151, 0.95);
-            color: white;
-        }
-
-        .notification-error {
-            background: rgba(255, 71, 87, 0.95);
-            color: white;
-        }
-
-        .notification-info {
-            background: rgba(255, 165, 2, 0.95);
-            color: white;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-
-        /* Demo Hint */
-        .demo-hint {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 216, 151, 0.1);
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 11px;
-            color: #00D897;
-            cursor: pointer;
-            z-index: 1000;
-            display: none;
-        }
-
-        .demo-hint:hover {
-            background: rgba(0, 216, 151, 0.2);
-        }
-
-        /* Responsive */
         @media (max-width: 480px) {
-            .container {
-                padding: 16px;
-            }
-            .auth-card {
-                padding: 32px 24px;
-            }
-            .logo-text {
-                font-size: 24px;
-            }
+            .auth-card { padding: 32px 24px; }
+            .logo-text { font-size: 24px; }
         }
     </style>
 </head>
 <body>
-    <div class="bg-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        <div class="shape shape-3"></div>
-    </div>
-
     <div class="container">
         <div class="auth-card">
             <div class="logo">
@@ -397,7 +220,6 @@
                 <div class="logo-text">PocketTrading</div>
             </div>
 
-            <!-- Tab Buttons -->
             <div class="auth-tabs">
                 <button class="tab-btn active" data-tab="login">Login</button>
                 <button class="tab-btn" data-tab="register">Register</button>
@@ -409,7 +231,7 @@
                     <label>Email Address</label>
                     <div class="input-wrapper">
                         <span class="input-icon">📧</span>
-                        <input type="email" id="loginEmail" placeholder="Enter your email" autocomplete="email">
+                        <input type="email" id="loginEmail" placeholder="Enter your email">
                     </div>
                 </div>
                 
@@ -417,7 +239,7 @@
                     <label>Password</label>
                     <div class="input-wrapper">
                         <span class="input-icon">🔒</span>
-                        <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password">
+                        <input type="password" id="loginPassword" placeholder="Enter your password">
                         <button type="button" class="password-toggle" onclick="togglePassword('loginPassword')">👁️</button>
                     </div>
                 </div>
@@ -429,7 +251,7 @@
                     <a href="#" class="forgot-link" id="forgotPassword">Forgot password?</a>
                 </div>
                 
-                <button type="submit" class="submit-btn" id="loginBtn">Login →</button>
+                <button type="button" class="submit-btn" id="loginBtn">Login →</button>
             </form>
 
             <!-- Register Form -->
@@ -438,18 +260,16 @@
                     <label>Full Name</label>
                     <div class="input-wrapper">
                         <span class="input-icon">👤</span>
-                        <input type="text" id="regFullName" placeholder="First and last name" autocomplete="name">
+                        <input type="text" id="regFullName" placeholder="First and last name">
                     </div>
-                    <small id="nameHint" style="color: #FFA502; font-size: 11px; display: none;">Enter both first and last name</small>
                 </div>
                 
                 <div class="form-group">
                     <label>Email Address</label>
                     <div class="input-wrapper">
                         <span class="input-icon">📧</span>
-                        <input type="email" id="regEmail" placeholder="Enter your email" autocomplete="email">
+                        <input type="email" id="regEmail" placeholder="Enter your email">
                     </div>
-                    <small id="regEmailHint" style="color: #8B93A5; font-size: 11px; display: none;"></small>
                 </div>
                 
                 <div class="form-group">
@@ -459,7 +279,6 @@
                         <input type="password" id="regPassword" placeholder="Create a password">
                         <button type="button" class="password-toggle" onclick="togglePassword('regPassword')">👁️</button>
                     </div>
-                    <div id="passwordStrength" class="password-strength"></div>
                 </div>
                 
                 <div class="form-group">
@@ -473,12 +292,11 @@
                 
                 <div class="form-options">
                     <label class="checkbox-label">
-                        <input type="checkbox" id="termsAgree"> 
-                        I agree to the <a href="#">Terms of Service</a>
+                        <input type="checkbox" id="termsAgree"> I agree to the <a href="#">Terms of Service</a>
                     </label>
                 </div>
                 
-                <button type="submit" class="submit-btn" id="registerBtn">Create Account →</button>
+                <button type="button" class="submit-btn" id="registerBtn">Create Account →</button>
             </form>
 
             <div class="terms-text">
@@ -487,39 +305,14 @@
         </div>
     </div>
 
-    <!-- Demo Hint (only visible in development) -->
-    <div class="demo-hint" id="demoHint">
-        🔑 Demo: Click to fill test credentials
-    </div>
-
-    <!-- Forgot Password Modal -->
-    <div id="forgotModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001; align-items: center; justify-content: center;">
-        <div style="background: #1E2A3A; border-radius: 24px; padding: 32px; max-width: 400px; width: 90%;">
-            <h3 style="margin-bottom: 16px;">Reset Password</h3>
-            <p style="color: #8B93A5; margin-bottom: 20px;">Enter your email to receive reset instructions.</p>
-            <input type="email" id="resetEmail" placeholder="Your email" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; margin-bottom: 20px;">
-            <div style="display: flex; gap: 12px;">
-                <button onclick="closeForgotModal()" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: none; border-radius: 12px; color: white; cursor: pointer;">Cancel</button>
-                <button onclick="sendResetLink()" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #00D897, #00B8A0); border: none; border-radius: 12px; color: white; cursor: pointer;">Send Reset Link</button>
-            </div>
-        </div>
-    </div>
-
+    <script src="js/supabase-db.js"></script>
+    <script src="js/auth.js"></script>
     <script>
-        // ============ COMPLETE AUTH SYSTEM ============
-        
-        // DOM Elements
+        // Tab switching
         const tabBtns = document.querySelectorAll('.tab-btn');
         const loginForm = document.getElementById('loginForm');
         const registerForm = document.getElementById('registerForm');
-        const forgotLink = document.getElementById('forgotPassword');
-        const forgotModal = document.getElementById('forgotModal');
         
-        // User data storage key
-        const USERS_KEY = 'pockettrading_users';
-        const ADMIN_EMAIL = 'ephremgojo@gmail.com';
-        
-        // ============ TAB SWITCHING ============
         tabBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 const tab = btn.dataset.tab;
@@ -529,387 +322,99 @@
                 if (tab === 'login') {
                     loginForm.classList.add('active');
                     registerForm.classList.remove('active');
-                    clearLoginErrors();
                 } else {
                     loginForm.classList.remove('active');
                     registerForm.classList.add('active');
-                    clearRegisterErrors();
                 }
             });
         });
         
-        // ============ PASSWORD STRENGTH METER ============
-        const regPassword = document.getElementById('regPassword');
-        if (regPassword) {
-            regPassword.addEventListener('input', function() {
-                const password = this.value;
-                const strengthDiv = document.getElementById('passwordStrength');
-                let strength = 0;
-                let message = '';
-                let className = '';
-                let percentage = 0;
-                
-                if (password.length >= 8) strength++;
-                if (password.match(/[a-z]+/)) strength++;
-                if (password.match(/[A-Z]+/)) strength++;
-                if (password.match(/[0-9]+/)) strength++;
-                if (password.match(/[$@#&!]+/)) strength++;
-                
-                switch(strength) {
-                    case 0: case 1: message = 'Weak'; className = 'strength-weak'; percentage = 20; break;
-                    case 2: case 3: message = 'Medium'; className = 'strength-medium'; percentage = 60; break;
-                    case 4: case 5: message = 'Strong'; className = 'strength-strong'; percentage = 100; break;
-                }
-                
-                if (password.length > 0) {
-                    let barColor = '#FF4757';
-                    if (strength <= 1) barColor = '#FF4757';
-                    else if (strength <= 3) barColor = '#FFA502';
-                    else barColor = '#00D897';
-                    
-                    strengthDiv.innerHTML = `
-                        <div class="strength-bar-container">
-                            <div class="strength-bar" style="width: ${percentage}%; background: ${barColor}"></div>
-                        </div>
-                        <span class="${className}">${message} Password</span>
-                    `;
-                } else {
-                    strengthDiv.innerHTML = '';
-                }
-            });
-        }
-        
-        // ============ VALIDATION FUNCTIONS ============
-        function isValidEmail(email) {
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        }
-        
-        function isValidName(name) {
-            const parts = name.trim().split(/\s+/);
-            return parts.length >= 2 && parts[0].length > 0 && parts[1].length > 0;
-        }
-        
-        async function isEmailTaken(email) {
-            const users = getUsers();
-            return users.some(u => u.email.toLowerCase() === email.toLowerCase());
-        }
-        
-        function getUsers() {
-            const users = localStorage.getItem(USERS_KEY);
-            return users ? JSON.parse(users) : [];
-        }
-        
-        function saveUsers(users) {
-            localStorage.setItem(USERS_KEY, JSON.stringify(users));
-            // Also try to sync with Supabase if available
-            if (typeof supabaseDB !== 'undefined') {
-                // Async update, don't wait
-                users.forEach(async user => {
-                    const existing = await supabaseDB.getUserByEmail(user.email);
-                    if (!existing) {
-                        await supabaseDB.insert('custom_users', user);
-                    }
-                });
+        // Toggle password visibility
+        window.togglePassword = function(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.type = field.type === 'password' ? 'text' : 'password';
             }
-        }
+        };
         
-        function saveUserSession(user, remember = false) {
-            if (remember) {
-                localStorage.setItem('pocket_user', JSON.stringify(user));
-                sessionStorage.removeItem('pocket_user');
-            } else {
-                sessionStorage.setItem('pocket_user', JSON.stringify(user));
-                localStorage.removeItem('pocket_user');
-            }
-        }
-        
-        // ============ LOGIN FUNCTION ============
-        async function handleLogin(email, password, rememberMe) {
-            if (!email || !password) {
-                showNotification('Please enter email and password', 'error');
-                return false;
-            }
-            
-            const users = getUsers();
-            const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
-            
-            if (user) {
-                // Update last login
-                user.last_login = new Date().toISOString();
-                saveUsers(users);
-                
-                // Set admin flag
-                user.isAdmin = (user.email === ADMIN_EMAIL);
-                
-                // Save session
-                saveUserSession(user, rememberMe);
-                
-                showNotification(`Welcome back, ${user.name || user.email.split('@')[0]}!`, 'success');
-                setTimeout(() => {
-                    window.location.href = 'home.html';
-                }, 1000);
-                return true;
-            } else {
-                // Check if email exists but password wrong
-                const emailExists = users.some(u => u.email.toLowerCase() === email.toLowerCase());
-                if (emailExists) {
-                    showNotification('Incorrect password', 'error');
-                } else {
-                    showNotification('Account not found. Please register first.', 'error');
-                }
-                return false;
-            }
-        }
-        
-        // ============ REGISTER FUNCTION ============
-        async function handleRegister(fullName, email, password, confirmPassword, termsAgree) {
-            // Validate full name
-            if (!fullName || !isValidName(fullName)) {
-                showNotification('Please enter your full name (first and last name)', 'error');
-                document.getElementById('regFullName').classList.add('error');
-                return false;
-            }
-            document.getElementById('regFullName').classList.remove('error');
-            
-            // Validate email
-            if (!email || !isValidEmail(email)) {
-                showNotification('Please enter a valid email address', 'error');
-                document.getElementById('regEmail').classList.add('error');
-                return false;
-            }
-            document.getElementById('regEmail').classList.remove('error');
-            
-            // Check if email already taken
-            const emailTaken = await isEmailTaken(email);
-            if (emailTaken) {
-                showNotification('Email already registered. Please login instead.', 'error');
-                setTimeout(() => {
-                    document.querySelector('.tab-btn[data-tab="login"]').click();
-                }, 2000);
-                return false;
-            }
-            
-            // Validate password
-            if (!password || password.length < 8) {
-                showNotification('Password must be at least 8 characters', 'error');
-                document.getElementById('regPassword').classList.add('error');
-                return false;
-            }
-            document.getElementById('regPassword').classList.remove('error');
-            
-            // Validate password match
-            if (password !== confirmPassword) {
-                showNotification('Passwords do not match', 'error');
-                document.getElementById('regConfirmPassword').classList.add('error');
-                return false;
-            }
-            document.getElementById('regConfirmPassword').classList.remove('error');
-            
-            // Validate terms
-            if (!termsAgree) {
-                showNotification('Please agree to the Terms of Service', 'error');
-                return false;
-            }
-            
-            // Format name (capitalize each word)
-            const formattedName = fullName.trim().split(/\s+/)
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                .join(' ');
-            
-            // Check if this is admin
-            const isAdmin = (email.toLowerCase() === ADMIN_EMAIL);
-            
-            // Create new user
-            const newUser = {
-                id: Date.now(),
-                name: formattedName,
-                email: email.toLowerCase(),
-                password: password,
-                balance: 0,
-                kyc_status: 'pending',
-                phone: '',
-                country: '',
-                timezone: 'UTC+0',
-                is_admin: isAdmin,
-                created_at: new Date().toISOString(),
-                last_login: new Date().toISOString()
-            };
-            
-            // Save to localStorage
-            const users = getUsers();
-            users.push(newUser);
-            saveUsers(users);
-            
-            // Auto-login the user
-            saveUserSession(newUser, true);
-            
-            const roleMsg = isAdmin ? ' (Administrator)' : '';
-            showNotification(`Welcome ${formattedName}!${roleMsg} Account created successfully.`, 'success');
-            
-            setTimeout(() => {
-                window.location.href = 'home.html';
-            }, 1500);
-            
-            return true;
-        }
-        
-        // ============ EVENT LISTENERS ============
-        
-        // Login form submit
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Login function
+        document.getElementById('loginBtn').addEventListener('click', async () => {
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
             const rememberMe = document.getElementById('rememberMe').checked;
             
-            await handleLogin(email, password, rememberMe);
+            if (!email || !password) {
+                showNotification('Please enter email and password', 'error');
+                return;
+            }
+            
+            // Wait for auth to be ready
+            if (typeof auth === 'undefined') {
+                showNotification('System loading. Please try again.', 'error');
+                return;
+            }
+            
+            const success = await auth.login(email, password, rememberMe);
+            if (success) {
+                setTimeout(() => {
+                    window.location.href = 'profile.html';
+                }, 1000);
+            }
         });
         
-        // Register form submit
-        registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Register function
+        document.getElementById('registerBtn').addEventListener('click', async () => {
             const fullName = document.getElementById('regFullName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const confirmPassword = document.getElementById('regConfirmPassword').value;
             const termsAgree = document.getElementById('termsAgree').checked;
             
-            await handleRegister(fullName, email, password, confirmPassword, termsAgree);
-        });
-        
-        // Real-time validation for register form
-        const regFullName = document.getElementById('regFullName');
-        const regEmailInput = document.getElementById('regEmail');
-        const regPasswordInput = document.getElementById('regPassword');
-        const regConfirmInput = document.getElementById('regConfirmPassword');
-        const nameHint = document.getElementById('nameHint');
-        const regEmailHint = document.getElementById('regEmailHint');
-        
-        if (regFullName) {
-            regFullName.addEventListener('input', () => {
-                if (regFullName.value.trim().split(/\s+/).length >= 2) {
-                    regFullName.classList.remove('error');
-                    regFullName.classList.add('valid');
-                    nameHint.style.display = 'none';
-                } else {
-                    regFullName.classList.remove('valid');
-                    if (regFullName.value.length > 0) {
-                        regFullName.classList.add('error');
-                        nameHint.style.display = 'block';
-                    } else {
-                        nameHint.style.display = 'none';
-                    }
-                }
-            });
-        }
-        
-        if (regEmailInput) {
-            regEmailInput.addEventListener('input', async () => {
-                const email = regEmailInput.value.trim();
-                if (isValidEmail(email)) {
-                    const taken = await isEmailTaken(email);
-                    if (taken) {
-                        regEmailInput.classList.add('error');
-                        regEmailInput.classList.remove('valid');
-                        regEmailHint.textContent = '⚠️ Email already registered';
-                        regEmailHint.style.color = '#FF4757';
-                        regEmailHint.style.display = 'block';
-                    } else {
-                        regEmailInput.classList.remove('error');
-                        regEmailInput.classList.add('valid');
-                        regEmailHint.textContent = '✓ Email available';
-                        regEmailHint.style.color = '#00D897';
-                        regEmailHint.style.display = 'block';
-                    }
-                } else if (email.length > 0) {
-                    regEmailInput.classList.add('error');
-                    regEmailInput.classList.remove('valid');
-                    regEmailHint.textContent = '⚠️ Enter valid email';
-                    regEmailHint.style.color = '#FFA502';
-                    regEmailHint.style.display = 'block';
-                } else {
-                    regEmailHint.style.display = 'none';
-                }
-            });
-        }
-        
-        if (regPasswordInput) {
-            regPasswordInput.addEventListener('input', () => {
-                if (regPasswordInput.value.length >= 8) {
-                    regPasswordInput.classList.remove('error');
-                    regPasswordInput.classList.add('valid');
-                } else if (regPasswordInput.value.length > 0) {
-                    regPasswordInput.classList.add('error');
-                    regPasswordInput.classList.remove('valid');
-                }
-            });
-        }
-        
-        if (regConfirmInput) {
-            regConfirmInput.addEventListener('input', () => {
-                if (regConfirmInput.value === regPasswordInput?.value && regConfirmInput.value.length > 0) {
-                    regConfirmInput.classList.remove('error');
-                    regConfirmInput.classList.add('valid');
-                } else if (regConfirmInput.value.length > 0) {
-                    regConfirmInput.classList.add('error');
-                    regConfirmInput.classList.remove('valid');
-                }
-            });
-        }
-        
-        // Clear error styles when switching tabs
-        function clearLoginErrors() {
-            document.getElementById('loginEmail').classList.remove('error', 'valid');
-            document.getElementById('loginPassword').classList.remove('error', 'valid');
-        }
-        
-        function clearRegisterErrors() {
-            document.getElementById('regFullName').classList.remove('error', 'valid');
-            document.getElementById('regEmail').classList.remove('error', 'valid');
-            document.getElementById('regPassword').classList.remove('error', 'valid');
-            document.getElementById('regConfirmPassword').classList.remove('error', 'valid');
-            document.getElementById('nameHint').style.display = 'none';
-            document.getElementById('regEmailHint').style.display = 'none';
-        }
-        
-        // ============ FORGOT PASSWORD ============
-        if (forgotLink) {
-            forgotLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                forgotModal.style.display = 'flex';
-            });
-        }
-        
-        function closeForgotModal() {
-            forgotModal.style.display = 'none';
-            document.getElementById('resetEmail').value = '';
-        }
-        
-        async function sendResetLink() {
-            const email = document.getElementById('resetEmail').value.trim();
-            if (!email || !isValidEmail(email)) {
-                showNotification('Please enter a valid email', 'error');
+            if (!fullName || fullName.split(' ').length < 2) {
+                showNotification('Please enter your full name (first and last name)', 'error');
                 return;
             }
             
-            const users = getUsers();
-            const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-            
-            if (user) {
-                // In a real app, send email here
-                showNotification(`Password reset link sent to ${email}. Demo mode - Use any password.`, 'info');
-                closeForgotModal();
-            } else {
-                showNotification('No account found with this email', 'error');
+            if (!email || !email.includes('@')) {
+                showNotification('Please enter a valid email address', 'error');
+                return;
             }
-        }
-        
-        // Close modal when clicking outside
-        forgotModal?.addEventListener('click', (e) => {
-            if (e.target === forgotModal) closeForgotModal();
+            
+            if (!password || password.length < 8) {
+                showNotification('Password must be at least 8 characters', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showNotification('Passwords do not match', 'error');
+                return;
+            }
+            
+            if (!termsAgree) {
+                showNotification('Please agree to the Terms of Service', 'error');
+                return;
+            }
+            
+            if (typeof auth === 'undefined') {
+                showNotification('System loading. Please try again.', 'error');
+                return;
+            }
+            
+            const success = await auth.register(fullName, email, password);
+            if (success) {
+                setTimeout(() => {
+                    window.location.href = 'profile.html';
+                }, 1500);
+            }
         });
         
-        // ============ NOTIFICATION SYSTEM ============
+        // Forgot password
+        document.getElementById('forgotPassword').addEventListener('click', (e) => {
+            e.preventDefault();
+            showNotification('Password reset link would be sent to your email (Demo feature)', 'info');
+        });
+        
+        // Notification function
         function showNotification(message, type) {
             const existing = document.querySelector('.notification');
             if (existing) existing.remove();
@@ -919,85 +424,15 @@
             notification.textContent = message;
             document.body.appendChild(notification);
             
-            setTimeout(() => {
-                notification.style.animation = 'slideOut 0.3s ease-out';
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
+            setTimeout(() => notification.remove(), 3000);
         }
         
-        // ============ PASSWORD TOGGLE ============
-        window.togglePassword = function(fieldId) {
-            const field = document.getElementById(fieldId);
-            if (field) {
-                field.type = field.type === 'password' ? 'text' : 'password';
+        // Check if already logged in
+        setTimeout(() => {
+            if (typeof auth !== 'undefined' && auth.isLoggedIn()) {
+                window.location.href = 'profile.html';
             }
-        };
-        
-        // ============ DEMO HINT (Development only) ============
-        const demoHint = document.getElementById('demoHint');
-        if (demoHint && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-            demoHint.style.display = 'block';
-            demoHint.onclick = () => {
-                document.getElementById('loginEmail').value = 'ephremgojo@gmail.com';
-                document.getElementById('loginPassword').value = 'Admin123';
-                showNotification('Demo admin credentials filled! Click Login.', 'info');
-            };
-        }
-        
-        // ============ CHECK EXISTING SESSION ============
-        function checkExistingSession() {
-            const storedUser = sessionStorage.getItem('pocket_user') || localStorage.getItem('pocket_user');
-            if (storedUser) {
-                window.location.href = 'home.html';
-            }
-        }
-        
-        checkExistingSession();
-        
-        // Initialize demo user if no users exist
-        function initializeDemoUsers() {
-            const users = getUsers();
-            if (users.length === 0) {
-                const demoUsers = [
-                    {
-                        id: Date.now(),
-                        name: 'Demo User',
-                        email: 'demo@example.com',
-                        password: 'Demo1234',
-                        balance: 10000,
-                        kyc_status: 'verified',
-                        phone: '',
-                        country: 'US',
-                        timezone: 'UTC+0',
-                        is_admin: false,
-                        created_at: new Date().toISOString(),
-                        last_login: new Date().toISOString()
-                    },
-                    {
-                        id: Date.now() + 1,
-                        name: 'Admin User',
-                        email: ADMIN_EMAIL,
-                        password: 'Admin123',
-                        balance: 50000,
-                        kyc_status: 'verified',
-                        phone: '',
-                        country: 'US',
-                        timezone: 'UTC+0',
-                        is_admin: true,
-                        created_at: new Date().toISOString(),
-                        last_login: new Date().toISOString()
-                    }
-                ];
-                saveUsers(demoUsers);
-            }
-        }
-        
-        initializeDemoUsers();
-        
-        // Make functions global
-        window.closeForgotModal = closeForgotModal;
-        window.sendResetLink = sendResetLink;
-        window.showNotification = showNotification;
+        }, 500);
     </script>
 </body>
 </html>
