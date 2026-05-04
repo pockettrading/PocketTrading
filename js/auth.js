@@ -6,13 +6,13 @@
 class AuthManager {
     constructor() {
         this.currentUser = null;
-        this.sessionUser = null;
         this.init();
     }
 
     async init() {
         await this.waitForSupabase();
         await this.checkExistingSession();
+        this.updateNavbarOnAllPages();
     }
 
     async waitForSupabase() {
@@ -31,7 +31,7 @@ class AuthManager {
     }
 
     async checkExistingSession() {
-        const userId = sessionStorage.getItem('pocket_user_id');
+        const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
         
         if (userId) {
             try {
@@ -50,26 +50,36 @@ class AuthManager {
         }
     }
 
+    updateNavbarOnAllPages() {
+        // Dispatch a custom event that all pages can listen to
+        const event = new CustomEvent('authStateChanged', { detail: { user: this.currentUser } });
+        window.dispatchEvent(event);
+    }
+
     async login(email, password, rememberMe = false) {
         try {
             const user = await supabaseDB.getUserByEmail(email);
             
             if (user && user.password === password) {
+                // Update last login
                 await supabaseDB.updateUser(user.id, { 
                     last_login: new Date().toISOString() 
                 });
                 
+                // Set admin flag
                 user.isAdmin = (user.email === 'ephremgojo@gmail.com');
                 
-                sessionStorage.setItem('pocket_user_id', user.id);
-                
+                // Store session
                 if (rememberMe) {
                     localStorage.setItem('pocket_user_id', user.id);
+                    sessionStorage.removeItem('pocket_user_id');
                 } else {
+                    sessionStorage.setItem('pocket_user_id', user.id);
                     localStorage.removeItem('pocket_user_id');
                 }
                 
                 this.currentUser = user;
+                this.updateNavbarOnAllPages();
                 this.showNotification(`Welcome back, ${user.name || user.email.split('@')[0]}!`, 'success');
                 return true;
             } else {
@@ -96,13 +106,15 @@ class AuthManager {
                 return false;
             }
             
+            // Format name
             const formattedName = fullName.trim().split(/\s+/)
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
                 .join(' ');
             
+            // Check if admin
             const isAdmin = (email === 'ephremgojo@gmail.com');
             
-            // Remove timezone field - only include columns that exist in your table
+            // Create new user (no timezone field)
             const newUser = {
                 id: Date.now(),
                 name: formattedName,
@@ -119,9 +131,11 @@ class AuthManager {
             
             await supabaseDB.createUser(newUser);
             
+            // Auto-login after registration
             newUser.isAdmin = isAdmin;
             sessionStorage.setItem('pocket_user_id', newUser.id);
             this.currentUser = newUser;
+            this.updateNavbarOnAllPages();
             
             const roleMsg = isAdmin ? ' (Administrator)' : '';
             this.showNotification(`Welcome ${formattedName}!${roleMsg} Account created successfully.`, 'success');
@@ -175,6 +189,7 @@ class AuthManager {
         sessionStorage.removeItem('pocket_user_id');
         localStorage.removeItem('pocket_user_id');
         this.currentUser = null;
+        this.updateNavbarOnAllPages();
         this.showNotification('Logged out successfully', 'info');
         window.location.href = 'index.html';
     }
@@ -189,6 +204,11 @@ class AuthManager {
 
     getUser() {
         return this.currentUser;
+    }
+
+    getUsername() {
+        if (!this.currentUser) return '';
+        return this.currentUser.name || this.currentUser.email.split('@')[0];
     }
 
     showNotification(message, type) {
@@ -240,10 +260,13 @@ if (!document.querySelector('#auth-notification-styles')) {
     document.head.appendChild(style);
 }
 
+// Initialize auth
 const auth = new AuthManager();
 
-window.logout = () => auth.logout();
+// Global helper functions
 window.isLoggedIn = () => auth.isLoggedIn();
 window.isAdmin = () => auth.isAdmin();
 window.getCurrentUser = () => auth.getUser();
+window.getUsername = () => auth.getUsername();
+window.logout = () => auth.logout();
 window.auth = auth;
