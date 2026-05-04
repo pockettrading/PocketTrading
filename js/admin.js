@@ -10,43 +10,181 @@ class AdminManager {
         this.withdrawals = [];
         this.kycRequests = [];
         this.trades = [];
-        this.userGrowthChart = null;
-        this.volumeChart = null;
+        this.tradingEnabled = true;
+        this.currentTab = 'dashboard';
         this.init();
     }
 
     async init() {
-        if (typeof auth === 'undefined') {
-            setTimeout(() => this.init(), 100);
-            return;
-        }
-
+        await this.waitForDependencies();
+        
         this.currentUser = auth.getUser();
         
-        // Check if user is admin
         if (!this.currentUser || this.currentUser.email !== 'ephremgojo@gmail.com') {
-            window.location.href = 'home.html';
+            window.location.href = 'index.html';
             return;
         }
-
-        await this.loadAllData();
-        this.setupUserInterface();
-        this.setupEventListeners();
-        this.renderDashboard();
-        this.initCharts();
         
-        // Set up auto-refresh every 30 seconds
+        await this.loadEmergencyStopStatus();
+        await this.loadAllData();
+        this.setupNavigation();
+        this.renderDashboard();
+        this.renderEmergencyStopSwitch();
+        this.setupEventListeners();
+        
+        // Auto-refresh every 30 seconds
         setInterval(() => this.refreshData(), 30000);
     }
 
-    setupUserInterface() {
-        const adminName = document.getElementById('adminName');
-        const adminEmail = document.getElementById('adminEmail');
-        const adminAvatar = document.getElementById('adminAvatar');
+    async waitForDependencies() {
+        return new Promise((resolve) => {
+            const check = setInterval(() => {
+                if (typeof auth !== 'undefined' && typeof supabaseDB !== 'undefined') {
+                    clearInterval(check);
+                    resolve();
+                }
+            }, 100);
+        });
+    }
+
+    async loadEmergencyStopStatus() {
+        try {
+            const settings = await supabaseDB.getPlatformSettings();
+            if (settings && settings.trading_enabled !== undefined) {
+                this.tradingEnabled = settings.trading_enabled;
+            }
+        } catch (error) {
+            console.error('Error loading emergency stop status:', error);
+        }
+    }
+
+    async saveEmergencyStopStatus(enabled) {
+        this.tradingEnabled = enabled;
+        await supabaseDB.updatePlatformSetting('trading_enabled', enabled);
         
-        if (adminName) adminName.textContent = this.currentUser.name || 'Admin';
-        if (adminEmail) adminEmail.textContent = this.currentUser.email;
-        if (adminAvatar) adminAvatar.textContent = '👑';
+        // If trading is DISABLED, close all open trades (users lose everything)
+        if (!enabled) {
+            await this.closeAllOpenTrades();
+        }
+        
+        this.renderEmergencyStopSwitch();
+    }
+
+    async closeAllOpenTrades() {
+        const openTrades = this.trades.filter(t => t.status === 'open');
+        
+        for (const trade of openTrades) {
+            // Mark trade as closed with loss
+            await supabaseDB.updateTrade(trade.id, {
+                status: 'closed',
+                result: 'emergency_stop',
+                pnl: -trade.amount,
+                closed_at: new Date().toISOString()
+            });
+            
+            // Create activity record for the user
+            await supabaseDB.createUserActivity({
+                id: Date.now(),
+                user_id: trade.user_id,
+                type: 'emergency_stop',
+                title: 'Trade Closed - Emergency Stop',
+                description: `Trade on ${trade.symbol} closed due to admin emergency stop. Loss: $${trade.amount}`,
+                created_at: new Date().toISOString()
+            });
+        }
+        
+        // Refresh trades list
+        await this.loadAllData();
+        this.renderTrades();
+        
+        if (openTrades.length > 0) {
+            auth.showNotification(`⚠️ Emergency Stop: ${openTrades.length} trades closed with total loss of $${openTrades.reduce((sum, t) => sum + t.amount, 0).toLocaleString()}`, 'error');
+        }
+    }
+
+    renderEmergencyStopSwitch() {
+        const dashboardTab = document.getElementById('dashboardTab');
+        if (!dashboardTab) return;
+        
+        // Check if switch already exists
+        let switchContainer = document.getElementById('emergencyStopSwitch');
+        if (switchContainer) {
+            switchContainer.remove();
+        }
+        
+        switchContainer = document.createElement('div');
+        switchContainer.id = 'emergencyStopSwitch';
+        switchContainer.style.cssText = `
+            background: ${this.tradingEnabled ? 'rgba(0, 216, 151, 0.1)' : 'rgba(255, 71, 87, 0.15)'};
+            border: 1px solid ${this.tradingEnabled ? 'rgba(0, 216, 151, 0.3)' : 'rgba(255, 71, 87, 0.3)'};
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        `;
+        
+        switchContainer.innerHTML = `
+            <div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 24px;">⚠️</span>
+                    <div>
+                        <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">Emergency Trade Stop</h3>
+                        <p style="font-size: 13px; color: #8B93A5; margin: 0;">
+                            ${this.tradingEnabled ? 'Trading is currently ACTIVE' : 'Trading is STOPPED - All open trades will be closed with LOSS'}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <span style="font-size: 14px; font-weight: 600; ${this.tradingEnabled ? 'color: #00D897' : 'color: #FF4757'}">
+                    ${this.tradingEnabled ? '● ENABLED' : '○ DISABLED'}
+                </span>
+                <label class="switch" style="position: relative; display: inline-block; width: 60px; height: 34px;">
+                    <input type="checkbox" id="emergencyStopToggle" ${this.tradingEnabled ? 'checked' : ''} style="opacity: 0; width: 0; height: 0;">
+                    <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${this.tradingEnabled ? '#00D897' : '#FF4757'}; transition: .3s; border-radius: 34px;"></span>
+                </label>
+            </div>
+        `;
+        
+        // Add slider styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .slider:before {
+                position: absolute;
+                content: "";
+                height: 26px;
+                width: 26px;
+                left: 4px;
+                bottom: 4px;
+                background-color: white;
+                transition: .3s;
+                border-radius: 50%;
+            }
+            input:checked + .slider:before {
+                transform: translateX(26px);
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Insert at the top of dashboard tab
+        dashboardTab.insertBefore(switchContainer, dashboardTab.firstChild);
+        
+        // Add event listener
+        const toggle = document.getElementById('emergencyStopToggle');
+        if (toggle) {
+            toggle.addEventListener('change', async (e) => {
+                const confirmed = confirm(`⚠️ WARNING: ${!e.target.checked ? 'Turning OFF will IMMEDIATELY CLOSE ALL OPEN TRADES. Users will lose their invested amounts.' : 'Turning ON will allow trading again.'} Are you sure?`);
+                if (confirmed) {
+                    await this.saveEmergencyStopStatus(e.target.checked);
+                } else {
+                    e.target.checked = this.tradingEnabled;
+                }
+            });
+        }
     }
 
     async loadAllData() {
@@ -61,7 +199,7 @@ class AdminManager {
 
     async refreshData() {
         await this.loadAllData();
-        this.renderDashboard();
+        if (this.currentTab === 'dashboard') this.renderDashboard();
         if (this.currentTab === 'users') this.renderUsers();
         if (this.currentTab === 'deposits') this.renderDeposits();
         if (this.currentTab === 'withdrawals') this.renderWithdrawals();
@@ -80,7 +218,7 @@ class AdminManager {
 
     async loadDeposits() {
         try {
-            this.deposits = await supabaseDB.getAll('deposit_requests');
+            this.deposits = await supabaseDB.getDepositRequests();
         } catch (error) {
             console.error('Error loading deposits:', error);
             this.deposits = [];
@@ -89,7 +227,7 @@ class AdminManager {
 
     async loadWithdrawals() {
         try {
-            this.withdrawals = await supabaseDB.getAll('withdrawal_requests');
+            this.withdrawals = await supabaseDB.getWithdrawalRequests();
         } catch (error) {
             console.error('Error loading withdrawals:', error);
             this.withdrawals = [];
@@ -98,7 +236,7 @@ class AdminManager {
 
     async loadKYC() {
         try {
-            this.kycRequests = await supabaseDB.getAll('kyc_requests');
+            this.kycRequests = await supabaseDB.getKYCRequests();
         } catch (error) {
             console.error('Error loading KYC:', error);
             this.kycRequests = [];
@@ -107,125 +245,127 @@ class AdminManager {
 
     async loadTrades() {
         try {
-            this.trades = await supabaseDB.getAll('trades');
+            this.trades = await supabaseDB.getAllTrades();
         } catch (error) {
             console.error('Error loading trades:', error);
             this.trades = [];
         }
     }
 
+    setupNavigation() {
+        const navLinks = document.getElementById('navLinks');
+        const rightNav = document.getElementById('rightNav');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
+        
+        if (navLinks) {
+            navLinks.innerHTML = `
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="markets.html" class="nav-link">Markets</a>
+                <a href="trades.html" class="nav-link">Trades</a>
+                <a href="profile.html" class="nav-link">My Profile</a>
+            `;
+        }
+        
+        if (rightNav) {
+            rightNav.innerHTML = `
+                <div class="user-section">
+                    <div class="user-info">
+                        <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
+                        <div class="user-name">${userName}<span class="admin-badge">Admin</span></div>
+                    </div>
+                    <button class="logout-btn" onclick="handleLogout()">Logout</button>
+                </div>
+            `;
+        }
+        
+        if (mobileMenu) {
+            mobileMenu.innerHTML = `
+                <a href="index.html" class="mobile-nav-link">🏠 Home</a>
+                <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
+                <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+                <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
+                <button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>
+            `;
+        }
+    }
+
     renderDashboard() {
-        // Update stats
-        const totalUsers = this.users.length;
-        const totalVolume = this.trades.reduce((sum, t) => sum + (t.amount * t.leverage), 0);
-        const totalDeposits = this.deposits
-            .filter(d => d.status === 'approved')
-            .reduce((sum, d) => sum + d.amount, 0);
+        const totalVolume = this.trades.reduce((sum, t) => sum + (t.amount * (t.leverage || 1)), 0);
+        const totalDeposits = this.deposits.filter(d => d.status === 'approved').reduce((sum, d) => sum + d.amount, 0);
         const pendingRequests = [
             ...this.deposits.filter(d => d.status === 'pending'),
             ...this.withdrawals.filter(w => w.status === 'pending'),
             ...this.kycRequests.filter(k => k.status === 'pending')
         ].length;
-
-        document.getElementById('totalUsers').textContent = totalUsers;
-        document.getElementById('totalVolume').textContent = `$${totalVolume.toLocaleString()}`;
-        document.getElementById('totalDeposits').textContent = `$${totalDeposits.toLocaleString()}`;
-        document.getElementById('pendingRequests').textContent = pendingRequests;
-
-        // Render recent activity
+        
+        const stats = document.getElementById('dashboardStats');
+        if (stats) {
+            stats.innerHTML = `
+                <div class="stat-card"><div class="stat-card-icon">👥</div><div class="stat-card-value" style="font-size: 32px; font-weight: 800;">${this.users.length}</div><div class="stat-card-label" style="font-size: 14px;">Total Users</div></div>
+                <div class="stat-card"><div class="stat-card-icon">💰</div><div class="stat-card-value" style="font-size: 32px; font-weight: 800;">$${(totalVolume / 1000).toFixed(1)}B</div><div class="stat-card-label" style="font-size: 14px;">Trading Volume</div></div>
+                <div class="stat-card"><div class="stat-card-icon">🏦</div><div class="stat-card-value" style="font-size: 32px; font-weight: 800;">$${(totalDeposits / 1000).toFixed(1)}K</div><div class="stat-card-label" style="font-size: 14px;">Total Deposits</div></div>
+                <div class="stat-card"><div class="stat-card-icon">📊</div><div class="stat-card-value" style="font-size: 32px; font-weight: 800; color: #FFA502;">${pendingRequests}</div><div class="stat-card-label" style="font-size: 14px;">Pending Requests</div></div>
+            `;
+        }
+        
         this.renderRecentActivity();
-        this.updateCharts();
     }
 
     renderRecentActivity() {
-        const tbody = document.getElementById('recentActivityTable');
-        if (!tbody) return;
-
-        // Combine all activities
+        const container = document.getElementById('recentActivityBody');
+        if (!container) return;
+        
         const activities = [];
-        
-        this.deposits.forEach(d => {
+        this.deposits.slice(0, 5).forEach(d => {
             const user = this.users.find(u => u.id === d.user_id);
-            activities.push({
-                user: user?.name || user?.email || 'Unknown',
-                action: `Deposit Request`,
-                amount: d.amount,
-                date: d.date,
-                type: 'deposit'
-            });
+            activities.push({ user: user?.name || 'Unknown', action: 'Deposit Request', amount: d.amount, date: d.date });
         });
-        
-        this.withdrawals.forEach(w => {
+        this.withdrawals.slice(0, 5).forEach(w => {
             const user = this.users.find(u => u.id === w.user_id);
-            activities.push({
-                user: user?.name || user?.email || 'Unknown',
-                action: `Withdrawal Request`,
-                amount: w.amount,
-                date: w.date,
-                type: 'withdrawal'
-            });
+            activities.push({ user: user?.name || 'Unknown', action: 'Withdrawal Request', amount: w.amount, date: w.date });
         });
-        
-        // Sort by date (most recent first)
         activities.sort((a, b) => new Date(b.date) - new Date(a.date));
-        const recentActivities = activities.slice(0, 10);
-
-        if (recentActivities.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state">No recent activity</div></td></tr>';
+        
+        if (activities.length === 0) {
+            container.innerHTML = '<tr><td colspan="4"><div class="empty-state">No recent activity</div></td></tr>';
             return;
         }
-
-        tbody.innerHTML = recentActivities.map(activity => `
-            <tr>
-                <td><strong>${activity.user}</strong></td>
-                <td>${activity.action}</td>
-                <td>$${activity.amount.toLocaleString()}</td>
-                <td>${this.formatDate(activity.date)}</td>
-            </tr>
+        
+        container.innerHTML = activities.slice(0, 10).map(a => `
+            <tr><td style="font-size: 14px;"><strong>${a.user}</strong></td><td style="font-size: 14px;">${a.action}</td><td style="font-size: 14px; font-weight: 600;">$${a.amount.toLocaleString()}</td><td style="font-size: 13px; color: #8B93A5;">${this.formatDate(a.date)}</td></tr>
         `).join('');
     }
 
     renderUsers() {
         const tbody = document.getElementById('usersTableBody');
         if (!tbody) return;
-
+        
         const searchTerm = document.getElementById('userSearch')?.value.toLowerCase() || '';
         const roleFilter = document.getElementById('userRoleFilter')?.value || 'all';
-
-        let filteredUsers = [...this.users];
         
-        if (searchTerm) {
-            filteredUsers = filteredUsers.filter(u => 
-                u.name?.toLowerCase().includes(searchTerm) || 
-                u.email?.toLowerCase().includes(searchTerm)
-            );
-        }
+        let filtered = this.users.filter(u => 
+            (u.name?.toLowerCase().includes(searchTerm) || u.email.toLowerCase().includes(searchTerm)) &&
+            (roleFilter === 'all' || (roleFilter === 'admin' ? u.email === 'ephremgojo@gmail.com' : u.email !== 'ephremgojo@gmail.com'))
+        );
         
-        if (roleFilter === 'admin') {
-            filteredUsers = filteredUsers.filter(u => u.email === 'ephremgojo@gmail.com');
-        } else if (roleFilter === 'user') {
-            filteredUsers = filteredUsers.filter(u => u.email !== 'ephremgojo@gmail.com');
-        }
-
-        if (filteredUsers.length === 0) {
+        if (filtered.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">No users found</div></td></tr>';
             return;
         }
-
-        tbody.innerHTML = filteredUsers.map(user => `
+        
+        tbody.innerHTML = filtered.map(u => `
             <tr>
+                <td style="font-size: 14px;"><strong>${u.name || 'N/A'}</strong><br><small style="color:#8B93A5; font-size: 11px;">ID: ${u.id}</small></td>
+                <td style="font-size: 14px;">${u.email}</td>
+                <td style="font-size: 14px; font-weight: 700; color: #00D897;">$${(u.balance || 0).toLocaleString()}</td>
+                <td><span class="status-badge status-${u.kyc_status === 'verified' ? 'approved' : (u.kyc_status || 'pending')}" style="font-size: 12px;">${u.kyc_status || 'pending'}</span></td>
+                <td><span class="${u.email === 'ephremgojo@gmail.com' ? 'role-admin' : 'role-user'}" style="font-size: 12px;">${u.email === 'ephremgojo@gmail.com' ? 'Admin' : 'User'}</span></td>
+                <td style="font-size: 13px; color: #8B93A5;">${u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'}</td>
                 <td>
-                    <strong>${user.name || 'N/A'}</strong><br>
-                    <small style="color: #8B93A5;">ID: ${user.id}</small>
-                </td>
-                <td>${user.email}</td>
-                <td>$${(user.balance || 0).toLocaleString()}</td>
-                <td><span class="status-badge status-${user.kyc_status === 'verified' ? 'approved' : (user.kyc_status || 'pending')}">${user.kyc_status || 'pending'}</span></td>
-                <td><span class="role-badge ${user.email === 'ephremgojo@gmail.com' ? 'role-admin' : 'role-user'}">${user.email === 'ephremgojo@gmail.com' ? 'Admin' : 'User'}</span></td>
-                <td>${this.formatDate(user.created_at)}</td>
-                <td>
-                    <button class="action-btn btn-view" onclick="adminManager.viewUserDetails(${user.id})">View</button>
-                    ${user.email !== 'ephremgojo@gmail.com' ? `<button class="action-btn btn-delete" onclick="adminManager.deleteUser(${user.id})">Delete</button>` : ''}
+                    <button class="action-btn btn-view" onclick="adminManager.viewUserDetails(${u.id})" style="font-size: 12px; padding: 6px 12px;">View</button>
+                    ${u.email !== 'ephremgojo@gmail.com' ? `<button class="action-btn btn-delete" onclick="adminManager.deleteUser(${u.id})" style="font-size: 12px; padding: 6px 12px;">Delete</button>` : ''}
                 </td>
             </tr>
         `).join('');
@@ -234,36 +374,30 @@ class AdminManager {
     renderDeposits() {
         const tbody = document.getElementById('depositsTableBody');
         if (!tbody) return;
-
+        
         const statusFilter = document.getElementById('depositStatusFilter')?.value || 'all';
+        let filtered = this.deposits.filter(d => statusFilter === 'all' || d.status === statusFilter);
         
-        let filteredDeposits = [...this.deposits];
-        
-        if (statusFilter !== 'all') {
-            filteredDeposits = filteredDeposits.filter(d => d.status === statusFilter);
-        }
-
-        if (filteredDeposits.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">No deposit requests found</div></td></tr>';
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">No deposits found</div></td></tr>';
             return;
         }
-
-        tbody.innerHTML = filteredDeposits.map(deposit => {
-            const user = this.users.find(u => u.id === deposit.user_id);
+        
+        tbody.innerHTML = filtered.map(d => {
+            const user = this.users.find(u => u.id === d.user_id);
             return `
                 <tr>
-                    <td><strong>${user?.name || user?.email || 'Unknown'}</strong></td>
-                    <td>$${deposit.amount.toLocaleString()}</td>
-                    <td>${deposit.currency || 'USDT'}</td>
-                    <td><small>${deposit.wallet_address?.substring(0, 15)}...</small></td>
-                    <td>${this.formatDate(deposit.date)}</td>
-                    <td><span class="status-badge status-${deposit.status}">${deposit.status}</span></td>
+                    <td style="font-size: 14px;"><strong>${user?.name || user?.email || 'Unknown'}</strong></td>
+                    <td style="font-size: 14px; font-weight: 700; color: #00D897;">$${d.amount.toLocaleString()}</td>
+                    <td style="font-size: 14px;">${d.currency || 'USDT'}</td>
+                    <td style="font-size: 13px; color: #8B93A5;">${new Date(d.date).toLocaleDateString()}</td>
+                    <td><span class="status-badge status-${d.status}" style="font-size: 12px;">${d.status}</span></td>
                     <td>
-                        ${deposit.status === 'pending' ? `
-                            <button class="action-btn btn-approve" onclick="adminManager.approveDeposit(${deposit.id})">Approve</button>
-                            <button class="action-btn btn-reject" onclick="adminManager.rejectDeposit(${deposit.id})">Reject</button>
+                        ${d.status === 'pending' ? `
+                            <button class="action-btn btn-approve" onclick="adminManager.approveDeposit(${d.id})" style="font-size: 12px; padding: 6px 12px;">Approve</button>
+                            <button class="action-btn btn-reject" onclick="adminManager.rejectDeposit(${d.id})" style="font-size: 12px; padding: 6px 12px;">Reject</button>
                         ` : ''}
-                        <button class="action-btn btn-view" onclick="adminManager.viewDepositDetails(${deposit.id})">Details</button>
+                        <button class="action-btn btn-view" onclick="adminManager.viewDepositDetails(${d.id})" style="font-size: 12px; padding: 6px 12px;">View</button>
                     </td>
                 </tr>
             `;
@@ -273,37 +407,30 @@ class AdminManager {
     renderWithdrawals() {
         const tbody = document.getElementById('withdrawalsTableBody');
         if (!tbody) return;
-
+        
         const statusFilter = document.getElementById('withdrawStatusFilter')?.value || 'all';
+        let filtered = this.withdrawals.filter(w => statusFilter === 'all' || w.status === statusFilter);
         
-        let filteredWithdrawals = [...this.withdrawals];
-        
-        if (statusFilter !== 'all') {
-            filteredWithdrawals = filteredWithdrawals.filter(w => w.status === statusFilter);
-        }
-
-        if (filteredWithdrawals.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">No withdrawal requests found</div></td></tr>';
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">No withdrawals found</div></td></tr>';
             return;
         }
-
-        tbody.innerHTML = filteredWithdrawals.map(withdrawal => {
-            const user = this.users.find(u => u.id === withdrawal.user_id);
+        
+        tbody.innerHTML = filtered.map(w => {
+            const user = this.users.find(u => u.id === w.user_id);
             return `
                 <tr>
-                    <td><strong>${user?.name || user?.email || 'Unknown'}</strong></td>
-                    <td>$${withdrawal.amount.toLocaleString()}</td>
-                    <td>${withdrawal.crypto || 'USDT'}</td>
-                    <td><small>${withdrawal.wallet_address?.substring(0, 15)}...</small></td>
-                    <td>${withdrawal.fee || 0}%</td>
-                    <td>${this.formatDate(withdrawal.date)}</td>
-                    <td><span class="status-badge status-${withdrawal.status}">${withdrawal.status}</span></td>
+                    <td style="font-size: 14px;"><strong>${user?.name || user?.email || 'Unknown'}</strong></td>
+                    <td style="font-size: 14px; font-weight: 700; color: #FF4757;">$${w.amount.toLocaleString()}</td>
+                    <td style="font-size: 14px;">${w.crypto || 'USDT'}</td>
+                    <td style="font-size: 13px; color: #8B93A5;">${new Date(w.date).toLocaleDateString()}</td>
+                    <td><span class="status-badge status-${w.status}" style="font-size: 12px;">${w.status}</span></td>
                     <td>
-                        ${withdrawal.status === 'pending' ? `
-                            <button class="action-btn btn-approve" onclick="adminManager.approveWithdrawal(${withdrawal.id})">Approve</button>
-                            <button class="action-btn btn-reject" onclick="adminManager.rejectWithdrawal(${withdrawal.id})">Reject</button>
+                        ${w.status === 'pending' ? `
+                            <button class="action-btn btn-approve" onclick="adminManager.approveWithdrawal(${w.id})" style="font-size: 12px; padding: 6px 12px;">Approve</button>
+                            <button class="action-btn btn-reject" onclick="adminManager.rejectWithdrawal(${w.id})" style="font-size: 12px; padding: 6px 12px;">Reject</button>
                         ` : ''}
-                        <button class="action-btn btn-view" onclick="adminManager.viewWithdrawalDetails(${withdrawal.id})">Details</button>
+                        <button class="action-btn btn-view" onclick="adminManager.viewWithdrawalDetails(${w.id})" style="font-size: 12px; padding: 6px 12px;">View</button>
                     </td>
                 </tr>
             `;
@@ -313,36 +440,30 @@ class AdminManager {
     renderKYC() {
         const tbody = document.getElementById('kycTableBody');
         if (!tbody) return;
-
+        
         const statusFilter = document.getElementById('kycStatusFilter')?.value || 'all';
+        let filtered = this.kycRequests.filter(k => statusFilter === 'all' || k.status === statusFilter);
         
-        let filteredKYC = [...this.kycRequests];
-        
-        if (statusFilter !== 'all') {
-            filteredKYC = filteredKYC.filter(k => k.status === statusFilter);
-        }
-
-        if (filteredKYC.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">No KYC requests found</div></td></tr>';
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">No KYC requests found</div></td></tr>';
             return;
         }
-
-        tbody.innerHTML = filteredKYC.map(kyc => {
-            const user = this.users.find(u => u.id === kyc.user_id);
+        
+        tbody.innerHTML = filtered.map(k => {
+            const user = this.users.find(u => u.id === k.user_id);
             return `
                 <tr>
-                    <td><strong>${user?.name || user?.email || 'Unknown'}</strong></td>
-                    <td>${kyc.full_name}</td>
-                    <td>${kyc.dob}</td>
-                    <td>${kyc.id_type}</td>
-                    <td>${this.formatDate(kyc.date)}</td>
-                    <td><span class="status-badge status-${kyc.status}">${kyc.status}</span></td>
+                    <td style="font-size: 14px;"><strong>${user?.name || user?.email || 'Unknown'}</strong></td>
+                    <td style="font-size: 14px;">${k.full_name}</td>
+                    <td style="font-size: 14px;">${k.id_type}</td>
+                    <td style="font-size: 13px; color: #8B93A5;">${new Date(k.date).toLocaleDateString()}</td>
+                    <td><span class="status-badge status-${k.status}" style="font-size: 12px;">${k.status}</span></td>
                     <td>
-                        ${kyc.status === 'pending' ? `
-                            <button class="action-btn btn-approve" onclick="adminManager.approveKYC(${kyc.id})">Verify</button>
-                            <button class="action-btn btn-reject" onclick="adminManager.rejectKYC(${kyc.id})">Reject</button>
+                        ${k.status === 'pending' ? `
+                            <button class="action-btn btn-approve" onclick="adminManager.approveKYC(${k.id})" style="font-size: 12px; padding: 6px 12px;">Verify</button>
+                            <button class="action-btn btn-reject" onclick="adminManager.rejectKYC(${k.id})" style="font-size: 12px; padding: 6px 12px;">Reject</button>
                         ` : ''}
-                        <button class="action-btn btn-view" onclick="adminManager.viewKYCDetails(${kyc.id})">Details</button>
+                        <button class="action-btn btn-view" onclick="adminManager.viewKYCDetails(${k.id})" style="font-size: 12px; padding: 6px 12px;">View</button>
                     </td>
                 </tr>
             `;
@@ -352,309 +473,122 @@ class AdminManager {
     renderTrades() {
         const tbody = document.getElementById('tradesTableBody');
         if (!tbody) return;
-
+        
         const searchTerm = document.getElementById('tradeSearch')?.value.toLowerCase() || '';
         const statusFilter = document.getElementById('tradeStatusFilter')?.value || 'all';
         
-        let filteredTrades = [...this.trades];
+        let filtered = this.trades.filter(t => 
+            (statusFilter === 'all' || t.status === statusFilter) &&
+            (!searchTerm || t.symbol?.toLowerCase().includes(searchTerm))
+        );
+        filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         
-        if (searchTerm) {
-            filteredTrades = filteredTrades.filter(t => 
-                t.symbol?.toLowerCase().includes(searchTerm)
-            );
-        }
-        
-        if (statusFilter !== 'all') {
-            filteredTrades = filteredTrades.filter(t => t.status === statusFilter);
-        }
-
-        filteredTrades.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-        if (filteredTrades.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state">No trades found</div></td></tr>';
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">No trades found</div></td></tr>';
             return;
         }
-
-        tbody.innerHTML = filteredTrades.map(trade => {
-            const user = this.users.find(u => u.id === trade.user_id);
-            const pnlClass = (trade.pnl || 0) >= 0 ? 'positive' : 'negative';
-            
+        
+        tbody.innerHTML = filtered.map(t => {
+            const user = this.users.find(u => u.id === t.user_id);
             return `
                 <tr>
-                    <td><small>${user?.name || user?.email || 'Unknown'}</small></td>
-                    <td><strong>${trade.symbol}</strong></td>
-                    <td><span class="trade-type-badge ${trade.type === 'buy' ? 'trade-type-buy' : 'trade-type-sell'}">${trade.type}</span></td>
-                    <td>$${trade.entry_price?.toLocaleString()}</td>
-                    <td>$${trade.amount?.toLocaleString()}</td>
-                    <td>${trade.leverage}x</td>
-                    <td class="${pnlClass}">${(trade.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(trade.pnl || 0).toLocaleString()}</td>
-                    <td><span class="status-badge status-${trade.status}">${trade.status}</span></td>
-                    <td><small>${this.formatDate(trade.created_at)}</small></td>
+                    <td style="font-size: 13px;"><small>${user?.name || user?.email || 'Unknown'}</small></td>
+                    <td style="font-size: 14px; font-weight: 600;"><strong>${t.symbol}/USD</strong></td>
+                    <td><span class="status-badge ${t.type === 'buy' ? 'status-approved' : 'status-rejected'}" style="font-size: 12px;">${t.type}</span></td>
+                    <td style="font-size: 14px;">$${(t.amount || 0).toLocaleString()}</td>
+                    <td style="font-size: 14px;">${t.leverage || 1}x</td>
+                    <td class="${(t.pnl || 0) >= 0 ? 'positive' : 'negative'}" style="font-size: 14px; font-weight: 600;">${(t.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(t.pnl || 0).toLocaleString()}</td>
+                    <td><span class="status-badge status-${t.status === 'open' ? 'pending' : 'approved'}" style="font-size: 12px;">${t.status}</span></td>
+                    <td style="font-size: 12px; color: #8B93A5;">${new Date(t.created_at).toLocaleDateString()}</td>
                 </tr>
             `;
         }).join('');
     }
 
-    initCharts() {
-        const growthCtx = document.getElementById('userGrowthChart')?.getContext('2d');
-        const volumeCtx = document.getElementById('volumeChart')?.getContext('2d');
-        
-        if (growthCtx) {
-            this.userGrowthChart = new Chart(growthCtx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: 'New Users',
-                        data: [],
-                        borderColor: '#00D897',
-                        backgroundColor: 'rgba(0, 216, 151, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#FFFFFF' } } },
-                    scales: {
-                        x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } },
-                        y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } }
-                    }
-                }
-            });
-        }
-        
-        if (volumeCtx) {
-            this.volumeChart = new Chart(volumeCtx, {
-                type: 'bar',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: 'Trading Volume',
-                        data: [],
-                        backgroundColor: '#00D897',
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#FFFFFF' } } },
-                    scales: {
-                        x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } },
-                        y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } }
-                    }
-                }
-            });
-        }
-    }
-
-    updateCharts() {
-        // Get last 7 days data
-        const last7Days = [];
-        const userCounts = [];
-        const volumeData = [];
-        
-        for (let i = 6; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            const dateStr = date.toLocaleDateString();
-            last7Days.push(dateStr);
-            
-            // Count users registered on this day
-            const usersOnDay = this.users.filter(u => {
-                const createdDate = new Date(u.created_at);
-                return createdDate.toLocaleDateString() === dateStr;
-            }).length;
-            userCounts.push(usersOnDay);
-            
-            // Calculate volume for this day
-            const volumeOnDay = this.trades.filter(t => {
-                const tradeDate = new Date(t.created_at);
-                return tradeDate.toLocaleDateString() === dateStr;
-            }).reduce((sum, t) => sum + (t.amount * t.leverage), 0);
-            volumeData.push(volumeOnDay / 1000); // in thousands
-        }
-        
-        if (this.userGrowthChart) {
-            this.userGrowthChart.data.labels = last7Days;
-            this.userGrowthChart.data.datasets[0].data = userCounts;
-            this.userGrowthChart.update();
-        }
-        
-        if (this.volumeChart) {
-            this.volumeChart.data.labels = last7Days;
-            this.volumeChart.data.datasets[0].data = volumeData;
-            this.volumeChart.update();
-        }
-    }
-
-    async approveDeposit(depositId) {
-        const deposit = this.deposits.find(d => d.id === depositId);
+    async approveDeposit(id) {
+        const deposit = this.deposits.find(d => d.id === id);
         if (!deposit) return;
         
-        await supabaseDB.update('deposit_requests', depositId, { status: 'approved' });
+        await supabaseDB.updateDepositRequest(id, { status: 'approved' });
         
-        // Update user balance
         const user = this.users.find(u => u.id === deposit.user_id);
         if (user) {
             const newBalance = (user.balance || 0) + deposit.amount;
             await supabaseDB.updateUserBalance(user.id, newBalance);
+            
+            await supabaseDB.createTransaction({
+                id: Date.now(),
+                user_id: user.id,
+                amount: deposit.amount,
+                type: 'deposit',
+                description: `Deposit of $${deposit.amount} approved`,
+                date: new Date().toISOString()
+            });
         }
         
         await this.refreshData();
-        auth.showSuccess(`Deposit of $${deposit.amount} approved!`);
+        auth.showNotification(`Deposit of $${deposit.amount} approved!`, 'success');
     }
 
-    async rejectDeposit(depositId) {
-        const deposit = this.deposits.find(d => d.id === depositId);
-        if (!deposit) return;
-        
-        await supabaseDB.update('deposit_requests', depositId, { status: 'rejected' });
+    async rejectDeposit(id) {
+        await supabaseDB.updateDepositRequest(id, { status: 'rejected' });
         await this.refreshData();
-        auth.showError(`Deposit of $${deposit.amount} rejected`);
+        auth.showNotification('Deposit rejected', 'error');
     }
 
-    async approveWithdrawal(withdrawalId) {
-        const withdrawal = this.withdrawals.find(w => w.id === withdrawalId);
+    async approveWithdrawal(id) {
+        const withdrawal = this.withdrawals.find(w => w.id === id);
         if (!withdrawal) return;
         
         const user = this.users.find(u => u.id === withdrawal.user_id);
         if (user && (user.balance || 0) >= withdrawal.amount) {
             const newBalance = (user.balance || 0) - withdrawal.amount;
             await supabaseDB.updateUserBalance(user.id, newBalance);
-            await supabaseDB.update('withdrawal_requests', withdrawalId, { status: 'approved' });
+            await supabaseDB.updateWithdrawalRequest(id, { status: 'approved' });
+            
+            await supabaseDB.createTransaction({
+                id: Date.now(),
+                user_id: user.id,
+                amount: -withdrawal.amount,
+                type: 'withdrawal',
+                description: `Withdrawal of $${withdrawal.amount} processed`,
+                date: new Date().toISOString()
+            });
+            
             await this.refreshData();
-            auth.showSuccess(`Withdrawal of $${withdrawal.amount} approved!`);
+            auth.showNotification(`Withdrawal of $${withdrawal.amount} approved!`, 'success');
         } else {
-            auth.showError('Insufficient balance for this withdrawal');
+            auth.showNotification('Insufficient balance', 'error');
         }
     }
 
-    async rejectWithdrawal(withdrawalId) {
-        const withdrawal = this.withdrawals.find(w => w.id === withdrawalId);
-        if (!withdrawal) return;
-        
-        await supabaseDB.update('withdrawal_requests', withdrawalId, { status: 'rejected' });
+    async rejectWithdrawal(id) {
+        await supabaseDB.updateWithdrawalRequest(id, { status: 'rejected' });
         await this.refreshData();
-        auth.showError(`Withdrawal of $${withdrawal.amount} rejected`);
+        auth.showNotification('Withdrawal rejected', 'error');
     }
 
-    async approveKYC(kycId) {
-        const kyc = this.kycRequests.find(k => k.id === kycId);
+    async approveKYC(id) {
+        const kyc = this.kycRequests.find(k => k.id === id);
         if (!kyc) return;
         
-        await supabaseDB.update('kyc_requests', kycId, { status: 'approved' });
+        await supabaseDB.updateKYCRequest(id, { status: 'approved' });
         await supabaseDB.updateUserKYCStatus(kyc.user_id, 'verified');
+        
         await this.refreshData();
-        auth.showSuccess(`KYC approved for ${kyc.full_name}`);
+        auth.showNotification(`KYC approved for ${kyc.full_name}`, 'success');
     }
 
-    async rejectKYC(kycId) {
-        const kyc = this.kycRequests.find(k => k.id === kycId);
+    async rejectKYC(id) {
+        const kyc = this.kycRequests.find(k => k.id === id);
         if (!kyc) return;
         
-        await supabaseDB.update('kyc_requests', kycId, { status: 'rejected' });
+        await supabaseDB.updateKYCRequest(id, { status: 'rejected' });
         await this.refreshData();
-        auth.showError(`KYC rejected for ${kyc.full_name}`);
+        auth.showNotification(`KYC rejected for ${kyc.full_name}`, 'error');
     }
 
-    async deleteUser(userId) {
-        if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-            await supabaseDB.delete('custom_users', userId);
-            await this.refreshData();
-            auth.showSuccess('User deleted successfully');
-        }
-    }
-
-    async saveSettings() {
-        const minTradeAmount = document.getElementById('minTradeAmount')?.value;
-        const maxLeverage = document.getElementById('maxLeverage')?.value;
-        const withdrawalFee = document.getElementById('withdrawalFee')?.value;
-        
-        const settings = { minTradeAmount, maxLeverage, withdrawalFee };
-        localStorage.setItem('platform_settings', JSON.stringify(settings));
-        
-        auth.showSuccess('Settings saved successfully');
-    }
-
-    async backupDatabase() {
-        const data = {
-            users: this.users,
-            trades: this.trades,
-            deposits: this.deposits,
-            withdrawals: this.withdrawals,
-            kycRequests: this.kycRequests,
-            backupDate: new Date().toISOString()
-        };
-        
-        const dataStr = JSON.stringify(data, null, 2);
-        const blob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `pockettrading_backup_${Date.now()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        auth.showSuccess('Database backup downloaded');
-    }
-
-    exportUserData() {
-        const data = this.users.map(u => ({
-            name: u.name,
-            email: u.email,
-            balance: u.balance,
-            kyc_status: u.kyc_status,
-            created_at: u.created_at
-        }));
-        
-        const dataStr = JSON.stringify(data, null, 2);
-        const blob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `users_export_${Date.now()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        auth.showSuccess('User data exported');
-    }
-
-    exportTradeData() {
-        const data = this.trades.map(t => ({
-            user_id: t.user_id,
-            symbol: t.symbol,
-            type: t.type,
-            amount: t.amount,
-            leverage: t.leverage,
-            pnl: t.pnl,
-            status: t.status,
-            created_at: t.created_at
-        }));
-        
-        const dataStr = JSON.stringify(data, null, 2);
-        const blob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `trades_export_${Date.now()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        auth.showSuccess('Trade data exported');
-    }
-
-    async clearLogs() {
-        if (confirm('Are you sure you want to clear all activity logs?')) {
-            // Clear activities from database
-            auth.showSuccess('Activity logs cleared');
-        }
-    }
-
-    viewUserDetails(userId) {
+    async viewUserDetails(userId) {
         const user = this.users.find(u => u.id === userId);
         if (!user) return;
         
@@ -668,70 +602,19 @@ class AdminManager {
         
         modalTitle.textContent = `User Details: ${user.name || 'User'}`;
         modalBody.innerHTML = `
-            <div class="detail-row"><span class="detail-label">Name</span><span class="detail-value">${user.name || 'N/A'}</span></div>
-            <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value">${user.email}</span></div>
-            <div class="detail-row"><span class="detail-label">Balance</span><span class="detail-value">$${(user.balance || 0).toLocaleString()}</span></div>
+            <div class="detail-row"><span class="detail-label">Name</span><span class="detail-value" style="font-size: 16px; font-weight: 600;">${user.name || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value" style="font-size: 16px;">${user.email}</span></div>
+            <div class="detail-row"><span class="detail-label">Balance</span><span class="detail-value" style="font-size: 16px; font-weight: 700; color: #00D897;">$${(user.balance || 0).toLocaleString()}</span></div>
             <div class="detail-row"><span class="detail-label">KYC Status</span><span class="detail-value">${user.kyc_status || 'pending'}</span></div>
-            <div class="detail-row"><span class="detail-label">Total Trades</span><span class="detail-value">${userTrades.length}</span></div>
-            <div class="detail-row"><span class="detail-label">Total P&L</span><span class="detail-value ${totalPnL >= 0 ? 'positive' : 'negative'}">${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}</span></div>
+            <div class="detail-row"><span class="detail-label">Total Trades</span><span class="detail-value" style="font-size: 16px;">${userTrades.length}</span></div>
+            <div class="detail-row"><span class="detail-label">Total P&L</span><span class="detail-value ${totalPnL >= 0 ? 'positive' : 'negative'}" style="font-size: 16px; font-weight: 600;">${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}</span></div>
             <div class="detail-row"><span class="detail-label">Joined</span><span class="detail-value">${this.formatDate(user.created_at)}</span></div>
         `;
         modalButtons.innerHTML = '';
         modal.style.display = 'flex';
     }
 
-    viewDepositDetails(depositId) {
-        const deposit = this.deposits.find(d => d.id === depositId);
-        const user = this.users.find(u => u.id === deposit?.user_id);
-        
-        const modal = document.getElementById('detailsModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalBody = document.getElementById('modalBody');
-        const modalButtons = document.getElementById('modalButtons');
-        
-        modalTitle.textContent = 'Deposit Request Details';
-        modalBody.innerHTML = `
-            <div class="detail-row"><span class="detail-label">User</span><span class="detail-value">${user?.name || user?.email || 'Unknown'}</span></div>
-            <div class="detail-row"><span class="detail-label">Amount</span><span class="detail-value">$${deposit?.amount?.toLocaleString()}</span></div>
-            <div class="detail-row"><span class="detail-label">Currency</span><span class="detail-value">${deposit?.currency || 'USDT'}</span></div>
-            <div class="detail-row"><span class="detail-label">Wallet Address</span><span class="detail-value"><small>${deposit?.wallet_address}</small></span></div>
-            <div class="detail-row"><span class="detail-label">Date</span><span class="detail-value">${this.formatDate(deposit?.date)}</span></div>
-            <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${deposit?.status}</span></div>
-        `;
-        modalButtons.innerHTML = deposit?.status === 'pending' ? `
-            <button class="modal-btn btn-approve" onclick="adminManager.approveDeposit(${depositId}); adminManager.closeModal();">Approve</button>
-            <button class="modal-btn btn-reject" onclick="adminManager.rejectDeposit(${depositId}); adminManager.closeModal();">Reject</button>
-        ` : '';
-        modal.style.display = 'flex';
-    }
-
-    viewWithdrawalDetails(withdrawalId) {
-        const withdrawal = this.withdrawals.find(w => w.id === withdrawalId);
-        const user = this.users.find(u => u.id === withdrawal?.user_id);
-        
-        const modal = document.getElementById('detailsModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalBody = document.getElementById('modalBody');
-        const modalButtons = document.getElementById('modalButtons');
-        
-        modalTitle.textContent = 'Withdrawal Request Details';
-        modalBody.innerHTML = `
-            <div class="detail-row"><span class="detail-label">User</span><span class="detail-value">${user?.name || user?.email || 'Unknown'}</span></div>
-            <div class="detail-row"><span class="detail-label">Amount</span><span class="detail-value">$${withdrawal?.amount?.toLocaleString()}</span></div>
-            <div class="detail-row"><span class="detail-label">Crypto</span><span class="detail-value">${withdrawal?.crypto || 'USDT'}</span></div>
-            <div class="detail-row"><span class="detail-label">Wallet Address</span><span class="detail-value"><small>${withdrawal?.wallet_address}</small></span></div>
-            <div class="detail-row"><span class="detail-label">Fee</span><span class="detail-value">${withdrawal?.fee}%</span></div>
-            <div class="detail-row"><span class="detail-label">Date</span><span class="detail-value">${this.formatDate(withdrawal?.date)}</span></div>
-            <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${withdrawal?.status}</span></div>
-        `;
-        modalButtons.innerHTML = withdrawal?.status === 'pending' ? `
-            <button class="modal-btn btn-approve" onclick="adminManager.approveWithdrawal(${withdrawalId}); adminManager.closeModal();">Approve</button>
-            <button class="modal-btn btn-reject" onclick="adminManager.rejectWithdrawal(${withdrawalId}); adminManager.closeModal();">Reject</button>
-        ` : '';
-        modal.style.display = 'flex';
-    }
-
-    viewKYCDetails(kycId) {
+    async viewKYCDetails(kycId) {
         const kyc = this.kycRequests.find(k => k.id === kycId);
         const user = this.users.find(u => u.id === kyc?.user_id);
         
@@ -740,20 +623,130 @@ class AdminManager {
         const modalBody = document.getElementById('modalBody');
         const modalButtons = document.getElementById('modalButtons');
         
-        modalTitle.textContent = 'KYC Request Details';
+        modalTitle.textContent = 'KYC Verification Details';
         modalBody.innerHTML = `
-            <div class="detail-row"><span class="detail-label">User</span><span class="detail-value">${user?.name || user?.email || 'Unknown'}</span></div>
-            <div class="detail-row"><span class="detail-label">Full Name</span><span class="detail-value">${kyc?.full_name}</span></div>
-            <div class="detail-row"><span class="detail-label">Date of Birth</span><span class="detail-value">${kyc?.dob}</span></div>
-            <div class="detail-row"><span class="detail-label">ID Type</span><span class="detail-value">${kyc?.id_type}</span></div>
-            <div class="detail-row"><span class="detail-label">Submitted</span><span class="detail-value">${this.formatDate(kyc?.date)}</span></div>
-            <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${kyc?.status}</span></div>
+            <div class="detail-row"><span class="detail-label">User</span><span class="detail-value" style="font-size: 16px; font-weight: 600;">${user?.name || 'Unknown'}</span></div>
+            <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value" style="font-size: 16px;">${user?.email || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-label">Full Name</span><span class="detail-value" style="font-size: 16px;">${kyc?.full_name}</span></div>
+            <div class="detail-row"><span class="detail-label">Date of Birth</span><span class="detail-value" style="font-size: 16px;">${kyc?.dob}</span></div>
+            <div class="detail-row"><span class="detail-label">ID Type</span><span class="detail-value" style="font-size: 16px;">${kyc?.id_type}</span></div>
+            <div class="detail-row"><span class="detail-label">Submitted Date</span><span class="detail-value">${this.formatDate(kyc?.date)}</span></div>
+            <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" style="font-size: 16px;">${kyc?.status}</span></div>
+            <div style="margin-top: 16px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 12px; text-align: center;">
+                <p style="color: #8B93A5; margin-bottom: 8px;">ID Document Images</p>
+                <div style="display: flex; gap: 12px; justify-content: center;">
+                    <div>📄 Front Side (Uploaded)</div>
+                    <div>📄 Back Side (Uploaded)</div>
+                </div>
+            </div>
         `;
         modalButtons.innerHTML = kyc?.status === 'pending' ? `
-            <button class="modal-btn btn-approve" onclick="adminManager.approveKYC(${kycId}); adminManager.closeModal();">Verify</button>
-            <button class="modal-btn btn-reject" onclick="adminManager.rejectKYC(${kycId}); adminManager.closeModal();">Reject</button>
+            <button class="modal-btn btn-approve" onclick="adminManager.approveKYC(${kycId}); adminManager.closeModal();" style="padding: 12px; font-size: 14px;">✅ Approve Verification</button>
+            <button class="modal-btn btn-reject" onclick="adminManager.rejectKYC(${kycId}); adminManager.closeModal();" style="padding: 12px; font-size: 14px;">❌ Reject Verification</button>
         ` : '';
         modal.style.display = 'flex';
+    }
+
+    viewDepositDetails(id) {
+        const deposit = this.deposits.find(d => d.id === id);
+        const user = this.users.find(u => u.id === deposit?.user_id);
+        
+        const modal = document.getElementById('detailsModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const modalButtons = document.getElementById('modalButtons');
+        
+        modalTitle.textContent = 'Deposit Details';
+        modalBody.innerHTML = `
+            <div class="detail-row"><span class="detail-label">User</span><span class="detail-value" style="font-size: 16px; font-weight: 600;">${user?.name || 'Unknown'}</span></div>
+            <div class="detail-row"><span class="detail-label">Amount</span><span class="detail-value" style="font-size: 16px; font-weight: 700; color: #00D897;">$${deposit?.amount.toLocaleString()}</span></div>
+            <div class="detail-row"><span class="detail-label">Currency</span><span class="detail-value" style="font-size: 16px;">${deposit?.currency || 'USDT'}</span></div>
+            <div class="detail-row"><span class="detail-label">Date</span><span class="detail-value">${this.formatDate(deposit?.date)}</span></div>
+            <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" style="font-size: 16px;">${deposit?.status}</span></div>
+        `;
+        modalButtons.innerHTML = deposit?.status === 'pending' ? `
+            <button class="modal-btn btn-approve" onclick="adminManager.approveDeposit(${id}); adminManager.closeModal();" style="padding: 12px; font-size: 14px;">✅ Approve Deposit</button>
+            <button class="modal-btn btn-reject" onclick="adminManager.rejectDeposit(${id}); adminManager.closeModal();" style="padding: 12px; font-size: 14px;">❌ Reject Deposit</button>
+        ` : '';
+        modal.style.display = 'flex';
+    }
+
+    viewWithdrawalDetails(id) {
+        const withdrawal = this.withdrawals.find(w => w.id === id);
+        const user = this.users.find(u => u.id === withdrawal?.user_id);
+        
+        const modal = document.getElementById('detailsModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const modalButtons = document.getElementById('modalButtons');
+        
+        modalTitle.textContent = 'Withdrawal Details';
+        modalBody.innerHTML = `
+            <div class="detail-row"><span class="detail-label">User</span><span class="detail-value" style="font-size: 16px; font-weight: 600;">${user?.name || 'Unknown'}</span></div>
+            <div class="detail-row"><span class="detail-label">Amount</span><span class="detail-value" style="font-size: 16px; font-weight: 700; color: #FF4757;">$${withdrawal?.amount.toLocaleString()}</span></div>
+            <div class="detail-row"><span class="detail-label">Crypto</span><span class="detail-value" style="font-size: 16px;">${withdrawal?.crypto || 'USDT'}</span></div>
+            <div class="detail-row"><span class="detail-label">Wallet Address</span><span class="detail-value"><small>${withdrawal?.wallet_address}</small></span></div>
+            <div class="detail-row"><span class="detail-label">Date</span><span class="detail-value">${this.formatDate(withdrawal?.date)}</span></div>
+            <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" style="font-size: 16px;">${withdrawal?.status}</span></div>
+        `;
+        modalButtons.innerHTML = withdrawal?.status === 'pending' ? `
+            <button class="modal-btn btn-approve" onclick="adminManager.approveWithdrawal(${id}); adminManager.closeModal();" style="padding: 12px; font-size: 14px;">✅ Approve Withdrawal</button>
+            <button class="modal-btn btn-reject" onclick="adminManager.rejectWithdrawal(${id}); adminManager.closeModal();" style="padding: 12px; font-size: 14px;">❌ Reject Withdrawal</button>
+        ` : '';
+        modal.style.display = 'flex';
+    }
+
+    async deleteUser(userId) {
+        if (confirm('⚠️ Delete this user? ALL their data will be permanently removed.')) {
+            await supabaseDB.deleteUser(userId);
+            await this.refreshData();
+            auth.showNotification('User deleted', 'success');
+        }
+    }
+
+    setupEventListeners() {
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.currentTab = btn.dataset.tab;
+                document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+                document.getElementById(`${this.currentTab}Tab`).style.display = 'block';
+                if (this.currentTab === 'users') this.renderUsers();
+                if (this.currentTab === 'deposits') this.renderDeposits();
+                if (this.currentTab === 'withdrawals') this.renderWithdrawals();
+                if (this.currentTab === 'kyc') this.renderKYC();
+                if (this.currentTab === 'trades') this.renderTrades();
+            });
+        });
+        
+        const searchInput = document.getElementById('userSearch');
+        if (searchInput) searchInput.addEventListener('input', () => this.renderUsers());
+        
+        const roleFilter = document.getElementById('userRoleFilter');
+        if (roleFilter) roleFilter.addEventListener('change', () => this.renderUsers());
+        
+        const depositFilter = document.getElementById('depositStatusFilter');
+        if (depositFilter) depositFilter.addEventListener('change', () => this.renderDeposits());
+        
+        const withdrawFilter = document.getElementById('withdrawStatusFilter');
+        if (withdrawFilter) withdrawFilter.addEventListener('change', () => this.renderWithdrawals());
+        
+        const kycFilter = document.getElementById('kycStatusFilter');
+        if (kycFilter) kycFilter.addEventListener('change', () => this.renderKYC());
+        
+        const tradeSearch = document.getElementById('tradeSearch');
+        if (tradeSearch) tradeSearch.addEventListener('input', () => this.renderTrades());
+        
+        const tradeFilter = document.getElementById('tradeStatusFilter');
+        if (tradeFilter) tradeFilter.addEventListener('change', () => this.renderTrades());
+        
+        const mobileBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        if (mobileBtn && mobileMenu) {
+            mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('show'));
+        }
     }
 
     closeModal() {
@@ -761,87 +754,10 @@ class AdminManager {
         modal.style.display = 'none';
     }
 
-    setupEventListeners() {
-        // Tab switching
-        const navItems = document.querySelectorAll('.nav-item[data-tab]');
-        navItems.forEach(item => {
-            item.addEventListener('click', () => {
-                const tabId = item.dataset.tab;
-                this.switchTab(tabId);
-            });
-        });
-        
-        // User filters
-        const userSearch = document.getElementById('userSearch');
-        const userRoleFilter = document.getElementById('userRoleFilter');
-        if (userSearch) userSearch.addEventListener('input', () => this.renderUsers());
-        if (userRoleFilter) userRoleFilter.addEventListener('change', () => this.renderUsers());
-        
-        // Deposit filter
-        const depositFilter = document.getElementById('depositStatusFilter');
-        if (depositFilter) depositFilter.addEventListener('change', () => this.renderDeposits());
-        
-        // Withdrawal filter
-        const withdrawFilter = document.getElementById('withdrawStatusFilter');
-        if (withdrawFilter) withdrawFilter.addEventListener('change', () => this.renderWithdrawals());
-        
-        // KYC filter
-        const kycFilter = document.getElementById('kycStatusFilter');
-        if (kycFilter) kycFilter.addEventListener('change', () => this.renderKYC());
-        
-        // Trade filters
-        const tradeSearch = document.getElementById('tradeSearch');
-        const tradeFilter = document.getElementById('tradeStatusFilter');
-        if (tradeSearch) tradeSearch.addEventListener('input', () => this.renderTrades());
-        if (tradeFilter) tradeFilter.addEventListener('change', () => this.renderTrades());
-        
-        // Mobile menu
-        const menuBtn = document.querySelector('.mobile-menu-btn');
-        const sidebar = document.querySelector('.sidebar');
-        if (menuBtn && sidebar) {
-            menuBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('show');
-            });
-        }
-    }
-
-    switchTab(tabId) {
-        this.currentTab = tabId;
-        
-        // Update nav items
-        document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
-            item.classList.remove('active');
-            if (item.dataset.tab === tabId) {
-                item.classList.add('active');
-            }
-        });
-        
-        // Update tab contents
-        const tabs = ['dashboard', 'users', 'deposits', 'withdrawals', 'kyc', 'trades', 'settings'];
-        tabs.forEach(tab => {
-            const element = document.getElementById(`${tab}Tab`);
-            if (element) element.style.display = tab === tabId ? 'block' : 'none';
-        });
-        
-        // Render appropriate content
-        if (tabId === 'users') this.renderUsers();
-        if (tabId === 'deposits') this.renderDeposits();
-        if (tabId === 'withdrawals') this.renderWithdrawals();
-        if (tabId === 'kyc') this.renderKYC();
-        if (tabId === 'trades') this.renderTrades();
-    }
-
     formatDate(dateString) {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
         return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-    }
-
-    formatNumber(num) {
-        if (!num) return '0';
-        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-        return num.toString();
     }
 }
 
@@ -853,6 +769,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Global functions
-function logout() {
-    if (auth) auth.logout();
-}
+window.handleLogout = function() {
+    if (typeof auth !== 'undefined' && auth.logout) {
+        auth.logout();
+    } else {
+        window.location.href = 'index.html';
+    }
+};
