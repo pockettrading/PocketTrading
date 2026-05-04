@@ -125,6 +125,12 @@
             border-color: #00D897;
             background: rgba(0, 216, 151, 0.05);
         }
+        .form-group input.error {
+            border-color: #FF4757;
+        }
+        .form-group input.valid {
+            border-color: #00D897;
+        }
         .password-toggle {
             position: absolute;
             right: 16px;
@@ -133,6 +139,13 @@
             color: #8B93A5;
             cursor: pointer;
             font-size: 18px;
+        }
+
+        .error-message {
+            color: #FF4757;
+            font-size: 11px;
+            margin-top: 4px;
+            display: none;
         }
 
         .form-options {
@@ -172,6 +185,10 @@
         .submit-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(0, 216, 151, 0.3);
+        }
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .terms-text {
@@ -262,6 +279,7 @@
                         <span class="input-icon">👤</span>
                         <input type="text" id="regFullName" placeholder="First and last name">
                     </div>
+                    <div class="error-message" id="nameError">Please enter first and last name</div>
                 </div>
                 
                 <div class="form-group">
@@ -270,15 +288,17 @@
                         <span class="input-icon">📧</span>
                         <input type="email" id="regEmail" placeholder="Enter your email">
                     </div>
+                    <div class="error-message" id="emailError">Please enter a valid email address</div>
                 </div>
                 
                 <div class="form-group">
                     <label>Password</label>
                     <div class="input-wrapper">
                         <span class="input-icon">🔒</span>
-                        <input type="password" id="regPassword" placeholder="Create a password">
+                        <input type="password" id="regPassword" placeholder="Create a password (min 8 characters)">
                         <button type="button" class="password-toggle" onclick="togglePassword('regPassword')">👁️</button>
                     </div>
+                    <div class="error-message" id="passwordError">Password must be at least 8 characters</div>
                 </div>
                 
                 <div class="form-group">
@@ -288,6 +308,7 @@
                         <input type="password" id="regConfirmPassword" placeholder="Confirm your password">
                         <button type="button" class="password-toggle" onclick="togglePassword('regConfirmPassword')">👁️</button>
                     </div>
+                    <div class="error-message" id="confirmError">Passwords do not match</div>
                 </div>
                 
                 <div class="form-options">
@@ -305,9 +326,8 @@
         </div>
     </div>
 
-    <!-- IMPORTANT: Load Supabase FIRST -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Then load your custom scripts -->
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
     
@@ -341,7 +361,78 @@
             }
         };
         
-        // Login function
+        // Real-time validation for register form
+        const regFullName = document.getElementById('regFullName');
+        const regEmail = document.getElementById('regEmail');
+        const regPassword = document.getElementById('regPassword');
+        const regConfirmPassword = document.getElementById('regConfirmPassword');
+        
+        regFullName.addEventListener('input', () => {
+            const nameParts = regFullName.value.trim().split(/\s+/);
+            const nameError = document.getElementById('nameError');
+            if (nameParts.length < 2 || nameParts[0].length === 0 || nameParts[1].length === 0) {
+                regFullName.classList.add('error');
+                regFullName.classList.remove('valid');
+                nameError.style.display = 'block';
+            } else {
+                regFullName.classList.remove('error');
+                regFullName.classList.add('valid');
+                nameError.style.display = 'none';
+            }
+        });
+        
+        regEmail.addEventListener('input', () => {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const emailError = document.getElementById('emailError');
+            if (!emailRegex.test(regEmail.value)) {
+                regEmail.classList.add('error');
+                regEmail.classList.remove('valid');
+                emailError.style.display = 'block';
+            } else {
+                regEmail.classList.remove('error');
+                regEmail.classList.add('valid');
+                emailError.style.display = 'none';
+            }
+        });
+        
+        regPassword.addEventListener('input', () => {
+            const passwordError = document.getElementById('passwordError');
+            if (regPassword.value.length < 8 && regPassword.value.length > 0) {
+                regPassword.classList.add('error');
+                regPassword.classList.remove('valid');
+                passwordError.style.display = 'block';
+            } else if (regPassword.value.length >= 8) {
+                regPassword.classList.remove('error');
+                regPassword.classList.add('valid');
+                passwordError.style.display = 'none';
+            }
+            // Also check confirm password match
+            if (regConfirmPassword.value.length > 0) {
+                if (regPassword.value !== regConfirmPassword.value) {
+                    regConfirmPassword.classList.add('error');
+                    document.getElementById('confirmError').style.display = 'block';
+                } else {
+                    regConfirmPassword.classList.remove('error');
+                    regConfirmPassword.classList.add('valid');
+                    document.getElementById('confirmError').style.display = 'none';
+                }
+            }
+        });
+        
+        regConfirmPassword.addEventListener('input', () => {
+            const confirmError = document.getElementById('confirmError');
+            if (regPassword.value !== regConfirmPassword.value) {
+                regConfirmPassword.classList.add('error');
+                regConfirmPassword.classList.remove('valid');
+                confirmError.style.display = 'block';
+            } else {
+                regConfirmPassword.classList.remove('error');
+                regConfirmPassword.classList.add('valid');
+                confirmError.style.display = 'none';
+            }
+        });
+        
+        // Login function - redirect to index.html (home page)
         document.getElementById('loginBtn').addEventListener('click', async () => {
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
@@ -361,39 +452,51 @@
             if (success) {
                 showNotification('Login successful! Redirecting...', 'success');
                 setTimeout(() => {
-                    window.location.href = 'profile.html';
+                    window.location.href = 'index.html';
                 }, 1000);
             }
         });
         
-        // Register function
+        // Register function - redirect to index.html (home page)
         document.getElementById('registerBtn').addEventListener('click', async () => {
+            // Validate all fields before submission
             const fullName = document.getElementById('regFullName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const confirmPassword = document.getElementById('regConfirmPassword').value;
             const termsAgree = document.getElementById('termsAgree').checked;
             
-            if (!fullName || fullName.split(' ').length < 2) {
+            // Validate full name
+            const nameParts = fullName.split(/\s+/);
+            if (nameParts.length < 2) {
                 showNotification('Please enter your full name (first and last name)', 'error');
+                document.getElementById('regFullName').focus();
                 return;
             }
             
-            if (!email || !email.includes('@')) {
+            // Validate email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
                 showNotification('Please enter a valid email address', 'error');
+                document.getElementById('regEmail').focus();
                 return;
             }
             
-            if (!password || password.length < 8) {
+            // Validate password length
+            if (password.length < 8) {
                 showNotification('Password must be at least 8 characters', 'error');
+                document.getElementById('regPassword').focus();
                 return;
             }
             
+            // Validate password match
             if (password !== confirmPassword) {
                 showNotification('Passwords do not match', 'error');
+                document.getElementById('regConfirmPassword').focus();
                 return;
             }
             
+            // Validate terms
             if (!termsAgree) {
                 showNotification('Please agree to the Terms of Service', 'error');
                 return;
@@ -408,7 +511,7 @@
             if (success) {
                 showNotification('Registration successful! Redirecting...', 'success');
                 setTimeout(() => {
-                    window.location.href = 'profile.html';
+                    window.location.href = 'index.html';
                 }, 1500);
             }
         });
@@ -435,7 +538,7 @@
         // Check if already logged in
         setTimeout(() => {
             if (typeof auth !== 'undefined' && auth.isLoggedIn()) {
-                window.location.href = 'profile.html';
+                window.location.href = 'index.html';
             }
         }, 500);
     </script>
