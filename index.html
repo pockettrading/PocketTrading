@@ -451,8 +451,11 @@
         </div>
     </section>
 
+    <!-- Scripts - Load in correct order -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
+    
     <script>
         let currentUser = null;
 
@@ -480,7 +483,6 @@
                 const isAdmin = currentUser.email === 'ephremgojo@gmail.com';
                 const userName = currentUser.name || currentUser.email.split('@')[0];
                 
-                // Update desktop navigation for logged-in user
                 if (navLinks) {
                     navLinks.innerHTML = `
                         <a href="index.html" class="nav-link">Home</a>
@@ -490,7 +492,6 @@
                     `;
                 }
                 
-                // Desktop right section
                 rightNav.innerHTML = `
                     <div class="user-section">
                         <div class="user-info">
@@ -502,7 +503,6 @@
                     </div>
                 `;
                 
-                // Mobile menu
                 mobileMenu.innerHTML = `
                     <a href="index.html" class="mobile-nav-link">🏠 Home</a>
                     <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
@@ -512,7 +512,6 @@
                     <button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>
                 `;
             } else {
-                // Desktop navigation for guest
                 if (navLinks) {
                     navLinks.innerHTML = `
                         <a href="index.html" class="nav-link">Home</a>
@@ -521,7 +520,6 @@
                     `;
                 }
                 
-                // Desktop right section for guest
                 rightNav.innerHTML = `
                     <div class="guest-buttons">
                         <a href="login.html" class="btn-login">Login</a>
@@ -529,7 +527,6 @@
                     </div>
                 `;
                 
-                // Mobile menu for guest
                 mobileMenu.innerHTML = `
                     <a href="index.html" class="mobile-nav-link">🏠 Home</a>
                     <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
@@ -542,18 +539,20 @@
 
         async function loadUserStats() {
             try {
-                const trades = await supabaseDB.getUserTrades(currentUser.id);
-                const totalTrades = trades.length;
-                const closedTrades = trades.filter(t => t.status === 'closed');
-                const winningTrades = closedTrades.filter(t => (t.pnl || 0) > 0).length;
-                const winRate = closedTrades.length > 0 ? (winningTrades / closedTrades.length * 100).toFixed(1) : 0;
-                const totalPnL = trades.reduce((sum, t) => sum + (t.pnl || 0), 0);
-                const balance = currentUser.balance || 0;
-                
-                document.getElementById('guestBalance').innerHTML = `$${balance.toLocaleString()}`;
-                document.getElementById('guestTotalTrades').textContent = totalTrades;
-                document.getElementById('guestWinRate').textContent = `${winRate}%`;
-                document.getElementById('guestProfit').innerHTML = `${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}`;
+                if (typeof supabaseDB !== 'undefined') {
+                    const trades = await supabaseDB.getUserTrades(currentUser.id);
+                    const totalTrades = trades.length;
+                    const closedTrades = trades.filter(t => t.status === 'closed');
+                    const winningTrades = closedTrades.filter(t => (t.pnl || 0) > 0).length;
+                    const winRate = closedTrades.length > 0 ? (winningTrades / closedTrades.length * 100).toFixed(1) : 0;
+                    const totalPnL = trades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+                    const balance = currentUser.balance || 0;
+                    
+                    document.getElementById('guestBalance').innerHTML = `$${balance.toLocaleString()}`;
+                    document.getElementById('guestTotalTrades').textContent = totalTrades;
+                    document.getElementById('guestWinRate').textContent = `${winRate}%`;
+                    document.getElementById('guestProfit').innerHTML = `${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}`;
+                }
             } catch (error) {
                 console.error('Error loading user stats:', error);
             }
