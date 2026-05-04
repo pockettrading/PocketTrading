@@ -177,10 +177,66 @@
             border: 1px solid rgba(255,255,255,0.1);
         }
         .stat-card-icon { font-size: 32px; margin-bottom: 12px; }
-        .stat-card-value { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
-        .stat-card-label { font-size: 13px; color: #8B93A5; }
+        .stat-card-value { font-size: 32px; font-weight: 800; margin-bottom: 4px; }
+        .stat-card-label { font-size: 14px; color: #8B93A5; }
         .positive { color: #00D897; }
-        .negative { color: #FF4757; }
+
+        /* Emergency Stop Switch */
+        .emergency-stop {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .emergency-stop.enabled {
+            background: rgba(0, 216, 151, 0.1);
+            border-color: rgba(0, 216, 151, 0.3);
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #FF4757;
+            transition: .3s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #00D897;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
 
         /* Tabs */
         .admin-tabs {
@@ -222,7 +278,11 @@
             text-align: left;
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        .data-table th { color: #8B93A5; font-weight: 500; font-size: 13px; }
+        .data-table th {
+            color: #8B93A5;
+            font-weight: 500;
+            font-size: 13px;
+        }
 
         /* Status Badges */
         .status-badge {
@@ -289,10 +349,6 @@
             color: white;
             font-size: 14px;
         }
-        .form-input:focus {
-            outline: none;
-            border-color: #00D897;
-        }
         .detail-row {
             display: flex;
             justify-content: space-between;
@@ -301,44 +357,6 @@
         }
         .detail-label { color: #8B93A5; }
         .detail-value { font-weight: 600; }
-
-        /* Action Buttons */
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-top: 20px;
-        }
-        .admin-action-btn {
-            flex: 1;
-            padding: 12px;
-            background: rgba(0, 216, 151, 0.15);
-            border: 1px solid rgba(0, 216, 151, 0.3);
-            border-radius: 12px;
-            color: #00D897;
-            cursor: pointer;
-            font-weight: 600;
-            text-align: center;
-        }
-        .admin-action-btn.danger {
-            background: rgba(255, 71, 87, 0.15);
-            border-color: rgba(255, 71, 87, 0.3);
-            color: #FF4757;
-        }
-
-        /* Loading & Empty States */
-        .loading { text-align: center; padding: 40px; }
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(0,216,151,0.3);
-            border-top-color: #00D897;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 16px;
-        }
-        .empty-state { text-align: center; padding: 60px; color: #8B93A5; }
-        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* Modal */
         .modal {
@@ -433,6 +451,9 @@
             <div class="stat-card"><div class="stat-card-icon">📊</div><div class="stat-card-value" id="pendingRequests">0</div><div class="stat-card-label">Pending Requests</div></div>
         </div>
 
+        <!-- Emergency Stop Switch -->
+        <div id="emergencyStopContainer"></div>
+
         <!-- Tabs -->
         <div class="admin-tabs">
             <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
@@ -445,204 +466,119 @@
         </div>
 
         <!-- Dashboard Tab -->
-        <div id="dashboardTab" class="tab-content active">
-            <div class="settings-grid">
-                <div class="settings-card">
-                    <h3>System Status</h3>
-                    <div class="detail-row"><span class="detail-label">Platform Status</span><span class="detail-value positive">● Operational</span></div>
-                    <div class="detail-row"><span class="detail-label">Database</span><span class="detail-value positive">● Connected</span></div>
-                    <div class="detail-row"><span class="detail-label">Last Backup</span><span class="detail-value" id="lastBackup">Today, 02:00 AM</span></div>
-                    <div class="detail-row"><span class="detail-label">Version</span><span class="detail-value">2.0.0</span></div>
-                    <div class="action-buttons"><button class="admin-action-btn" onclick="backupDatabase()">💾 Backup Database</button></div>
-                </div>
-                <div class="settings-card">
-                    <h3>Quick Stats</h3>
-                    <div class="detail-row"><span class="detail-label">Total Registered Users</span><span class="detail-value" id="quickTotalUsers">0</span></div>
-                    <div class="detail-row"><span class="detail-label">Active Today</span><span class="detail-value" id="activeToday">0</span></div>
-                    <div class="detail-row"><span class="detail-label">Pending Deposits</span><span class="detail-value" id="pendingDeposits">0</span></div>
-                    <div class="detail-row"><span class="detail-label">Pending Withdrawals</span><span class="detail-value" id="pendingWithdrawals">0</span></div>
-                </div>
-            </div>
-            <div class="table-container" style="margin-top: 24px;">
-                <table class="data-table"><thead><tr><th>User</th><th>Action</th><th>Amount</th><th>Date</th></tr></thead><tbody id="recentActivityBody"><tr><td colspan="4"><div class="loading"><div class="spinner"></div></div></td></tr></tbody></table>
-            </div>
-        </div>
+        <div id="dashboardTab" class="tab-content active"></div>
 
         <!-- Users Tab -->
         <div id="usersTab" class="tab-content" style="display: none;">
             <div style="display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
                 <input type="text" id="userSearch" class="form-input" style="flex:1;" placeholder="Search by name or email...">
-                <select id="userRoleFilter" class="form-input" style="width: 150px;"><option value="all">All Users</option><option value="admin">Admins</option><option value="user">Regular Users</option></select>
+                <select id="userRoleFilter" class="form-input" style="width: 150px;">
+                    <option value="all">All Users</option>
+                    <option value="admin">Admins</option>
+                    <option value="user">Regular Users</option>
+                </select>
                 <button class="btn-approve" onclick="adminManager.refreshUsers()">🔄 Refresh</button>
             </div>
-            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Email</th><th>Balance</th><th>KYC Status</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="usersTableBody"><tr><td colspan="7"><div class="loading"><div class="spinner"></div></div></td></tr></tbody></table></div>
+            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Email</th><th>Balance</th><th>KYC Status</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="usersTableBody"><tr><td colspan="7"><div class="loading" style="text-align:center; padding:40px;">Loading...</div></td></tr></tbody></table></div>
         </div>
 
         <!-- Deposits Tab -->
         <div id="depositsTab" class="tab-content" style="display: none;">
             <div style="display: flex; gap: 16px; margin-bottom: 20px;">
-                <select id="depositStatusFilter" class="form-input" style="width: 200px;"><option value="all">All Requests</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
+                <select id="depositStatusFilter" class="form-input" style="width: 200px;">
+                    <option value="all">All Requests</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                </select>
                 <button class="btn-approve" onclick="adminManager.refreshDeposits()">🔄 Refresh</button>
             </div>
-            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Amount</th><th>Currency</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="depositsTableBody"><tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr></tbody></table></div>
+            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Amount</th><th>Currency</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="depositsTableBody"><tr><td colspan="6"><div class="loading" style="text-align:center; padding:40px;">Loading...</div></td></tr></tbody></table></div>
         </div>
 
         <!-- Withdrawals Tab -->
         <div id="withdrawalsTab" class="tab-content" style="display: none;">
             <div style="display: flex; gap: 16px; margin-bottom: 20px;">
-                <select id="withdrawStatusFilter" class="form-input" style="width: 200px;"><option value="all">All Requests</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
+                <select id="withdrawStatusFilter" class="form-input" style="width: 200px;">
+                    <option value="all">All Requests</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                </select>
                 <button class="btn-approve" onclick="adminManager.refreshWithdrawals()">🔄 Refresh</button>
             </div>
-            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Amount</th><th>Crypto</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="withdrawalsTableBody"><tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr></tbody></table></div>
+            <div class="table-container"><table class="data-table"><thead></tr><th>User</th><th>Amount</th><th>Crypto</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="withdrawalsTableBody"><tr><td colspan="6"><div class="loading" style="text-align:center; padding:40px;">Loading...</div></td></tr></tbody></table></div>
         </div>
 
         <!-- KYC Tab -->
         <div id="kycTab" class="tab-content" style="display: none;">
             <div style="display: flex; gap: 16px; margin-bottom: 20px;">
-                <select id="kycStatusFilter" class="form-input" style="width: 200px;"><option value="all">All Requests</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
+                <select id="kycStatusFilter" class="form-input" style="width: 200px;">
+                    <option value="all">All Requests</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                </select>
                 <button class="btn-approve" onclick="adminManager.refreshKYC()">🔄 Refresh</button>
             </div>
-            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Full Name</th><th>ID Type</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="kycTableBody"><tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr></tbody></table></div>
+            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Full Name</th><th>ID Type</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="kycTableBody"><tr><td colspan="6"><div class="loading" style="text-align:center; padding:40px;">Loading...</div></td></tr></tbody></table></div>
         </div>
 
         <!-- Trades Tab -->
         <div id="tradesTab" class="tab-content" style="display: none;">
             <div style="display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
                 <input type="text" id="tradeSearch" class="form-input" style="flex:1;" placeholder="Search by user or symbol...">
-                <select id="tradeStatusFilter" class="form-input" style="width: 150px;"><option value="all">All Trades</option><option value="open">Open</option><option value="closed">Closed</option></select>
+                <select id="tradeStatusFilter" class="form-input" style="width: 150px;">
+                    <option value="all">All Trades</option>
+                    <option value="open">Open</option>
+                    <option value="closed">Closed</option>
+                </select>
                 <button class="btn-approve" onclick="adminManager.refreshTrades()">🔄 Refresh</button>
             </div>
-            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Symbol</th><th>Type</th><th>Amount</th><th>Leverage</th><th>P&L</th><th>Status</th><th>Date</th></tr></thead><tbody id="tradesTableBody"><tr><td colspan="8"><div class="loading"><div class="spinner"></div></div></td></tr></tbody></table></div>
+            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Symbol</th><th>Type</th><th>Amount</th><th>Leverage</th><th>P&L</th><th>Status</th><th>Date</th></tr></thead><tbody id="tradesTableBody"><tr><td colspan="8"><div class="loading" style="text-align:center; padding:40px;">Loading...</div></td></tr></tbody></table></div>
         </div>
 
         <!-- Settings Tab -->
         <div id="settingsTab" class="tab-content" style="display: none;">
             <div class="settings-grid">
-                <!-- Trading Settings -->
                 <div class="settings-card">
                     <h3>Trading Settings</h3>
-                    <div class="form-group"><label>Minimum Trade Amount ($)</label><input type="number" id="minTradeAmount" class="form-input" value="10" step="5" min="5"></div>
+                    <div class="form-group"><label>Minimum Trade Amount ($)</label><input type="number" id="minTradeAmount" class="form-input" value="10"></div>
                     <div class="form-group"><label>Maximum Leverage</label><select id="maxLeverage" class="form-input"><option value="10">10x</option><option value="20">20x</option><option value="50">50x</option><option value="100" selected>100x</option></select></div>
                     <div class="form-group"><label>Withdrawal Fee (%)</label><input type="number" id="withdrawalFee" class="form-input" step="0.1" value="1.5"></div>
-                    <button class="btn-approve" style="width:100%; padding:12px;" onclick="saveTradingSettings()">Save Settings</button>
+                    <button class="btn-approve" style="width:100%; padding:12px;" onclick="adminManager.saveTradingSettings()">Save Settings</button>
                 </div>
-
-                <!-- Deposit Wallet Addresses -->
                 <div class="settings-card">
                     <h3>💰 Deposit Wallet Addresses</h3>
-                    <p style="color:#8B93A5; font-size:12px; margin-bottom:16px;">Configure cryptocurrency wallet addresses for user deposits</p>
                     <div class="form-group"><label>USDT (TRC20) Address</label><input type="text" id="adminUSDTAddress" class="form-input" placeholder="Enter USDT wallet address"></div>
                     <div class="form-group"><label>BTC Address</label><input type="text" id="adminBTCAddress" class="form-input" placeholder="Enter BTC wallet address"></div>
                     <div class="form-group"><label>ETH (ERC20) Address</label><input type="text" id="adminETHAddress" class="form-input" placeholder="Enter ETH wallet address"></div>
-                    <button class="btn-approve" style="width:100%; padding:12px;" onclick="saveDepositAddresses()">Save Deposit Addresses</button>
+                    <button class="btn-approve" style="width:100%; padding:12px;" onclick="adminManager.saveDepositAddresses()">Save Deposit Addresses</button>
                 </div>
-
-                <!-- System Status -->
                 <div class="settings-card">
                     <h3>System Status</h3>
                     <div class="detail-row"><span class="detail-label">Platform Status</span><span class="detail-value positive">● Operational</span></div>
                     <div class="detail-row"><span class="detail-label">Database</span><span class="detail-value positive">● Connected</span></div>
-                    <div class="detail-row"><span class="detail-label">Last Backup</span><span class="detail-value" id="settingsLastBackup">Today, 02:00 AM</span></div>
                     <div class="detail-row"><span class="detail-label">Version</span><span class="detail-value">2.0.0</span></div>
-                    <div class="action-buttons"><button class="admin-action-btn" onclick="backupDatabase()">💾 Backup Database</button></div>
+                    <button class="btn-approve" style="width:100%; margin-top:16px; padding:12px;" onclick="adminManager.backupDatabase()">💾 Backup Database</button>
                 </div>
-
-                <!-- Admin Actions -->
                 <div class="settings-card">
                     <h3>Admin Actions</h3>
-                    <div class="action-buttons"><button class="admin-action-btn" onclick="exportUserData()">📥 Export User Data</button><button class="admin-action-btn" onclick="exportTradeData()">📥 Export Trade Data</button><button class="admin-action-btn danger" onclick="clearLogs()">🗑️ Clear Activity Logs</button></div>
+                    <button class="btn-approve" style="width:100%; margin-bottom:12px; padding:12px;" onclick="adminManager.exportUserData()">📥 Export User Data</button>
+                    <button class="btn-approve" style="width:100%; margin-bottom:12px; padding:12px;" onclick="adminManager.exportTradeData()">📥 Export Trade Data</button>
+                    <button class="btn-reject" style="width:100%; padding:12px;" onclick="adminManager.clearLogs()">🗑️ Clear Activity Logs</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Details Modal -->
-    <div id="detailsModal" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="modalTitle">Details</h3><span class="modal-close" onclick="closeModal()">&times;</span></div><div class="modal-body" id="modalBody"></div><div class="modal-buttons" id="modalButtons"></div></div></div>
+    <div id="detailsModal" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="modalTitle">Details</h3><span class="modal-close" onclick="adminManager?.closeModal()">&times;</span></div><div class="modal-body" id="modalBody"></div><div class="modal-buttons" id="modalButtons"></div></div></div>
 
+    <!-- Scripts - Load in correct order -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
-    <script>
-        let currentUser = null;
-        let users = [], deposits = [], withdrawals = [], kycRequests = [], trades = [];
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            await waitForAuth();
-            if (typeof auth !== 'undefined') currentUser = auth.getUser();
-            if (!currentUser || currentUser.email !== 'ephremgojo@gmail.com') { window.location.href = 'index.html'; return; }
-            setupNavigation();
-            await loadAllData();
-            renderDashboard();
-            setupEventListeners();
-            loadDepositAddresses();
-            loadTradingSettings();
-        });
-
-        function waitForAuth() { return new Promise(r => { if (typeof auth !== 'undefined') r(); else setTimeout(() => r(), 100); }); }
-
-        function setupNavigation() {
-            const navLinks = document.getElementById('navLinks');
-            const rightNav = document.getElementById('rightNav');
-            const mobileMenu = document.getElementById('mobileMenu');
-            const userName = currentUser.name || currentUser.email.split('@')[0];
-            navLinks.innerHTML = `<a href="index.html" class="nav-link">Home</a><a href="markets.html" class="nav-link">Markets</a><a href="trades.html" class="nav-link">Trades</a><a href="profile.html" class="nav-link">My Profile</a>`;
-            rightNav.innerHTML = `<div class="user-section"><div class="user-info"><div class="user-avatar">${userName.charAt(0)}</div><div class="user-name">${userName}<span class="admin-badge">Admin</span></div></div><button class="logout-btn" onclick="handleLogout()">Logout</button></div>`;
-            mobileMenu.innerHTML = `<a href="index.html" class="mobile-nav-link">🏠 Home</a><a href="markets.html" class="mobile-nav-link">📊 Markets</a><a href="trades.html" class="mobile-nav-link">🔄 Trades</a><a href="profile.html" class="mobile-nav-link">👤 My Profile</a><button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>`;
-        }
-
-        async function loadAllData() {
-            users = JSON.parse(localStorage.getItem('pockettrading_users') || '[]');
-            deposits = JSON.parse(localStorage.getItem('deposit_requests') || '[]');
-            withdrawals = JSON.parse(localStorage.getItem('withdrawal_requests') || '[]');
-            kycRequests = JSON.parse(localStorage.getItem('kyc_requests') || '[]');
-            trades = [];
-            users.forEach(u => { const userTrades = JSON.parse(localStorage.getItem(`trades_${u.id}`) || '[]'); trades.push(...userTrades); });
-        }
-
-        function renderDashboard() {
-            document.getElementById('totalUsers').textContent = users.length;
-            document.getElementById('totalVolume').textContent = `$${trades.reduce((s, t) => s + (t.amount * t.leverage || 0), 0).toLocaleString()}`;
-            document.getElementById('totalDeposits').textContent = `$${deposits.filter(d => d.status === 'approved').reduce((s, d) => s + d.amount, 0).toLocaleString()}`;
-            document.getElementById('pendingRequests').textContent = deposits.filter(d => d.status === 'pending').length + withdrawals.filter(w => w.status === 'pending').length + kycRequests.filter(k => k.status === 'pending').length;
-            document.getElementById('quickTotalUsers').textContent = users.length;
-            document.getElementById('pendingDeposits').textContent = deposits.filter(d => d.status === 'pending').length;
-            document.getElementById('pendingWithdrawals').textContent = withdrawals.filter(w => w.status === 'pending').length;
-        }
-
-        function setupEventListeners() {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); const tab = btn.dataset.tab; document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none'); document.getElementById(`${tab}Tab`).style.display = 'block'; if (tab === 'users') renderUsers(); if (tab === 'deposits') renderDeposits(); if (tab === 'withdrawals') renderWithdrawals(); if (tab === 'kyc') renderKYC(); if (tab === 'trades') renderTrades(); }));
-            const mobileBtn = document.getElementById('mobileMenuBtn'); const mobileMenu = document.getElementById('mobileMenu'); if (mobileBtn && mobileMenu) mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('show'));
-        }
-
-        function renderUsers() { const tbody = document.getElementById('usersTableBody'); const search = document.getElementById('userSearch')?.value.toLowerCase() || ''; const role = document.getElementById('userRoleFilter')?.value || 'all'; let filtered = users.filter(u => (u.name?.toLowerCase().includes(search) || u.email.toLowerCase().includes(search)) && (role === 'all' || (role === 'admin' ? u.email === 'ephremgojo@gmail.com' : u.email !== 'ephremgojo@gmail.com'))); if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">No users found</div></td></tr>'; return; } tbody.innerHTML = filtered.map(u => `<tr><td><strong>${u.name || 'N/A'}</strong><br><small style="color:#8B93A5">ID: ${u.id}</small></td><td>${u.email}</td><td>$${(u.balance || 0).toLocaleString()}</td><td><span class="status-badge status-${u.kyc_status === 'verified' ? 'approved' : (u.kyc_status || 'pending')}">${u.kyc_status || 'pending'}</span></td><td><span class="${u.email === 'ephremgojo@gmail.com' ? 'role-admin' : 'role-user'}">${u.email === 'ephremgojo@gmail.com' ? 'Admin' : 'User'}</span></td><td>${u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'}</td><td><button class="action-btn btn-view" onclick="viewUserDetails(${u.id})">View</button>${u.email !== 'ephremgojo@gmail.com' ? `<button class="action-btn btn-delete" onclick="deleteUser(${u.id})">Delete</button>` : ''}</td></tr>`).join(''); }
-        function renderDeposits() { const tbody = document.getElementById('depositsTableBody'); const status = document.getElementById('depositStatusFilter')?.value || 'all'; let filtered = deposits.filter(d => status === 'all' || d.status === status); if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">No deposits found</div></td></tr>'; return; } tbody.innerHTML = filtered.map(d => { const u = users.find(u => u.id === d.user_id); return `<tr><td><strong>${u?.name || u?.email || 'Unknown'}</strong></td><td>$${d.amount.toLocaleString()}</td><td>${d.currency || 'USDT'}</td><td>${new Date(d.date).toLocaleDateString()}</td><td><span class="status-badge status-${d.status}">${d.status}</span></td><td>${d.status === 'pending' ? `<button class="action-btn btn-approve" onclick="approveDeposit(${d.id})">Approve</button><button class="action-btn btn-reject" onclick="rejectDeposit(${d.id})">Reject</button>` : ''}<button class="action-btn btn-view" onclick="viewDepositDetails(${d.id})">Details</button></td>` }).join(''); }
-        function renderWithdrawals() { const tbody = document.getElementById('withdrawalsTableBody'); const status = document.getElementById('withdrawStatusFilter')?.value || 'all'; let filtered = withdrawals.filter(w => status === 'all' || w.status === status); if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">No withdrawals found</div></td></tr>'; return; } tbody.innerHTML = filtered.map(w => { const u = users.find(u => u.id === w.user_id); return `<tr><td><strong>${u?.name || u?.email || 'Unknown'}</strong></td><td>$${w.amount.toLocaleString()}</td><td>${w.crypto || 'USDT'}</td><td>${new Date(w.date).toLocaleDateString()}</td><td><span class="status-badge status-${w.status}">${w.status}</span></td><td>${w.status === 'pending' ? `<button class="action-btn btn-approve" onclick="approveWithdrawal(${w.id})">Approve</button><button class="action-btn btn-reject" onclick="rejectWithdrawal(${w.id})">Reject</button>` : ''}<button class="action-btn btn-view" onclick="viewWithdrawalDetails(${w.id})">Details</button></td>` }).join(''); }
-        function renderKYC() { const tbody = document.getElementById('kycTableBody'); const status = document.getElementById('kycStatusFilter')?.value || 'all'; let filtered = kycRequests.filter(k => status === 'all' || k.status === status); if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">No KYC requests found</div></td></tr>'; return; } tbody.innerHTML = filtered.map(k => { const u = users.find(u => u.id === k.user_id); return `<tr><td><strong>${u?.name || u?.email || 'Unknown'}</strong></td><td>${k.full_name}</td><td>${k.id_type}</td><td>${new Date(k.date).toLocaleDateString()}</td><td><span class="status-badge status-${k.status}">${k.status}</span></td><td>${k.status === 'pending' ? `<button class="action-btn btn-approve" onclick="approveKYC(${k.id})">Verify</button><button class="action-btn btn-reject" onclick="rejectKYC(${k.id})">Reject</button>` : ''}<button class="action-btn btn-view" onclick="viewKYCDetails(${k.id})">Details</button></td>` }).join(''); }
-        function renderTrades() { const tbody = document.getElementById('tradesTableBody'); const search = document.getElementById('tradeSearch')?.value.toLowerCase() || ''; const status = document.getElementById('tradeStatusFilter')?.value || 'all'; let filtered = trades.filter(t => (status === 'all' || t.status === status) && (!search || t.symbol?.toLowerCase().includes(search))); filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">No trades found</div></td></tr>'; return; } tbody.innerHTML = filtered.map(t => { const u = users.find(u => u.id === t.user_id); return `<tr><td><small>${u?.name || u?.email || 'Unknown'}</small></td><td><strong>${t.symbol}</strong></td><td><span class="status-badge ${t.type === 'buy' ? 'status-approved' : 'status-rejected'}">${t.type}</span></td><td>$${(t.amount || 0).toLocaleString()}</td><td>${t.leverage || 1}x</td><td class="${(t.pnl || 0) >= 0 ? 'positive' : 'negative'}">${(t.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(t.pnl || 0).toLocaleString()}</td><td><span class="status-badge status-${t.status === 'open' ? 'pending' : 'approved'}">${t.status}</span></td><td><small>${new Date(t.created_at).toLocaleDateString()}</small></td>` }).join(''); }
-
-        async function approveDeposit(id) { const deposit = deposits.find(d => d.id === id); if (!deposit) return; await supabaseDB?.update('deposit_requests', id, { status: 'approved' }); const user = users.find(u => u.id === deposit.user_id); if (user) { const newBalance = (user.balance || 0) + deposit.amount; await supabaseDB?.updateUserBalance(user.id, newBalance); user.balance = newBalance; localStorage.setItem('pockettrading_users', JSON.stringify(users)); if (localStorage.getItem('pocket_user') && JSON.parse(localStorage.getItem('pocket_user')).id === user.id) { const u = JSON.parse(localStorage.getItem('pocket_user')); u.balance = newBalance; localStorage.setItem('pocket_user', JSON.stringify(u)); } } await loadAllData(); renderDeposits(); renderDashboard(); alert(`Deposit of $${deposit.amount} approved!`); }
-        async function rejectDeposit(id) { await supabaseDB?.update('deposit_requests', id, { status: 'rejected' }); await loadAllData(); renderDeposits(); alert('Deposit rejected'); }
-        async function approveWithdrawal(id) { const withdrawal = withdrawals.find(w => w.id === id); if (!withdrawal) return; const user = users.find(u => u.id === withdrawal.user_id); if (user && (user.balance || 0) >= withdrawal.amount) { const newBalance = (user.balance || 0) - withdrawal.amount; await supabaseDB?.updateUserBalance(user.id, newBalance); await supabaseDB?.update('withdrawal_requests', id, { status: 'approved' }); user.balance = newBalance; localStorage.setItem('pockettrading_users', JSON.stringify(users)); await loadAllData(); renderWithdrawals(); renderDashboard(); alert(`Withdrawal of $${withdrawal.amount} approved!`); } else alert('Insufficient balance'); }
-        async function rejectWithdrawal(id) { await supabaseDB?.update('withdrawal_requests', id, { status: 'rejected' }); await loadAllData(); renderWithdrawals(); alert('Withdrawal rejected'); }
-        async function approveKYC(id) { const kyc = kycRequests.find(k => k.id === id); if (!kyc) return; await supabaseDB?.update('kyc_requests', id, { status: 'approved' }); await supabaseDB?.updateUserKYCStatus(kyc.user_id, 'verified'); const user = users.find(u => u.id === kyc.user_id); if (user) { user.kyc_status = 'verified'; localStorage.setItem('pockettrading_users', JSON.stringify(users)); } await loadAllData(); renderKYC(); alert('KYC approved'); }
-        async function rejectKYC(id) { await supabaseDB?.update('kyc_requests', id, { status: 'rejected' }); await loadAllData(); renderKYC(); alert('KYC rejected'); }
-        function viewUserDetails(id) { const user = users.find(u => u.id === id); if (!user) return; const modal = document.getElementById('detailsModal'); document.getElementById('modalTitle').textContent = `User: ${user.name || 'User'}`; document.getElementById('modalBody').innerHTML = `<div class="detail-row"><span class="detail-label">Name</span><span class="detail-value">${user.name || 'N/A'}</span></div><div class="detail-row"><span class="detail-label">Email</span><span class="detail-value">${user.email}</span></div><div class="detail-row"><span class="detail-label">Balance</span><span class="detail-value">$${(user.balance || 0).toLocaleString()}</span></div><div class="detail-row"><span class="detail-label">KYC Status</span><span class="detail-value">${user.kyc_status || 'pending'}</span></div><div class="detail-row"><span class="detail-label">Joined</span><span class="detail-value">${new Date(user.created_at).toLocaleDateString()}</span></div>`; document.getElementById('modalButtons').innerHTML = ''; modal.style.display = 'flex'; }
-        function viewDepositDetails(id) { const deposit = deposits.find(d => d.id === id); const user = users.find(u => u.id === deposit?.user_id); document.getElementById('modalTitle').textContent = 'Deposit Details'; document.getElementById('modalBody').innerHTML = `<div class="detail-row"><span class="detail-label">User</span><span class="detail-value">${user?.name || 'Unknown'}</span></div><div class="detail-row"><span class="detail-label">Amount</span><span class="detail-value">$${deposit?.amount.toLocaleString()}</span></div><div class="detail-row"><span class="detail-label">Currency</span><span class="detail-value">${deposit?.currency || 'USDT'}</span></div><div class="detail-row"><span class="detail-label">Date</span><span class="detail-value">${new Date(deposit?.date).toLocaleString()}</span></div><div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${deposit?.status}</span></div>`; document.getElementById('modalButtons').innerHTML = deposit?.status === 'pending' ? `<button class="modal-btn btn-approve" onclick="approveDeposit(${id}); closeModal();">Approve</button><button class="modal-btn btn-reject" onclick="rejectDeposit(${id}); closeModal();">Reject</button>` : ''; document.getElementById('detailsModal').style.display = 'flex'; }
-        function viewWithdrawalDetails(id) { const withdrawal = withdrawals.find(w => w.id === id); const user = users.find(u => u.id === withdrawal?.user_id); document.getElementById('modalTitle').textContent = 'Withdrawal Details'; document.getElementById('modalBody').innerHTML = `<div class="detail-row"><span class="detail-label">User</span><span class="detail-value">${user?.name || 'Unknown'}</span></div><div class="detail-row"><span class="detail-label">Amount</span><span class="detail-value">$${withdrawal?.amount.toLocaleString()}</span></div><div class="detail-row"><span class="detail-label">Crypto</span><span class="detail-value">${withdrawal?.crypto || 'USDT'}</span></div><div class="detail-row"><span class="detail-label">Date</span><span class="detail-value">${new Date(withdrawal?.date).toLocaleString()}</span></div><div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${withdrawal?.status}</span></div>`; document.getElementById('modalButtons').innerHTML = withdrawal?.status === 'pending' ? `<button class="modal-btn btn-approve" onclick="approveWithdrawal(${id}); closeModal();">Approve</button><button class="modal-btn btn-reject" onclick="rejectWithdrawal(${id}); closeModal();">Reject</button>` : ''; document.getElementById('detailsModal').style.display = 'flex'; }
-        function viewKYCDetails(id) { const kyc = kycRequests.find(k => k.id === id); const user = users.find(u => u.id === kyc?.user_id); document.getElementById('modalTitle').textContent = 'KYC Details'; document.getElementById('modalBody').innerHTML = `<div class="detail-row"><span class="detail-label">User</span><span class="detail-value">${user?.name || 'Unknown'}</span></div><div class="detail-row"><span class="detail-label">Full Name</span><span class="detail-value">${kyc?.full_name}</span></div><div class="detail-row"><span class="detail-label">DOB</span><span class="detail-value">${kyc?.dob}</span></div><div class="detail-row"><span class="detail-label">ID Type</span><span class="detail-value">${kyc?.id_type}</span></div><div class="detail-row"><span class="detail-label">Date</span><span class="detail-value">${new Date(kyc?.date).toLocaleString()}</span></div><div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${kyc?.status}</span></div>`; document.getElementById('modalButtons').innerHTML = kyc?.status === 'pending' ? `<button class="modal-btn btn-approve" onclick="approveKYC(${id}); closeModal();">Verify</button><button class="modal-btn btn-reject" onclick="rejectKYC(${id}); closeModal();">Reject</button>` : ''; document.getElementById('detailsModal').style.display = 'flex'; }
-        function closeModal() { document.getElementById('detailsModal').style.display = 'none'; }
-        async function deleteUser(id) { if (confirm('Delete this user?')) { await supabaseDB?.delete('custom_users', id); await loadAllData(); renderUsers(); alert('User deleted'); } }
-
-        function loadDepositAddresses() { const saved = localStorage.getItem('crypto_deposit_addresses'); if (saved) { const a = JSON.parse(saved); if (document.getElementById('adminUSDTAddress')) document.getElementById('adminUSDTAddress').value = a.USDT || ''; if (document.getElementById('adminBTCAddress')) document.getElementById('adminBTCAddress').value = a.BTC || ''; if (document.getElementById('adminETHAddress')) document.getElementById('adminETHAddress').value = a.ETH || ''; } }
-        function saveDepositAddresses() { const addresses = { USDT: document.getElementById('adminUSDTAddress')?.value || '', BTC: document.getElementById('adminBTCAddress')?.value || '', ETH: document.getElementById('adminETHAddress')?.value || '' }; localStorage.setItem('crypto_deposit_addresses', JSON.stringify(addresses)); if (typeof supabaseDB !== 'undefined') supabaseDB.insert('platform_settings', { key: 'crypto_deposit_addresses', value: JSON.stringify(addresses), updated_at: new Date().toISOString() }); alert('Deposit addresses saved!'); }
-        function loadTradingSettings() { const settings = JSON.parse(localStorage.getItem('platform_settings') || '{}'); if (document.getElementById('minTradeAmount')) document.getElementById('minTradeAmount').value = settings.minTradeAmount || 10; if (document.getElementById('maxLeverage')) document.getElementById('maxLeverage').value = settings.maxLeverage || 100; if (document.getElementById('withdrawalFee')) document.getElementById('withdrawalFee').value = settings.withdrawalFee || 1.5; }
-        function saveTradingSettings() { const settings = { minTradeAmount: document.getElementById('minTradeAmount')?.value, maxLeverage: document.getElementById('maxLeverage')?.value, withdrawalFee: document.getElementById('withdrawalFee')?.value }; localStorage.setItem('platform_settings', JSON.stringify(settings)); if (typeof supabaseDB !== 'undefined') supabaseDB.insert('platform_settings', { key: 'trading_settings', value: JSON.stringify(settings), updated_at: new Date().toISOString() }); alert('Trading settings saved!'); }
-        function backupDatabase() { const data = { users, trades, deposits, withdrawals, kycRequests, backupDate: new Date().toISOString() }; const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pockettrading_backup_${Date.now()}.json`; a.click(); URL.revokeObjectURL(url); alert('Backup downloaded!'); }
-        function exportUserData() { const data = users.map(u => ({ name: u.name, email: u.email, balance: u.balance, kyc_status: u.kyc_status, created_at: u.created_at })); const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `users_export_${Date.now()}.json`; a.click(); URL.revokeObjectURL(url); alert('User data exported!'); }
-        function exportTradeData() { const data = trades.map(t => ({ user_id: t.user_id, symbol: t.symbol, type: t.type, amount: t.amount, pnl: t.pnl, status: t.status, created_at: t.created_at })); const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `trades_export_${Date.now()}.json`; a.click(); URL.revokeObjectURL(url); alert('Trade data exported!'); }
-        function clearLogs() { if (confirm('Clear all activity logs?')) alert('Logs cleared (demo)'); }
-
-        window.handleLogout = () => { if (auth?.logout) auth.logout(); else { localStorage.clear(); sessionStorage.clear(); window.location.href = 'index.html'; } };
-        window.approveDeposit = approveDeposit; window.rejectDeposit = rejectDeposit; window.approveWithdrawal = approveWithdrawal; window.rejectWithdrawal = rejectWithdrawal; window.approveKYC = approveKYC; window.rejectKYC = rejectKYC; window.viewUserDetails = viewUserDetails; window.viewDepositDetails = viewDepositDetails; window.viewWithdrawalDetails = viewWithdrawalDetails; window.viewKYCDetails = viewKYCDetails; window.closeModal = closeModal; window.deleteUser = deleteUser; window.saveDepositAddresses = saveDepositAddresses; window.saveTradingSettings = saveTradingSettings; window.backupDatabase = backupDatabase; window.exportUserData = exportUserData; window.exportTradeData = exportTradeData; window.clearLogs = clearLogs;
-    </script>
+    <script src="js/admin.js"></script>
 </body>
 </html>
