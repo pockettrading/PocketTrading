@@ -17,11 +17,11 @@ class AuthManager {
 
     async waitForSupabase() {
         return new Promise((resolve) => {
-            if (typeof supabaseDB !== 'undefined' && supabaseDB.isConnected) {
+            if (typeof supabaseDB !== 'undefined' && supabaseDB.supabase) {
                 resolve();
             } else {
                 const checkInterval = setInterval(() => {
-                    if (typeof supabaseDB !== 'undefined' && supabaseDB.isConnected) {
+                    if (typeof supabaseDB !== 'undefined' && supabaseDB.supabase) {
                         clearInterval(checkInterval);
                         resolve();
                     }
@@ -31,7 +31,6 @@ class AuthManager {
     }
 
     async checkExistingSession() {
-        // Only sessionStorage for user ID (temporary, cleared on logout)
         const userId = sessionStorage.getItem('pocket_user_id');
         
         if (userId) {
@@ -53,22 +52,17 @@ class AuthManager {
 
     async login(email, password, rememberMe = false) {
         try {
-            // Find user by email
             const user = await supabaseDB.getUserByEmail(email);
             
             if (user && user.password === password) {
-                // Update last login
                 await supabaseDB.updateUser(user.id, { 
                     last_login: new Date().toISOString() 
                 });
                 
-                // Set admin flag
                 user.isAdmin = (user.email === 'ephremgojo@gmail.com');
                 
-                // Store only user ID in sessionStorage (NOT the whole user object)
                 sessionStorage.setItem('pocket_user_id', user.id);
                 
-                // If remember me, also store but still just ID
                 if (rememberMe) {
                     localStorage.setItem('pocket_user_id', user.id);
                 } else {
@@ -96,23 +90,20 @@ class AuthManager {
 
     async register(fullName, email, password) {
         try {
-            // Check if user exists
             const existingUser = await supabaseDB.getUserByEmail(email);
             if (existingUser) {
                 this.showNotification('Email already exists. Please login.', 'error');
                 return false;
             }
             
-            // Format name
             const formattedName = fullName.trim().split(/\s+/)
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
                 .join(' ');
             
-            // Check if admin
             const isAdmin = (email === 'ephremgojo@gmail.com');
             
-            // Create new user in Supabase
-            const newUser = await supabaseDB.createUser({
+            // Remove timezone field - only include columns that exist in your table
+            const newUser = {
                 id: Date.now(),
                 name: formattedName,
                 email: email,
@@ -121,13 +112,13 @@ class AuthManager {
                 kyc_status: 'pending',
                 phone: '',
                 country: '',
-                timezone: 'UTC+0',
                 is_admin: isAdmin,
                 created_at: new Date().toISOString(),
                 last_login: new Date().toISOString()
-            });
+            };
             
-            // Auto-login
+            await supabaseDB.createUser(newUser);
+            
             newUser.isAdmin = isAdmin;
             sessionStorage.setItem('pocket_user_id', newUser.id);
             this.currentUser = newUser;
@@ -150,12 +141,10 @@ class AuthManager {
                 const newBalance = (user.balance || 0) + amount;
                 await supabaseDB.updateUserBalance(userId, newBalance);
                 
-                // Update current user if it's the same
                 if (this.currentUser && this.currentUser.id === userId) {
                     this.currentUser.balance = newBalance;
                 }
                 
-                // Record transaction
                 await supabaseDB.createTransaction({
                     id: Date.now(),
                     user_id: userId,
@@ -183,7 +172,6 @@ class AuthManager {
     }
 
     logout() {
-        // Clear all stored data
         sessionStorage.removeItem('pocket_user_id');
         localStorage.removeItem('pocket_user_id');
         this.currentUser = null;
@@ -252,10 +240,8 @@ if (!document.querySelector('#auth-notification-styles')) {
     document.head.appendChild(style);
 }
 
-// Initialize auth
 const auth = new AuthManager();
 
-// Global functions
 window.logout = () => auth.logout();
 window.isLoggedIn = () => auth.isLoggedIn();
 window.isAdmin = () => auth.isAdmin();
