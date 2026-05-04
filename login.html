@@ -226,7 +226,7 @@
             </div>
 
             <!-- Login Form -->
-            <form id="loginForm" class="auth-form active">
+            <form id="loginForm" class="auth-form active" action="javascript:void(0)">
                 <div class="form-group">
                     <label>Email Address</label>
                     <div class="input-wrapper">
@@ -255,7 +255,7 @@
             </form>
 
             <!-- Register Form -->
-            <form id="registerForm" class="auth-form">
+            <form id="registerForm" class="auth-form" action="javascript:void(0)">
                 <div class="form-group">
                     <label>Full Name</label>
                     <div class="input-wrapper">
@@ -305,8 +305,12 @@
         </div>
     </div>
 
+    <!-- IMPORTANT: Load Supabase FIRST -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Then load your custom scripts -->
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
+    
     <script>
         // Tab switching
         const tabBtns = document.querySelectorAll('.tab-btn');
@@ -348,14 +352,14 @@
                 return;
             }
             
-            // Wait for auth to be ready
             if (typeof auth === 'undefined') {
-                showNotification('System loading. Please try again.', 'error');
+                showNotification('System loading. Please wait and try again.', 'error');
                 return;
             }
             
             const success = await auth.login(email, password, rememberMe);
             if (success) {
+                showNotification('Login successful! Redirecting...', 'success');
                 setTimeout(() => {
                     window.location.href = 'profile.html';
                 }, 1000);
@@ -396,12 +400,13 @@
             }
             
             if (typeof auth === 'undefined') {
-                showNotification('System loading. Please try again.', 'error');
+                showNotification('System loading. Please wait and try again.', 'error');
                 return;
             }
             
             const success = await auth.register(fullName, email, password);
             if (success) {
+                showNotification('Registration successful! Redirecting...', 'success');
                 setTimeout(() => {
                     window.location.href = 'profile.html';
                 }, 1500);
