@@ -1,28 +1,6 @@
 // Markets Page Controller - PocketTrading
 // File: js/markets.js
-
-// Wait for supabaseDB to be ready
-function waitForSupabase() {
-    return new Promise((resolve) => {
-        if (typeof supabaseDB !== 'undefined') {
-            resolve();
-        } else {
-            const checkInterval = setInterval(() => {
-                if (typeof supabaseDB !== 'undefined') {
-                    clearInterval(checkInterval);
-                    resolve();
-                }
-            }, 100);
-            
-            // Timeout after 5 seconds
-            setTimeout(() => {
-                clearInterval(checkInterval);
-                console.warn('SupabaseDB timeout, using fallback');
-                resolve();
-            }, 5000);
-        }
-    });
-}
+// Pure Supabase - No localStorage
 
 class MarketsManager {
     constructor() {
@@ -38,18 +16,10 @@ class MarketsManager {
     }
 
     async init() {
-        // Wait for supabaseDB
-        await waitForSupabase();
+        await this.waitForDependencies();
         
-        // Wait for auth to be ready
-        if (typeof auth === 'undefined') {
-            setTimeout(() => this.init(), 100);
-            return;
-        }
-
         this.currentUser = auth.getUser();
         
-        // Load user data if logged in
         if (this.currentUser) {
             await this.loadUserData();
             this.setupUserInterface();
@@ -64,13 +34,24 @@ class MarketsManager {
         this.updateMarketStats();
     }
 
+    async waitForDependencies() {
+        return new Promise((resolve) => {
+            const check = setInterval(() => {
+                if (typeof auth !== 'undefined' && typeof supabaseDB !== 'undefined') {
+                    clearInterval(check);
+                    resolve();
+                }
+            }, 100);
+        });
+    }
+
     async loadUserData() {
         try {
-            if (typeof supabaseDB !== 'undefined') {
-                const userData = await supabaseDB.getUserByEmail(this.currentUser.email);
-                if (userData) {
-                    this.currentUser = { ...this.currentUser, ...userData };
-                }
+            // Refresh user data from Supabase
+            const userData = await supabaseDB.getUserById(this.currentUser.id);
+            if (userData) {
+                this.currentUser = { ...this.currentUser, ...userData };
+                this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
             }
         } catch (error) {
             console.error('Error loading user data:', error);
@@ -114,12 +95,8 @@ class MarketsManager {
         if (!this.currentUser) return;
         
         try {
-            const savedWatchlist = localStorage.getItem(`watchlist_${this.currentUser.id}`);
-            if (savedWatchlist) {
-                this.watchlist = JSON.parse(savedWatchlist);
-            } else {
-                this.watchlist = [];
-            }
+            const watchlistData = await supabaseDB.getUserWatchlist(this.currentUser.id);
+            this.watchlist = watchlistData.map(w => w.symbol);
             this.renderWatchlist();
         } catch (error) {
             console.error('Error loading watchlist:', error);
@@ -127,27 +104,64 @@ class MarketsManager {
         }
     }
 
-    saveWatchlist() {
-        if (!this.currentUser) return;
-        localStorage.setItem(`watchlist_${this.currentUser.id}`, JSON.stringify(this.watchlist));
+    async saveWatchlist() {
+        // Since watchlist is saved immediately when toggling, this is just for UI refresh
         this.renderWatchlist();
-        this.renderMarkets(); // Re-render to update star icons
+        this.renderMarkets();
+    }
+
+    async toggleWatchlist(symbol) {
+        if (!this.currentUser) {
+            if (confirm('Please login to add markets to your watchlist. Go to login?')) {
+                window.location.href = 'login.html';
+            }
+            return;
+        }
+        
+        try {
+            if (this.watchlist.includes(symbol)) {
+                await supabaseDB.removeFromWatchlist(this.currentUser.id, symbol);
+                this.watchlist = this.watchlist.filter(s => s !== symbol);
+                this.showNotification(`${symbol} removed from watchlist`, 'info');
+            } else {
+                if (this.watchlist.length >= 20) {
+                    this.showNotification('Watchlist limit reached (20 items)', 'error');
+                    return;
+                }
+                await supabaseDB.addToWatchlist(this.currentUser.id, symbol);
+                this.watchlist.push(symbol);
+                this.showNotification(`${symbol} added to watchlist`, 'success');
+            }
+            this.saveWatchlist();
+        } catch (error) {
+            console.error('Error toggling watchlist:', error);
+            this.showNotification('Failed to update watchlist', 'error');
+        }
+    }
+
+    async removeFromWatchlist(symbol) {
+        if (!this.currentUser) return;
+        
+        try {
+            await supabaseDB.removeFromWatchlist(this.currentUser.id, symbol);
+            this.watchlist = this.watchlist.filter(s => s !== symbol);
+            this.saveWatchlist();
+            this.showNotification(`${symbol} removed from watchlist`, 'info');
+        } catch (error) {
+            console.error('Error removing from watchlist:', error);
+            this.showNotification('Failed to remove from watchlist', 'error');
+        }
+    }
+
+    isInWatchlist(symbol) {
+        return this.watchlist.includes(symbol);
     }
 
     async loadMarkets() {
         try {
-            // Try to fetch from Supabase first
-            let markets = [];
+            let markets = await supabaseDB.getAllMarkets();
             
-            if (typeof supabaseDB !== 'undefined') {
-                const dbMarkets = await supabaseDB.getAll('market_prices');
-                if (dbMarkets && dbMarkets.length > 0) {
-                    markets = dbMarkets;
-                }
-            }
-            
-            if (markets.length === 0) {
-                // Use default markets
+            if (!markets || markets.length === 0) {
                 markets = this.getDefaultMarkets();
             }
             
@@ -165,33 +179,21 @@ class MarketsManager {
 
     getDefaultMarkets() {
         return [
-            { id: 1, symbol: 'BTC/USD', name: 'Bitcoin', category: 'crypto', price: 68432.50, change: 2.34, volume: '32.5B', high24h: 69200, low24h: 67800, marketCap: '1.35T', icon: '₿', rank: 1 },
-            { id: 2, symbol: 'ETH/USD', name: 'Ethereum', category: 'crypto', price: 3821.75, change: 1.87, volume: '18.2B', high24h: 3850, low24h: 3780, marketCap: '459B', icon: 'Ξ', rank: 2 },
-            { id: 3, symbol: 'SOL/USD', name: 'Solana', category: 'crypto', price: 168.42, change: 5.23, volume: '4.8B', high24h: 172, low24h: 162, marketCap: '72B', icon: '◎', rank: 3 },
-            { id: 4, symbol: 'XRP/USD', name: 'Ripple', category: 'crypto', price: 0.624, change: -0.45, volume: '1.2B', high24h: 0.63, low24h: 0.62, marketCap: '33.5B', icon: 'X', rank: 4 },
-            { id: 5, symbol: 'DOGE/USD', name: 'Dogecoin', category: 'crypto', price: 0.162, change: 8.91, volume: '892M', high24h: 0.168, low24h: 0.158, marketCap: '23.2B', icon: 'Ð', rank: 5 },
-            { id: 6, symbol: 'ADA/USD', name: 'Cardano', category: 'crypto', price: 0.483, change: -1.23, volume: '456M', high24h: 0.49, low24h: 0.478, marketCap: '17.1B', icon: 'A', rank: 6 },
-            { id: 7, symbol: 'AVAX/USD', name: 'Avalanche', category: 'crypto', price: 42.15, change: 3.45, volume: '678M', high24h: 43.2, low24h: 41.1, marketCap: '15.8B', icon: 'A', rank: 7 },
-            { id: 8, symbol: 'MATIC/USD', name: 'Polygon', category: 'crypto', price: 0.89, change: -2.11, volume: '345M', high24h: 0.91, low24h: 0.88, marketCap: '8.7B', icon: 'M', rank: 8 },
-            { id: 9, symbol: 'LINK/USD', name: 'Chainlink', category: 'crypto', price: 18.34, change: 1.56, volume: '234M', high24h: 18.6, low24h: 18.1, marketCap: '10.2B', icon: 'L', rank: 9 },
-            { id: 10, symbol: 'UNI/USD', name: 'Uniswap', category: 'crypto', price: 11.23, change: -0.89, volume: '167M', high24h: 11.4, low24h: 11.1, marketCap: '6.5B', icon: 'U', rank: 10 },
-            { id: 11, symbol: 'EUR/USD', name: 'Euro', category: 'forex', price: 1.092, change: 0.12, volume: '124B', high24h: 1.095, low24h: 1.088, icon: '€', rank: 11 },
-            { id: 12, symbol: 'GBP/USD', name: 'British Pound', category: 'forex', price: 1.284, change: -0.08, volume: '98B', high24h: 1.287, low24h: 1.281, icon: '£', rank: 12 },
-            { id: 13, symbol: 'AAPL', name: 'Apple Inc.', category: 'stocks', price: 192.45, change: 0.56, volume: '45M', high24h: 193.20, low24h: 191.80, icon: '🍎', rank: 13 },
-            { id: 14, symbol: 'GOOGL', name: 'Google', category: 'stocks', price: 142.67, change: -0.23, volume: '32M', high24h: 143.50, low24h: 142.00, icon: 'G', rank: 14 },
-            { id: 15, symbol: 'GOLD', name: 'Gold', category: 'commodities', price: 2345.60, change: 0.89, volume: '12B', high24h: 2350.00, low24h: 2340.00, icon: '🥇', rank: 15 }
+            { id: 1, symbol: 'BTC', name: 'Bitcoin', category: 'crypto', price: 78312.00, change_24h: 2.34, volume: '32.5B', high_24h: 79200, low_24h: 77500, market_cap: '1.56T', icon: '₿', rank: 1 },
+            { id: 2, symbol: 'ETH', name: 'Ethereum', category: 'crypto', price: 2297.32, change_24h: 1.29, volume: '18.2B', high_24h: 2320, low_24h: 2280, market_cap: '276B', icon: 'Ξ', rank: 2 },
+            { id: 3, symbol: 'SOL', name: 'Solana', category: 'crypto', price: 168.42, change_24h: 5.23, volume: '4.8B', high_24h: 172, low_24h: 162, market_cap: '72B', icon: '◎', rank: 3 },
+            { id: 4, symbol: 'XRP', name: 'Ripple', category: 'crypto', price: 0.624, change_24h: -0.45, volume: '1.2B', high_24h: 0.63, low_24h: 0.62, market_cap: '33.5B', icon: 'X', rank: 4 },
+            { id: 5, symbol: 'DOGE', name: 'Dogecoin', category: 'crypto', price: 0.162, change_24h: 8.91, volume: '892M', high_24h: 0.168, low_24h: 0.158, market_cap: '23.2B', icon: 'Ð', rank: 5 }
         ];
     }
 
     applyFilters() {
         let filtered = [...this.allMarkets];
         
-        // Apply category filter
         if (this.currentCategory !== 'all') {
             filtered = filtered.filter(m => m.category === this.currentCategory);
         }
         
-        // Apply search term
         if (this.searchTerm) {
             const term = this.searchTerm.toLowerCase();
             filtered = filtered.filter(m => 
@@ -200,23 +202,17 @@ class MarketsManager {
             );
         }
         
-        // Apply sorting
         filtered.sort((a, b) => {
             switch(this.currentSort) {
-                case 'name':
-                    return a.name.localeCompare(b.name);
-                case 'price':
-                    return a.price - b.price;
-                case 'price-desc':
-                    return b.price - a.price;
-                case 'change':
-                    return b.change - a.change;
+                case 'name': return a.name.localeCompare(b.name);
+                case 'price': return a.price - b.price;
+                case 'price-desc': return b.price - a.price;
+                case 'change': return b.change_24h - a.change_24h;
                 case 'volume':
                     const volA = parseFloat(a.volume) || 0;
                     const volB = parseFloat(b.volume) || 0;
                     return volB - volA;
-                default:
-                    return (a.rank || 999) - (b.rank || 999);
+                default: return (a.rank || 999) - (b.rank || 999);
             }
         });
         
@@ -239,14 +235,14 @@ class MarketsManager {
         }
         
         grid.innerHTML = this.filteredMarkets.map(market => {
-            const isInWatchlist = this.watchlist.includes(market.symbol);
+            const isInWatchlist = this.isInWatchlist(market.symbol);
             return `
             <div class="market-card" data-symbol="${market.symbol}">
                 <div class="card-header">
                     <div class="market-info">
                         <div class="market-icon">${market.icon || '📈'}</div>
                         <div class="market-details">
-                            <h3>${market.symbol}</h3>
+                            <h3>${market.symbol}/USD</h3>
                             <p>${market.name}</p>
                         </div>
                     </div>
@@ -256,18 +252,18 @@ class MarketsManager {
                 </div>
                 <div class="card-price">
                     <div class="current-price">$${this.formatPrice(market.price)}</div>
-                    <div class="price-change ${market.change >= 0 ? 'positive' : 'negative'}">
-                        ${market.change >= 0 ? '▲' : '▼'} ${Math.abs(market.change)}%
+                    <div class="price-change ${market.change_24h >= 0 ? 'positive' : 'negative'}">
+                        ${market.change_24h >= 0 ? '▲' : '▼'} ${Math.abs(market.change_24h)}%
                     </div>
                 </div>
                 <div class="card-stats">
                     <div class="stat">
                         <div class="stat-label-sm">24h High</div>
-                        <div class="stat-value-sm">$${this.formatPrice(market.high24h)}</div>
+                        <div class="stat-value-sm">$${this.formatPrice(market.high_24h)}</div>
                     </div>
                     <div class="stat">
                         <div class="stat-label-sm">24h Low</div>
-                        <div class="stat-value-sm">$${this.formatPrice(market.low24h)}</div>
+                        <div class="stat-value-sm">$${this.formatPrice(market.low_24h)}</div>
                     </div>
                     <div class="stat">
                         <div class="stat-label-sm">Volume</div>
@@ -275,7 +271,7 @@ class MarketsManager {
                     </div>
                 </div>
                 <button class="trade-btn" onclick="marketsManager.openTradeModal('${market.symbol}', ${market.price})">
-                    Trade ${market.symbol.split('/')[0]}
+                    Trade ${market.symbol}
                 </button>
             </div>
         `}).join('');
@@ -330,13 +326,7 @@ class MarketsManager {
         container.innerHTML = `
             <table class="watchlist-table">
                 <thead>
-                    <tr>
-                        <th>Market</th>
-                        <th>Price</th>
-                        <th>24h Change</th>
-                        <th>Volume</th>
-                        <th>Action</th>
-                    </tr>
+                    <tr><th>Market</th><th>Price</th><th>24h Change</th><th>Volume</th><th>Action</th></tr>
                 </thead>
                 <tbody>
                     ${watchlistMarkets.map(market => `
@@ -345,15 +335,13 @@ class MarketsManager {
                                 <div class="market-info" style="display: flex; align-items: center; gap: 12px;">
                                     <div class="market-icon" style="width: 32px; height: 32px; font-size: 16px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 50%;">${market.icon || '📈'}</div>
                                     <div>
-                                        <strong>${market.symbol}</strong><br>
+                                        <strong>${market.symbol}/USD</strong><br>
                                         <small style="color: #8B93A5;">${market.name}</small>
                                     </div>
                                 </div>
-                              </td>
-                            <td class="current-price">$${this.formatPrice(market.price)}</td>
-                            <td class="${market.change >= 0 ? 'positive' : 'negative'}">
-                                ${market.change >= 0 ? '+' : ''}${market.change}%
                             </td>
+                            <td class="current-price">$${this.formatPrice(market.price)}</td>
+                            <td class="${market.change_24h >= 0 ? 'positive' : 'negative'}">${market.change_24h >= 0 ? '+' : ''}${market.change_24h}%</td>
                             <td>${market.volume || '—'}</td>
                             <td>
                                 <button class="remove-watchlist" onclick="marketsManager.removeFromWatchlist('${market.symbol}')" style="background: none; border: none; color: #FF4757; cursor: pointer; font-size: 18px;">🗑️</button>
@@ -366,45 +354,8 @@ class MarketsManager {
         `;
     }
 
-    isInWatchlist(symbol) {
-        return this.watchlist.includes(symbol);
-    }
-
-    toggleWatchlist(symbol) {
-        if (!this.currentUser) {
-            if (confirm('Please login to add markets to your watchlist. Go to login?')) {
-                window.location.href = 'login.html';
-            }
-            return;
-        }
-        
-        if (this.watchlist.includes(symbol)) {
-            this.watchlist = this.watchlist.filter(s => s !== symbol);
-            this.showNotification(`${symbol} removed from watchlist`, 'info');
-        } else {
-            if (this.watchlist.length >= 20) {
-                this.showNotification('Watchlist limit reached (20 items)', 'error');
-                return;
-            }
-            this.watchlist.push(symbol);
-            this.showNotification(`${symbol} added to watchlist`, 'success');
-        }
-        
-        this.saveWatchlist();
-        this.renderMarkets();
-        this.renderWatchlist();
-    }
-
-    removeFromWatchlist(symbol) {
-        this.watchlist = this.watchlist.filter(s => s !== symbol);
-        this.saveWatchlist();
-        this.renderMarkets();
-        this.renderWatchlist();
-        this.showNotification(`${symbol} removed from watchlist`, 'info');
-    }
-
     updateMarketStats() {
-        const totalChange = this.allMarkets.reduce((sum, m) => sum + (m.change || 0), 0) / this.allMarkets.length;
+        const totalChange = this.allMarkets.reduce((sum, m) => sum + (m.change_24h || 0), 0) / this.allMarkets.length;
         const totalVolume = this.allMarkets.reduce((sum, m) => {
             let vol = 0;
             if (typeof m.volume === 'string') {
@@ -417,8 +368,8 @@ class MarketsManager {
             return sum + vol;
         }, 0);
         
-        const btcMarket = this.allMarkets.find(m => m.symbol === 'BTC/USD');
-        const btcPrice = btcMarket ? btcMarket.price : 68432;
+        const btcMarket = this.allMarkets.find(m => m.symbol === 'BTC');
+        const btcPrice = btcMarket ? btcMarket.price : 78312;
         
         const marketCapEl = document.getElementById('totalMarketCap');
         const volumeEl = document.getElementById('totalVolume');
@@ -470,12 +421,13 @@ class MarketsManager {
         // Clear watchlist button
         const clearBtn = document.getElementById('clearWatchlistBtn');
         if (clearBtn) {
-            clearBtn.addEventListener('click', () => {
+            clearBtn.addEventListener('click', async () => {
                 if (confirm('Are you sure you want to clear your entire watchlist?')) {
+                    for (const symbol of this.watchlist) {
+                        await supabaseDB.removeFromWatchlist(this.currentUser.id, symbol);
+                    }
                     this.watchlist = [];
                     this.saveWatchlist();
-                    this.renderMarkets();
-                    this.renderWatchlist();
                     this.showNotification('Watchlist cleared', 'info');
                 }
             });
@@ -543,7 +495,7 @@ class MarketsManager {
         const currentPriceInput = document.getElementById('currentPrice');
         const availableBalance = document.getElementById('availableBalance');
         
-        if (modalSymbol) modalSymbol.textContent = symbol;
+        if (modalSymbol) modalSymbol.textContent = `${symbol}/USD`;
         if (modalPrice) modalPrice.textContent = `$${this.formatPrice(currentPrice)}`;
         if (tradeSymbol) tradeSymbol.value = symbol;
         if (currentPriceInput) currentPriceInput.value = currentPrice;
@@ -614,28 +566,16 @@ class MarketsManager {
             return;
         }
         
-        // Update balance (deduct margin)
         const newBalance = (this.currentUser.balance || 0) - amount;
         
         try {
-            if (typeof supabaseDB !== 'undefined' && supabaseDB.updateUserBalance) {
-                await supabaseDB.updateUserBalance(this.currentUser.id, newBalance);
-            }
+            // Update balance in Supabase
+            await supabaseDB.updateUserBalance(this.currentUser.id, newBalance);
             
             // Update local user object
             this.currentUser.balance = newBalance;
-            if (localStorage.getItem('pocket_user')) {
-                const user = JSON.parse(localStorage.getItem('pocket_user'));
-                user.balance = newBalance;
-                localStorage.setItem('pocket_user', JSON.stringify(user));
-            }
-            if (sessionStorage.getItem('pocket_user')) {
-                const user = JSON.parse(sessionStorage.getItem('pocket_user'));
-                user.balance = newBalance;
-                sessionStorage.setItem('pocket_user', JSON.stringify(user));
-            }
             
-            // Create trade record
+            // Create trade record in Supabase
             const trade = {
                 id: Date.now(),
                 user_id: this.currentUser.id,
@@ -650,14 +590,17 @@ class MarketsManager {
                 created_at: new Date().toISOString()
             };
             
-            // Save trade
-            const existingTrades = JSON.parse(localStorage.getItem(`trades_${this.currentUser.id}`) || '[]');
-            existingTrades.push(trade);
-            localStorage.setItem(`trades_${this.currentUser.id}`, JSON.stringify(existingTrades));
+            await supabaseDB.createTrade(trade);
             
-            if (typeof supabaseDB !== 'undefined' && supabaseDB.insert) {
-                await supabaseDB.insert('trades', trade);
-            }
+            // Create activity record
+            await supabaseDB.createUserActivity({
+                id: Date.now(),
+                user_id: this.currentUser.id,
+                type: 'trade',
+                title: 'Trade Opened',
+                description: `Opened ${tradeType.toUpperCase()} ${amount} USD ${symbol} @ ${leverageVal}x`,
+                created_at: new Date().toISOString()
+            });
             
             this.showNotification(`Trade opened: ${tradeType.toUpperCase()} ${amount} USD @ ${leverageVal}x`, 'success');
             
@@ -671,29 +614,101 @@ class MarketsManager {
                 el.textContent = `$${newBalance.toFixed(2)}`;
             });
             
+            // Simulate trade result after 60 seconds
+            this.simulateTradeResult(trade);
+            
         } catch (error) {
             console.error('Error executing trade:', error);
             this.showNotification('Failed to execute trade', 'error');
         }
     }
 
+    async simulateTradeResult(trade) {
+        setTimeout(async () => {
+            const isWin = Math.random() < 0.55;
+            
+            if (isWin) {
+                const winAmount = trade.amount * 1.8; // 80% return
+                const newBalance = (this.currentUser.balance || 0) + winAmount;
+                
+                // Update balance
+                await supabaseDB.updateUserBalance(this.currentUser.id, newBalance);
+                this.currentUser.balance = newBalance;
+                
+                // Update trade record
+                await supabaseDB.updateTrade(trade.id, {
+                    status: 'closed',
+                    result: 'win',
+                    pnl: winAmount,
+                    close_price: trade.entry_price * 1.02,
+                    closed_at: new Date().toISOString()
+                });
+                
+                // Create activity
+                await supabaseDB.createUserActivity({
+                    id: Date.now(),
+                    user_id: this.currentUser.id,
+                    type: 'trade_win',
+                    title: 'Trade Won!',
+                    description: `Won $${winAmount.toFixed(2)} on ${trade.symbol}`,
+                    created_at: new Date().toISOString()
+                });
+                
+                this.showNotification(`🎉 WIN! You won $${winAmount.toFixed(2)} on ${trade.symbol}!`, 'success');
+            } else {
+                // Update trade record as loss
+                await supabaseDB.updateTrade(trade.id, {
+                    status: 'closed',
+                    result: 'loss',
+                    pnl: -trade.amount,
+                    closed_at: new Date().toISOString()
+                });
+                
+                // Create activity
+                await supabaseDB.createUserActivity({
+                    id: Date.now(),
+                    user_id: this.currentUser.id,
+                    type: 'trade_loss',
+                    title: 'Trade Lost',
+                    description: `Lost $${trade.amount.toFixed(2)} on ${trade.symbol}`,
+                    created_at: new Date().toISOString()
+                });
+                
+                this.showNotification(`😢 LOSS! You lost $${trade.amount.toFixed(2)} on ${trade.symbol}`, 'error');
+            }
+            
+            // Update balance display
+            const balanceElements = document.querySelectorAll('.user-balance');
+            balanceElements.forEach(el => {
+                el.textContent = `$${(this.currentUser.balance || 0).toFixed(2)}`;
+            });
+        }, 60000);
+    }
+
     startRealTimeUpdates() {
-        this.updateInterval = setInterval(() => {
-            this.updateMarketPrices();
+        this.updateInterval = setInterval(async () => {
+            await this.updateMarketPrices();
         }, 30000);
     }
 
-    updateMarketPrices() {
+    async updateMarketPrices() {
         try {
-            this.allMarkets = this.allMarkets.map(market => {
-                const changePercent = (Math.random() - 0.5) * 0.5;
-                const newPrice = market.price * (1 + changePercent / 100);
-                return {
-                    ...market,
-                    price: newPrice,
-                    change: market.change + changePercent
-                };
-            });
+            // Fetch latest prices from Supabase
+            const markets = await supabaseDB.getAllMarkets();
+            if (markets && markets.length > 0) {
+                this.allMarkets = markets;
+            } else {
+                // Simulate price changes for demo
+                this.allMarkets = this.allMarkets.map(market => {
+                    const changePercent = (Math.random() - 0.5) * 0.5;
+                    const newPrice = market.price * (1 + changePercent / 100);
+                    return {
+                        ...market,
+                        price: newPrice,
+                        change_24h: market.change_24h + changePercent
+                    };
+                });
+            }
             
             this.applyFilters();
             this.renderMarkets();
@@ -708,7 +723,6 @@ class MarketsManager {
         if (typeof auth !== 'undefined' && auth.showNotification) {
             auth.showNotification(message, type);
         } else {
-            // Create simple notification
             const notification = document.createElement('div');
             notification.textContent = message;
             notification.style.cssText = `
