@@ -78,6 +78,35 @@
             color: #00D897;
         }
 
+        /* Guest Buttons */
+        .guest-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .btn-login, .btn-register {
+            padding: 8px 24px;
+            border-radius: 40px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-login {
+            background: transparent;
+            border: 1px solid rgba(0, 216, 151, 0.5);
+            color: #00D897;
+        }
+        .btn-login:hover {
+            background: rgba(0, 216, 151, 0.1);
+        }
+        .btn-register {
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            color: white;
+        }
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 216, 151, 0.3);
+        }
+
         /* User Section - Logged In */
         .user-section {
             display: flex;
@@ -124,10 +153,6 @@
             text-decoration: none;
             font-size: 13px;
             font-weight: 500;
-            transition: all 0.2s;
-        }
-        .admin-link:hover {
-            background: rgba(0, 216, 151, 0.3);
         }
         .logout-btn {
             padding: 8px 20px;
@@ -137,39 +162,6 @@
             color: #FF4757;
             cursor: pointer;
             font-weight: 500;
-            transition: all 0.2s;
-        }
-        .logout-btn:hover {
-            background: rgba(255, 71, 87, 0.3);
-        }
-
-        /* Guest Buttons */
-        .guest-buttons {
-            display: flex;
-            gap: 12px;
-        }
-        .btn-login, .btn-register {
-            padding: 8px 24px;
-            border-radius: 40px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        .btn-login {
-            background: transparent;
-            border: 1px solid rgba(0, 216, 151, 0.5);
-            color: #00D897;
-        }
-        .btn-login:hover {
-            background: rgba(0, 216, 151, 0.1);
-        }
-        .btn-register {
-            background: linear-gradient(135deg, #00D897, #00B8A0);
-            color: white;
-        }
-        .btn-register:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 216, 151, 0.3);
         }
 
         /* Mobile Menu */
@@ -226,14 +218,16 @@
             border-radius: 50%;
             filter: blur(80px);
             opacity: 0.3;
+            animation: float 10s infinite;
         }
-        .shape-1 { width: 500px; height: 500px; background: #00D897; top: -200px; right: -100px; animation: float1 10s infinite; }
-        .shape-2 { width: 400px; height: 400px; background: #FF4757; bottom: -150px; left: -100px; animation: float2 8s infinite; }
-        .shape-3 { width: 300px; height: 300px; background: #FFA502; top: 50%; left: 50%; transform: translate(-50%, -50%); animation: float3 12s infinite; }
+        .shape-1 { width: 500px; height: 500px; background: #00D897; top: -200px; right: -100px; }
+        .shape-2 { width: 400px; height: 400px; background: #FF4757; bottom: -150px; left: -100px; animation-delay: 2s; }
+        .shape-3 { width: 300px; height: 300px; background: #FFA502; top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: 4s; }
 
-        @keyframes float1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-30px,30px); } }
-        @keyframes float2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(30px,-30px); } }
-        @keyframes float3 { 0%,100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-50%) scale(1.1); } }
+        @keyframes float {
+            0%,100% { transform: translate(0,0); }
+            50% { transform: translate(20px,-20px); }
+        }
 
         .hero-container {
             max-width: 1400px;
@@ -264,42 +258,6 @@
             line-height: 1.6;
             margin-bottom: 32px;
             max-width: 500px;
-        }
-        .hero-buttons {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-        .btn-primary {
-            padding: 14px 32px;
-            background: linear-gradient(135deg, #00D897, #00B8A0);
-            border: none;
-            border-radius: 40px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 216, 151, 0.3);
-        }
-        .btn-outline {
-            padding: 14px 32px;
-            background: transparent;
-            border: 1px solid rgba(0, 216, 151, 0.5);
-            border-radius: 40px;
-            color: #00D897;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .btn-outline:hover {
-            background: rgba(0, 216, 151, 0.1);
         }
 
         /* Stats Cards */
@@ -356,9 +314,46 @@
             border: 1px solid rgba(255,255,255,0.1);
             font-size: 13px;
         }
-        .card-1 { top: -20px; right: -20px; animation: float 3s infinite; }
-        .card-2 { bottom: 60px; left: -30px; animation: float 3s infinite 1s; }
-        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .card-1 { top: -20px; right: -20px; }
+        .card-2 { bottom: 60px; left: -30px; }
+
+        /* Buttons */
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .btn-primary {
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            border: none;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 216, 151, 0.3);
+        }
+        .btn-outline {
+            padding: 14px 32px;
+            background: transparent;
+            border: 1px solid rgba(0, 216, 151, 0.5);
+            border-radius: 40px;
+            color: #00D897;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-outline:hover {
+            background: rgba(0, 216, 151, 0.1);
+        }
 
         /* Footer Stats */
         .footer-stats {
@@ -383,12 +378,13 @@
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 768px) {
-            .nav-links, .user-section, .guest-buttons { display: none; }
+            .nav-links, .guest-buttons, .user-section { display: none; }
             .mobile-menu-btn { display: block; }
             .hero { padding: 100px 20px 40px; }
             .hero-content h1 { font-size: 32px; }
             .stats-grid { grid-template-columns: 1fr; }
             .footer-stats { flex-direction: column; align-items: center; }
+            .floating-card { display: none; }
         }
     </style>
 </head>
@@ -399,7 +395,11 @@
                 <span class="logo-icon">📈</span>
                 <span class="logo-text">PocketTrading</span>
             </a>
-            <div class="nav-links" id="navLinks"></div>
+            <div class="nav-links" id="navLinks">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="markets.html" class="nav-link">Markets</a>
+                <a href="trades.html" class="nav-link">Trades</a>
+            </div>
             <div id="rightNav"></div>
             <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
         </div>
@@ -420,33 +420,18 @@
                     <button class="btn-primary" id="startTradingBtn">Start Trading →</button>
                     <button class="btn-outline" id="learnMoreBtn">Learn More</button>
                 </div>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">Your Balance</div>
-                        <div class="stat-value" id="guestBalance">$0.00</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Total Trades</div>
-                        <div class="stat-value" id="guestTotalTrades">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Win Rate</div>
-                        <div class="stat-value" id="guestWinRate">0%</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Profit To</div>
-                        <div class="stat-value positive" id="guestProfit">+$0.00</div>
-                    </div>
+                <div class="stats-grid" id="guestStats">
+                    <div class="stat-card"><div class="stat-label">Your Balance</div><div class="stat-value" id="guestBalance">$0.00</div></div>
+                    <div class="stat-card"><div class="stat-label">Total Trades</div><div class="stat-value" id="guestTotalTrades">0</div></div>
+                    <div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-value" id="guestWinRate">0%</div></div>
+                    <div class="stat-card"><div class="stat-label">Profit To</div><div class="stat-value positive" id="guestProfit">+$0.00</div></div>
                 </div>
             </div>
             <div class="hero-image">
                 <div class="floating-card card-1"><span>📈</span> BTC +5.2%</div>
                 <div class="floating-card card-2"><span>💰</span> Volume $68B</div>
                 <div class="chart-preview">
-                    <div class="chart-header">
-                        <span class="chart-symbol">BTC/USD</span>
-                        <span class="chart-price">$68,432.50</span>
-                    </div>
+                    <div class="chart-header"><span class="chart-symbol">BTC/USD</span><span class="chart-price">$68,432.50</span></div>
                     <div style="height: 180px; background: rgba(255,255,255,0.03); border-radius: 12px; position: relative;">
                         <svg width="100%" height="180" viewBox="0 0 400 180" preserveAspectRatio="none">
                             <polyline points="0,150 40,130 80,140 120,100 160,110 200,60 240,80 280,40 320,60 360,30 400,20" fill="none" stroke="#00D897" stroke-width="2"/>
@@ -487,22 +472,25 @@
         }
 
         function setupNavigation() {
-            const navLinks = document.getElementById('navLinks');
             const rightNav = document.getElementById('rightNav');
             const mobileMenu = document.getElementById('mobileMenu');
+            const navLinks = document.getElementById('navLinks');
             
             if (currentUser) {
                 const isAdmin = currentUser.email === 'ephremgojo@gmail.com';
                 const userName = currentUser.name || currentUser.email.split('@')[0];
                 
-                // Desktop navigation for logged-in users
-                navLinks.innerHTML = `
-                    <a href="index.html" class="nav-link">Home</a>
-                    <a href="markets.html" class="nav-link">Markets</a>
-                    <a href="trades.html" class="nav-link">Trades</a>
-                    <a href="profile.html" class="nav-link">My Profile</a>
-                `;
+                // Update desktop navigation for logged-in user
+                if (navLinks) {
+                    navLinks.innerHTML = `
+                        <a href="index.html" class="nav-link">Home</a>
+                        <a href="markets.html" class="nav-link">Markets</a>
+                        <a href="trades.html" class="nav-link">Trades</a>
+                        <a href="profile.html" class="nav-link">My Profile</a>
+                    `;
+                }
                 
+                // Desktop right section
                 rightNav.innerHTML = `
                     <div class="user-section">
                         <div class="user-info">
@@ -514,7 +502,7 @@
                     </div>
                 `;
                 
-                // Mobile menu for logged-in users
+                // Mobile menu
                 mobileMenu.innerHTML = `
                     <a href="index.html" class="mobile-nav-link">🏠 Home</a>
                     <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
@@ -524,13 +512,16 @@
                     <button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>
                 `;
             } else {
-                // Desktop navigation for guests
-                navLinks.innerHTML = `
-                    <a href="index.html" class="nav-link">Home</a>
-                    <a href="markets.html" class="nav-link">Markets</a>
-                    <a href="trades.html" class="nav-link">Trades</a>
-                `;
+                // Desktop navigation for guest
+                if (navLinks) {
+                    navLinks.innerHTML = `
+                        <a href="index.html" class="nav-link">Home</a>
+                        <a href="markets.html" class="nav-link">Markets</a>
+                        <a href="trades.html" class="nav-link">Trades</a>
+                    `;
+                }
                 
+                // Desktop right section for guest
                 rightNav.innerHTML = `
                     <div class="guest-buttons">
                         <a href="login.html" class="btn-login">Login</a>
@@ -538,7 +529,7 @@
                     </div>
                 `;
                 
-                // Mobile menu for guests
+                // Mobile menu for guest
                 mobileMenu.innerHTML = `
                     <a href="index.html" class="mobile-nav-link">🏠 Home</a>
                     <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
@@ -551,7 +542,7 @@
 
         async function loadUserStats() {
             try {
-                const trades = JSON.parse(localStorage.getItem(`trades_${currentUser.id}`) || '[]');
+                const trades = await supabaseDB.getUserTrades(currentUser.id);
                 const totalTrades = trades.length;
                 const closedTrades = trades.filter(t => t.status === 'closed');
                 const winningTrades = closedTrades.filter(t => (t.pnl || 0) > 0).length;
@@ -601,8 +592,6 @@
             if (typeof auth !== 'undefined' && auth.logout) {
                 auth.logout();
             } else {
-                localStorage.removeItem('pocket_user');
-                sessionStorage.removeItem('pocket_user');
                 window.location.href = 'index.html';
             }
         };
