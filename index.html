@@ -447,7 +447,7 @@
         </div>
     </section>
 
-    <!-- Scripts - Load in correct order -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
@@ -455,31 +455,19 @@
     <script>
         let currentUser = null;
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            await waitForAuth();
-            if (typeof auth !== 'undefined') currentUser = auth.getUser();
-            setupNavigation();
-            setupEventListeners();
-            if (currentUser) await loadUserStats();
-        });
-
-        function waitForAuth() {
-            return new Promise((resolve) => {
-                if (typeof auth !== 'undefined') resolve();
-                else setTimeout(() => resolve(), 100);
-            });
-        }
-
-        function setupNavigation() {
+        // Function to update navbar based on user state
+        function updateNavbar() {
             const navLinks = document.getElementById('navLinks');
             const rightNav = document.getElementById('rightNav');
             const mobileMenu = document.getElementById('mobileMenu');
+            
+            if (!navLinks) return;
             
             if (currentUser) {
                 const isAdmin = currentUser.email === 'ephremgojo@gmail.com';
                 const userName = currentUser.name || currentUser.email.split('@')[0];
                 
-                // Common nav links for all logged-in users
+                // Desktop nav links (same for all logged-in users)
                 navLinks.innerHTML = `
                     <a href="index.html" class="nav-link">Home</a>
                     <a href="markets.html" class="nav-link">Markets</a>
@@ -487,39 +475,29 @@
                     <a href="profile.html" class="nav-link">My Profile</a>
                 `;
                 
-                // Right side - user info and logout
-                let rightNavHtml = `
+                // Desktop right section
+                rightNav.innerHTML = `
                     <div class="user-section">
                         <div class="user-info">
                             <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
                             <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
                         </div>
+                        ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
+                        <button class="logout-btn" onclick="logout()">Logout</button>
+                    </div>
                 `;
                 
-                if (isAdmin) {
-                    rightNavHtml += `<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>`;
-                }
-                
-                rightNavHtml += `<button class="logout-btn" onclick="handleLogout()">Logout</button></div>`;
-                rightNav.innerHTML = rightNavHtml;
-                
                 // Mobile menu
-                let mobileMenuHtml = `
+                mobileMenu.innerHTML = `
                     <a href="index.html" class="mobile-nav-link">🏠 Home</a>
                     <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
                     <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
                     <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
+                    ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
+                    <button class="logout-btn" style="margin-top:12px;" onclick="logout()">Logout</button>
                 `;
-                
-                if (isAdmin) {
-                    mobileMenuHtml += `<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>`;
-                }
-                
-                mobileMenuHtml += `<button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>`;
-                mobileMenu.innerHTML = mobileMenuHtml;
-                
             } else {
-                // Guest user nav
+                // Guest user
                 navLinks.innerHTML = `
                     <a href="index.html" class="nav-link">Home</a>
                     <a href="markets.html" class="nav-link">Markets</a>
@@ -543,9 +521,10 @@
             }
         }
 
+        // Load user stats if logged in
         async function loadUserStats() {
             try {
-                if (typeof supabaseDB !== 'undefined') {
+                if (currentUser && typeof supabaseDB !== 'undefined') {
                     const trades = await supabaseDB.getUserTrades(currentUser.id);
                     const totalTrades = trades.length;
                     const closedTrades = trades.filter(t => t.status === 'closed');
@@ -562,6 +541,35 @@
             } catch (error) {
                 console.error('Error loading user stats:', error);
             }
+        }
+
+        // Initialize page
+        async function init() {
+            // Wait for auth to be ready
+            await new Promise(resolve => {
+                const check = setInterval(() => {
+                    if (typeof auth !== 'undefined') {
+                        clearInterval(check);
+                        resolve();
+                    }
+                }, 100);
+            });
+            
+            currentUser = auth.getUser();
+            updateNavbar();
+            
+            if (currentUser) {
+                await loadUserStats();
+            }
+            
+            // Listen for auth state changes
+            window.addEventListener('authStateChanged', (e) => {
+                currentUser = e.detail.user;
+                updateNavbar();
+                if (currentUser) loadUserStats();
+            });
+            
+            setupEventListeners();
         }
 
         function setupEventListeners() {
@@ -593,13 +601,17 @@
             }
         }
 
-        window.handleLogout = function() {
+        // Logout function
+        window.logout = function() {
             if (typeof auth !== 'undefined' && auth.logout) {
                 auth.logout();
             } else {
                 window.location.href = 'index.html';
             }
         };
+
+        // Start
+        init();
     </script>
 </body>
 </html>
