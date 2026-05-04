@@ -1,82 +1,175 @@
 // Deposit Page Controller - PocketTrading
 // File: js/deposit.js
+// Pure Supabase - No localStorage
 
 class DepositManager {
     constructor() {
         this.currentUser = null;
         this.selectedCurrency = 'USDT';
-        this.selectedMethod = 'crypto';
         this.cryptoAddresses = {
             USDT: 'TX8xKJk3g5xVHhRq2LpN7mY9wQeRtYuIoP',
             BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-            ETH: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5',
-            SOL: '5vEt4uR6LrY7ZxVkQpWnM8jHsK9cFdGtYhJkLzXcVb'
+            ETH: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5'
         };
         this.networkFees = {
             USDT: 1.00,
             BTC: 0.0002,
-            ETH: 0.005,
-            SOL: 0.01
+            ETH: 0.005
         };
+        this.minDeposit = 10;
         this.init();
     }
 
     async init() {
-        if (typeof auth === 'undefined') {
-            setTimeout(() => this.init(), 100);
-            return;
-        }
-
+        await this.waitForDependencies();
+        
         this.currentUser = auth.getUser();
         
         if (!this.currentUser) {
             window.location.href = 'login.html';
             return;
         }
-
-        this.setupUI();
+        
+        await this.loadSettings();
+        await this.loadCryptoAddresses();
+        this.setupNavigation();
+        this.updateBalanceDisplay();
         this.setupEventListeners();
+        this.updateSummary();
     }
 
-    setupUI() {
-        this.updateBalanceDisplay();
-        this.updateSummary();
+    async waitForDependencies() {
+        return new Promise((resolve) => {
+            const check = setInterval(() => {
+                if (typeof auth !== 'undefined' && typeof supabaseDB !== 'undefined') {
+                    clearInterval(check);
+                    resolve();
+                }
+            }, 100);
+        });
+    }
+
+    async loadSettings() {
+        try {
+            const settings = await supabaseDB.getPlatformSettings();
+            if (settings && settings.trading_settings) {
+                this.minDeposit = settings.trading_settings.minTradeAmount || 10;
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error);
+        }
+    }
+
+    async loadCryptoAddresses() {
+        try {
+            const settings = await supabaseDB.getPlatformSettings();
+            if (settings && settings.crypto_deposit_addresses) {
+                this.cryptoAddresses = settings.crypto_deposit_addresses;
+            }
+        } catch (error) {
+            console.error('Error loading crypto addresses:', error);
+        }
+        this.updateCryptoAddress();
+    }
+
+    setupNavigation() {
+        const navLinks = document.getElementById('navLinks');
+        const rightNav = document.getElementById('rightNav');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        const isAdmin = this.currentUser.email === 'ephremgojo@gmail.com';
+        const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
+        
+        if (navLinks) {
+            navLinks.innerHTML = `
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="markets.html" class="nav-link">Markets</a>
+                <a href="trades.html" class="nav-link">Trades</a>
+                <a href="profile.html" class="nav-link">My Profile</a>
+            `;
+        }
+        
+        if (rightNav) {
+            rightNav.innerHTML = `
+                <div class="user-section">
+                    <div class="user-info">
+                        <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
+                        <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
+                    </div>
+                    ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
+                    <button class="logout-btn" onclick="handleLogout()">Logout</button>
+                </div>
+            `;
+        }
+        
+        if (mobileMenu) {
+            mobileMenu.innerHTML = `
+                <a href="index.html" class="mobile-nav-link">🏠 Home</a>
+                <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
+                <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+                <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
+                ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
+                <button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>
+            `;
+        }
     }
 
     updateBalanceDisplay() {
         const balance = this.currentUser.balance || 0;
         const balanceEl = document.getElementById('currentBalance');
-        if (balanceEl) balanceEl.textContent = `$${balance.toLocaleString()}`;
-    }
-
-    updateSummary() {
-        const amount = parseFloat(document.getElementById('depositAmount')?.value) || 0;
-        const fee = this.selectedMethod === 'crypto' ? (this.networkFees[this.selectedCurrency] || 1) : 0;
-        const total = amount + fee;
-        
-        const summaryAmount = document.getElementById('summaryAmount');
-        const networkFee = document.getElementById('networkFee');
-        const totalAmount = document.getElementById('totalAmount');
-        
-        if (summaryAmount) summaryAmount.textContent = `$${amount.toFixed(2)}`;
-        if (networkFee) networkFee.textContent = `$${fee.toFixed(2)}`;
-        if (totalAmount) totalAmount.textContent = `$${total.toFixed(2)}`;
+        if (balanceEl) {
+            balanceEl.textContent = `$${balance.toLocaleString()}`;
+        }
     }
 
     updateCryptoAddress() {
         const address = this.cryptoAddresses[this.selectedCurrency] || this.cryptoAddresses['USDT'];
         const addressEl = document.getElementById('cryptoAddress');
-        const addressLabel = document.querySelector('#cryptoAddressSection .address-label');
+        const addressLabel = document.getElementById('addressLabel');
         
         if (addressEl) addressEl.textContent = address;
-        if (addressLabel) addressLabel.textContent = `Send ${this.selectedCurrency} (TRC20) to this address:`;
+        if (addressLabel) {
+            let network = 'TRC20';
+            if (this.selectedCurrency === 'BTC') network = 'BTC';
+            if (this.selectedCurrency === 'ETH') network = 'ERC20';
+            addressLabel.textContent = `Send ${this.selectedCurrency} (${network}) to this address:`;
+        }
+    }
+
+    updateSummary() {
+        const amount = parseFloat(document.getElementById('depositAmount')?.value) || 0;
+        const fee = this.networkFees[this.selectedCurrency] || 1;
+        const total = amount + fee;
+        
+        const summaryAmount = document.getElementById('summaryAmount');
+        const networkFee = document.getElementById('networkFee');
+        const totalAmount = document.getElementById('totalAmount');
+        const submitBtn = document.getElementById('submitDeposit');
+        
+        if (summaryAmount) summaryAmount.textContent = `$${amount.toFixed(2)}`;
+        if (networkFee) networkFee.textContent = `$${fee.toFixed(4)}`;
+        if (totalAmount) totalAmount.textContent = `$${total.toFixed(4)}`;
+        
+        if (submitBtn) {
+            if (amount < this.minDeposit && amount > 0) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = `Minimum $${this.minDeposit}`;
+            } else if (!amount || amount <= 0) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Enter Amount';
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Deposit Request';
+            }
+        }
     }
 
     setupEventListeners() {
         // Currency selector
-        document.querySelectorAll('.currency-btn').forEach(btn => {
+        const currencyBtns = document.querySelectorAll('.currency-btn');
+        currencyBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.currency-btn').forEach(b => b.classList.remove('active'));
+                currencyBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.selectedCurrency = btn.dataset.currency;
                 this.updateCryptoAddress();
@@ -85,7 +178,8 @@ class DepositManager {
         });
         
         // Preset amounts
-        document.querySelectorAll('.preset-btn').forEach(btn => {
+        const presetBtns = document.querySelectorAll('.preset-btn');
+        presetBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 const amount = btn.dataset.amount;
                 const amountInput = document.getElementById('depositAmount');
@@ -97,25 +191,6 @@ class DepositManager {
         // Amount input
         const amountInput = document.getElementById('depositAmount');
         if (amountInput) amountInput.addEventListener('input', () => this.updateSummary());
-        
-        // Payment method
-        document.querySelectorAll('.method-option').forEach(opt => {
-            opt.addEventListener('click', () => {
-                document.querySelectorAll('.method-option').forEach(o => o.classList.remove('active'));
-                opt.classList.add('active');
-                this.selectedMethod = opt.dataset.method;
-                
-                const cryptoSection = document.getElementById('cryptoAddressSection');
-                const cardForm = document.getElementById('cardForm');
-                const bankInfo = document.getElementById('bankInfo');
-                
-                if (cryptoSection) cryptoSection.style.display = this.selectedMethod === 'crypto' ? 'block' : 'none';
-                if (cardForm) cardForm.style.display = this.selectedMethod === 'card' ? 'block' : 'none';
-                if (bankInfo) bankInfo.style.display = this.selectedMethod === 'bank' ? 'block' : 'none';
-                
-                this.updateSummary();
-            });
-        });
         
         // Submit button
         const submitBtn = document.getElementById('submitDeposit');
@@ -132,24 +207,12 @@ class DepositManager {
     async submitDeposit() {
         const amount = parseFloat(document.getElementById('depositAmount')?.value);
         
-        if (!amount || amount < 10) {
-            alert('Please enter a valid amount (minimum $10)');
+        if (!amount || amount < this.minDeposit) {
+            this.showNotification(`Minimum deposit amount is $${this.minDeposit}`, 'error');
             return;
         }
         
-        if (this.selectedMethod === 'card') {
-            const cardNumber = document.getElementById('cardNumber')?.value;
-            const expiryDate = document.getElementById('expiryDate')?.value;
-            const cvv = document.getElementById('cvv')?.value;
-            const cardholderName = document.getElementById('cardholderName')?.value;
-            
-            if (!cardNumber || !expiryDate || !cvv || !cardholderName) {
-                alert('Please fill in all card details');
-                return;
-            }
-        }
-        
-        const fee = this.selectedMethod === 'crypto' ? (this.networkFees[this.selectedCurrency] || 1) : 0;
+        const fee = this.networkFees[this.selectedCurrency] || 1;
         const total = amount + fee;
         
         const depositRequest = {
@@ -159,77 +222,111 @@ class DepositManager {
             user_name: this.currentUser.name,
             amount: amount,
             currency: this.selectedCurrency,
-            method: this.selectedMethod,
             fee: fee,
             total: total,
             status: 'pending',
             date: new Date().toISOString()
         };
         
-        // Save to localStorage
-        const existingRequests = JSON.parse(localStorage.getItem('deposit_requests') || '[]');
-        existingRequests.push(depositRequest);
-        localStorage.setItem('deposit_requests', JSON.stringify(existingRequests));
-        
-        // Save to user's deposit history
-        const userDeposits = JSON.parse(localStorage.getItem(`deposits_${this.currentUser.id}`) || '[]');
-        userDeposits.push(depositRequest);
-        localStorage.setItem(`deposits_${this.currentUser.id}`, JSON.stringify(userDeposits));
-        
-        alert(`Deposit request submitted!\nAmount: $${amount.toFixed(2)} ${this.selectedCurrency}\nMethod: ${this.selectedMethod.toUpperCase()}\n\nYour deposit will be processed within 5-30 minutes.`);
-        
-        // Reset form
-        const amountInput = document.getElementById('depositAmount');
-        if (amountInput) amountInput.value = '';
-        this.updateSummary();
-        
-        // Auto-approve for admin and demo users
-        if (this.currentUser.email === 'ephremgojo@gmail.com' || this.currentUser.email === 'demo@example.com') {
-            const newBalance = (this.currentUser.balance || 0) + amount;
-            this.currentUser.balance = newBalance;
+        try {
+            // Save to Supabase
+            await supabaseDB.createDepositRequest(depositRequest);
             
-            if (typeof auth !== 'undefined' && auth.updateBalance) {
-                await auth.updateBalance(this.currentUser.id, amount, {
-                    type: 'deposit',
-                    amount: amount,
-                    status: 'auto_approved'
-                });
+            // Create activity record
+            await supabaseDB.createUserActivity({
+                id: Date.now(),
+                user_id: this.currentUser.id,
+                type: 'deposit',
+                title: 'Deposit Request Submitted',
+                description: `$${amount} ${this.selectedCurrency} deposit requested`,
+                created_at: new Date().toISOString()
+            });
+            
+            this.showNotification(`Deposit request submitted!\nAmount: $${amount.toFixed(2)} ${this.selectedCurrency}\n\nYour deposit will be processed within 5-30 minutes.`, 'success');
+            
+            // Reset form
+            const amountInput = document.getElementById('depositAmount');
+            if (amountInput) amountInput.value = '';
+            this.updateSummary();
+            
+            // Auto-approve for admin user (for testing)
+            if (this.currentUser.email === 'ephremgojo@gmail.com') {
+                await this.autoApproveDeposit(depositRequest);
             }
             
-            // Update storage
-            if (localStorage.getItem('pocket_user')) {
-                const user = JSON.parse(localStorage.getItem('pocket_user'));
-                user.balance = newBalance;
-                localStorage.setItem('pocket_user', JSON.stringify(user));
-            }
-            if (sessionStorage.getItem('pocket_user')) {
-                const user = JSON.parse(sessionStorage.getItem('pocket_user'));
-                user.balance = newBalance;
-                sessionStorage.setItem('pocket_user', JSON.stringify(user));
-            }
-            
-            this.updateBalanceDisplay();
-            alert(`✅ Deposit auto-approved! New balance: $${newBalance.toFixed(2)}`);
+        } catch (error) {
+            console.error('Error submitting deposit:', error);
+            this.showNotification('Failed to submit deposit request', 'error');
         }
     }
 
-    copyAddress() {
-        const address = document.getElementById('cryptoAddress')?.textContent;
-        if (address) {
-            navigator.clipboard.writeText(address);
-            alert('Address copied to clipboard!');
+    async autoApproveDeposit(depositRequest) {
+        try {
+            // Update deposit request status
+            await supabaseDB.updateDepositRequest(depositRequest.id, { status: 'approved' });
+            
+            // Update user balance
+            const newBalance = (this.currentUser.balance || 0) + depositRequest.amount;
+            await supabaseDB.updateUserBalance(this.currentUser.id, newBalance);
+            this.currentUser.balance = newBalance;
+            
+            // Create transaction record
+            await supabaseDB.createTransaction({
+                id: Date.now(),
+                user_id: this.currentUser.id,
+                amount: depositRequest.amount,
+                type: 'deposit',
+                description: `Deposit of $${depositRequest.amount} ${depositRequest.currency}`,
+                date: new Date().toISOString()
+            });
+            
+            // Create activity
+            await supabaseDB.createUserActivity({
+                id: Date.now(),
+                user_id: this.currentUser.id,
+                type: 'deposit_approved',
+                title: 'Deposit Approved',
+                description: `$${depositRequest.amount} deposit has been approved`,
+                created_at: new Date().toISOString()
+            });
+            
+            this.updateBalanceDisplay();
+            this.showNotification(`✅ Deposit auto-approved! New balance: $${newBalance.toFixed(2)}`, 'success');
+            
+        } catch (error) {
+            console.error('Error auto-approving deposit:', error);
+        }
+    }
+
+    showNotification(message, type) {
+        if (typeof auth !== 'undefined' && auth.showNotification) {
+            auth.showNotification(message, type);
+        } else {
+            alert(message);
         }
     }
 }
 
-// Initialize
+// Initialize when DOM is ready
 let depositManager = null;
+
 document.addEventListener('DOMContentLoaded', () => {
     depositManager = new DepositManager();
 });
 
-window.copyAddress = () => depositManager?.copyAddress();
-window.handleLogout = () => {
-    if (typeof auth !== 'undefined' && auth.logout) auth.logout();
-    else { localStorage.clear(); sessionStorage.clear(); window.location.href = 'home.html'; }
+// Global functions
+window.copyAddress = function() {
+    const address = document.getElementById('cryptoAddress')?.textContent;
+    if (address) {
+        navigator.clipboard.writeText(address);
+        alert('Address copied to clipboard!');
+    }
+};
+
+window.handleLogout = function() {
+    if (typeof auth !== 'undefined' && auth.logout) {
+        auth.logout();
+    } else {
+        window.location.href = 'index.html';
+    }
 };
