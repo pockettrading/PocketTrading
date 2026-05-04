@@ -1,6 +1,5 @@
 // Supabase Database Wrapper - PocketTrading
 // File: js/supabase-db.js
-// Pure Supabase - No localStorage fallback
 
 const SUPABASE_URL = 'https://nzjgknwwenrczxzrnhjr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56amdrbnd3ZW5yY3p4enJuaGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NzY5NjksImV4cCI6MjA5MzE1Mjk2OX0.3Fb_VO5kYYBQF0T_2G19fcvnk91l-DOQZA_SKG8Xuao';
@@ -12,14 +11,14 @@ class SupabaseDB {
         this.init();
     }
 
-    async init() {
-        // Check if Supabase client is available
-        if (typeof supabase !== 'undefined') {
-            this.supabase = supabase;
+    init() {
+        // Check if Supabase client is available globally
+        if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+            this.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             this.isConnected = true;
-            console.log('✅ Supabase connected');
+            console.log('✅ Supabase connected successfully');
         } else {
-            console.error('❌ Supabase client not loaded. Please include Supabase JS library.');
+            console.error('❌ Supabase client not loaded. Please check script order.');
             this.isConnected = false;
         }
     }
@@ -27,7 +26,7 @@ class SupabaseDB {
     // ============ USERS ============
     
     async getAllUsers() {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('custom_users')
             .select('*')
@@ -37,29 +36,29 @@ class SupabaseDB {
     }
 
     async getUserByEmail(email) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('custom_users')
             .select('*')
             .eq('email', email)
-            .single();
+            .maybeSingle();
         if (error && error.code !== 'PGRST116') throw error;
         return data;
     }
 
     async getUserById(id) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('custom_users')
             .select('*')
             .eq('id', id)
-            .single();
+            .maybeSingle();
         if (error && error.code !== 'PGRST116') throw error;
         return data;
     }
 
     async createUser(userData) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('custom_users')
             .insert([userData])
@@ -70,7 +69,7 @@ class SupabaseDB {
     }
 
     async updateUser(userId, updates) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('custom_users')
             .update(updates)
@@ -90,7 +89,7 @@ class SupabaseDB {
     }
 
     async deleteUser(userId) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { error } = await this.supabase
             .from('custom_users')
             .delete()
@@ -102,7 +101,7 @@ class SupabaseDB {
     // ============ TRADES ============
 
     async getUserTrades(userId) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('trades')
             .select('*')
@@ -113,7 +112,7 @@ class SupabaseDB {
     }
 
     async getAllTrades() {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('trades')
             .select('*')
@@ -123,7 +122,7 @@ class SupabaseDB {
     }
 
     async createTrade(tradeData) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('trades')
             .insert([tradeData])
@@ -134,7 +133,7 @@ class SupabaseDB {
     }
 
     async updateTrade(tradeId, updates) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('trades')
             .update(updates)
@@ -148,7 +147,7 @@ class SupabaseDB {
     // ============ DEPOSITS ============
 
     async getDepositRequests(userId = null) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         let query = this.supabase.from('deposit_requests').select('*');
         if (userId) query = query.eq('user_id', userId);
         const { data, error } = await query.order('date', { ascending: false });
@@ -157,7 +156,7 @@ class SupabaseDB {
     }
 
     async createDepositRequest(depositData) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('deposit_requests')
             .insert([depositData])
@@ -168,7 +167,7 @@ class SupabaseDB {
     }
 
     async updateDepositRequest(requestId, updates) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('deposit_requests')
             .update(updates)
@@ -182,7 +181,7 @@ class SupabaseDB {
     // ============ WITHDRAWALS ============
 
     async getWithdrawalRequests(userId = null) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         let query = this.supabase.from('withdrawal_requests').select('*');
         if (userId) query = query.eq('user_id', userId);
         const { data, error } = await query.order('date', { ascending: false });
@@ -191,7 +190,7 @@ class SupabaseDB {
     }
 
     async createWithdrawalRequest(withdrawalData) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('withdrawal_requests')
             .insert([withdrawalData])
@@ -202,7 +201,7 @@ class SupabaseDB {
     }
 
     async updateWithdrawalRequest(requestId, updates) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('withdrawal_requests')
             .update(updates)
@@ -216,7 +215,7 @@ class SupabaseDB {
     // ============ KYC REQUESTS ============
 
     async getKYCRequests(userId = null) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         let query = this.supabase.from('kyc_requests').select('*');
         if (userId) query = query.eq('user_id', userId);
         const { data, error } = await query.order('date', { ascending: false });
@@ -225,7 +224,7 @@ class SupabaseDB {
     }
 
     async createKYCRequest(kycData) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('kyc_requests')
             .insert([kycData])
@@ -236,7 +235,7 @@ class SupabaseDB {
     }
 
     async updateKYCRequest(requestId, updates) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('kyc_requests')
             .update(updates)
@@ -250,7 +249,7 @@ class SupabaseDB {
     // ============ MARKET PRICES ============
 
     async getAllMarkets() {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('market_prices')
             .select('*')
@@ -260,7 +259,7 @@ class SupabaseDB {
     }
 
     async updateMarketPrice(symbol, priceData) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('market_prices')
             .update({ ...priceData, updated_at: new Date().toISOString() })
@@ -274,7 +273,7 @@ class SupabaseDB {
     // ============ WATCHLIST ============
 
     async getUserWatchlist(userId) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('watchlist')
             .select('*')
@@ -284,7 +283,7 @@ class SupabaseDB {
     }
 
     async addToWatchlist(userId, symbol) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('watchlist')
             .insert([{ user_id: userId, symbol }])
@@ -295,7 +294,7 @@ class SupabaseDB {
     }
 
     async removeFromWatchlist(userId, symbol) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { error } = await this.supabase
             .from('watchlist')
             .delete()
@@ -308,7 +307,7 @@ class SupabaseDB {
     // ============ PLATFORM SETTINGS ============
 
     async getPlatformSettings() {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('platform_settings')
             .select('*');
@@ -325,7 +324,7 @@ class SupabaseDB {
     }
 
     async updatePlatformSetting(key, value) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
         const { data, error } = await this.supabase
             .from('platform_settings')
@@ -340,7 +339,7 @@ class SupabaseDB {
     // ============ USER ACTIVITIES ============
 
     async getUserActivities(userId, limit = 20) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('user_activities')
             .select('*')
@@ -352,7 +351,7 @@ class SupabaseDB {
     }
 
     async createUserActivity(activityData) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('user_activities')
             .insert([activityData])
@@ -365,7 +364,7 @@ class SupabaseDB {
     // ============ TRANSACTIONS ============
 
     async getUserTransactions(userId, limit = 50) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('transactions')
             .select('*')
@@ -377,7 +376,7 @@ class SupabaseDB {
     }
 
     async createTransaction(transactionData) {
-        if (!this.isConnected) throw new Error('Supabase not connected');
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
         const { data, error } = await this.supabase
             .from('transactions')
             .insert([transactionData])
@@ -390,6 +389,4 @@ class SupabaseDB {
 
 // Initialize the database wrapper
 const supabaseDB = new SupabaseDB();
-
-// Export for use in other files
 window.supabaseDB = supabaseDB;
