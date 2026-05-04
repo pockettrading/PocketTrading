@@ -1,5 +1,6 @@
 // Trades Page Controller - PocketTrading
 // File: js/trades.js
+// Pure Supabase - No localStorage
 
 class TradesManager {
     constructor() {
@@ -7,383 +8,465 @@ class TradesManager {
         this.allTrades = [];
         this.filteredTrades = [];
         this.currentTab = 'open';
-        this.symbolFilter = 'all';
-        this.typeFilter = 'all';
-        this.searchTerm = '';
-        this.currentSort = 'date';
-        this.sortDirection = 'desc';
-        this.performanceChart = null;
-        this.updateInterval = null;
-        this.currentPrices = {};
+        this.currentSymbol = 'BTC';
+        this.currentPrice = 78312.00;
+        this.selectedDuration = 30;
+        this.selectedPayout = 12;
+        this.selectedMinAmount = 100;
+        this.currentTradeType = 'buy';
+        this.tvWidget = null;
+        this.priceUpdateInterval = null;
         this.init();
     }
 
     async init() {
-        if (typeof auth === 'undefined') {
-            setTimeout(() => this.init(), 100);
-            return;
-        }
-
+        await this.waitForDependencies();
+        
         this.currentUser = auth.getUser();
         
         if (!this.currentUser) {
             window.location.href = 'login.html';
             return;
         }
-
+        
         await this.loadUserData();
-        this.setupUserInterface();
         await this.loadTrades();
+        this.setupNavigation();
+        this.initTradingView();
+        this.setupTradeForm();
         this.setupEventListeners();
         this.startPriceUpdates();
-        
-        // Load market prices for P&L calculations
-        await this.loadCurrentPrices();
+        this.updateStats();
+    }
+
+    async waitForDependencies() {
+        return new Promise((resolve) => {
+            const check = setInterval(() => {
+                if (typeof auth !== 'undefined' && typeof supabaseDB !== 'undefined') {
+                    clearInterval(check);
+                    resolve();
+                }
+            }, 100);
+        });
     }
 
     async loadUserData() {
         try {
-            const userData = await supabaseDB.getUserByEmail(this.currentUser.email);
+            const userData = await supabaseDB.getUserById(this.currentUser.id);
             if (userData) {
                 this.currentUser = { ...this.currentUser, ...userData };
+                this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
             }
         } catch (error) {
             console.error('Error loading user data:', error);
         }
     }
 
-    setupUserInterface() {
-        const userElements = document.querySelectorAll('.user-only');
-        const userNameElements = document.querySelectorAll('.user-name');
-        const userEmailElements = document.querySelectorAll('.user-email');
-        
-        userElements.forEach(el => el.style.display = 'block');
-        
-        if (this.currentUser) {
-            userNameElements.forEach(el => el.textContent = this.currentUser.name || 'Trader');
-            userEmailElements.forEach(el => el.textContent = this.currentUser.email || '');
-        }
-        
-        const adminElements = document.querySelectorAll('.admin-only');
-        if (this.currentUser?.isAdmin) {
-            adminElements.forEach(el => el.style.display = 'block');
-        }
-    }
-
     async loadTrades() {
         try {
-            // Load trades from Supabase
-            const trades = await supabaseDB.getUserTrades(this.currentUser.id);
-            
-            if (trades && trades.length > 0) {
-                this.allTrades = trades.map(t => ({
-                    ...t,
-                    pnl: t.pnl || 0,
-                    close_price: t.close_price || null,
-                    close_date: t.close_date || null
-                }));
-            } else {
-                // Demo trades for testing
-                this.allTrades = this.getDemoTrades();
-                // Save demo trades to Supabase for persistence
-                for (const trade of this.allTrades) {
-                    await supabaseDB.insert('trades', trade);
-                }
-            }
-            
+            this.allTrades = await supabaseDB.getUserTrades(this.currentUser.id);
             this.applyFilters();
-            this.updateStats();
             this.renderTrades();
-            this.updatePerformanceChart();
         } catch (error) {
             console.error('Error loading trades:', error);
-            this.allTrades = this.getDemoTrades();
-            this.applyFilters();
-            this.updateStats();
+            this.allTrades = [];
             this.renderTrades();
         }
     }
 
-    getDemoTrades() {
-        const now = new Date();
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    setupNavigation() {
+        const navLinks = document.getElementById('navLinks');
+        const rightNav = document.getElementById('rightNav');
+        const mobileMenu = document.getElementById('mobileMenu');
         
-        return [
-            {
-                id: 1001,
-                user_id: this.currentUser?.id,
-                symbol: 'BTC/USD',
-                type: 'buy',
-                amount: 1000,
-                leverage: 5,
-                entry_price: 68432.50,
-                current_price: 69123.75,
-                status: 'open',
-                pnl: 101.20,
-                pnl_percentage: 10.12,
-                created_at: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString()
-            },
-            {
-                id: 1002,
-                user_id: this.currentUser?.id,
-                symbol: 'ETH/USD',
-                type: 'sell',
-                amount: 500,
-                leverage: 3,
-                entry_price: 3821.75,
-                current_price: 3756.30,
-                status: 'open',
-                pnl: 85.70,
-                pnl_percentage: 17.14,
-                created_at: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString()
-            },
-            {
-                id: 1003,
-                user_id: this.currentUser?.id,
-                symbol: 'SOL/USD',
-                type: 'buy',
-                amount: 800,
-                leverage: 10,
-                entry_price: 168.42,
-                current_price: 172.15,
-                status: 'open',
-                pnl: 176.50,
-                pnl_percentage: 22.06,
-                created_at: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString()
-            },
-            {
-                id: 1004,
-                user_id: this.currentUser?.id,
-                symbol: 'BTC/USD',
-                type: 'buy',
-                amount: 2000,
-                leverage: 2,
-                entry_price: 67500.00,
-                close_price: 69000.00,
-                pnl: 450.00,
-                pnl_percentage: 22.5,
-                status: 'closed',
-                created_at: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-                close_date: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000).toISOString()
-            },
-            {
-                id: 1005,
-                user_id: this.currentUser?.id,
-                symbol: 'ETH/USD',
-                type: 'sell',
-                amount: 300,
-                leverage: 5,
-                entry_price: 3900.00,
-                close_price: 3850.00,
-                pnl: 75.00,
-                pnl_percentage: 25.0,
-                status: 'closed',
-                created_at: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-                close_date: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000).toISOString()
-            },
-            {
-                id: 1006,
-                user_id: this.currentUser?.id,
-                symbol: 'DOGE/USD',
-                type: 'buy',
-                amount: 200,
-                leverage: 20,
-                entry_price: 0.162,
-                close_price: 0.175,
-                pnl: 320.99,
-                pnl_percentage: 160.49,
-                status: 'closed',
-                created_at: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-                close_date: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString()
-            },
-            {
-                id: 1007,
-                user_id: this.currentUser?.id,
-                symbol: 'XRP/USD',
-                type: 'buy',
-                amount: 400,
-                leverage: 3,
-                entry_price: 0.624,
-                close_price: 0.598,
-                pnl: -50.00,
-                pnl_percentage: -12.5,
-                status: 'closed',
-                created_at: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-                close_date: new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000).toISOString()
-            }
-        ];
-    }
-
-    async loadCurrentPrices() {
-        try {
-            const markets = await supabaseDB.getAll('market_prices');
-            if (markets && markets.length > 0) {
-                markets.forEach(m => {
-                    this.currentPrices[m.symbol] = m.price;
-                });
-            } else {
-                // Default prices
-                this.currentPrices = {
-                    'BTC/USD': 69123.75,
-                    'ETH/USD': 3756.30,
-                    'SOL/USD': 172.15,
-                    'XRP/USD': 0.618,
-                    'DOGE/USD': 0.168,
-                    'ADA/USD': 0.479,
-                    'AVAX/USD': 43.20,
-                    'MATIC/USD': 0.92
-                };
-            }
-            
-            // Update open trades with current prices
-            this.updateOpenTradePrices();
-        } catch (error) {
-            console.error('Error loading current prices:', error);
+        const isAdmin = this.currentUser.email === 'ephremgojo@gmail.com';
+        const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
+        
+        if (navLinks) {
+            navLinks.innerHTML = `
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="markets.html" class="nav-link">Markets</a>
+                <a href="trades.html" class="nav-link active">Trades</a>
+                <a href="profile.html" class="nav-link">My Profile</a>
+            `;
+        }
+        
+        if (rightNav) {
+            rightNav.innerHTML = `
+                <div class="user-section">
+                    <div class="user-info">
+                        <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
+                        <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
+                    </div>
+                    ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
+                    <button class="logout-btn" onclick="handleLogout()">Logout</button>
+                </div>
+            `;
+        }
+        
+        if (mobileMenu) {
+            mobileMenu.innerHTML = `
+                <a href="index.html" class="mobile-nav-link">🏠 Home</a>
+                <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
+                <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+                <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
+                ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
+                <button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>
+            `;
         }
     }
 
-    updateOpenTradePrices() {
-        let updated = false;
+    setupTradeForm() {
+        const tradeFormSection = document.getElementById('tradeFormSection');
+        if (!tradeFormSection) return;
         
-        this.allTrades = this.allTrades.map(trade => {
-            if (trade.status === 'open' && this.currentPrices[trade.symbol]) {
-                const currentPrice = this.currentPrices[trade.symbol];
-                const newPnL = this.calculatePnL(trade, currentPrice);
-                
-                if (trade.current_price !== currentPrice || trade.pnl !== newPnL) {
-                    updated = true;
-                    return {
-                        ...trade,
-                        current_price: currentPrice,
-                        pnl: newPnL,
-                        pnl_percentage: (newPnL / trade.amount * 100)
-                    };
-                }
-            }
-            return trade;
+        tradeFormSection.innerHTML = `
+            <div class="trade-type-buttons">
+                <button class="trade-type-btn buy active" data-type="buy">BUY</button>
+                <button class="trade-type-btn sell" data-type="sell">SELL</button>
+            </div>
+
+            <div class="selected-coin">
+                <div class="coin-name-large" id="selectedCoinName">Bitcoin</div>
+                <div class="coin-symbol" id="selectedCoinSymbol">BTC/USD</div>
+                <div class="current-price-large" id="currentPrice">$78,312.00</div>
+                <div class="live-badge">● LIVE</div>
+            </div>
+
+            <div class="form-group">
+                <div class="form-label">Amount (USDT)</div>
+                <input type="number" id="tradeAmount" class="amount-input" placeholder="Enter amount" min="10" step="10">
+            </div>
+
+            <div class="form-label">Select Duration</div>
+            <div class="duration-grid" id="durationGrid">
+                <div class="duration-btn" data-duration="30" data-payout="12" data-min="100">
+                    <div class="duration-time">30s</div>
+                    <div class="duration-payout">+12%</div>
+                    <div class="duration-min">Min $100</div>
+                </div>
+                <div class="duration-btn" data-duration="60" data-payout="18" data-min="15000">
+                    <div class="duration-time">60s</div>
+                    <div class="duration-payout">+18%</div>
+                    <div class="duration-min">Min $15K</div>
+                </div>
+                <div class="duration-btn" data-duration="90" data-payout="25" data-min="50000">
+                    <div class="duration-time">90s</div>
+                    <div class="duration-payout">+25%</div>
+                    <div class="duration-min">Min $50K</div>
+                </div>
+                <div class="duration-btn" data-duration="180" data-payout="32" data-min="200000">
+                    <div class="duration-time">180s</div>
+                    <div class="duration-payout">+32%</div>
+                    <div class="duration-min">Min $200K</div>
+                </div>
+                <div class="duration-btn" data-duration="300" data-payout="45" data-min="900000">
+                    <div class="duration-time">300s</div>
+                    <div class="duration-payout">+45%</div>
+                    <div class="duration-min">Min $900K</div>
+                </div>
+            </div>
+
+            <div class="trade-summary">
+                <div class="summary-row">
+                    <span>Available:</span>
+                    <span id="availableBalance">0.00 USDT</span>
+                </div>
+                <div class="summary-row">
+                    <span>Fee (2%):</span>
+                    <span id="feeAmount">0.00 USDT</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total:</span>
+                    <span id="totalAmount" style="color: #00D897;">0.00 USDT</span>
+                </div>
+            </div>
+
+            <button class="confirm-btn" id="confirmTrade">Confirm Trade</button>
+        `;
+        
+        this.attachTradeFormEvents();
+    }
+
+    attachTradeFormEvents() {
+        const buyBtn = document.querySelector('.trade-type-btn.buy');
+        const sellBtn = document.querySelector('.trade-type-btn.sell');
+        
+        if (buyBtn && sellBtn) {
+            buyBtn.addEventListener('click', () => {
+                buyBtn.classList.add('active');
+                sellBtn.classList.remove('active');
+                this.currentTradeType = 'buy';
+                this.updateTradeSummary();
+            });
+            sellBtn.addEventListener('click', () => {
+                sellBtn.classList.add('active');
+                buyBtn.classList.remove('active');
+                this.currentTradeType = 'sell';
+                this.updateTradeSummary();
+            });
+        }
+
+        document.querySelectorAll('.duration-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.selectedDuration = parseInt(btn.dataset.duration);
+                this.selectedPayout = parseInt(btn.dataset.payout);
+                this.selectedMinAmount = parseInt(btn.dataset.min);
+                this.updateTradeSummary();
+            });
+        });
+
+        const amountInput = document.getElementById('tradeAmount');
+        if (amountInput) amountInput.addEventListener('input', () => this.updateTradeSummary());
+
+        const confirmBtn = document.getElementById('confirmTrade');
+        if (confirmBtn) confirmBtn.addEventListener('click', () => this.executeTrade());
+    }
+
+    initTradingView() {
+        const container = document.getElementById('tv_chart_container');
+        if (!container || typeof TradingView === 'undefined') return;
+        
+        const pair = `BINANCE:${this.currentSymbol}USDT`;
+        
+        if (this.tvWidget) this.tvWidget.remove();
+        
+        this.tvWidget = new TradingView.widget({
+            container_id: "tv_chart_container",
+            width: "100%",
+            height: "100%",
+            symbol: pair,
+            interval: "1",
+            timezone: "Etc/UTC",
+            theme: "dark",
+            style: "1",
+            locale: "en",
+            toolbar_bg: "#131722",
+            enable_publishing: false,
+            hide_side_toolbar: false,
+            allow_symbol_change: false,
+            studies: ["RSI@tv-basicstudies", "MACD@tv-basicstudies"],
+            save_image: false,
+            autosize: true
         });
         
-        if (updated) {
-            this.applyFilters();
-            this.updateStats();
-            this.renderTrades();
+        this.updateSelectedCoinDisplay();
+    }
+
+    updateSelectedCoinDisplay() {
+        const coinNames = {
+            BTC: { name: 'Bitcoin', price: 78312.00 },
+            ETH: { name: 'Ethereum', price: 2297.32 },
+            SOL: { name: 'Solana', price: 168.42 },
+            XRP: { name: 'Ripple', price: 0.624 },
+            DOGE: { name: 'Dogecoin', price: 0.162 },
+            BNB: { name: 'Binance Coin', price: 615.81 },
+            ADA: { name: 'Cardano', price: 0.483 }
+        };
+        
+        const coin = coinNames[this.currentSymbol] || coinNames.BTC;
+        this.currentPrice = coin.price;
+        
+        const nameEl = document.getElementById('selectedCoinName');
+        const symbolEl = document.getElementById('selectedCoinSymbol');
+        const priceEl = document.getElementById('currentPrice');
+        
+        if (nameEl) nameEl.textContent = coin.name;
+        if (symbolEl) symbolEl.textContent = `${this.currentSymbol}/USD`;
+        if (priceEl) priceEl.textContent = `$${this.currentPrice.toLocaleString()}`;
+    }
+
+    updateTradeSummary() {
+        const amount = parseFloat(document.getElementById('tradeAmount')?.value) || 0;
+        const fee = amount * 0.02;
+        const total = amount + fee;
+        
+        const feeEl = document.getElementById('feeAmount');
+        const totalEl = document.getElementById('totalAmount');
+        const confirmBtn = document.getElementById('confirmTrade');
+        const balance = this.currentUser?.balance || 0;
+        
+        if (feeEl) feeEl.textContent = `${fee.toFixed(2)} USDT`;
+        if (totalEl) totalEl.textContent = `${total.toFixed(2)} USDT`;
+        
+        if (confirmBtn) {
+            if (amount < this.selectedMinAmount && amount > 0) {
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = `Min $${this.selectedMinAmount.toLocaleString()}`;
+            } else if (amount > balance) {
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = 'Insufficient Balance';
+            } else if (amount < 10) {
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = 'Minimum $10';
+            } else {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Confirm Trade';
+            }
+        }
+        
+        const balanceEl = document.getElementById('availableBalance');
+        if (balanceEl) {
+            balanceEl.textContent = `${balance.toFixed(2)} USDT`;
+            balanceEl.style.color = balance > 0 ? '#00D897' : '#FF4757';
         }
     }
 
-    calculatePnL(trade, currentPrice) {
-        const positionSize = trade.amount * trade.leverage;
-        const priceDiff = trade.type === 'buy' 
-            ? currentPrice - trade.entry_price 
-            : trade.entry_price - currentPrice;
-        const pnl = (positionSize / trade.entry_price) * priceDiff;
-        return parseFloat(pnl.toFixed(2));
+    async executeTrade() {
+        const amount = parseFloat(document.getElementById('tradeAmount')?.value);
+        
+        if (!amount || amount < 10) {
+            this.showNotification('Please enter a valid amount (minimum $10)', 'error');
+            return;
+        }
+        
+        if (amount < this.selectedMinAmount) {
+            this.showNotification(`Minimum amount for ${this.selectedDuration}s is $${this.selectedMinAmount.toLocaleString()}`, 'error');
+            return;
+        }
+        
+        const fee = amount * 0.02;
+        const total = amount + fee;
+        
+        if (total > (this.currentUser?.balance || 0)) {
+            this.showNotification('Insufficient balance', 'error');
+            return;
+        }
+        
+        const newBalance = (this.currentUser.balance || 0) - total;
+        
+        try {
+            // Update balance in Supabase
+            await supabaseDB.updateUserBalance(this.currentUser.id, newBalance);
+            this.currentUser.balance = newBalance;
+            
+            // Create trade record
+            const trade = {
+                id: Date.now(),
+                user_id: this.currentUser.id,
+                symbol: this.currentSymbol,
+                type: this.currentTradeType,
+                amount: amount,
+                leverage: 1,
+                entry_price: this.currentPrice,
+                fee: fee,
+                status: 'open',
+                duration: this.selectedDuration,
+                payout_percent: this.selectedPayout,
+                created_at: new Date().toISOString()
+            };
+            
+            await supabaseDB.createTrade(trade);
+            
+            // Create activity record
+            await supabaseDB.createUserActivity({
+                id: Date.now(),
+                user_id: this.currentUser.id,
+                type: 'trade',
+                title: 'Trade Placed',
+                description: `${this.currentTradeType.toUpperCase()} $${amount} ${this.currentSymbol}`,
+                created_at: new Date().toISOString()
+            });
+            
+            this.showNotification(`Trade placed! ${this.currentTradeType.toUpperCase()} $${amount} ${this.currentSymbol} for ${this.selectedDuration}s`, 'success');
+            
+            // Reset form
+            const amountInput = document.getElementById('tradeAmount');
+            if (amountInput) amountInput.value = '';
+            this.updateTradeSummary();
+            
+            // Update balance display
+            const balanceElements = document.querySelectorAll('.user-balance');
+            balanceElements.forEach(el => {
+                el.textContent = `$${newBalance.toFixed(2)}`;
+            });
+            
+            // Simulate trade result
+            this.simulateTradeResult(trade);
+            
+        } catch (error) {
+            console.error('Error executing trade:', error);
+            this.showNotification('Failed to execute trade', 'error');
+        }
+    }
+
+    async simulateTradeResult(trade) {
+        setTimeout(async () => {
+            const isWin = Math.random() < 0.55;
+            
+            if (isWin) {
+                const winAmount = trade.amount * (1 + trade.payout_percent / 100);
+                const newBalance = (this.currentUser.balance || 0) + winAmount;
+                
+                // Update balance
+                await supabaseDB.updateUserBalance(this.currentUser.id, newBalance);
+                this.currentUser.balance = newBalance;
+                
+                // Update trade record
+                await supabaseDB.updateTrade(trade.id, {
+                    status: 'closed',
+                    result: 'win',
+                    pnl: winAmount,
+                    closed_at: new Date().toISOString()
+                });
+                
+                // Create activity
+                await supabaseDB.createUserActivity({
+                    id: Date.now(),
+                    user_id: this.currentUser.id,
+                    type: 'trade_win',
+                    title: 'Trade Won!',
+                    description: `Won $${winAmount.toFixed(2)} on ${trade.symbol}`,
+                    created_at: new Date().toISOString()
+                });
+                
+                this.showNotification(`🎉 WIN! You won $${winAmount.toFixed(2)} on ${trade.symbol}!`, 'success');
+            } else {
+                // Update trade record as loss
+                await supabaseDB.updateTrade(trade.id, {
+                    status: 'closed',
+                    result: 'loss',
+                    pnl: -trade.amount,
+                    closed_at: new Date().toISOString()
+                });
+                
+                // Create activity
+                await supabaseDB.createUserActivity({
+                    id: Date.now(),
+                    user_id: this.currentUser.id,
+                    type: 'trade_loss',
+                    title: 'Trade Lost',
+                    description: `Lost $${trade.amount.toFixed(2)} on ${trade.symbol}`,
+                    created_at: new Date().toISOString()
+                });
+                
+                this.showNotification(`😢 LOSS! You lost $${trade.amount.toFixed(2)} on ${trade.symbol}`, 'error');
+            }
+            
+            // Update stats
+            await this.loadTrades();
+            this.updateStats();
+            
+            // Update balance display
+            const balanceElements = document.querySelectorAll('.user-balance, #availableBalance');
+            balanceElements.forEach(el => {
+                el.textContent = `$${(this.currentUser.balance || 0).toFixed(2)} USDT`;
+            });
+        }, this.selectedDuration * 1000);
     }
 
     applyFilters() {
         let filtered = [...this.allTrades];
         
-        // Apply tab filter
         if (this.currentTab === 'open') {
             filtered = filtered.filter(t => t.status === 'open');
         } else if (this.currentTab === 'closed') {
             filtered = filtered.filter(t => t.status === 'closed');
         }
         
-        // Apply symbol filter
-        if (this.symbolFilter !== 'all') {
-            filtered = filtered.filter(t => t.symbol === this.symbolFilter);
-        }
-        
-        // Apply type filter
-        if (this.typeFilter !== 'all') {
-            filtered = filtered.filter(t => t.type === this.typeFilter);
-        }
-        
-        // Apply search
-        if (this.searchTerm) {
-            const term = this.searchTerm.toLowerCase();
-            filtered = filtered.filter(t => 
-                t.symbol.toLowerCase().includes(term)
-            );
-        }
-        
-        // Apply sorting
-        filtered.sort((a, b) => {
-            let aVal, bVal;
-            switch(this.currentSort) {
-                case 'symbol':
-                    aVal = a.symbol;
-                    bVal = b.symbol;
-                    break;
-                case 'type':
-                    aVal = a.type;
-                    bVal = b.type;
-                    break;
-                case 'entryPrice':
-                    aVal = a.entry_price;
-                    bVal = b.entry_price;
-                    break;
-                case 'currentPrice':
-                    aVal = a.current_price || a.close_price || 0;
-                    bVal = b.current_price || b.close_price || 0;
-                    break;
-                case 'amount':
-                    aVal = a.amount;
-                    bVal = b.amount;
-                    break;
-                case 'leverage':
-                    aVal = a.leverage;
-                    bVal = b.leverage;
-                    break;
-                case 'pnl':
-                    aVal = a.pnl || 0;
-                    bVal = b.pnl || 0;
-                    break;
-                case 'status':
-                    aVal = a.status;
-                    bVal = b.status;
-                    break;
-                default:
-                    aVal = new Date(a.created_at);
-                    bVal = new Date(b.created_at);
-            }
-            
-            if (this.sortDirection === 'asc') {
-                return aVal > bVal ? 1 : -1;
-            } else {
-                return aVal < bVal ? 1 : -1;
-            }
-        });
-        
         this.filteredTrades = filtered;
-    }
-
-    updateStats() {
-        const totalInvested = this.allTrades.reduce((sum, t) => sum + t.amount, 0);
-        const totalPnL = this.allTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
-        const closedTrades = this.allTrades.filter(t => t.status === 'closed');
-        const winningTrades = closedTrades.filter(t => (t.pnl || 0) > 0).length;
-        const winRate = closedTrades.length > 0 ? (winningTrades / closedTrades.length * 100).toFixed(1) : 0;
-        const activeTrades = this.allTrades.filter(t => t.status === 'open').length;
-        
-        const totalInvestedEl = document.getElementById('totalInvested');
-        const totalPnLEl = document.getElementById('totalPnL');
-        const pnlPercentageEl = document.getElementById('pnlPercentage');
-        const winRateEl = document.getElementById('winRate');
-        const totalTradesEl = document.getElementById('totalTrades');
-        const activeTradesEl = document.getElementById('activeTrades');
-        
-        if (totalInvestedEl) totalInvestedEl.textContent = `$${totalInvested.toLocaleString()}`;
-        if (totalPnLEl) {
-            totalPnLEl.innerHTML = `<span style="color: ${totalPnL >= 0 ? '#00D897' : '#FF4757'}">${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}</span>`;
-        }
-        if (pnlPercentageEl) {
-            const pnlPercent = totalInvested > 0 ? (totalPnL / totalInvested * 100).toFixed(1) : 0;
-            pnlPercentageEl.innerHTML = `<span style="color: ${pnlPercent >= 0 ? '#00D897' : '#FF4757'}">${pnlPercent >= 0 ? '+' : ''}${pnlPercent}%</span>`;
-        }
-        if (winRateEl) winRateEl.textContent = `${winRate}%`;
-        if (totalTradesEl) totalTradesEl.textContent = this.allTrades.length;
-        if (activeTradesEl) activeTradesEl.textContent = `${activeTrades} Active`;
     }
 
     renderTrades() {
@@ -393,7 +476,7 @@ class TradesManager {
         if (this.filteredTrades.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="9">
+                    <td colspan="8">
                         <div class="empty-state">
                             <div class="empty-state-icon">📊</div>
                             <p>No trades found</p>
@@ -407,333 +490,64 @@ class TradesManager {
         
         tbody.innerHTML = this.filteredTrades.map(trade => {
             const isOpen = trade.status === 'open';
-            const currentPrice = isOpen ? (trade.current_price || 0) : (trade.close_price || 0);
+            const currentPrice = trade.current_price || trade.entry_price;
             const pnl = trade.pnl || 0;
             const pnlClass = pnl >= 0 ? 'positive' : 'negative';
             const pnlSymbol = pnl >= 0 ? '+' : '';
             
             return `
                 <tr>
-                    <td><strong>${trade.symbol}</strong></td>
+                    <td><strong>${trade.symbol}/USD</strong></td>
                     <td>
                         <span class="trade-type-badge ${trade.type === 'buy' ? 'trade-type-buy' : 'trade-type-sell'}">
                             ${trade.type === 'buy' ? 'BUY/LONG' : 'SELL/SHORT'}
                         </span>
                     </td>
-                    <td>$${trade.entry_price.toLocaleString(undefined, { minimumFractionDigits: trade.entry_price < 1 ? 4 : 2 })}</td>
-                    <td>$${currentPrice.toLocaleString(undefined, { minimumFractionDigits: currentPrice < 1 ? 4 : 2 })}</td>
+                    <td>$${this.formatPrice(trade.entry_price)}</td>
+                    <td>$${this.formatPrice(currentPrice)}</td>
                     <td>$${trade.amount.toLocaleString()}</td>
-                    <td>${trade.leverage}x</td>
+                    <td>${trade.leverage || 1}x</td>
                     <td class="${pnlClass}">
                         ${pnlSymbol}$${Math.abs(pnl).toLocaleString()}
-                        <br><small>(${pnlSymbol}${(trade.pnl_percentage || 0).toFixed(2)}%)</small>
+                        ${trade.payout_percent ? `<br><small>(${trade.payout_percent}% payout)</small>` : ''}
                     </td>
                     <td>
                         <span class="status-badge status-${trade.status}">
                             ${trade.status === 'open' ? 'Open' : 'Closed'}
                         </span>
                     </td>
-                    <td>
-                        ${isOpen ? `
-                            <button class="close-trade-btn" onclick="tradesManager.showCloseTradeModal(${trade.id})">Close</button>
-                            <button class="view-details-btn" onclick="tradesManager.showTradeDetails(${trade.id})" style="margin-left: 8px;">Details</button>
-                        ` : `
-                            <button class="view-details-btn" onclick="tradesManager.showTradeDetails(${trade.id})">Details</button>
-                        `}
-                    </td>
                 </tr>
             `;
         }).join('');
-        
-        // Update symbol filter dropdown
-        this.updateSymbolFilter();
     }
 
-    updateSymbolFilter() {
-        const symbols = [...new Set(this.allTrades.map(t => t.symbol))];
-        const filterSelect = document.getElementById('symbolFilter');
-        
-        if (filterSelect && filterSelect.children.length <= 1) {
-            symbols.forEach(symbol => {
-                const option = document.createElement('option');
-                option.value = symbol;
-                option.textContent = symbol;
-                filterSelect.appendChild(option);
-            });
-        }
-    }
-
-    async closeTrade(tradeId) {
-        const trade = this.allTrades.find(t => t.id === tradeId);
-        if (!trade || trade.status !== 'open') return;
-        
-        const currentPrice = this.currentPrices[trade.symbol] || trade.current_price;
-        const pnl = this.calculatePnL(trade, currentPrice);
-        
-        // Update trade record
-        trade.status = 'closed';
-        trade.close_price = currentPrice;
-        trade.close_date = new Date().toISOString();
-        trade.pnl = pnl;
-        trade.pnl_percentage = (pnl / trade.amount * 100);
-        
-        // Update user balance with profit/loss
-        await auth.updateBalance(this.currentUser.id, pnl, {
-            type: 'trade_close',
-            trade_id: tradeId,
-            symbol: trade.symbol,
-            pnl: pnl
-        });
-        
-        // Update in Supabase
-        await supabaseDB.update('trades', tradeId, {
-            status: 'closed',
-            close_price: currentPrice,
-            close_date: new Date().toISOString(),
-            pnl: pnl,
-            pnl_percentage: (pnl / trade.amount * 100)
-        });
-        
-        this.applyFilters();
-        this.updateStats();
-        this.renderTrades();
-        this.updatePerformanceChart();
-        
-        auth.showSuccess(`Position closed! ${pnl >= 0 ? 'Profit' : 'Loss'}: $${Math.abs(pnl).toFixed(2)}`);
-        
-        this.closeCloseTradeModal();
-    }
-
-    showTradeDetails(tradeId) {
-        const trade = this.allTrades.find(t => t.id === tradeId);
-        if (!trade) return;
-        
-        const modal = document.getElementById('tradeDetailsModal');
-        const body = document.getElementById('tradeDetailsBody');
-        
-        const isOpen = trade.status === 'open';
-        const currentPrice = isOpen ? (trade.current_price || 0) : (trade.close_price || 0);
-        const positionSize = trade.amount * trade.leverage;
-        
-        body.innerHTML = `
-            <div class="trade-detail-row">
-                <span class="trade-detail-label">Market</span>
-                <span class="trade-detail-value">${trade.symbol}</span>
-            </div>
-            <div class="trade-detail-row">
-                <span class="trade-detail-label">Type</span>
-                <span class="trade-detail-value ${trade.type === 'buy' ? 'positive' : 'negative'}">${trade.type === 'buy' ? 'BUY/LONG' : 'SELL/SHORT'}</span>
-            </div>
-            <div class="trade-detail-row">
-                <span class="trade-detail-label">Entry Price</span>
-                <span class="trade-detail-value">$${trade.entry_price.toLocaleString()}</span>
-            </div>
-            <div class="trade-detail-row">
-                <span class="trade-detail-label">${isOpen ? 'Current Price' : 'Exit Price'}</span>
-                <span class="trade-detail-value">$${currentPrice.toLocaleString()}</span>
-            </div>
-            <div class="trade-detail-row">
-                <span class="trade-detail-label">Amount</span>
-                <span class="trade-detail-value">$${trade.amount.toLocaleString()}</span>
-            </div>
-            <div class="trade-detail-row">
-                <span class="trade-detail-label">Leverage</span>
-                <span class="trade-detail-value">${trade.leverage}x</span>
-            </div>
-            <div class="trade-detail-row">
-                <span class="trade-detail-label">Position Size</span>
-                <span class="trade-detail-value">$${positionSize.toLocaleString()}</span>
-            </div>
-            <div class="trade-detail-row">
-                <span class="trade-detail-label">Open Date</span>
-                <span class="trade-detail-value">${new Date(trade.created_at).toLocaleString()}</span>
-            </div>
-            ${trade.close_date ? `
-                <div class="trade-detail-row">
-                    <span class="trade-detail-label">Close Date</span>
-                    <span class="trade-detail-value">${new Date(trade.close_date).toLocaleString()}</span>
-                </div>
-            ` : ''}
-            <div class="trade-detail-row">
-                <span class="trade-detail-label">P&L</span>
-                <span class="trade-detail-value ${(trade.pnl || 0) >= 0 ? 'positive' : 'negative'}">
-                    ${(trade.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(trade.pnl || 0).toLocaleString()}
-                    (${(trade.pnl_percentage || 0) >= 0 ? '+' : ''}${(trade.pnl_percentage || 0).toFixed(2)}%)
-                </span>
-            </div>
-        `;
-        
-        modal.style.display = 'flex';
-        
-        const closeBtn = modal.querySelector('.modal-close');
-        closeBtn.onclick = () => modal.style.display = 'none';
-        window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
-    }
-
-    showCloseTradeModal(tradeId) {
-        const trade = this.allTrades.find(t => t.id === tradeId);
-        if (!trade) return;
-        
-        const modal = document.getElementById('closeTradeModal');
-        const detailsDiv = document.getElementById('closeTradeDetails');
-        const messageEl = document.getElementById('closeTradeMessage');
-        const currentPrice = this.currentPrices[trade.symbol] || trade.current_price;
-        const estimatedPnl = this.calculatePnL(trade, currentPrice);
-        
-        messageEl.textContent = `Are you sure you want to close your ${trade.symbol} position?`;
-        
-        detailsDiv.innerHTML = `
-            <div style="display: flex; justify-content: space-between;">
-                <span>Entry Price:</span>
-                <span>$${trade.entry_price.toLocaleString()}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-                <span>Current Price:</span>
-                <span>$${currentPrice.toLocaleString()}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-                <span>Position Size:</span>
-                <span>$${(trade.amount * trade.leverage).toLocaleString()}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-                <span>Estimated P&L:</span>
-                <span style="color: ${estimatedPnl >= 0 ? '#00D897' : '#FF4757'}">
-                    ${estimatedPnl >= 0 ? '+' : ''}$${Math.abs(estimatedPnl).toLocaleString()}
-                </span>
-            </div>
-        `;
-        
-        modal.style.display = 'flex';
-        
-        const confirmBtn = document.getElementById('confirmCloseBtn');
-        confirmBtn.onclick = () => this.closeTrade(tradeId);
-        
-        const closeBtn = modal.querySelector('.modal-close');
-        closeBtn.onclick = () => this.closeCloseTradeModal();
-        window.onclick = (e) => { if (e.target === modal) this.closeCloseTradeModal(); };
-    }
-
-    closeCloseTradeModal() {
-        const modal = document.getElementById('closeTradeModal');
-        if (modal) modal.style.display = 'none';
-    }
-
-    async updatePerformanceChart() {
-        const canvas = document.getElementById('performanceChart');
-        if (!canvas || typeof Chart === 'undefined') return;
-        
-        const period = parseInt(document.getElementById('chartPeriod')?.value || '30');
+    updateStats() {
+        const totalInvested = this.allTrades.reduce((sum, t) => sum + t.amount, 0);
+        const totalPnL = this.allTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
         const closedTrades = this.allTrades.filter(t => t.status === 'closed');
+        const winningTrades = closedTrades.filter(t => (t.pnl || 0) > 0).length;
+        const winRate = closedTrades.length > 0 ? (winningTrades / closedTrades.length * 100).toFixed(1) : 0;
+        const activeTrades = this.allTrades.filter(t => t.status === 'open').length;
         
-        // Generate daily P&L data
-        const dailyData = this.generateDailyPnLData(closedTrades, period);
+        const totalInvestedEl = document.getElementById('totalInvested');
+        const totalPnLEl = document.getElementById('totalPnL');
+        const winRateEl = document.getElementById('winRate');
+        const totalTradesEl = document.getElementById('totalTrades');
+        const activeTradesEl = document.getElementById('activeTrades');
         
-        if (this.performanceChart) {
-            this.performanceChart.destroy();
+        if (totalInvestedEl) totalInvestedEl.textContent = `$${totalInvested.toLocaleString()}`;
+        if (totalPnLEl) {
+            totalPnLEl.innerHTML = `<span style="color: ${totalPnL >= 0 ? '#00D897' : '#FF4757'}">${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}</span>`;
         }
-        
-        const ctx = canvas.getContext('2d');
-        this.performanceChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: dailyData.labels,
-                datasets: [
-                    {
-                        label: 'Cumulative P&L',
-                        data: dailyData.cumulativePnL,
-                        borderColor: '#00D897',
-                        backgroundColor: 'rgba(0, 216, 151, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4
-                    },
-                    {
-                        label: 'Daily P&L',
-                        data: dailyData.dailyPnL,
-                        borderColor: '#FFA502',
-                        backgroundColor: 'rgba(255, 165, 2, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        yAxisID: 'y1'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        labels: { color: '#FFFFFF' }
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                let value = context.raw;
-                                return `${label}: ${value >= 0 ? '+' : ''}$${value.toLocaleString()}`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: { color: 'rgba(255,255,255,0.1)' },
-                        ticks: { color: '#FFFFFF' }
-                    },
-                    y: {
-                        grid: { color: 'rgba(255,255,255,0.1)' },
-                        ticks: { color: '#FFFFFF' },
-                        title: {
-                            display: true,
-                            text: 'Cumulative P&L ($)',
-                            color: '#00D897'
-                        }
-                    },
-                    y1: {
-                        position: 'right',
-                        grid: { drawOnChartArea: false },
-                        ticks: { color: '#FFA502' },
-                        title: {
-                            display: true,
-                            text: 'Daily P&L ($)',
-                            color: '#FFA502'
-                        }
-                    }
-                }
-            }
-        });
+        if (winRateEl) winRateEl.textContent = `${winRate}%`;
+        if (totalTradesEl) totalTradesEl.textContent = this.allTrades.length;
+        if (activeTradesEl) activeTradesEl.textContent = `${activeTrades} Active`;
     }
 
-    generateDailyPnLData(trades, days) {
-        const labels = [];
-        const dailyPnL = [];
-        const cumulativePnL = [];
-        
-        let runningTotal = 0;
-        
-        for (let i = days; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            const dateStr = date.toLocaleDateString();
-            labels.push(dateStr);
-            
-            // Sum P&L for this day
-            const dayPnL = trades
-                .filter(t => {
-                    const closeDate = new Date(t.close_date);
-                    return closeDate.toLocaleDateString() === dateStr;
-                })
-                .reduce((sum, t) => sum + (t.pnl || 0), 0);
-            
-            dailyPnL.push(dayPnL);
-            runningTotal += dayPnL;
-            cumulativePnL.push(runningTotal);
-        }
-        
-        return { labels, dailyPnL, cumulativePnL };
+    formatPrice(price) {
+        if (!price) return '0.00';
+        if (price < 1) return price.toFixed(4);
+        return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     setupEventListeners() {
@@ -749,79 +563,62 @@ class TradesManager {
             });
         });
         
-        // Symbol filter
-        const symbolFilter = document.getElementById('symbolFilter');
-        if (symbolFilter) {
-            symbolFilter.addEventListener('change', (e) => {
-                this.symbolFilter = e.target.value;
-                this.applyFilters();
-                this.renderTrades();
+        // Crypto selector
+        const cryptoBtns = document.querySelectorAll('.crypto-btn');
+        cryptoBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                cryptoBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.currentSymbol = btn.dataset.symbol;
+                if (this.tvWidget) {
+                    this.tvWidget.setSymbol(`BINANCE:${this.currentSymbol}USDT`);
+                }
+                this.updateSelectedCoinDisplay();
+                this.updateTradeSummary();
             });
-        }
+        });
         
-        // Type filter
-        const typeFilter = document.getElementById('typeFilter');
-        if (typeFilter) {
-            typeFilter.addEventListener('change', (e) => {
-                this.typeFilter = e.target.value;
-                this.applyFilters();
-                this.renderTrades();
-            });
-        }
-        
-        // Search
-        const searchInput = document.getElementById('searchTrades');
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
-                this.searchTerm = e.target.value;
-                this.applyFilters();
-                this.renderTrades();
-            });
-        }
-        
-        // Sortable columns
-        const headers = document.querySelectorAll('.trades-table th');
-        headers.forEach(header => {
-            header.addEventListener('click', () => {
-                const sortKey = header.dataset.sort;
-                if (sortKey) {
-                    if (this.currentSort === sortKey) {
-                        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-                    } else {
-                        this.currentSort = sortKey;
-                        this.sortDirection = 'asc';
-                    }
-                    this.applyFilters();
-                    this.renderTrades();
+        // Timeframe buttons
+        const timeBtns = document.querySelectorAll('.time-btn');
+        timeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                timeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (this.tvWidget) {
+                    this.tvWidget.setInterval(btn.dataset.interval);
                 }
             });
         });
         
-        // Chart period
-        const chartPeriod = document.getElementById('chartPeriod');
-        if (chartPeriod) {
-            chartPeriod.addEventListener('change', () => this.updatePerformanceChart());
-        }
-        
         // Mobile menu
-        const menuBtn = document.querySelector('.mobile-menu-btn');
-        const sidebar = document.querySelector('.sidebar');
-        if (menuBtn && sidebar) {
-            menuBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('show');
-            });
+        const mobileBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        if (mobileBtn && mobileMenu) {
+            mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('show'));
         }
     }
 
     startPriceUpdates() {
-        this.updateInterval = setInterval(async () => {
-            await this.loadCurrentPrices();
-        }, 30000);
+        this.priceUpdateInterval = setInterval(() => {
+            // Simulate small price changes
+            const change = (Math.random() - 0.5) * 100;
+            this.currentPrice = Math.max(0.01, this.currentPrice + change);
+            const priceEl = document.getElementById('currentPrice');
+            if (priceEl) priceEl.textContent = `$${this.currentPrice.toLocaleString()}`;
+        }, 5000);
+    }
+
+    showNotification(message, type) {
+        if (typeof auth !== 'undefined' && auth.showNotification) {
+            auth.showNotification(message, type);
+        } else {
+            alert(message);
+        }
     }
 
     destroy() {
-        if (this.updateInterval) {
-            clearInterval(this.updateInterval);
+        if (this.priceUpdateInterval) {
+            clearInterval(this.priceUpdateInterval);
         }
     }
 }
@@ -833,8 +630,11 @@ document.addEventListener('DOMContentLoaded', () => {
     tradesManager = new TradesManager();
 });
 
-// Make functions globally accessible
-window.closeTradeModal = (tradeId) => tradesManager?.showCloseTradeModal(tradeId);
-window.showTradeDetails = (tradeId) => tradesManager?.showTradeDetails(tradeId);
-window.closeCloseTradeModal = () => tradesManager?.closeCloseTradeModal();
-window.logout = () => { if (auth) auth.logout(); };
+// Global functions
+window.handleLogout = function() {
+    if (typeof auth !== 'undefined' && auth.logout) {
+        auth.logout();
+    } else {
+        window.location.href = 'index.html';
+    }
+};
