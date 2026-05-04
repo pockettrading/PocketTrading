@@ -77,7 +77,6 @@
             color: #00D897;
         }
 
-        /* User Section - Logged In */
         .user-section {
             display: flex;
             align-items: center;
@@ -134,7 +133,6 @@
             font-weight: 500;
         }
 
-        /* Guest Buttons */
         .guest-buttons {
             display: flex;
             gap: 12px;
@@ -151,19 +149,11 @@
             border: 1px solid rgba(0, 216, 151, 0.5);
             color: #00D897;
         }
-        .btn-login:hover {
-            background: rgba(0, 216, 151, 0.1);
-        }
         .btn-register {
             background: linear-gradient(135deg, #00D897, #00B8A0);
             color: white;
         }
-        .btn-register:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 216, 151, 0.3);
-        }
 
-        /* Mobile Menu */
         .mobile-menu-btn {
             display: none;
             background: none;
@@ -202,7 +192,6 @@
             margin-right: auto;
         }
 
-        /* Page Header */
         .page-header {
             margin-bottom: 32px;
         }
@@ -216,7 +205,6 @@
             font-size: 14px;
         }
 
-        /* Stats Bar */
         .stats-bar {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -235,7 +223,6 @@
         .positive { color: #00D897; }
         .negative { color: #FF4757; }
 
-        /* Filters Bar */
         .filters-bar {
             display: flex;
             justify-content: space-between;
@@ -267,12 +254,7 @@
             color: white;
             width: 250px;
         }
-        .search-input:focus {
-            outline: none;
-            border-color: #00D897;
-        }
 
-        /* Markets Table */
         .table-container {
             background: rgba(255,255,255,0.05);
             border-radius: 20px;
@@ -307,9 +289,6 @@
             font-size: 12px;
             transition: all 0.2s;
         }
-        .tradingview-btn:hover {
-            background: rgba(0, 216, 151, 0.3);
-        }
         .last-updated {
             text-align: right;
             font-size: 11px;
@@ -317,7 +296,6 @@
             margin-top: 12px;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .nav-links, .user-section, .guest-buttons { display: none; }
             .mobile-menu-btn { display: block; }
@@ -350,23 +328,10 @@
         </div>
 
         <div class="stats-bar">
-            <div class="stat-card">
-                <div class="stat-label">Total Market Cap</div>
-                <div class="stat-value" id="totalMarketCap">$2.34T</div>
-                <div class="stat-change positive" id="marketCapChange">+2.4%</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">24h Volume</div>
-                <div class="stat-value" id="totalVolume">$68.5B</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">BTC Dominance</div>
-                <div class="stat-value" id="btcDominance">48.2%</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Active Coins</div>
-                <div class="stat-value" id="activeCoins">150+</div>
-            </div>
+            <div class="stat-card"><div class="stat-label">Total Market Cap</div><div class="stat-value" id="totalMarketCap">$2.34T</div><div class="stat-change positive" id="marketCapChange">+2.4%</div></div>
+            <div class="stat-card"><div class="stat-label">24h Volume</div><div class="stat-value" id="totalVolume">$68.5B</div></div>
+            <div class="stat-card"><div class="stat-label">BTC Dominance</div><div class="stat-value" id="btcDominance">48.2%</div></div>
+            <div class="stat-card"><div class="stat-label">Active Coins</div><div class="stat-value" id="activeCoins">150+</div></div>
         </div>
 
         <div class="filters-bar">
@@ -382,238 +347,17 @@
 
         <div class="table-container">
             <table class="markets-table">
-                <thead>
-                    <tr>
-                        <th>Coin</th>
-                        <th>Price</th>
-                        <th>24h Change</th>
-                        <th>Market Cap</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="marketsTableBody">
-                    <tr><td colspan="5" style="text-align:center; padding: 40px;">Loading markets...</td></tr>
-                </tbody>
+                <thead><tr><th>Coin</th><th>Price</th><th>24h Change</th><th>Volume</th><th>Action</th></tr></thead>
+                <tbody id="marketsTableBody"><tr><td colspan="5" style="text-align:center; padding:40px;">Loading markets...</td></tr></tbody>
             </table>
         </div>
         <div class="last-updated" id="lastUpdated">Last updated: --</div>
     </div>
 
+    <!-- Scripts - Load in correct order -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
-    <script>
-        let currentUser = null;
-        let allMarkets = [];
-        let currentCategory = 'all';
-        let searchTerm = '';
-        let priceUpdateInterval = null;
-
-        const coins = [
-            { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 78312.00, change: 2.34, marketCap: '1.56T', category: 'large' },
-            { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2297.32, change: 1.29, marketCap: '276B', category: 'large' },
-            { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 615.81, change: 0.21, marketCap: '94B', category: 'large' },
-            { symbol: 'SOL', name: 'Solana', icon: '◎', price: 168.42, change: 5.23, marketCap: '72B', category: 'large' },
-            { symbol: 'XRP', name: 'Ripple', icon: 'X', price: 0.624, change: -0.45, marketCap: '33.5B', category: 'large' },
-            { symbol: 'ADA', name: 'Cardano', icon: 'A', price: 0.483, change: -1.23, marketCap: '17.1B', category: 'mid' },
-            { symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð', price: 0.162, change: 8.91, marketCap: '23.2B', category: 'meme' },
-            { symbol: 'AVAX', name: 'Avalanche', icon: 'A', price: 42.15, change: 3.45, marketCap: '15.8B', category: 'mid' },
-            { symbol: 'MATIC', name: 'Polygon', icon: 'M', price: 0.89, change: -2.11, marketCap: '8.7B', category: 'mid' },
-            { symbol: 'SHIB', name: 'Shiba Inu', icon: '🐕', price: 0.000023, change: 4.56, marketCap: '13.5B', category: 'meme' },
-            { symbol: 'UNI', name: 'Uniswap', icon: 'U', price: 11.23, change: -0.89, marketCap: '6.5B', category: 'defi' },
-            { symbol: 'LINK', name: 'Chainlink', icon: 'L', price: 18.34, change: 1.56, marketCap: '10.2B', category: 'defi' }
-        ];
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            await waitForAuth();
-            if (typeof auth !== 'undefined') currentUser = auth.getUser();
-            setupNavigation();
-            allMarkets = [...coins];
-            renderMarkets();
-            updateStats();
-            setupEventListeners();
-            startPriceUpdates();
-        });
-
-        function waitForAuth() {
-            return new Promise((resolve) => {
-                if (typeof auth !== 'undefined') resolve();
-                else setTimeout(() => resolve(), 100);
-            });
-        }
-
-        function setupNavigation() {
-            const navLinks = document.getElementById('navLinks');
-            const rightNav = document.getElementById('rightNav');
-            const mobileMenu = document.getElementById('mobileMenu');
-            
-            if (currentUser) {
-                const isAdmin = currentUser.email === 'ephremgojo@gmail.com';
-                const userName = currentUser.name || currentUser.email.split('@')[0];
-                
-                // Desktop navigation for logged-in users
-                navLinks.innerHTML = `
-                    <a href="index.html" class="nav-link">Home</a>
-                    <a href="markets.html" class="nav-link active">Markets</a>
-                    <a href="trades.html" class="nav-link">Trades</a>
-                    <a href="profile.html" class="nav-link">My Profile</a>
-                `;
-                
-                rightNav.innerHTML = `
-                    <div class="user-section">
-                        <div class="user-info">
-                            <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
-                            <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
-                        </div>
-                        ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
-                        <button class="logout-btn" onclick="handleLogout()">Logout</button>
-                    </div>
-                `;
-                
-                // Mobile menu for logged-in users
-                mobileMenu.innerHTML = `
-                    <a href="index.html" class="mobile-nav-link">🏠 Home</a>
-                    <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
-                    <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
-                    <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
-                    ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
-                    <button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>
-                `;
-            } else {
-                // Desktop navigation for guests
-                navLinks.innerHTML = `
-                    <a href="index.html" class="nav-link">Home</a>
-                    <a href="markets.html" class="nav-link active">Markets</a>
-                    <a href="trades.html" class="nav-link">Trades</a>
-                `;
-                
-                rightNav.innerHTML = `
-                    <div class="guest-buttons">
-                        <a href="login.html" class="btn-login">Login</a>
-                        <a href="login.html" class="btn-register">Register</a>
-                    </div>
-                `;
-                
-                // Mobile menu for guests
-                mobileMenu.innerHTML = `
-                    <a href="index.html" class="mobile-nav-link">🏠 Home</a>
-                    <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
-                    <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
-                    <a href="login.html" class="mobile-nav-link">🔐 Login</a>
-                    <a href="login.html" class="mobile-nav-link">📝 Register</a>
-                `;
-            }
-        }
-
-        function formatPrice(p) {
-            if (p < 1) return p.toFixed(6);
-            return p.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-
-        function renderMarkets() {
-            let filtered = allMarkets.filter(m => currentCategory === 'all' || m.category === currentCategory);
-            if (searchTerm) {
-                filtered = filtered.filter(m => 
-                    m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                    m.symbol.toLowerCase().includes(searchTerm.toLowerCase())
-                );
-            }
-            
-            const tbody = document.getElementById('marketsTableBody');
-            if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px;">No markets found</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = filtered.map(m => `
-                <tr>
-                    <td>
-                        <div class="coin-info">
-                            <span class="coin-icon">${m.icon}</span>
-                            <div>
-                                <div class="coin-name">${m.name}</div>
-                                <div class="coin-symbol">${m.symbol}/USD</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>$${formatPrice(m.price)}</td>
-                    <td class="${m.change >= 0 ? 'positive' : 'negative'}">
-                        ${m.change >= 0 ? '▲' : '▼'} ${Math.abs(m.change)}%
-                    </td>
-                    <td>${m.marketCap}</td>
-                    <td>
-                        <button class="tradingview-btn" onclick="openTradingView('${m.symbol}')">TradingView</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function updateStats() {
-            const totalCap = allMarkets.reduce((s, m) => {
-                let val = parseFloat(m.marketCap);
-                if (m.marketCap.includes('T')) val = parseFloat(m.marketCap) * 1000;
-                return s + (isNaN(val) ? 0 : val);
-            }, 0);
-            document.getElementById('totalMarketCap').innerHTML = `$${(totalCap / 1000).toFixed(2)}T`;
-            
-            const btcPrice = allMarkets.find(m => m.symbol === 'BTC')?.price || 78000;
-            document.getElementById('btcDominance').textContent = `${((btcPrice * 19.5) / 1000).toFixed(1)}%`;
-            document.getElementById('lastUpdated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
-        }
-
-        function openTradingView(symbol) {
-            window.location.href = `trading-view.html?symbol=${symbol}`;
-        }
-
-        function setupEventListeners() {
-            // Category filters
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    currentCategory = btn.dataset.category;
-                    renderMarkets();
-                });
-            });
-            
-            // Search input
-            const searchInput = document.getElementById('marketSearch');
-            if (searchInput) {
-                searchInput.addEventListener('input', (e) => {
-                    searchTerm = e.target.value;
-                    renderMarkets();
-                });
-            }
-            
-            // Mobile menu
-            const mobileBtn = document.getElementById('mobileMenuBtn');
-            const mobileMenu = document.getElementById('mobileMenu');
-            if (mobileBtn && mobileMenu) {
-                mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('show'));
-            }
-        }
-
-        function startPriceUpdates() {
-            priceUpdateInterval = setInterval(() => {
-                allMarkets = allMarkets.map(m => ({
-                    ...m,
-                    price: m.price * (1 + (Math.random() - 0.5) * 0.002),
-                    change: m.change + (Math.random() - 0.5) * 0.2
-                }));
-                renderMarkets();
-                updateStats();
-            }, 30000);
-        }
-
-        window.openTradingView = openTradingView;
-        window.handleLogout = function() {
-            if (typeof auth !== 'undefined' && auth.logout) {
-                auth.logout();
-            } else {
-                localStorage.removeItem('pocket_user');
-                sessionStorage.removeItem('pocket_user');
-                window.location.href = 'index.html';
-            }
-        };
-    </script>
+    <script src="js/markets.js"></script>
 </body>
 </html>
