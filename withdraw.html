@@ -380,6 +380,31 @@
             margin-top: 20px;
         }
 
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+            max-width: 350px;
+        }
+        .notification-success { background: rgba(0, 216, 151, 0.95); color: white; }
+        .notification-error { background: rgba(255, 71, 87, 0.95); color: white; }
+        .notification-info { background: rgba(255, 165, 2, 0.95); color: white; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .nav-links, .user-section { display: none; }
@@ -462,8 +487,37 @@
         </div>
     </div>
 
+    <!-- Scripts - Load in correct order -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/withdraw.js"></script>
+    
+    <script>
+        // Show notification function
+        function showNotification(message, type) {
+            const existing = document.querySelector('.notification');
+            if (existing) existing.remove();
+            
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
+        
+        // Global logout
+        window.handleLogout = function() {
+            if (typeof auth !== 'undefined' && auth.logout) {
+                auth.logout();
+            } else {
+                window.location.href = 'index.html';
+            }
+        };
+    </script>
 </body>
 </html>
