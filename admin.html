@@ -59,7 +59,12 @@
             color: transparent;
         }
 
-        .nav-links { display: flex; gap: 8px; align-items: center; }
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
         .nav-link {
             padding: 8px 20px;
             border-radius: 40px;
@@ -73,7 +78,11 @@
             color: #00D897;
         }
 
-        .user-section { display: flex; align-items: center; gap: 12px; }
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
         .user-info {
             display: flex;
             align-items: center;
@@ -93,7 +102,10 @@
             justify-content: center;
             font-size: 18px;
         }
-        .user-name { font-size: 14px; font-weight: 600; }
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
         .admin-badge {
             font-size: 10px;
             background: linear-gradient(135deg, #00D897, #00B8A0);
@@ -408,7 +420,6 @@
             cursor: pointer;
         }
 
-        /* Responsive */
         @media (max-width: 1024px) {
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
             .settings-grid { grid-template-columns: 1fr; }
@@ -451,7 +462,7 @@
             <div class="stat-card"><div class="stat-card-icon">📊</div><div class="stat-card-value" id="pendingRequests">0</div><div class="stat-card-label">Pending Requests</div></div>
         </div>
 
-        <!-- Emergency Stop Switch -->
+        <!-- Emergency Stop Container -->
         <div id="emergencyStopContainer"></div>
 
         <!-- Tabs -->
@@ -479,7 +490,7 @@
                 </select>
                 <button class="btn-approve" onclick="adminManager.refreshUsers()">🔄 Refresh</button>
             </div>
-            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Email</th><th>Balance</th><th>KYC Status</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="usersTableBody"><tr><td colspan="7"><div class="loading" style="text-align:center; padding:40px;">Loading...</div></td></tr></tbody></table></div>
+            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Email</th><th>Balance</th><th>KYC Status</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="usersTableBody"></table><td colspan="7"><div class="loading" style="text-align:center; padding:40px;">Loading...</div></td></tbody></table></div>
         </div>
 
         <!-- Deposits Tab -->
@@ -507,7 +518,7 @@
                 </select>
                 <button class="btn-approve" onclick="adminManager.refreshWithdrawals()">🔄 Refresh</button>
             </div>
-            <div class="table-container"><table class="data-table"><thead></tr><th>User</th><th>Amount</th><th>Crypto</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="withdrawalsTableBody"><tr><td colspan="6"><div class="loading" style="text-align:center; padding:40px;">Loading...</div></td></tr></tbody></table></div>
+            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Amount</th><th>Crypto</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="withdrawalsTableBody"><tr><td colspan="6"><div class="loading" style="text-align:center; padding:40px;">Loading...</div></td></tr></tbody></table></div>
         </div>
 
         <!-- KYC Tab -->
@@ -575,7 +586,7 @@
     <!-- Details Modal -->
     <div id="detailsModal" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="modalTitle">Details</h3><span class="modal-close" onclick="adminManager?.closeModal()">&times;</span></div><div class="modal-body" id="modalBody"></div><div class="modal-buttons" id="modalButtons"></div></div></div>
 
-    <!-- Scripts - Load in correct order -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
