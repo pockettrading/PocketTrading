@@ -32,7 +32,6 @@ class AdminManager {
         this.renderEmergencyStopSwitch();
         this.setupEventListeners();
         
-        // Auto-refresh every 30 seconds
         setInterval(() => this.refreshData(), 30000);
     }
 
@@ -45,6 +44,39 @@ class AdminManager {
                 }
             }, 100);
         });
+    }
+
+    setupNavigation() {
+        const navLinks = document.getElementById('navLinks');
+        const rightNav = document.getElementById('rightNav');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
+        
+        navLinks.innerHTML = `
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="markets.html" class="nav-link">Markets</a>
+            <a href="trades.html" class="nav-link">Trades</a>
+            <a href="profile.html" class="nav-link">My Profile</a>
+        `;
+        
+        rightNav.innerHTML = `
+            <div class="user-section">
+                <div class="user-info">
+                    <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
+                    <div class="user-name">${userName}<span class="admin-badge">Admin</span></div>
+                </div>
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
+        `;
+        
+        mobileMenu.innerHTML = `
+            <a href="index.html" class="mobile-nav-link">🏠 Home</a>
+            <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
+            <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+            <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
+            <button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>
+        `;
     }
 
     async loadEmergencyStopStatus() {
@@ -62,7 +94,6 @@ class AdminManager {
         this.tradingEnabled = enabled;
         await supabaseDB.updatePlatformSetting('trading_enabled', enabled);
         
-        // If trading is DISABLED, close all open trades (users lose everything)
         if (!enabled) {
             await this.closeAllOpenTrades();
         }
@@ -74,7 +105,6 @@ class AdminManager {
         const openTrades = this.trades.filter(t => t.status === 'open');
         
         for (const trade of openTrades) {
-            // Mark trade as closed with loss
             await supabaseDB.updateTrade(trade.id, {
                 status: 'closed',
                 result: 'emergency_stop',
@@ -82,7 +112,6 @@ class AdminManager {
                 closed_at: new Date().toISOString()
             });
             
-            // Create activity record for the user
             await supabaseDB.createUserActivity({
                 id: Date.now(),
                 user_id: trade.user_id,
@@ -93,12 +122,11 @@ class AdminManager {
             });
         }
         
-        // Refresh trades list
         await this.loadAllData();
         this.renderTrades();
         
         if (openTrades.length > 0) {
-            auth.showNotification(`⚠️ Emergency Stop: ${openTrades.length} trades closed with total loss of $${openTrades.reduce((sum, t) => sum + t.amount, 0).toLocaleString()}`, 'error');
+            this.showNotification(`⚠️ Emergency Stop: ${openTrades.length} trades closed with total loss of $${openTrades.reduce((sum, t) => sum + t.amount, 0).toLocaleString()}`, 'error');
         }
     }
 
@@ -106,74 +134,34 @@ class AdminManager {
         const dashboardTab = document.getElementById('dashboardTab');
         if (!dashboardTab) return;
         
-        // Check if switch already exists
-        let switchContainer = document.getElementById('emergencyStopSwitch');
-        if (switchContainer) {
-            switchContainer.remove();
-        }
-        
-        switchContainer = document.createElement('div');
-        switchContainer.id = 'emergencyStopSwitch';
-        switchContainer.style.cssText = `
-            background: ${this.tradingEnabled ? 'rgba(0, 216, 151, 0.1)' : 'rgba(255, 71, 87, 0.15)'};
-            border: 1px solid ${this.tradingEnabled ? 'rgba(0, 216, 151, 0.3)' : 'rgba(255, 71, 87, 0.3)'};
-            border-radius: 16px;
-            padding: 20px 24px;
-            margin-bottom: 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
-        `;
+        let switchContainer = document.getElementById('emergencyStopContainer');
+        if (!switchContainer) return;
         
         switchContainer.innerHTML = `
-            <div>
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <span style="font-size: 24px;">⚠️</span>
-                    <div>
-                        <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">Emergency Trade Stop</h3>
-                        <p style="font-size: 13px; color: #8B93A5; margin: 0;">
-                            ${this.tradingEnabled ? 'Trading is currently ACTIVE' : 'Trading is STOPPED - All open trades will be closed with LOSS'}
-                        </p>
+            <div class="emergency-stop ${this.tradingEnabled ? 'enabled' : ''}">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 24px;">⚠️</span>
+                        <div>
+                            <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">Emergency Trade Stop</h3>
+                            <p style="font-size: 13px; color: #8B93A5; margin: 0;">
+                                ${this.tradingEnabled ? 'Trading is currently ACTIVE' : 'Trading is STOPPED - All open trades will be closed with LOSS'}
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 16px;">
-                <span style="font-size: 14px; font-weight: 600; ${this.tradingEnabled ? 'color: #00D897' : 'color: #FF4757'}">
-                    ${this.tradingEnabled ? '● ENABLED' : '○ DISABLED'}
-                </span>
-                <label class="switch" style="position: relative; display: inline-block; width: 60px; height: 34px;">
-                    <input type="checkbox" id="emergencyStopToggle" ${this.tradingEnabled ? 'checked' : ''} style="opacity: 0; width: 0; height: 0;">
-                    <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${this.tradingEnabled ? '#00D897' : '#FF4757'}; transition: .3s; border-radius: 34px;"></span>
-                </label>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <span style="font-size: 14px; font-weight: 600; ${this.tradingEnabled ? 'color: #00D897' : 'color: #FF4757'}">
+                        ${this.tradingEnabled ? '● ENABLED' : '○ DISABLED'}
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="emergencyStopToggle" ${this.tradingEnabled ? 'checked' : ''}>
+                        <span class="slider"></span>
+                    </label>
+                </div>
             </div>
         `;
         
-        // Add slider styles
-        const style = document.createElement('style');
-        style.textContent = `
-            .slider:before {
-                position: absolute;
-                content: "";
-                height: 26px;
-                width: 26px;
-                left: 4px;
-                bottom: 4px;
-                background-color: white;
-                transition: .3s;
-                border-radius: 50%;
-            }
-            input:checked + .slider:before {
-                transform: translateX(26px);
-            }
-        `;
-        document.head.appendChild(style);
-        
-        // Insert at the top of dashboard tab
-        dashboardTab.insertBefore(switchContainer, dashboardTab.firstChild);
-        
-        // Add event listener
         const toggle = document.getElementById('emergencyStopToggle');
         if (toggle) {
             toggle.addEventListener('change', async (e) => {
@@ -252,45 +240,6 @@ class AdminManager {
         }
     }
 
-    setupNavigation() {
-        const navLinks = document.getElementById('navLinks');
-        const rightNav = document.getElementById('rightNav');
-        const mobileMenu = document.getElementById('mobileMenu');
-        
-        const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
-        
-        if (navLinks) {
-            navLinks.innerHTML = `
-                <a href="index.html" class="nav-link">Home</a>
-                <a href="markets.html" class="nav-link">Markets</a>
-                <a href="trades.html" class="nav-link">Trades</a>
-                <a href="profile.html" class="nav-link">My Profile</a>
-            `;
-        }
-        
-        if (rightNav) {
-            rightNav.innerHTML = `
-                <div class="user-section">
-                    <div class="user-info">
-                        <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
-                        <div class="user-name">${userName}<span class="admin-badge">Admin</span></div>
-                    </div>
-                    <button class="logout-btn" onclick="handleLogout()">Logout</button>
-                </div>
-            `;
-        }
-        
-        if (mobileMenu) {
-            mobileMenu.innerHTML = `
-                <a href="index.html" class="mobile-nav-link">🏠 Home</a>
-                <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
-                <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
-                <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
-                <button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>
-            `;
-        }
-    }
-
     renderDashboard() {
         const totalVolume = this.trades.reduce((sum, t) => sum + (t.amount * (t.leverage || 1)), 0);
         const totalDeposits = this.deposits.filter(d => d.status === 'approved').reduce((sum, d) => sum + d.amount, 0);
@@ -300,15 +249,10 @@ class AdminManager {
             ...this.kycRequests.filter(k => k.status === 'pending')
         ].length;
         
-        const stats = document.getElementById('dashboardStats');
-        if (stats) {
-            stats.innerHTML = `
-                <div class="stat-card"><div class="stat-card-icon">👥</div><div class="stat-card-value" style="font-size: 32px; font-weight: 800;">${this.users.length}</div><div class="stat-card-label" style="font-size: 14px;">Total Users</div></div>
-                <div class="stat-card"><div class="stat-card-icon">💰</div><div class="stat-card-value" style="font-size: 32px; font-weight: 800;">$${(totalVolume / 1000).toFixed(1)}B</div><div class="stat-card-label" style="font-size: 14px;">Trading Volume</div></div>
-                <div class="stat-card"><div class="stat-card-icon">🏦</div><div class="stat-card-value" style="font-size: 32px; font-weight: 800;">$${(totalDeposits / 1000).toFixed(1)}K</div><div class="stat-card-label" style="font-size: 14px;">Total Deposits</div></div>
-                <div class="stat-card"><div class="stat-card-icon">📊</div><div class="stat-card-value" style="font-size: 32px; font-weight: 800; color: #FFA502;">${pendingRequests}</div><div class="stat-card-label" style="font-size: 14px;">Pending Requests</div></div>
-            `;
-        }
+        document.getElementById('totalUsers').textContent = this.users.length;
+        document.getElementById('totalVolume').textContent = `$${(totalVolume / 1000).toFixed(1)}B`;
+        document.getElementById('totalDeposits').textContent = `$${(totalDeposits / 1000).toFixed(1)}K`;
+        document.getElementById('pendingRequests').textContent = pendingRequests;
         
         this.renderRecentActivity();
     }
@@ -379,7 +323,7 @@ class AdminManager {
         let filtered = this.deposits.filter(d => statusFilter === 'all' || d.status === statusFilter);
         
         if (filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">No deposits found</div></td></tr>';
+            tbody.innerHTML = '<td><td colspan="6"><div class="empty-state">No deposits found</div></td></tr>';
             return;
         }
         
@@ -527,13 +471,13 @@ class AdminManager {
         }
         
         await this.refreshData();
-        auth.showNotification(`Deposit of $${deposit.amount} approved!`, 'success');
+        this.showNotification(`Deposit of $${deposit.amount} approved!`, 'success');
     }
 
     async rejectDeposit(id) {
         await supabaseDB.updateDepositRequest(id, { status: 'rejected' });
         await this.refreshData();
-        auth.showNotification('Deposit rejected', 'error');
+        this.showNotification('Deposit rejected', 'error');
     }
 
     async approveWithdrawal(id) {
@@ -556,16 +500,16 @@ class AdminManager {
             });
             
             await this.refreshData();
-            auth.showNotification(`Withdrawal of $${withdrawal.amount} approved!`, 'success');
+            this.showNotification(`Withdrawal of $${withdrawal.amount} approved!`, 'success');
         } else {
-            auth.showNotification('Insufficient balance', 'error');
+            this.showNotification('Insufficient balance', 'error');
         }
     }
 
     async rejectWithdrawal(id) {
         await supabaseDB.updateWithdrawalRequest(id, { status: 'rejected' });
         await this.refreshData();
-        auth.showNotification('Withdrawal rejected', 'error');
+        this.showNotification('Withdrawal rejected', 'error');
     }
 
     async approveKYC(id) {
@@ -576,7 +520,7 @@ class AdminManager {
         await supabaseDB.updateUserKYCStatus(kyc.user_id, 'verified');
         
         await this.refreshData();
-        auth.showNotification(`KYC approved for ${kyc.full_name}`, 'success');
+        this.showNotification(`KYC approved for ${kyc.full_name}`, 'success');
     }
 
     async rejectKYC(id) {
@@ -585,7 +529,7 @@ class AdminManager {
         
         await supabaseDB.updateKYCRequest(id, { status: 'rejected' });
         await this.refreshData();
-        auth.showNotification(`KYC rejected for ${kyc.full_name}`, 'error');
+        this.showNotification(`KYC rejected for ${kyc.full_name}`, 'error');
     }
 
     async viewUserDetails(userId) {
@@ -596,12 +540,8 @@ class AdminManager {
         const totalPnL = userTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
         
         const modal = document.getElementById('detailsModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalBody = document.getElementById('modalBody');
-        const modalButtons = document.getElementById('modalButtons');
-        
-        modalTitle.textContent = `User Details: ${user.name || 'User'}`;
-        modalBody.innerHTML = `
+        document.getElementById('modalTitle').textContent = `User Details: ${user.name || 'User'}`;
+        document.getElementById('modalBody').innerHTML = `
             <div class="detail-row"><span class="detail-label">Name</span><span class="detail-value" style="font-size: 16px; font-weight: 600;">${user.name || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value" style="font-size: 16px;">${user.email}</span></div>
             <div class="detail-row"><span class="detail-label">Balance</span><span class="detail-value" style="font-size: 16px; font-weight: 700; color: #00D897;">$${(user.balance || 0).toLocaleString()}</span></div>
@@ -610,7 +550,7 @@ class AdminManager {
             <div class="detail-row"><span class="detail-label">Total P&L</span><span class="detail-value ${totalPnL >= 0 ? 'positive' : 'negative'}" style="font-size: 16px; font-weight: 600;">${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}</span></div>
             <div class="detail-row"><span class="detail-label">Joined</span><span class="detail-value">${this.formatDate(user.created_at)}</span></div>
         `;
-        modalButtons.innerHTML = '';
+        document.getElementById('modalButtons').innerHTML = '';
         modal.style.display = 'flex';
     }
 
@@ -619,12 +559,8 @@ class AdminManager {
         const user = this.users.find(u => u.id === kyc?.user_id);
         
         const modal = document.getElementById('detailsModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalBody = document.getElementById('modalBody');
-        const modalButtons = document.getElementById('modalButtons');
-        
-        modalTitle.textContent = 'KYC Verification Details';
-        modalBody.innerHTML = `
+        document.getElementById('modalTitle').textContent = 'KYC Verification Details';
+        document.getElementById('modalBody').innerHTML = `
             <div class="detail-row"><span class="detail-label">User</span><span class="detail-value" style="font-size: 16px; font-weight: 600;">${user?.name || 'Unknown'}</span></div>
             <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value" style="font-size: 16px;">${user?.email || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-label">Full Name</span><span class="detail-value" style="font-size: 16px;">${kyc?.full_name}</span></div>
@@ -640,7 +576,7 @@ class AdminManager {
                 </div>
             </div>
         `;
-        modalButtons.innerHTML = kyc?.status === 'pending' ? `
+        document.getElementById('modalButtons').innerHTML = kyc?.status === 'pending' ? `
             <button class="modal-btn btn-approve" onclick="adminManager.approveKYC(${kycId}); adminManager.closeModal();" style="padding: 12px; font-size: 14px;">✅ Approve Verification</button>
             <button class="modal-btn btn-reject" onclick="adminManager.rejectKYC(${kycId}); adminManager.closeModal();" style="padding: 12px; font-size: 14px;">❌ Reject Verification</button>
         ` : '';
@@ -652,19 +588,15 @@ class AdminManager {
         const user = this.users.find(u => u.id === deposit?.user_id);
         
         const modal = document.getElementById('detailsModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalBody = document.getElementById('modalBody');
-        const modalButtons = document.getElementById('modalButtons');
-        
-        modalTitle.textContent = 'Deposit Details';
-        modalBody.innerHTML = `
+        document.getElementById('modalTitle').textContent = 'Deposit Details';
+        document.getElementById('modalBody').innerHTML = `
             <div class="detail-row"><span class="detail-label">User</span><span class="detail-value" style="font-size: 16px; font-weight: 600;">${user?.name || 'Unknown'}</span></div>
             <div class="detail-row"><span class="detail-label">Amount</span><span class="detail-value" style="font-size: 16px; font-weight: 700; color: #00D897;">$${deposit?.amount.toLocaleString()}</span></div>
             <div class="detail-row"><span class="detail-label">Currency</span><span class="detail-value" style="font-size: 16px;">${deposit?.currency || 'USDT'}</span></div>
             <div class="detail-row"><span class="detail-label">Date</span><span class="detail-value">${this.formatDate(deposit?.date)}</span></div>
             <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" style="font-size: 16px;">${deposit?.status}</span></div>
         `;
-        modalButtons.innerHTML = deposit?.status === 'pending' ? `
+        document.getElementById('modalButtons').innerHTML = deposit?.status === 'pending' ? `
             <button class="modal-btn btn-approve" onclick="adminManager.approveDeposit(${id}); adminManager.closeModal();" style="padding: 12px; font-size: 14px;">✅ Approve Deposit</button>
             <button class="modal-btn btn-reject" onclick="adminManager.rejectDeposit(${id}); adminManager.closeModal();" style="padding: 12px; font-size: 14px;">❌ Reject Deposit</button>
         ` : '';
@@ -676,12 +608,8 @@ class AdminManager {
         const user = this.users.find(u => u.id === withdrawal?.user_id);
         
         const modal = document.getElementById('detailsModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalBody = document.getElementById('modalBody');
-        const modalButtons = document.getElementById('modalButtons');
-        
-        modalTitle.textContent = 'Withdrawal Details';
-        modalBody.innerHTML = `
+        document.getElementById('modalTitle').textContent = 'Withdrawal Details';
+        document.getElementById('modalBody').innerHTML = `
             <div class="detail-row"><span class="detail-label">User</span><span class="detail-value" style="font-size: 16px; font-weight: 600;">${user?.name || 'Unknown'}</span></div>
             <div class="detail-row"><span class="detail-label">Amount</span><span class="detail-value" style="font-size: 16px; font-weight: 700; color: #FF4757;">$${withdrawal?.amount.toLocaleString()}</span></div>
             <div class="detail-row"><span class="detail-label">Crypto</span><span class="detail-value" style="font-size: 16px;">${withdrawal?.crypto || 'USDT'}</span></div>
@@ -689,7 +617,7 @@ class AdminManager {
             <div class="detail-row"><span class="detail-label">Date</span><span class="detail-value">${this.formatDate(withdrawal?.date)}</span></div>
             <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" style="font-size: 16px;">${withdrawal?.status}</span></div>
         `;
-        modalButtons.innerHTML = withdrawal?.status === 'pending' ? `
+        document.getElementById('modalButtons').innerHTML = withdrawal?.status === 'pending' ? `
             <button class="modal-btn btn-approve" onclick="adminManager.approveWithdrawal(${id}); adminManager.closeModal();" style="padding: 12px; font-size: 14px;">✅ Approve Withdrawal</button>
             <button class="modal-btn btn-reject" onclick="adminManager.rejectWithdrawal(${id}); adminManager.closeModal();" style="padding: 12px; font-size: 14px;">❌ Reject Withdrawal</button>
         ` : '';
@@ -700,7 +628,90 @@ class AdminManager {
         if (confirm('⚠️ Delete this user? ALL their data will be permanently removed.')) {
             await supabaseDB.deleteUser(userId);
             await this.refreshData();
-            auth.showNotification('User deleted', 'success');
+            this.showNotification('User deleted', 'success');
+        }
+    }
+
+    async saveTradingSettings() {
+        const minTradeAmount = document.getElementById('minTradeAmount')?.value;
+        const maxLeverage = document.getElementById('maxLeverage')?.value;
+        const withdrawalFee = document.getElementById('withdrawalFee')?.value;
+        
+        const settings = { minTradeAmount, maxLeverage, withdrawalFee };
+        await supabaseDB.updatePlatformSetting('trading_settings', settings);
+        this.showNotification('Trading settings saved!', 'success');
+    }
+
+    async saveDepositAddresses() {
+        const addresses = {
+            USDT: document.getElementById('adminUSDTAddress')?.value || '',
+            BTC: document.getElementById('adminBTCAddress')?.value || '',
+            ETH: document.getElementById('adminETHAddress')?.value || ''
+        };
+        await supabaseDB.updatePlatformSetting('crypto_deposit_addresses', addresses);
+        this.showNotification('Deposit addresses saved!', 'success');
+    }
+
+    async backupDatabase() {
+        const data = {
+            users: this.users,
+            trades: this.trades,
+            deposits: this.deposits,
+            withdrawals: this.withdrawals,
+            kycRequests: this.kycRequests,
+            backupDate: new Date().toISOString()
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pockettrading_backup_${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.showNotification('Backup downloaded!', 'success');
+    }
+
+    async exportUserData() {
+        const data = this.users.map(u => ({
+            name: u.name,
+            email: u.email,
+            balance: u.balance,
+            kyc_status: u.kyc_status,
+            created_at: u.created_at
+        }));
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `users_export_${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.showNotification('User data exported!', 'success');
+    }
+
+    async exportTradeData() {
+        const data = this.trades.map(t => ({
+            user_id: t.user_id,
+            symbol: t.symbol,
+            type: t.type,
+            amount: t.amount,
+            pnl: t.pnl,
+            status: t.status,
+            created_at: t.created_at
+        }));
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `trades_export_${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.showNotification('Trade data exported!', 'success');
+    }
+
+    clearLogs() {
+        if (confirm('Clear all activity logs?')) {
+            this.showNotification('Logs cleared (demo)', 'info');
         }
     }
 
@@ -759,16 +770,35 @@ class AdminManager {
         const date = new Date(dateString);
         return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
     }
+
+    showNotification(message, type) {
+        if (typeof auth !== 'undefined' && auth.showNotification) {
+            auth.showNotification(message, type);
+        } else {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'error' ? '#FF4757' : '#00D897'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 12px;
+                z-index: 10000;
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+    }
 }
 
-// Initialize
 let adminManager = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     adminManager = new AdminManager();
 });
 
-// Global functions
 window.handleLogout = function() {
     if (typeof auth !== 'undefined' && auth.logout) {
         auth.logout();
