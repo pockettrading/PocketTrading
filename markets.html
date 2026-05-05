@@ -77,6 +77,27 @@
             color: #00D897;
         }
 
+        .guest-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .btn-login, .btn-register {
+            padding: 8px 24px;
+            border-radius: 40px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-login {
+            background: transparent;
+            border: 1px solid rgba(0, 216, 151, 0.5);
+            color: #00D897;
+        }
+        .btn-register {
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            color: white;
+        }
+
         .user-section {
             display: flex;
             align-items: center;
@@ -131,27 +152,6 @@
             color: #FF4757;
             cursor: pointer;
             font-weight: 500;
-        }
-
-        .guest-buttons {
-            display: flex;
-            gap: 12px;
-        }
-        .btn-login, .btn-register {
-            padding: 8px 24px;
-            border-radius: 40px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        .btn-login {
-            background: transparent;
-            border: 1px solid rgba(0, 216, 151, 0.5);
-            color: #00D897;
-        }
-        .btn-register {
-            background: linear-gradient(135deg, #00D897, #00B8A0);
-            color: white;
         }
 
         .mobile-menu-btn {
@@ -289,6 +289,9 @@
             font-size: 12px;
             transition: all 0.2s;
         }
+        .tradingview-btn:hover {
+            background: rgba(0, 216, 151, 0.3);
+        }
         .last-updated {
             text-align: right;
             font-size: 11px;
@@ -297,12 +300,10 @@
         }
 
         @media (max-width: 768px) {
-            .nav-links, .user-section, .guest-buttons { display: none; }
+            .nav-links, .guest-buttons, .user-section { display: none; }
             .mobile-menu-btn { display: block; }
             .main-content { padding: 16px; }
-            .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-            .stat-value { font-size: 18px; }
-            .filters-bar { flex-direction: column; align-items: stretch; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
             .search-input { width: 100%; }
         }
     </style>
@@ -347,17 +348,294 @@
 
         <div class="table-container">
             <table class="markets-table">
-                <thead><tr><th>Coin</th><th>Price</th><th>24h Change</th><th>Volume</th><th>Action</th></tr></thead>
-                <tbody id="marketsTableBody"><tr><td colspan="5" style="text-align:center; padding:40px;">Loading markets...</td></tr></tbody>
+                <thead>
+                    <tr>
+                        <th>Coin</th>
+                        <th>Price</th>
+                        <th>24h Change</th>
+                        <th>Volume</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="marketsTableBody">
+                    <tr><td colspan="5" style="text-align:center; padding:40px;">Loading markets...</td></tr>
+                </tbody>
             </table>
         </div>
         <div class="last-updated" id="lastUpdated">Last updated: --</div>
     </div>
 
-    <!-- Scripts - Load in correct order -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/markets.js"></script>
+    
+    <script>
+        let currentUser = null;
+        let allMarkets = [];
+        let currentCategory = 'all';
+        let searchTerm = '';
+        let priceUpdateInterval = null;
+
+        // Default market data (will be replaced by Supabase data)
+        const defaultMarkets = [
+            { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 78312.00, change: 2.34, volume: '32.5B', category: 'large' },
+            { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2297.32, change: 1.29, volume: '18.2B', category: 'large' },
+            { symbol: 'SOL', name: 'Solana', icon: '◎', price: 168.42, change: 5.23, volume: '4.8B', category: 'large' },
+            { symbol: 'XRP', name: 'Ripple', icon: 'X', price: 0.624, change: -0.45, volume: '1.2B', category: 'large' },
+            { symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð', price: 0.162, change: 8.91, volume: '892M', category: 'meme' },
+            { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 615.81, change: 0.21, volume: '2.1B', category: 'large' },
+            { symbol: 'ADA', name: 'Cardano', icon: 'A', price: 0.483, change: -1.23, volume: '456M', category: 'mid' },
+            { symbol: 'AVAX', name: 'Avalanche', icon: 'A', price: 42.15, change: 3.45, volume: '678M', category: 'mid' },
+            { symbol: 'MATIC', name: 'Polygon', icon: 'M', price: 0.89, change: -2.11, volume: '345M', category: 'mid' },
+            { symbol: 'SHIB', name: 'Shiba Inu', icon: '🐕', price: 0.000023, change: 4.56, volume: '234M', category: 'meme' },
+            { symbol: 'UNI', name: 'Uniswap', icon: 'U', price: 11.23, change: -0.89, volume: '167M', category: 'defi' },
+            { symbol: 'LINK', name: 'Chainlink', icon: 'L', price: 18.34, change: 1.56, volume: '234M', category: 'defi' }
+        ];
+
+        // Update navbar based on user state
+        function updateNavbar() {
+            const navLinks = document.getElementById('navLinks');
+            const rightNav = document.getElementById('rightNav');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            if (!navLinks) return;
+            
+            if (currentUser) {
+                const isAdmin = currentUser.email === 'ephremgojo@gmail.com';
+                const userName = currentUser.name || currentUser.email.split('@')[0];
+                
+                navLinks.innerHTML = `
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="markets.html" class="nav-link active">Markets</a>
+                    <a href="trades.html" class="nav-link">Trades</a>
+                    <a href="profile.html" class="nav-link">My Profile</a>
+                `;
+                
+                rightNav.innerHTML = `
+                    <div class="user-section">
+                        <div class="user-info">
+                            <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
+                            <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
+                        </div>
+                        ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
+                        <button class="logout-btn" onclick="logout()">Logout</button>
+                    </div>
+                `;
+                
+                mobileMenu.innerHTML = `
+                    <a href="index.html" class="mobile-nav-link">🏠 Home</a>
+                    <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
+                    <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+                    <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
+                    ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
+                    <button class="logout-btn" style="margin-top:12px;" onclick="logout()">Logout</button>
+                `;
+            } else {
+                navLinks.innerHTML = `
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="markets.html" class="nav-link active">Markets</a>
+                    <a href="trades.html" class="nav-link">Trades</a>
+                `;
+                
+                rightNav.innerHTML = `
+                    <div class="guest-buttons">
+                        <a href="login.html" class="btn-login">Login</a>
+                        <a href="login.html" class="btn-register">Register</a>
+                    </div>
+                `;
+                
+                mobileMenu.innerHTML = `
+                    <a href="index.html" class="mobile-nav-link">🏠 Home</a>
+                    <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
+                    <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+                    <a href="login.html" class="mobile-nav-link">🔐 Login</a>
+                    <a href="login.html" class="mobile-nav-link">📝 Register</a>
+                `;
+            }
+        }
+
+        // Format price
+        function formatPrice(price) {
+            if (!price) return '0.00';
+            if (price < 1) return price.toFixed(6);
+            return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Render markets table
+        function renderMarkets() {
+            let filtered = allMarkets.filter(m => currentCategory === 'all' || m.category === currentCategory);
+            if (searchTerm) {
+                filtered = filtered.filter(m => 
+                    m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                    m.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            }
+            
+            const tbody = document.getElementById('marketsTableBody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">No markets found</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = filtered.map(m => `
+                <tr>
+                    <td>
+                        <div class="coin-info">
+                            <span class="coin-icon">${m.icon || '📈'}</span>
+                            <div>
+                                <div class="coin-name">${m.name}</div>
+                                <div class="coin-symbol">${m.symbol}/USD</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>$${formatPrice(m.price)}</td>
+                    <td class="${m.change >= 0 ? 'positive' : 'negative'}">
+                        ${m.change >= 0 ? '▲' : '▼'} ${Math.abs(m.change)}%
+                    </td>
+                    <td>${m.volume || '—'}</td>
+                    <td>
+                        <button class="tradingview-btn" onclick="openTradingView('${m.symbol}')">TradingView</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Update market stats
+        function updateStats() {
+            const totalChange = allMarkets.reduce((sum, m) => sum + (m.change || 0), 0) / allMarkets.length;
+            const totalVolume = allMarkets.reduce((sum, m) => {
+                let vol = 0;
+                if (typeof m.volume === 'string') {
+                    if (m.volume.includes('B')) vol = parseFloat(m.volume);
+                    else if (m.volume.includes('M')) vol = parseFloat(m.volume) / 1000;
+                } else {
+                    vol = m.volume || 0;
+                }
+                return sum + vol;
+            }, 0);
+            
+            const btcMarket = allMarkets.find(m => m.symbol === 'BTC');
+            const btcPrice = btcMarket ? btcMarket.price : 78312;
+            
+            const marketCapEl = document.getElementById('totalMarketCap');
+            const volumeEl = document.getElementById('totalVolume');
+            const changeEl = document.getElementById('marketCapChange');
+            
+            if (marketCapEl) marketCapEl.innerHTML = `$${(btcPrice * 19.5 / 1e12).toFixed(2)}T`;
+            if (volumeEl) volumeEl.innerHTML = `$${totalVolume.toFixed(1)}B`;
+            if (changeEl) {
+                changeEl.innerHTML = `${totalChange >= 0 ? '+' : ''}${totalChange.toFixed(1)}%`;
+                changeEl.className = `stat-change ${totalChange >= 0 ? 'positive' : 'negative'}`;
+            }
+            
+            document.getElementById('lastUpdated').innerHTML = `Last updated: ${new Date().toLocaleTimeString()}`;
+        }
+
+        // Load markets from Supabase
+        async function loadMarkets() {
+            try {
+                if (typeof supabaseDB !== 'undefined' && supabaseDB.supabase) {
+                    const dbMarkets = await supabaseDB.getAllMarkets();
+                    if (dbMarkets && dbMarkets.length > 0) {
+                        allMarkets = dbMarkets;
+                    } else {
+                        allMarkets = [...defaultMarkets];
+                    }
+                } else {
+                    allMarkets = [...defaultMarkets];
+                }
+                renderMarkets();
+                updateStats();
+            } catch (error) {
+                console.error('Error loading markets:', error);
+                allMarkets = [...defaultMarkets];
+                renderMarkets();
+                updateStats();
+            }
+        }
+
+        // Start real-time price updates
+        function startPriceUpdates() {
+            priceUpdateInterval = setInterval(() => {
+                allMarkets = allMarkets.map(m => ({
+                    ...m,
+                    price: m.price * (1 + (Math.random() - 0.5) * 0.002),
+                    change: m.change + (Math.random() - 0.5) * 0.2
+                }));
+                renderMarkets();
+                updateStats();
+            }, 30000);
+        }
+
+        // Open TradingView chart page
+        function openTradingView(symbol) {
+            window.location.href = `trading-view.html?symbol=${symbol}`;
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Category filters
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentCategory = btn.dataset.category;
+                    renderMarkets();
+                });
+            });
+            
+            // Search input
+            const searchInput = document.getElementById('marketSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    searchTerm = e.target.value;
+                    renderMarkets();
+                });
+            }
+            
+            // Mobile menu
+            const mobileBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileBtn && mobileMenu) {
+                mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('show'));
+            }
+        }
+
+        // Initialize page
+        async function init() {
+            await new Promise(resolve => {
+                const check = setInterval(() => {
+                    if (typeof auth !== 'undefined') {
+                        clearInterval(check);
+                        resolve();
+                    }
+                }, 100);
+            });
+            
+            currentUser = auth.getUser();
+            updateNavbar();
+            await loadMarkets();
+            setupEventListeners();
+            startPriceUpdates();
+            
+            window.addEventListener('authStateChanged', (e) => {
+                currentUser = e.detail.user;
+                updateNavbar();
+            });
+        }
+
+        // Logout function
+        window.logout = function() {
+            if (typeof auth !== 'undefined' && auth.logout) {
+                auth.logout();
+            } else {
+                window.location.href = 'index.html';
+            }
+        };
+        
+        window.openTradingView = openTradingView;
+
+        init();
+    </script>
 </body>
 </html>
