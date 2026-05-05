@@ -225,7 +225,6 @@
             min-width: 300px;
         }
 
-        /* Content Header */
         .content-header {
             margin-bottom: 24px;
         }
@@ -239,7 +238,6 @@
             font-size: 14px;
         }
 
-        /* Cards */
         .card {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 20px;
@@ -259,7 +257,6 @@
             padding: 24px;
         }
 
-        /* Dashboard Stats */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -277,7 +274,6 @@
         .stat-value { font-size: 28px; font-weight: 700; }
         .positive { color: #00D897; }
 
-        /* Charts */
         .charts-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -297,22 +293,6 @@
         }
         .chart-container { height: 250px; }
 
-        /* Quick Actions */
-        .quick-actions {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 24px;
-        }
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-        .section-header h3 { font-size: 18px; font-weight: 600; }
         .action-buttons {
             display: flex;
             gap: 12px;
@@ -340,7 +320,6 @@
             color: #00D897;
         }
 
-        /* Form Styles */
         .form-group {
             margin-bottom: 20px;
         }
@@ -370,7 +349,6 @@
             width: 100%;
         }
 
-        /* KYC Badge */
         .kyc-badge {
             display: inline-block;
             padding: 4px 12px;
@@ -382,7 +360,6 @@
         .kyc-pending { background: rgba(255, 165, 2, 0.2); color: #FFA502; }
         .kyc-none { background: rgba(255, 71, 87, 0.2); color: #FF4757; }
 
-        /* Table */
         .trades-table {
             width: 100%;
             border-collapse: collapse;
@@ -398,7 +375,6 @@
             font-size: 12px;
         }
 
-        /* Danger Zone */
         .danger-zone {
             background: rgba(255, 71, 87, 0.1);
             border: 1px solid rgba(255, 71, 87, 0.2);
@@ -417,7 +393,6 @@
             cursor: pointer;
         }
 
-        /* Upload Area */
         .upload-area {
             border: 2px dashed rgba(255, 255, 255, 0.2);
             border-radius: 16px;
@@ -433,7 +408,6 @@
         }
         .file-input { display: none; }
 
-        /* Welcome Section */
         .welcome-section {
             background: linear-gradient(135deg, rgba(0, 216, 151, 0.1), rgba(0, 184, 160, 0.05));
             border-radius: 20px;
@@ -441,17 +415,9 @@
             margin-bottom: 24px;
             border: 1px solid rgba(0, 216, 151, 0.2);
         }
-        .welcome-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .welcome-subtitle {
-            color: #8B93A5;
-            font-size: 14px;
-        }
+        .welcome-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .welcome-subtitle { color: #8B93A5; font-size: 14px; }
 
-        /* Activity Item */
         .activity-item {
             display: flex;
             justify-content: space-between;
@@ -460,7 +426,6 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* Responsive */
         @media (max-width: 900px) {
             .profile-layout { flex-direction: column; }
             .profile-sidebar { width: 100%; }
@@ -537,11 +502,21 @@
                         <div class="chart-card"><div class="chart-title">Trade Distribution</div><div class="chart-container"><canvas id="distributionChart"></canvas></div></div>
                     </div>
 
-                    <div class="quick-actions">
-                        <div class="section-header"><h3>Quick Actions</h3><div class="action-buttons"><a href="deposit.html" class="action-btn deposit">💰 Deposit Funds</a><a href="withdraw.html" class="action-btn withdraw">💸 Withdraw Funds</a><a href="trades.html" class="action-btn trade">🚀 Start Trading</a></div></div>
+                    <div class="card">
+                        <div class="card-header"><h3>Quick Actions</h3></div>
+                        <div class="card-body">
+                            <div class="action-buttons">
+                                <a href="deposit.html" class="action-btn deposit">💰 Deposit Funds</a>
+                                <a href="withdraw.html" class="action-btn withdraw">💸 Withdraw Funds</a>
+                                <a href="trades.html" class="action-btn trade">🚀 Start Trading</a>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="card"><div class="card-header"><h3>Recent Activity</h3></div><div class="card-body"><div id="recentActivityList"><div style="text-align:center; padding:20px; color:#8B93A5;">Loading activities...</div></div></div></div>
+                    <div class="card">
+                        <div class="card-header"><h3>Recent Activity</h3></div>
+                        <div class="card-body"><div id="recentActivityList"><div style="text-align:center; padding:20px; color:#8B93A5;">Loading activities...</div></div></div>
+                    </div>
                 </div>
 
                 <!-- User Profile Tab -->
@@ -583,16 +558,427 @@
         </div>
     </div>
 
-    <!-- Scripts - Load in correct order -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/profile.js"></script>
     
     <script>
-        window.submitKYC = function() { if (window.profileManager) profileManager.submitKYC(); };
-        window.sendSupport = function() { if (window.profileManager) profileManager.sendSupport(); };
-        window.deleteAccount = function() { if (window.profileManager) profileManager.deleteAccount(); };
+        let currentUser = null;
+        let userTrades = [];
+        let userActivities = [];
+        let pnlChart = null;
+        let distributionChart = null;
+
+        // Update navbar based on user state
+        function updateNavbar() {
+            const navLinks = document.getElementById('navLinks');
+            const rightNav = document.getElementById('rightNav');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            if (!navLinks) return;
+            
+            if (currentUser) {
+                const isAdmin = currentUser.email === 'ephremgojo@gmail.com';
+                const userName = currentUser.name || currentUser.email.split('@')[0];
+                
+                navLinks.innerHTML = `
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="markets.html" class="nav-link">Markets</a>
+                    <a href="trades.html" class="nav-link">Trades</a>
+                    <a href="profile.html" class="nav-link active">My Profile</a>
+                `;
+                
+                rightNav.innerHTML = `
+                    <div class="user-section">
+                        <div class="user-info">
+                            <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
+                            <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
+                        </div>
+                        ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
+                        <button class="logout-btn" onclick="logout()">Logout</button>
+                    </div>
+                `;
+                
+                mobileMenu.innerHTML = `
+                    <a href="index.html" class="mobile-nav-link">🏠 Home</a>
+                    <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
+                    <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+                    <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
+                    ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
+                    <button class="logout-btn" style="margin-top:12px;" onclick="logout()">Logout</button>
+                `;
+            } else {
+                // Guest users should not be on profile page, redirect to index
+                window.location.href = 'index.html';
+                return;
+            }
+        }
+
+        // Load user data
+        async function loadUserData() {
+            const displayName = document.getElementById('displayName');
+            const displayEmail = document.getElementById('displayEmail');
+            const displayMemberSince = document.getElementById('displayMemberSince');
+            const profileBalance = document.getElementById('profileBalance');
+            const displayKyc = document.getElementById('displayKyc');
+            const updateFullName = document.getElementById('updateFullName');
+            const updatePhone = document.getElementById('updatePhone');
+            const updateCountry = document.getElementById('updateCountry');
+            const kycFullName = document.getElementById('kycFullName');
+            
+            if (displayName) displayName.textContent = currentUser.name || 'N/A';
+            if (displayEmail) displayEmail.textContent = currentUser.email;
+            if (displayMemberSince) {
+                displayMemberSince.textContent = currentUser.created_at 
+                    ? new Date(currentUser.created_at).toLocaleDateString() 
+                    : 'N/A';
+            }
+            if (profileBalance) profileBalance.textContent = `$${(currentUser.balance || 0).toLocaleString()}`;
+            
+            if (displayKyc) {
+                const kycStatus = currentUser.kyc_status || 'pending';
+                displayKyc.textContent = kycStatus === 'verified' ? 'Verified ✓' : (kycStatus === 'pending' ? 'Pending Review' : 'Not Verified');
+                displayKyc.className = `kyc-badge kyc-${kycStatus === 'verified' ? 'verified' : (kycStatus === 'pending' ? 'pending' : 'none')}`;
+            }
+            
+            if (updateFullName) updateFullName.value = currentUser.name || '';
+            if (updatePhone) updatePhone.value = currentUser.phone || '';
+            if (updateCountry) updateCountry.value = currentUser.country || '';
+            if (kycFullName) kycFullName.value = currentUser.name || '';
+        }
+
+        // Load trades
+        async function loadTrades() {
+            if (typeof supabaseDB !== 'undefined') {
+                userTrades = await supabaseDB.getUserTrades(currentUser.id);
+                userActivities = await supabaseDB.getUserActivities(currentUser.id, 10);
+            }
+            
+            updateDashboardStats();
+            renderTradeHistory();
+            renderRecentActivity();
+            initCharts();
+        }
+
+        function updateDashboardStats() {
+            const dashBalance = document.getElementById('dashBalance');
+            const dashTotalTrades = document.getElementById('dashTotalTrades');
+            const dashWinRate = document.getElementById('dashWinRate');
+            const dashPnL = document.getElementById('dashPnL');
+            const statTotalTrades = document.getElementById('statTotalTrades');
+            const statWinRate = document.getElementById('statWinRate');
+            const statTotalVolume = document.getElementById('statTotalVolume');
+            
+            const totalTrades = userTrades.length;
+            const closedTrades = userTrades.filter(t => t.status === 'closed');
+            const winningTrades = closedTrades.filter(t => (t.pnl || 0) > 0).length;
+            const winRate = closedTrades.length > 0 ? (winningTrades / closedTrades.length * 100).toFixed(1) : 0;
+            const totalPnL = userTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+            const totalVolume = userTrades.reduce((sum, t) => sum + (t.amount || 0), 0);
+            const balance = currentUser.balance || 0;
+            
+            if (dashBalance) dashBalance.innerHTML = `$${balance.toLocaleString()}`;
+            if (dashTotalTrades) dashTotalTrades.textContent = totalTrades;
+            if (dashWinRate) dashWinRate.textContent = `${winRate}%`;
+            if (dashPnL) dashPnL.innerHTML = `<span class="${totalPnL >= 0 ? 'positive' : 'negative'}">${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}</span>`;
+            if (statTotalTrades) statTotalTrades.textContent = totalTrades;
+            if (statWinRate) statWinRate.textContent = `${winRate}%`;
+            if (statTotalVolume) statTotalVolume.textContent = `$${totalVolume.toLocaleString()}`;
+        }
+
+        function renderTradeHistory() {
+            const tbody = document.getElementById('tradeHistoryBody');
+            if (!tbody) return;
+            
+            if (userTrades.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No trades yet</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = userTrades.slice().reverse().map(t => `
+                <tr>
+                    <td>${new Date(t.created_at).toLocaleDateString()}</td>
+                    <td>${t.symbol}/USD</td>
+                    <td class="${t.type === 'buy' ? 'positive' : 'negative'}">${t.type?.toUpperCase() || 'N/A'}</td>
+                    <td>$${(t.amount || 0).toLocaleString()}</td>
+                    <td class="${(t.pnl || 0) >= 0 ? 'positive' : 'negative'}">${(t.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(t.pnl || 0).toLocaleString()}</td>
+                    <td><span class="kyc-badge ${t.status === 'open' ? 'kyc-pending' : 'kyc-verified'}">${t.status || 'N/A'}</span></td>
+            </tr>
+            `).join('');
+        }
+
+        function renderRecentActivity() {
+            const container = document.getElementById('recentActivityList');
+            if (!container) return;
+            
+            if (userActivities.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#8B93A5;">No recent activity. Start trading!</div>';
+                return;
+            }
+            
+            container.innerHTML = userActivities.slice(0, 5).map(activity => `
+                <div class="activity-item">
+                    <div><strong>${activity.title || activity.type}</strong><br><small style="color:#8B93A5">${activity.description || ''}</small></div>
+                    <div><small>${formatDate(activity.created_at)}</small></div>
+                </div>
+            `).join('');
+        }
+
+        function initCharts() {
+            const pnlCtx = document.getElementById('pnlChart')?.getContext('2d');
+            const distCtx = document.getElementById('distributionChart')?.getContext('2d');
+            
+            if (pnlCtx) {
+                const last7Days = [];
+                const dailyPnL = [];
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    last7Days.push(date.toLocaleDateString());
+                    const dayPnL = userTrades.filter(t => {
+                        const tradeDate = new Date(t.created_at);
+                        return tradeDate.toLocaleDateString() === date.toLocaleDateString() && t.status === 'closed';
+                    }).reduce((sum, t) => sum + (t.pnl || 0), 0);
+                    dailyPnL.push(dayPnL);
+                }
+                pnlChart = new Chart(pnlCtx, {
+                    type: 'line',
+                    data: { labels: last7Days, datasets: [{ label: 'Daily P&L', data: dailyPnL, borderColor: '#00D897', backgroundColor: 'rgba(0,216,151,0.1)', borderWidth: 2, fill: true, tension: 0.4 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#FFFFFF' } } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } }, y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } } } }
+                });
+            }
+            
+            if (distCtx) {
+                const closedTrades = userTrades.filter(t => t.status === 'closed');
+                const wins = closedTrades.filter(t => (t.pnl || 0) > 0).length;
+                const losses = closedTrades.filter(t => (t.pnl || 0) <= 0).length;
+                distributionChart = new Chart(distCtx, {
+                    type: 'doughnut',
+                    data: { labels: ['Winning Trades', 'Losing Trades'], datasets: [{ data: [wins, losses], backgroundColor: ['#00D897', '#FF4757'], borderWidth: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#FFFFFF' } } } }
+                });
+            }
+        }
+
+        async function updateProfile(e) {
+            e.preventDefault();
+            
+            const fullName = document.getElementById('updateFullName').value;
+            const phone = document.getElementById('updatePhone').value;
+            const country = document.getElementById('updateCountry').value;
+            const currentPass = document.getElementById('currentPassword').value;
+            const newPass = document.getElementById('newPassword').value;
+            const confirmPass = document.getElementById('confirmNewPassword').value;
+            
+            if (newPass && newPass !== confirmPass) {
+                showNotification('New passwords do not match', 'error');
+                return;
+            }
+            if (newPass && newPass.length < 8) {
+                showNotification('Password must be at least 8 characters', 'error');
+                return;
+            }
+            if (currentPass && currentPass !== currentUser.password) {
+                showNotification('Current password is incorrect', 'error');
+                return;
+            }
+            
+            const updates = { name: fullName, phone: phone, country: country };
+            if (newPass) updates.password = newPass;
+            
+            if (typeof supabaseDB !== 'undefined') {
+                await supabaseDB.updateUser(currentUser.id, updates);
+                currentUser = { ...currentUser, ...updates };
+                sessionStorage.setItem('pocket_user_id', currentUser.id);
+            }
+            
+            showNotification('Profile updated successfully!', 'success');
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmNewPassword').value = '';
+            loadUserData();
+            updateNavbar();
+        }
+
+        async function submitKYC() {
+            const fullName = document.getElementById('kycFullName').value;
+            const dob = document.getElementById('kycDob').value;
+            const idType = document.getElementById('kycIdType').value;
+            
+            if (!fullName || !dob || !idType) {
+                showNotification('Please fill all fields', 'error');
+                return;
+            }
+            
+            if (typeof supabaseDB !== 'undefined') {
+                await supabaseDB.updateUserKYCStatus(currentUser.id, 'pending');
+                await supabaseDB.createKYCRequest({
+                    id: Date.now(),
+                    user_id: currentUser.id,
+                    user_email: currentUser.email,
+                    full_name: fullName,
+                    dob: dob,
+                    id_type: idType,
+                    status: 'pending',
+                    date: new Date().toISOString()
+                });
+                await supabaseDB.createUserActivity({
+                    id: Date.now(),
+                    user_id: currentUser.id,
+                    type: 'kyc',
+                    title: 'KYC Submitted',
+                    description: 'Identity verification documents submitted',
+                    created_at: new Date().toISOString()
+                });
+            }
+            
+            currentUser.kyc_status = 'pending';
+            loadUserData();
+            
+            const kycForm = document.getElementById('kycForm');
+            const kycPendingMessage = document.getElementById('kycPendingMessage');
+            if (kycForm) kycForm.style.display = 'none';
+            if (kycPendingMessage) kycPendingMessage.style.display = 'block';
+            
+            showNotification('KYC documents submitted for review!', 'success');
+        }
+
+        async function sendSupport() {
+            const subject = document.getElementById('supportSubject').value;
+            const message = document.getElementById('supportMessage').value;
+            
+            if (!subject || !message) {
+                showNotification('Please fill all fields', 'error');
+                return;
+            }
+            
+            if (typeof supabaseDB !== 'undefined') {
+                await supabaseDB.createUserActivity({
+                    id: Date.now(),
+                    user_id: currentUser.id,
+                    type: 'support',
+                    title: 'Support Ticket',
+                    description: `Subject: ${subject}`,
+                    created_at: new Date().toISOString()
+                });
+            }
+            
+            showNotification(`Support ticket submitted!\nSubject: ${subject}\n\nWe will respond within 24 hours.`, 'success');
+            document.getElementById('supportSubject').value = '';
+            document.getElementById('supportMessage').value = '';
+        }
+
+        async function deleteAccount() {
+            if (!confirm('Are you sure you want to delete your account? This cannot be undone!')) return;
+            
+            if (typeof supabaseDB !== 'undefined') {
+                for (const trade of userTrades) await supabaseDB.delete('trades', trade.id);
+                for (const activity of userActivities) await supabaseDB.delete('user_activities', activity.id);
+                await supabaseDB.deleteUser(currentUser.id);
+            }
+            
+            sessionStorage.removeItem('pocket_user_id');
+            localStorage.removeItem('pocket_user_id');
+            showNotification('Account deleted successfully', 'success');
+            setTimeout(() => window.location.href = 'index.html', 2000);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins} minutes ago`;
+            if (diffHours < 24) return `${diffHours} hours ago`;
+            if (diffDays < 7) return `${diffDays} days ago`;
+            return date.toLocaleDateString();
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'error' ? '#FF4757' : '#00D897'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 12px;
+                z-index: 10000;
+                animation: slideIn 0.3s ease-out;
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        function setupEventListeners() {
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    const tab = item.dataset.tab;
+                    document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+                    if (tab === 'dashboard') document.getElementById('dashboardTab').style.display = 'block';
+                    if (tab === 'profile') document.getElementById('profileTab').style.display = 'block';
+                    if (tab === 'history') document.getElementById('historyTab').style.display = 'block';
+                    if (tab === 'kyc') document.getElementById('kycTab').style.display = 'block';
+                    if (tab === 'update') document.getElementById('updateTab').style.display = 'block';
+                    if (tab === 'support') document.getElementById('supportTab').style.display = 'block';
+                });
+            });
+            
+            const updateForm = document.getElementById('updateProfileForm');
+            if (updateForm) updateForm.addEventListener('submit', (e) => updateProfile(e));
+            
+            const mobileBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileBtn && mobileMenu) {
+                mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('show'));
+            }
+        }
+
+        async function init() {
+            await new Promise(resolve => {
+                const check = setInterval(() => {
+                    if (typeof auth !== 'undefined') {
+                        clearInterval(check);
+                        resolve();
+                    }
+                }, 100);
+            });
+            
+            currentUser = auth.getUser();
+            
+            if (!currentUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            updateNavbar();
+            await loadUserData();
+            await loadTrades();
+            setupEventListeners();
+            
+            window.addEventListener('authStateChanged', (e) => {
+                currentUser = e.detail.user;
+                updateNavbar();
+            });
+        }
+
+        window.submitKYC = submitKYC;
+        window.sendSupport = sendSupport;
+        window.deleteAccount = deleteAccount;
+        window.logout = function() {
+            if (typeof auth !== 'undefined' && auth.logout) auth.logout();
+            else window.location.href = 'index.html';
+        };
+
+        init();
     </script>
 </body>
 </html>
