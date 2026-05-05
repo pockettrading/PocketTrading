@@ -1,18 +1,21 @@
 // Authentication and user management - PocketTrading
 // File: js/auth.js
-// Pure Supabase - No localStorage
+// Pure Supabase - No localStorage for user data
 // Admin email: ephremgojo@gmail.com (ONLY)
 
 class AuthManager {
     constructor() {
         this.currentUser = null;
+        this.initialized = false;
         this.init();
     }
 
     async init() {
         await this.waitForSupabase();
-        await this.checkExistingSession();
-        this.updateNavbarOnAllPages();
+        await this.restoreSession();
+        this.initialized = true;
+        this.dispatchAuthEvent();
+        console.log('✅ AuthManager initialized, user:', this.currentUser?.email || 'none');
     }
 
     async waitForSupabase() {
@@ -26,34 +29,71 @@ class AuthManager {
                         resolve();
                     }
                 }, 100);
+                // Timeout after 5 seconds
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+                    console.warn('Supabase timeout, continuing anyway');
+                    resolve();
+                }, 5000);
             }
         });
     }
 
-    async checkExistingSession() {
+    async restoreSession() {
+        // Try to get user ID from storage
         const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
         
-        if (userId) {
-            try {
-                const user = await supabaseDB.getUserById(parseInt(userId));
-                if (user) {
-                    this.currentUser = user;
-                    this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
-                    console.log('✅ Session restored for:', this.currentUser.email);
-                } else {
-                    this.logout();
-                }
-            } catch (error) {
-                console.error('Error restoring session:', error);
-                this.logout();
+        if (!userId) {
+            console.log('No session found');
+            return;
+        }
+        
+        try {
+            const user = await supabaseDB.getUserById(parseInt(userId));
+            if (user) {
+                this.currentUser = user;
+                this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
+                console.log('✅ Session restored for:', this.currentUser.email);
+            } else {
+                // User not found in database, clear session
+                this.clearSession();
             }
+        } catch (error) {
+            console.error('Error restoring session:', error);
+            this.clearSession();
         }
     }
 
-    updateNavbarOnAllPages() {
-        // Dispatch a custom event that all pages can listen to
-        const event = new CustomEvent('authStateChanged', { detail: { user: this.currentUser } });
+    clearSession() {
+        sessionStorage.removeItem('pocket_user_id');
+        localStorage.removeItem('pocket_user_id');
+        this.currentUser = null;
+    }
+
+    dispatchAuthEvent() {
+        const event = new CustomEvent('authStateChanged', { 
+            detail: { user: this.currentUser, isLoggedIn: !!this.currentUser }
+        });
         window.dispatchEvent(event);
+    }
+
+    async waitForReady() {
+        return new Promise((resolve) => {
+            if (this.initialized) {
+                resolve();
+            } else {
+                const check = setInterval(() => {
+                    if (this.initialized) {
+                        clearInterval(check);
+                        resolve();
+                    }
+                }, 50);
+                setTimeout(() => {
+                    clearInterval(check);
+                    resolve();
+                }, 3000);
+            }
+        });
     }
 
     async login(email, password, rememberMe = false) {
@@ -69,7 +109,7 @@ class AuthManager {
                 // Set admin flag
                 user.isAdmin = (user.email === 'ephremgojo@gmail.com');
                 
-                // Store session
+                // Store session - ONLY THE USER ID, not the whole user object
                 if (rememberMe) {
                     localStorage.setItem('pocket_user_id', user.id);
                     sessionStorage.removeItem('pocket_user_id');
@@ -79,7 +119,7 @@ class AuthManager {
                 }
                 
                 this.currentUser = user;
-                this.updateNavbarOnAllPages();
+                this.dispatchAuthEvent();
                 this.showNotification(`Welcome back, ${user.name || user.email.split('@')[0]}!`, 'success');
                 return true;
             } else {
@@ -134,8 +174,9 @@ class AuthManager {
             // Auto-login after registration
             newUser.isAdmin = isAdmin;
             sessionStorage.setItem('pocket_user_id', newUser.id);
+            localStorage.removeItem('pocket_user_id');
             this.currentUser = newUser;
-            this.updateNavbarOnAllPages();
+            this.dispatchAuthEvent();
             
             const roleMsg = isAdmin ? ' (Administrator)' : '';
             this.showNotification(`Welcome ${formattedName}!${roleMsg} Account created successfully.`, 'success');
@@ -186,10 +227,8 @@ class AuthManager {
     }
 
     logout() {
-        sessionStorage.removeItem('pocket_user_id');
-        localStorage.removeItem('pocket_user_id');
-        this.currentUser = null;
-        this.updateNavbarOnAllPages();
+        this.clearSession();
+        this.dispatchAuthEvent();
         this.showNotification('Logged out successfully', 'info');
         window.location.href = 'index.html';
     }
