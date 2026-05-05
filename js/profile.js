@@ -9,24 +9,23 @@ class ProfileManager {
         this.userActivities = [];
         this.pnlChart = null;
         this.distributionChart = null;
-        this.authReady = false;
         this.init();
     }
 
     async init() {
-        // First, wait for auth to be available
+        // Wait for auth to be ready
         await this.waitForAuth();
         
-        // Then wait for session to be restored (or timeout)
-        const user = await this.waitForUserSession();
+        // Get user - this will wait if session is still restoring
+        this.currentUser = await this.getUserWithRetry();
         
-        if (!user) {
-            // Only redirect if we're sure no user is logged in
+        if (!this.currentUser) {
+            console.log('No user found, redirecting to login');
             window.location.href = 'login.html';
             return;
         }
         
-        this.currentUser = user;
+        console.log('Profile page loaded for user:', this.currentUser.email);
         
         await this.loadUserData();
         await this.loadUserTrades();
@@ -51,7 +50,6 @@ class ProfileManager {
                     resolve();
                 }
             }, 50);
-            // Timeout after 5 seconds
             setTimeout(() => {
                 clearInterval(check);
                 resolve();
@@ -59,54 +57,39 @@ class ProfileManager {
         });
     }
 
-    async waitForUserSession() {
-        return new Promise((resolve) => {
-            // Check if user already exists in auth
-            if (typeof auth !== 'undefined' && auth.getUser() !== null) {
-                resolve(auth.getUser());
-                return;
+    async getUserWithRetry(maxRetries = 30, delay = 100) {
+        // First try to get from auth
+        let user = null;
+        
+        for (let i = 0; i < maxRetries; i++) {
+            if (typeof auth !== 'undefined') {
+                user = auth.getUser();
+                if (user) {
+                    return user;
+                }
             }
             
-            // Check sessionStorage directly
+            // Also check sessionStorage directly as fallback
             const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
-            if (userId) {
-                // Fetch user from Supabase
-                supabaseDB.getUserById(parseInt(userId)).then(user => {
+            if (userId && !user) {
+                try {
+                    user = await supabaseDB.getUserById(parseInt(userId));
                     if (user) {
-                        // Also update auth if possible
+                        // Update auth if possible
                         if (typeof auth !== 'undefined') {
                             auth.currentUser = user;
                         }
-                        resolve(user);
-                    } else {
-                        resolve(null);
+                        return user;
                     }
-                }).catch(() => resolve(null));
-                return;
+                } catch (e) {
+                    console.error('Error fetching user by ID:', e);
+                }
             }
             
-            // Wait for auth to restore session
-            let attempts = 0;
-            const maxAttempts = 50; // 5 seconds max (50 * 100ms = 5s)
-            const check = setInterval(() => {
-                attempts++;
-                if (typeof auth !== 'undefined' && auth.getUser() !== null) {
-                    clearInterval(check);
-                    resolve(auth.getUser());
-                } else if (attempts >= maxAttempts) {
-                    clearInterval(check);
-                    // Final check of sessionStorage
-                    const storedId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
-                    if (storedId) {
-                        supabaseDB.getUserById(parseInt(storedId)).then(user => {
-                            resolve(user || null);
-                        }).catch(() => resolve(null));
-                    } else {
-                        resolve(null);
-                    }
-                }
-            }, 100);
-        });
+            await new Promise(r => setTimeout(r, delay));
+        }
+        
+        return null;
     }
 
     async loadUserData() {
@@ -115,6 +98,7 @@ class ProfileManager {
             if (userData) {
                 this.currentUser = { ...this.currentUser, ...userData };
                 this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
+                // Update session storage
                 sessionStorage.setItem('pocket_user_id', this.currentUser.id);
             }
         } catch (error) {
