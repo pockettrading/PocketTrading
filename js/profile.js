@@ -14,8 +14,26 @@ class ProfileManager {
 
     async init() {
         await this.waitForDependencies();
+        await this.waitForSession();
         
         this.currentUser = auth.getUser();
+        
+        // Double check with sessionStorage if auth returns null
+        if (!this.currentUser) {
+            const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
+            if (userId) {
+                try {
+                    const user = await supabaseDB.getUserById(parseInt(userId));
+                    if (user) {
+                        this.currentUser = user;
+                        this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
+                        if (typeof auth !== 'undefined') auth.currentUser = user;
+                    }
+                } catch (e) {
+                    console.error('Error fetching user:', e);
+                }
+            }
+        }
         
         if (!this.currentUser) {
             window.location.href = 'login.html';
@@ -44,12 +62,46 @@ class ProfileManager {
         });
     }
 
+    async waitForSession() {
+        return new Promise((resolve) => {
+            // Check if already have user
+            if (typeof auth !== 'undefined' && auth.getUser() !== null) {
+                resolve();
+                return;
+            }
+            
+            // Check sessionStorage directly
+            const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
+            if (userId) {
+                resolve();
+                return;
+            }
+            
+            // Wait for auth to restore session
+            const check = setInterval(() => {
+                if (typeof auth !== 'undefined' && auth.getUser() !== null) {
+                    clearInterval(check);
+                    resolve();
+                }
+            }, 100);
+            
+            setTimeout(() => {
+                clearInterval(check);
+                resolve();
+            }, 2000);
+        });
+    }
+
     async loadUserData() {
         try {
+            // Refresh user data from Supabase
             const userData = await supabaseDB.getUserById(this.currentUser.id);
             if (userData) {
                 this.currentUser = { ...this.currentUser, ...userData };
                 this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
+                
+                // Update session storage with latest data
+                sessionStorage.setItem('pocket_user_id', this.currentUser.id);
             }
         } catch (error) {
             console.error('Error loading user data:', error);
@@ -203,7 +255,6 @@ class ProfileManager {
         container.innerHTML = this.userActivities.slice(0, 5).map(activity => `
             <div class="activity-item">
                 <div><strong>${activity.title || activity.type}</strong><br><small style="color:#8B93A5">${activity.description || ''}</small></div>
-                <div class="${activity.type === 'trade_win' ? 'positive' : (activity.type === 'trade_loss' ? 'negative' : '')}"></div>
                 <div><small>${this.formatDate(activity.created_at)}</small></div>
             </div>
         `).join('');
@@ -214,7 +265,7 @@ class ProfileManager {
         if (!tbody) return;
         
         if (this.userTrades.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No trades yet</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No trades yet</td></tr>'；
             return;
         }
         
@@ -226,7 +277,7 @@ class ProfileManager {
                 <td>$${(trade.amount || 0).toLocaleString()}</td>
                 <td class="${(trade.pnl || 0) >= 0 ? 'positive' : 'negative'}">${(trade.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(trade.pnl || 0).toLocaleString()}</td>
                 <td><span class="kyc-badge ${trade.status === 'open' ? 'kyc-pending' : 'kyc-verified'}">${trade.status || 'N/A'}</span></td>
-            </tr>
+             </>
         `).join('');
     }
 
@@ -234,7 +285,7 @@ class ProfileManager {
         const pnlCtx = document.getElementById('pnlChart')?.getContext('2d');
         const distCtx = document.getElementById('distributionChart')?.getContext('2d');
         
-        if (pnlCtx) {
+        if (pnlCtx && this.userTrades.length > 0) {
             const last7Days = [];
             const dailyPnL = [];
             for (let i = 6; i >= 0; i--) {
@@ -275,7 +326,7 @@ class ProfileManager {
             });
         }
         
-        if (distCtx) {
+        if (distCtx && this.userTrades.length > 0) {
             const closedTrades = this.userTrades.filter(t => t.status === 'closed');
             const wins = closedTrades.filter(t => (t.pnl || 0) > 0).length;
             const losses = closedTrades.filter(t => (t.pnl || 0) <= 0).length;
@@ -334,6 +385,9 @@ class ProfileManager {
         try {
             await supabaseDB.updateUser(this.currentUser.id, updates);
             this.currentUser = { ...this.currentUser, ...updates };
+            
+            // Update session storage
+            sessionStorage.setItem('pocket_user_id', this.currentUser.id);
             
             this.showNotification('Profile updated successfully!', 'success');
             
@@ -517,7 +571,21 @@ class ProfileManager {
         if (typeof auth !== 'undefined' && auth.showNotification) {
             auth.showNotification(message, type);
         } else {
-            alert(message);
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'error' ? '#FF4757' : '#00D897'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 12px;
+                z-index: 10000;
+                animation: slideIn 0.3s ease-out;
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
         }
     }
 }
