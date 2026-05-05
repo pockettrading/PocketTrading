@@ -9,36 +9,24 @@ class ProfileManager {
         this.userActivities = [];
         this.pnlChart = null;
         this.distributionChart = null;
+        this.authReady = false;
         this.init();
     }
 
     async init() {
-        await this.waitForDependencies();
-        await this.waitForSession();
+        // First, wait for auth to be available
+        await this.waitForAuth();
         
-        this.currentUser = auth.getUser();
+        // Then wait for session to be restored (or timeout)
+        const user = await this.waitForUserSession();
         
-        // Double check with sessionStorage if auth returns null
-        if (!this.currentUser) {
-            const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
-            if (userId) {
-                try {
-                    const user = await supabaseDB.getUserById(parseInt(userId));
-                    if (user) {
-                        this.currentUser = user;
-                        this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
-                        if (typeof auth !== 'undefined') auth.currentUser = user;
-                    }
-                } catch (e) {
-                    console.error('Error fetching user:', e);
-                }
-            }
-        }
-        
-        if (!this.currentUser) {
+        if (!user) {
+            // Only redirect if we're sure no user is logged in
             window.location.href = 'login.html';
             return;
         }
+        
+        this.currentUser = user;
         
         await this.loadUserData();
         await this.loadUserTrades();
@@ -51,56 +39,82 @@ class ProfileManager {
         this.setupEventListeners();
     }
 
-    async waitForDependencies() {
+    async waitForAuth() {
         return new Promise((resolve) => {
+            if (typeof auth !== 'undefined') {
+                resolve();
+                return;
+            }
             const check = setInterval(() => {
-                if (typeof auth !== 'undefined' && typeof supabaseDB !== 'undefined') {
+                if (typeof auth !== 'undefined') {
                     clearInterval(check);
                     resolve();
                 }
-            }, 100);
+            }, 50);
+            // Timeout after 5 seconds
+            setTimeout(() => {
+                clearInterval(check);
+                resolve();
+            }, 5000);
         });
     }
 
-    async waitForSession() {
+    async waitForUserSession() {
         return new Promise((resolve) => {
-            // Check if already have user
+            // Check if user already exists in auth
             if (typeof auth !== 'undefined' && auth.getUser() !== null) {
-                resolve();
+                resolve(auth.getUser());
                 return;
             }
             
             // Check sessionStorage directly
             const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
             if (userId) {
-                resolve();
+                // Fetch user from Supabase
+                supabaseDB.getUserById(parseInt(userId)).then(user => {
+                    if (user) {
+                        // Also update auth if possible
+                        if (typeof auth !== 'undefined') {
+                            auth.currentUser = user;
+                        }
+                        resolve(user);
+                    } else {
+                        resolve(null);
+                    }
+                }).catch(() => resolve(null));
                 return;
             }
             
             // Wait for auth to restore session
+            let attempts = 0;
+            const maxAttempts = 50; // 5 seconds max (50 * 100ms = 5s)
             const check = setInterval(() => {
+                attempts++;
                 if (typeof auth !== 'undefined' && auth.getUser() !== null) {
                     clearInterval(check);
-                    resolve();
+                    resolve(auth.getUser());
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(check);
+                    // Final check of sessionStorage
+                    const storedId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
+                    if (storedId) {
+                        supabaseDB.getUserById(parseInt(storedId)).then(user => {
+                            resolve(user || null);
+                        }).catch(() => resolve(null));
+                    } else {
+                        resolve(null);
+                    }
                 }
             }, 100);
-            
-            setTimeout(() => {
-                clearInterval(check);
-                resolve();
-            }, 2000);
         });
     }
 
     async loadUserData() {
         try {
-            // Refresh user data from Supabase
             const userData = await supabaseDB.getUserById(this.currentUser.id);
             if (userData) {
                 this.currentUser = { ...this.currentUser, ...userData };
                 this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
-                
-                // Update session storage with latest data
                 sessionStorage.setItem('pocket_user_id', this.currentUser.id);
             }
         } catch (error) {
@@ -167,7 +181,6 @@ class ProfileManager {
             `;
         }
         
-        // Update welcome message
         const welcomeMsg = document.getElementById('welcomeMessage');
         if (welcomeMsg) {
             welcomeMsg.innerHTML = `Welcome back, ${userName}! 👋`;
@@ -175,7 +188,6 @@ class ProfileManager {
     }
 
     updateUI() {
-        // Update profile display
         const displayName = document.getElementById('displayName');
         const displayEmail = document.getElementById('displayEmail');
         const displayMemberSince = document.getElementById('displayMemberSince');
@@ -197,7 +209,6 @@ class ProfileManager {
             displayKyc.className = `kyc-badge kyc-${kycStatus === 'verified' ? 'verified' : (kycStatus === 'pending' ? 'pending' : 'none')}`;
         }
         
-        // Update form fields
         const updateFullName = document.getElementById('updateFullName');
         const updatePhone = document.getElementById('updatePhone');
         const updateCountry = document.getElementById('updateCountry');
@@ -210,7 +221,6 @@ class ProfileManager {
     }
 
     renderDashboard() {
-        // Update dashboard stats
         const dashBalance = document.getElementById('dashBalance');
         const dashTotalTrades = document.getElementById('dashTotalTrades');
         const dashWinRate = document.getElementById('dashWinRate');
@@ -229,7 +239,6 @@ class ProfileManager {
             dashPnL.innerHTML = `<span class="${totalPnL >= 0 ? 'positive' : 'negative'}">${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}</span>`;
         }
         
-        // Update profile stats
         const statTotalTrades = document.getElementById('statTotalTrades');
         const statWinRate = document.getElementById('statWinRate');
         const statTotalVolume = document.getElementById('statTotalVolume');
@@ -239,7 +248,6 @@ class ProfileManager {
         if (statWinRate) statWinRate.textContent = `${winRate}%`;
         if (statTotalVolume) statTotalVolume.textContent = `$${totalVolume.toLocaleString()}`;
         
-        // Render recent activity
         this.renderRecentActivity();
     }
 
@@ -265,7 +273,7 @@ class ProfileManager {
         if (!tbody) return;
         
         if (this.userTrades.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No trades yet</td></tr>'；
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No trades yet</td></tr>';
             return;
         }
         
@@ -277,7 +285,7 @@ class ProfileManager {
                 <td>$${(trade.amount || 0).toLocaleString()}</td>
                 <td class="${(trade.pnl || 0) >= 0 ? 'positive' : 'negative'}">${(trade.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(trade.pnl || 0).toLocaleString()}</td>
                 <td><span class="kyc-badge ${trade.status === 'open' ? 'kyc-pending' : 'kyc-verified'}">${trade.status || 'N/A'}</span></td>
-             </>
+            </tr>
         `).join('');
     }
 
@@ -285,14 +293,13 @@ class ProfileManager {
         const pnlCtx = document.getElementById('pnlChart')?.getContext('2d');
         const distCtx = document.getElementById('distributionChart')?.getContext('2d');
         
-        if (pnlCtx && this.userTrades.length > 0) {
+        if (pnlCtx) {
             const last7Days = [];
             const dailyPnL = [];
             for (let i = 6; i >= 0; i--) {
                 const date = new Date();
                 date.setDate(date.getDate() - i);
                 last7Days.push(date.toLocaleDateString());
-                
                 const dayPnL = this.userTrades.filter(t => {
                     const tradeDate = new Date(t.created_at);
                     return tradeDate.toLocaleDateString() === date.toLocaleDateString() && t.status === 'closed';
@@ -300,6 +307,7 @@ class ProfileManager {
                 dailyPnL.push(dayPnL);
             }
             
+            if (this.pnlChart) this.pnlChart.destroy();
             this.pnlChart = new Chart(pnlCtx, {
                 type: 'line',
                 data: {
@@ -326,11 +334,12 @@ class ProfileManager {
             });
         }
         
-        if (distCtx && this.userTrades.length > 0) {
+        if (distCtx) {
             const closedTrades = this.userTrades.filter(t => t.status === 'closed');
             const wins = closedTrades.filter(t => (t.pnl || 0) > 0).length;
             const losses = closedTrades.filter(t => (t.pnl || 0) <= 0).length;
             
+            if (this.distributionChart) this.distributionChart.destroy();
             this.distributionChart = new Chart(distCtx, {
                 type: 'doughnut',
                 data: {
@@ -379,27 +388,20 @@ class ProfileManager {
             country: country,
             updated_at: new Date().toISOString()
         };
-        
         if (newPass) updates.password = newPass;
         
         try {
             await supabaseDB.updateUser(this.currentUser.id, updates);
             this.currentUser = { ...this.currentUser, ...updates };
-            
-            // Update session storage
             sessionStorage.setItem('pocket_user_id', this.currentUser.id);
             
             this.showNotification('Profile updated successfully!', 'success');
-            
-            // Clear password fields
             document.getElementById('currentPassword').value = '';
             document.getElementById('newPassword').value = '';
             document.getElementById('confirmNewPassword').value = '';
             
-            // Update UI
             this.updateUI();
             this.setupNavigation();
-            
         } catch (error) {
             console.error('Error updating profile:', error);
             this.showNotification('Failed to update profile', 'error');
@@ -410,8 +412,6 @@ class ProfileManager {
         const fullName = document.getElementById('kycFullName').value;
         const dob = document.getElementById('kycDob').value;
         const idType = document.getElementById('kycIdType').value;
-        const idFront = document.getElementById('idFront')?.files[0];
-        const idBack = document.getElementById('idBack')?.files[0];
         
         if (!fullName || !dob || !idType) {
             this.showNotification('Please fill all fields', 'error');
@@ -419,10 +419,7 @@ class ProfileManager {
         }
         
         try {
-            // Update user KYC status
             await supabaseDB.updateUserKYCStatus(this.currentUser.id, 'pending');
-            
-            // Create KYC request record
             await supabaseDB.createKYCRequest({
                 id: Date.now(),
                 user_id: this.currentUser.id,
@@ -433,8 +430,6 @@ class ProfileManager {
                 status: 'pending',
                 date: new Date().toISOString()
             });
-            
-            // Create activity
             await supabaseDB.createUserActivity({
                 id: Date.now(),
                 user_id: this.currentUser.id,
@@ -447,14 +442,12 @@ class ProfileManager {
             this.currentUser.kyc_status = 'pending';
             this.updateUI();
             
-            // Hide form, show pending message
             const kycForm = document.getElementById('kycForm');
             const kycPendingMessage = document.getElementById('kycPendingMessage');
             if (kycForm) kycForm.style.display = 'none';
             if (kycPendingMessage) kycPendingMessage.style.display = 'block';
             
             this.showNotification('KYC documents submitted for review!', 'success');
-            
         } catch (error) {
             console.error('Error submitting KYC:', error);
             this.showNotification('Failed to submit KYC', 'error');
@@ -470,7 +463,6 @@ class ProfileManager {
             return;
         }
         
-        // Create activity record for support ticket
         await supabaseDB.createUserActivity({
             id: Date.now(),
             user_id: this.currentUser.id,
@@ -481,7 +473,6 @@ class ProfileManager {
         });
         
         this.showNotification(`Support ticket submitted!\nSubject: ${subject}\n\nWe will respond within 24 hours.`, 'success');
-        
         document.getElementById('supportSubject').value = '';
         document.getElementById('supportMessage').value = '';
     }
@@ -490,28 +481,19 @@ class ProfileManager {
         if (!confirm('Are you sure you want to delete your account? This cannot be undone!')) return;
         
         try {
-            // Delete all user trades
             for (const trade of this.userTrades) {
                 await supabaseDB.delete('trades', trade.id);
             }
-            
-            // Delete user activities
             for (const activity of this.userActivities) {
                 await supabaseDB.delete('user_activities', activity.id);
             }
-            
-            // Delete user
             await supabaseDB.deleteUser(this.currentUser.id);
             
-            // Clear session
             sessionStorage.removeItem('pocket_user_id');
             localStorage.removeItem('pocket_user_id');
             
             this.showNotification('Account deleted successfully', 'success');
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 2000);
-            
+            setTimeout(() => window.location.href = 'index.html', 2000);
         } catch (error) {
             console.error('Error deleting account:', error);
             this.showNotification('Failed to delete account', 'error');
@@ -519,16 +501,12 @@ class ProfileManager {
     }
 
     setupEventListeners() {
-        // Sidebar tabs
-        const sidebarItems = document.querySelectorAll('.sidebar-item');
-        sidebarItems.forEach(item => {
+        document.querySelectorAll('.sidebar-item').forEach(item => {
             item.addEventListener('click', () => {
-                sidebarItems.forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
                 item.classList.add('active');
                 const tab = item.dataset.tab;
-                document.querySelectorAll('.tab-content').forEach(content => {
-                    content.style.display = 'none';
-                });
+                document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
                 if (tab === 'dashboard') document.getElementById('dashboardTab').style.display = 'block';
                 if (tab === 'profile') document.getElementById('profileTab').style.display = 'block';
                 if (tab === 'history') document.getElementById('historyTab').style.display = 'block';
@@ -538,13 +516,9 @@ class ProfileManager {
             });
         });
         
-        // Update profile form
         const updateForm = document.getElementById('updateProfileForm');
-        if (updateForm) {
-            updateForm.addEventListener('submit', (e) => this.updateProfile(e));
-        }
+        if (updateForm) updateForm.addEventListener('submit', (e) => this.updateProfile(e));
         
-        // Mobile menu
         const mobileBtn = document.getElementById('mobileMenuBtn');
         const mobileMenu = document.getElementById('mobileMenu');
         if (mobileBtn && mobileMenu) {
@@ -582,7 +556,6 @@ class ProfileManager {
                 padding: 12px 20px;
                 border-radius: 12px;
                 z-index: 10000;
-                animation: slideIn 0.3s ease-out;
             `;
             document.body.appendChild(notification);
             setTimeout(() => notification.remove(), 3000);
@@ -590,14 +563,12 @@ class ProfileManager {
     }
 }
 
-// Initialize when DOM is ready
 let profileManager = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     profileManager = new ProfileManager();
 });
 
-// Global functions
 window.submitKYC = () => profileManager?.submitKYC();
 window.sendSupport = () => profileManager?.sendSupport();
 window.deleteAccount = () => profileManager?.deleteAccount();
