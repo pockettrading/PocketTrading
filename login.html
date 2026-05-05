@@ -23,6 +23,52 @@
             padding: 20px;
         }
 
+        /* Animated Background */
+        .bg-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.3;
+            animation: float 10s ease-in-out infinite;
+        }
+        .shape-1 {
+            width: 400px;
+            height: 400px;
+            background: #00D897;
+            top: -150px;
+            right: -150px;
+        }
+        .shape-2 {
+            width: 300px;
+            height: 300px;
+            background: #FF4757;
+            bottom: -100px;
+            left: -100px;
+            animation-delay: 2s;
+        }
+        .shape-3 {
+            width: 250px;
+            height: 250px;
+            background: #FFA502;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: 4s;
+        }
+        @keyframes float {
+            0%,100% { transform: translate(0,0); }
+            50% { transform: translate(20px,-20px); }
+        }
+
         .container {
             position: relative;
             z-index: 1;
@@ -53,6 +99,7 @@
             color: transparent;
         }
 
+        /* Tabs */
         .auth-tabs {
             display: flex;
             gap: 12px;
@@ -76,8 +123,10 @@
         .tab-btn.active {
             background: linear-gradient(135deg, #00D897, #00B8A0);
             color: white;
+            box-shadow: 0 4px 15px rgba(0, 216, 151, 0.3);
         }
 
+        /* Forms */
         .auth-form {
             display: none;
         }
@@ -202,6 +251,7 @@
             text-decoration: none;
         }
 
+        /* Notification */
         .notification {
             position: fixed;
             top: 20px;
@@ -217,6 +267,7 @@
         }
         .notification-success { background: rgba(0, 216, 151, 0.95); color: white; }
         .notification-error { background: rgba(255, 71, 87, 0.95); color: white; }
+        .notification-info { background: rgba(255, 165, 2, 0.95); color: white; }
 
         @keyframes slideDown {
             from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
@@ -230,6 +281,12 @@
     </style>
 </head>
 <body>
+    <div class="bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
     <div class="container">
         <div class="auth-card">
             <div class="logo">
@@ -248,7 +305,7 @@
                     <label>Email Address</label>
                     <div class="input-wrapper">
                         <span class="input-icon">📧</span>
-                        <input type="email" id="loginEmail" placeholder="Enter your email">
+                        <input type="email" id="loginEmail" placeholder="Enter your email" autocomplete="email">
                     </div>
                 </div>
                 
@@ -256,7 +313,7 @@
                     <label>Password</label>
                     <div class="input-wrapper">
                         <span class="input-icon">🔒</span>
-                        <input type="password" id="loginPassword" placeholder="Enter your password">
+                        <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password">
                         <button type="button" class="password-toggle" onclick="togglePassword('loginPassword')">👁️</button>
                     </div>
                 </div>
@@ -277,7 +334,7 @@
                     <label>Full Name</label>
                     <div class="input-wrapper">
                         <span class="input-icon">👤</span>
-                        <input type="text" id="regFullName" placeholder="First and last name">
+                        <input type="text" id="regFullName" placeholder="First and last name" autocomplete="name">
                     </div>
                     <div class="error-message" id="nameError">Please enter first and last name</div>
                 </div>
@@ -286,7 +343,7 @@
                     <label>Email Address</label>
                     <div class="input-wrapper">
                         <span class="input-icon">📧</span>
-                        <input type="email" id="regEmail" placeholder="Enter your email">
+                        <input type="email" id="regEmail" placeholder="Enter your email" autocomplete="email">
                     </div>
                     <div class="error-message" id="emailError">Please enter a valid email address</div>
                 </div>
@@ -326,221 +383,23 @@
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Forgot Password Modal -->
+    <div id="forgotModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001; align-items: center; justify-content: center;">
+        <div style="background: #1E2A3A; border-radius: 24px; padding: 32px; max-width: 400px; width: 90%;">
+            <h3 style="margin-bottom: 16px;">Reset Password</h3>
+            <p style="color: #8B93A5; margin-bottom: 20px;">Enter your email to receive reset instructions.</p>
+            <input type="email" id="resetEmail" placeholder="Your email" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; margin-bottom: 20px;">
+            <div style="display: flex; gap: 12px;">
+                <button onclick="closeForgotModal()" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: none; border-radius: 12px; color: white; cursor: pointer;">Cancel</button>
+                <button onclick="sendResetLink()" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #00D897, #00B8A0); border: none; border-radius: 12px; color: white; cursor: pointer;">Send Reset Link</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts - Load in correct order -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
-    
-    <script>
-        // Tab switching
-        const tabBtns = document.querySelectorAll('.tab-btn');
-        const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
-        
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const tab = btn.dataset.tab;
-                tabBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                
-                if (tab === 'login') {
-                    loginForm.classList.add('active');
-                    registerForm.classList.remove('active');
-                } else {
-                    loginForm.classList.remove('active');
-                    registerForm.classList.add('active');
-                }
-            });
-        });
-        
-        // Toggle password visibility
-        window.togglePassword = function(fieldId) {
-            const field = document.getElementById(fieldId);
-            if (field) {
-                field.type = field.type === 'password' ? 'text' : 'password';
-            }
-        };
-        
-        // Real-time validation for register form
-        const regFullName = document.getElementById('regFullName');
-        const regEmail = document.getElementById('regEmail');
-        const regPassword = document.getElementById('regPassword');
-        const regConfirmPassword = document.getElementById('regConfirmPassword');
-        
-        regFullName.addEventListener('input', () => {
-            const nameParts = regFullName.value.trim().split(/\s+/);
-            const nameError = document.getElementById('nameError');
-            if (nameParts.length < 2 || nameParts[0].length === 0 || nameParts[1].length === 0) {
-                regFullName.classList.add('error');
-                regFullName.classList.remove('valid');
-                nameError.style.display = 'block';
-            } else {
-                regFullName.classList.remove('error');
-                regFullName.classList.add('valid');
-                nameError.style.display = 'none';
-            }
-        });
-        
-        regEmail.addEventListener('input', () => {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            const emailError = document.getElementById('emailError');
-            if (!emailRegex.test(regEmail.value)) {
-                regEmail.classList.add('error');
-                regEmail.classList.remove('valid');
-                emailError.style.display = 'block';
-            } else {
-                regEmail.classList.remove('error');
-                regEmail.classList.add('valid');
-                emailError.style.display = 'none';
-            }
-        });
-        
-        regPassword.addEventListener('input', () => {
-            const passwordError = document.getElementById('passwordError');
-            if (regPassword.value.length < 8 && regPassword.value.length > 0) {
-                regPassword.classList.add('error');
-                regPassword.classList.remove('valid');
-                passwordError.style.display = 'block';
-            } else if (regPassword.value.length >= 8) {
-                regPassword.classList.remove('error');
-                regPassword.classList.add('valid');
-                passwordError.style.display = 'none';
-            }
-            // Also check confirm password match
-            if (regConfirmPassword.value.length > 0) {
-                if (regPassword.value !== regConfirmPassword.value) {
-                    regConfirmPassword.classList.add('error');
-                    document.getElementById('confirmError').style.display = 'block';
-                } else {
-                    regConfirmPassword.classList.remove('error');
-                    regConfirmPassword.classList.add('valid');
-                    document.getElementById('confirmError').style.display = 'none';
-                }
-            }
-        });
-        
-        regConfirmPassword.addEventListener('input', () => {
-            const confirmError = document.getElementById('confirmError');
-            if (regPassword.value !== regConfirmPassword.value) {
-                regConfirmPassword.classList.add('error');
-                regConfirmPassword.classList.remove('valid');
-                confirmError.style.display = 'block';
-            } else {
-                regConfirmPassword.classList.remove('error');
-                regConfirmPassword.classList.add('valid');
-                confirmError.style.display = 'none';
-            }
-        });
-        
-        // Login function - redirect to index.html (home page)
-        document.getElementById('loginBtn').addEventListener('click', async () => {
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value;
-            const rememberMe = document.getElementById('rememberMe').checked;
-            
-            if (!email || !password) {
-                showNotification('Please enter email and password', 'error');
-                return;
-            }
-            
-            if (typeof auth === 'undefined') {
-                showNotification('System loading. Please wait and try again.', 'error');
-                return;
-            }
-            
-            const success = await auth.login(email, password, rememberMe);
-            if (success) {
-                showNotification('Login successful! Redirecting...', 'success');
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1000);
-            }
-        });
-        
-        // Register function - redirect to index.html (home page)
-        document.getElementById('registerBtn').addEventListener('click', async () => {
-            // Validate all fields before submission
-            const fullName = document.getElementById('regFullName').value.trim();
-            const email = document.getElementById('regEmail').value.trim();
-            const password = document.getElementById('regPassword').value;
-            const confirmPassword = document.getElementById('regConfirmPassword').value;
-            const termsAgree = document.getElementById('termsAgree').checked;
-            
-            // Validate full name
-            const nameParts = fullName.split(/\s+/);
-            if (nameParts.length < 2) {
-                showNotification('Please enter your full name (first and last name)', 'error');
-                document.getElementById('regFullName').focus();
-                return;
-            }
-            
-            // Validate email
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                showNotification('Please enter a valid email address', 'error');
-                document.getElementById('regEmail').focus();
-                return;
-            }
-            
-            // Validate password length
-            if (password.length < 8) {
-                showNotification('Password must be at least 8 characters', 'error');
-                document.getElementById('regPassword').focus();
-                return;
-            }
-            
-            // Validate password match
-            if (password !== confirmPassword) {
-                showNotification('Passwords do not match', 'error');
-                document.getElementById('regConfirmPassword').focus();
-                return;
-            }
-            
-            // Validate terms
-            if (!termsAgree) {
-                showNotification('Please agree to the Terms of Service', 'error');
-                return;
-            }
-            
-            if (typeof auth === 'undefined') {
-                showNotification('System loading. Please wait and try again.', 'error');
-                return;
-            }
-            
-            const success = await auth.register(fullName, email, password);
-            if (success) {
-                showNotification('Registration successful! Redirecting...', 'success');
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1500);
-            }
-        });
-        
-        // Forgot password
-        document.getElementById('forgotPassword').addEventListener('click', (e) => {
-            e.preventDefault();
-            showNotification('Password reset link would be sent to your email (Demo feature)', 'info');
-        });
-        
-        // Notification function
-        function showNotification(message, type) {
-            const existing = document.querySelector('.notification');
-            if (existing) existing.remove();
-            
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => notification.remove(), 3000);
-        }
-        
-        // Check if already logged in
-        setTimeout(() => {
-            if (typeof auth !== 'undefined' && auth.isLoggedIn()) {
-                window.location.href = 'index.html';
-            }
-        }, 500);
-    </script>
+    <script src="js/login.js"></script>
 </body>
 </html>
