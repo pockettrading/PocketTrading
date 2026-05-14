@@ -1,5 +1,6 @@
 // Supabase Database Wrapper - PocketTrading
 // File: js/supabase-db.js
+// Pure Supabase - No localStorage
 
 const SUPABASE_URL = 'https://nzjgknwwenrczxzrnhjr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56amdrbnd3ZW5yY3p4enJuaGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NzY5NjksImV4cCI6MjA5MzE1Mjk2OX0.3Fb_VO5kYYBQF0T_2G19fcvnk91l-DOQZA_SKG8Xuao';
@@ -12,7 +13,6 @@ class SupabaseDB {
     }
 
     init() {
-        // Check if Supabase client is available globally
         if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
             this.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             this.isConnected = true;
@@ -96,6 +96,58 @@ class SupabaseDB {
             .eq('id', userId);
         if (error) throw error;
         return true;
+    }
+
+    // ============ PASSWORD RESET ============
+    
+    async setPasswordResetToken(email, token, expiresAt) {
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
+        const { data, error } = await this.supabase
+            .from('custom_users')
+            .update({ 
+                reset_token: token, 
+                reset_expires: expiresAt 
+            })
+            .eq('email', email)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    }
+
+    async getUserByResetToken(token) {
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
+        const { data, error } = await this.supabase
+            .from('custom_users')
+            .select('*')
+            .eq('reset_token', token)
+            .maybeSingle();
+        if (error && error.code !== 'PGRST116') throw error;
+        
+        // Check if token is expired
+        if (data && data.reset_expires) {
+            const expiryDate = new Date(data.reset_expires);
+            if (expiryDate < new Date()) {
+                return null; // Token expired
+            }
+        }
+        return data;
+    }
+
+    async updatePasswordWithResetToken(token, newPassword) {
+        if (!this.supabase || !this.isConnected) throw new Error('Supabase not connected');
+        const { data, error } = await this.supabase
+            .from('custom_users')
+            .update({ 
+                password: newPassword,
+                reset_token: null,
+                reset_expires: null
+            })
+            .eq('reset_token', token)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
     }
 
     // ============ TRADES ============
