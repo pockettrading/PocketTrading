@@ -197,6 +197,25 @@
             display: none;
         }
 
+        .password-strength {
+            margin-top: 8px;
+        }
+        .strength-bar-container {
+            height: 4px;
+            background: #2A3545;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .strength-bar {
+            height: 100%;
+            transition: width 0.3s;
+            border-radius: 2px;
+        }
+        .strength-weak { color: #FF4757; }
+        .strength-medium { color: #FFA502; }
+        .strength-strong { color: #00D897; }
+
         .form-options {
             display: flex;
             justify-content: space-between;
@@ -217,6 +236,10 @@
             color: #00D897;
             text-decoration: none;
             font-size: 13px;
+            cursor: pointer;
+        }
+        .forgot-link:hover {
+            text-decoration: underline;
         }
 
         .submit-btn {
@@ -249,6 +272,69 @@
         .terms-text a {
             color: #00D897;
             text-decoration: none;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10001;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #1E2A3A;
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 400px;
+            width: 90%;
+        }
+        .modal-content h3 {
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+        .modal-content p {
+            color: #8B93A5;
+            margin-bottom: 20px;
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .modal-content input:focus {
+            outline: none;
+            border-color: #00D897;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .modal-btn.cancel {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        .modal-btn.submit {
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            color: white;
         }
 
         /* Notification */
@@ -322,7 +408,7 @@
                     <label class="checkbox-label">
                         <input type="checkbox" id="rememberMe"> Remember me
                     </label>
-                    <a href="#" class="forgot-link" id="forgotPassword">Forgot password?</a>
+                    <a class="forgot-link" id="forgotPassword">Forgot password?</a>
                 </div>
                 
                 <button type="button" class="submit-btn" id="loginBtn">Login →</button>
@@ -355,7 +441,8 @@
                         <input type="password" id="regPassword" placeholder="Create a password (min 8 characters)">
                         <button type="button" class="password-toggle" onclick="togglePassword('regPassword')">👁️</button>
                     </div>
-                    <div class="error-message" id="passwordError">Password must be at least 8 characters</div>
+                    <div id="regPasswordStrength" class="password-strength"></div>
+                    <div class="error-message" id="regPasswordError">Password must be at least 8 characters</div>
                 </div>
                 
                 <div class="form-group">
@@ -365,7 +452,7 @@
                         <input type="password" id="regConfirmPassword" placeholder="Confirm your password">
                         <button type="button" class="password-toggle" onclick="togglePassword('regConfirmPassword')">👁️</button>
                     </div>
-                    <div class="error-message" id="confirmError">Passwords do not match</div>
+                    <div class="error-message" id="regConfirmError">Passwords do not match</div>
                 </div>
                 
                 <div class="form-options">
@@ -384,22 +471,342 @@
     </div>
 
     <!-- Forgot Password Modal -->
-    <div id="forgotModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001; align-items: center; justify-content: center;">
-        <div style="background: #1E2A3A; border-radius: 24px; padding: 32px; max-width: 400px; width: 90%;">
-            <h3 style="margin-bottom: 16px;">Reset Password</h3>
-            <p style="color: #8B93A5; margin-bottom: 20px;">Enter your email to receive reset instructions.</p>
-            <input type="email" id="resetEmail" placeholder="Your email" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; margin-bottom: 20px;">
-            <div style="display: flex; gap: 12px;">
-                <button onclick="closeForgotModal()" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: none; border-radius: 12px; color: white; cursor: pointer;">Cancel</button>
-                <button onclick="sendResetLink()" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #00D897, #00B8A0); border: none; border-radius: 12px; color: white; cursor: pointer;">Send Reset Link</button>
+    <div id="forgotModal" class="modal">
+        <div class="modal-content">
+            <h3>Reset Password</h3>
+            <p>Enter your email address and we'll send you a link to reset your password.</p>
+            <input type="email" id="resetEmail" placeholder="Your email address">
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeForgotModal()">Cancel</button>
+                <button class="modal-btn submit" onclick="sendResetLink()">Send Reset Link</button>
             </div>
         </div>
     </div>
 
-    <!-- Scripts - Load in correct order -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/login.js"></script>
+    
+    <script>
+        // ============ DOM ELEMENTS ============
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const forgotModal = document.getElementById('forgotModal');
+
+        // ============ TAB SWITCHING ============
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                if (tab === 'login') {
+                    loginForm.classList.add('active');
+                    registerForm.classList.remove('active');
+                } else {
+                    loginForm.classList.remove('active');
+                    registerForm.classList.add('active');
+                }
+            });
+        });
+
+        // ============ PASSWORD TOGGLE ============
+        window.togglePassword = function(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.type = field.type === 'password' ? 'text' : 'password';
+            }
+        };
+
+        // ============ PASSWORD STRENGTH CHECKER ============
+        function checkPasswordStrength(password, strengthDivId) {
+            const strengthDiv = document.getElementById(strengthDivId);
+            if (!strengthDiv) return;
+            
+            let strength = 0;
+            let message = '';
+            let className = '';
+            let percentage = 0;
+            
+            if (password.length >= 8) strength++;
+            if (password.match(/[a-z]+/)) strength++;
+            if (password.match(/[A-Z]+/)) strength++;
+            if (password.match(/[0-9]+/)) strength++;
+            if (password.match(/[$@#&!]+/)) strength++;
+            
+            switch(strength) {
+                case 0: case 1: message = 'Weak'; className = 'strength-weak'; percentage = 20; break;
+                case 2: case 3: message = 'Medium'; className = 'strength-medium'; percentage = 60; break;
+                case 4: case 5: message = 'Strong'; className = 'strength-strong'; percentage = 100; break;
+            }
+            
+            if (password.length > 0) {
+                let barColor = '#FF4757';
+                if (strength <= 1) barColor = '#FF4757';
+                else if (strength <= 3) barColor = '#FFA502';
+                else barColor = '#00D897';
+                
+                strengthDiv.innerHTML = `
+                    <div class="strength-bar-container">
+                        <div class="strength-bar" style="width: ${percentage}%; background: ${barColor}"></div>
+                    </div>
+                    <span class="${className}">${message} Password</span>
+                `;
+            } else {
+                strengthDiv.innerHTML = '';
+            }
+        }
+
+        // ============ REAL-TIME VALIDATION ============
+        const regFullName = document.getElementById('regFullName');
+        const regEmail = document.getElementById('regEmail');
+        const regPassword = document.getElementById('regPassword');
+        const regConfirmPassword = document.getElementById('regConfirmPassword');
+
+        if (regFullName) {
+            regFullName.addEventListener('input', () => {
+                const nameParts = regFullName.value.trim().split(/\s+/);
+                const nameError = document.getElementById('nameError');
+                if (nameParts.length < 2 && regFullName.value.length > 0) {
+                    regFullName.classList.add('error');
+                    regFullName.classList.remove('valid');
+                    nameError.style.display = 'block';
+                } else if (regFullName.value.length === 0) {
+                    regFullName.classList.remove('error', 'valid');
+                    nameError.style.display = 'none';
+                } else {
+                    regFullName.classList.remove('error');
+                    regFullName.classList.add('valid');
+                    nameError.style.display = 'none';
+                }
+            });
+        }
+
+        if (regEmail) {
+            regEmail.addEventListener('input', () => {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                const emailError = document.getElementById('emailError');
+                if (!emailRegex.test(regEmail.value) && regEmail.value.length > 0) {
+                    regEmail.classList.add('error');
+                    regEmail.classList.remove('valid');
+                    emailError.style.display = 'block';
+                } else if (regEmail.value.length === 0) {
+                    regEmail.classList.remove('error', 'valid');
+                    emailError.style.display = 'none';
+                } else {
+                    regEmail.classList.remove('error');
+                    regEmail.classList.add('valid');
+                    emailError.style.display = 'none';
+                }
+            });
+        }
+
+        if (regPassword) {
+            regPassword.addEventListener('input', () => {
+                const passwordError = document.getElementById('regPasswordError');
+                checkPasswordStrength(regPassword.value, 'regPasswordStrength');
+                
+                if (regPassword.value.length < 8 && regPassword.value.length > 0) {
+                    regPassword.classList.add('error');
+                    regPassword.classList.remove('valid');
+                    passwordError.style.display = 'block';
+                } else if (regPassword.value.length >= 8) {
+                    regPassword.classList.remove('error');
+                    regPassword.classList.add('valid');
+                    passwordError.style.display = 'none';
+                } else {
+                    regPassword.classList.remove('error', 'valid');
+                    passwordError.style.display = 'none';
+                }
+                
+                if (regConfirmPassword && regConfirmPassword.value.length > 0) {
+                    const confirmError = document.getElementById('regConfirmError');
+                    if (regPassword.value !== regConfirmPassword.value) {
+                        regConfirmPassword.classList.add('error');
+                        regConfirmPassword.classList.remove('valid');
+                        confirmError.style.display = 'block';
+                    } else {
+                        regConfirmPassword.classList.remove('error');
+                        regConfirmPassword.classList.add('valid');
+                        confirmError.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        if (regConfirmPassword) {
+            regConfirmPassword.addEventListener('input', () => {
+                const confirmError = document.getElementById('regConfirmError');
+                if (regPassword.value !== regConfirmPassword.value && regConfirmPassword.value.length > 0) {
+                    regConfirmPassword.classList.add('error');
+                    regConfirmPassword.classList.remove('valid');
+                    confirmError.style.display = 'block';
+                } else if (regConfirmPassword.value.length === 0) {
+                    regConfirmPassword.classList.remove('error', 'valid');
+                    confirmError.style.display = 'none';
+                } else {
+                    regConfirmPassword.classList.remove('error');
+                    regConfirmPassword.classList.add('valid');
+                    confirmError.style.display = 'none';
+                }
+            });
+        }
+
+        // ============ FORGOT PASSWORD MODAL ============
+        document.getElementById('forgotPassword').addEventListener('click', (e) => {
+            e.preventDefault();
+            forgotModal.style.display = 'flex';
+        });
+
+        window.closeForgotModal = function() {
+            forgotModal.style.display = 'none';
+            document.getElementById('resetEmail').value = '';
+        };
+
+        window.sendResetLink = async function() {
+            const email = document.getElementById('resetEmail').value.trim();
+            const submitBtn = document.querySelector('#forgotModal .modal-btn.submit');
+            
+            if (!email) {
+                showNotification('Please enter your email address', 'error');
+                return;
+            }
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showNotification('Please enter a valid email address', 'error');
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+            
+            try {
+                await auth.requestPasswordReset(email);
+                closeForgotModal();
+            } catch (error) {
+                console.error('Reset request error:', error);
+                showNotification('Failed to send reset link. Please try again.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Reset Link';
+            }
+        };
+
+        forgotModal.addEventListener('click', (e) => {
+            if (e.target === forgotModal) closeForgotModal();
+        });
+
+        // ============ LOGIN FUNCTION ============
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+            
+            if (!email || !password) {
+                showNotification('Please enter email and password', 'error');
+                return;
+            }
+            
+            const loginBtn = document.getElementById('loginBtn');
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Logging in...';
+            
+            try {
+                const success = await auth.login(email, password, rememberMe);
+                if (success) {
+                    showNotification('Login successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                }
+            } catch (error) {
+                showNotification('Login failed. Please try again.', 'error');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login →';
+            }
+        });
+
+        // ============ REGISTER FUNCTION ============
+        document.getElementById('registerBtn').addEventListener('click', async () => {
+            const fullName = document.getElementById('regFullName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+            const termsAgree = document.getElementById('termsAgree').checked;
+            
+            const nameParts = fullName.split(/\s+/);
+            if (nameParts.length < 2) {
+                showNotification('Please enter your full name (first and last name)', 'error');
+                return;
+            }
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showNotification('Please enter a valid email address', 'error');
+                return;
+            }
+            
+            if (password.length < 8) {
+                showNotification('Password must be at least 8 characters', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showNotification('Passwords do not match', 'error');
+                return;
+            }
+            
+            if (!termsAgree) {
+                showNotification('Please agree to the Terms of Service', 'error');
+                return;
+            }
+            
+            const registerBtn = document.getElementById('registerBtn');
+            registerBtn.disabled = true;
+            registerBtn.textContent = 'Creating Account...';
+            
+            try {
+                const success = await auth.register(fullName, email, password);
+                if (success) {
+                    showNotification('Registration successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                }
+            } catch (error) {
+                showNotification('Registration failed. Please try again.', 'error');
+            } finally {
+                registerBtn.disabled = false;
+                registerBtn.textContent = 'Create Account →';
+            }
+        });
+
+        // ============ NOTIFICATION FUNCTION ============
+        function showNotification(message, type) {
+            const existing = document.querySelector('.notification');
+            if (existing) existing.remove();
+            
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideUp 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // ============ CHECK EXISTING SESSION ============
+        setTimeout(() => {
+            if (typeof auth !== 'undefined' && auth.isLoggedIn()) {
+                window.location.href = 'index.html';
+            }
+        }, 500);
+    </script>
 </body>
 </html>
