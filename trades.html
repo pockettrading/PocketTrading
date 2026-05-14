@@ -79,6 +79,7 @@
             color: #00D897;
         }
 
+        /* Guest Buttons */
         .guest-buttons {
             display: flex;
             gap: 12px;
@@ -100,6 +101,7 @@
             color: white;
         }
 
+        /* User Section - Logged In */
         .user-section {
             display: flex;
             align-items: center;
@@ -156,6 +158,7 @@
             font-weight: 500;
         }
 
+        /* Mobile Menu */
         .mobile-menu-btn {
             display: none;
             background: none;
@@ -271,6 +274,7 @@
             border-color: #00D897;
         }
 
+        /* Chart Container */
         .chart-container {
             flex: 1;
             width: 100%;
@@ -294,6 +298,7 @@
             overflow-y: auto;
         }
 
+        /* Trade Type Buttons */
         .trade-type-buttons {
             display: flex;
             gap: 8px;
@@ -327,6 +332,7 @@
             color: white;
         }
 
+        /* Selected Coin Display */
         .selected-coin {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 12px;
@@ -340,6 +346,7 @@
         .live-badge { font-size: 10px; color: #FF4757; animation: pulse 1s infinite; }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
+        /* Form Elements */
         .form-group { margin-bottom: 16px; }
         .form-label { font-size: 12px; color: #8B93A5; margin-bottom: 6px; display: block; }
         .amount-input {
@@ -356,6 +363,7 @@
             border-color: #00D897;
         }
 
+        /* Duration Grid */
         .duration-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -380,6 +388,7 @@
         .duration-payout { font-size: 10px; color: #00D897; margin-top: 2px; }
         .duration-min { font-size: 8px; color: #5A6475; margin-top: 2px; }
 
+        /* Trade Summary */
         .trade-summary {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
@@ -400,6 +409,7 @@
             font-size: 13px;
         }
 
+        /* Confirm Button */
         .confirm-btn {
             width: 100%;
             padding: 12px;
@@ -432,10 +442,12 @@
         .login-required p { color: #8B93A5; margin-bottom: 28px; }
         .login-buttons { display: flex; gap: 16px; justify-content: center; }
 
+        /* Scrollbar */
         .trade-form-section::-webkit-scrollbar { width: 4px; }
         .trade-form-section::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 4px; }
         .trade-form-section::-webkit-scrollbar-thumb { background: #00D897; border-radius: 4px; }
 
+        /* Responsive */
         @media (max-width: 900px) {
             .trading-layout { flex-direction: column; }
             .chart-container { min-height: 400px; }
@@ -490,12 +502,11 @@
             </div>
 
             <!-- Right: Trade Form Section -->
-            <div class="trade-form-section" id="tradeFormSection">
-                <!-- Populated by JavaScript based on login state -->
-            </div>
+            <div class="trade-form-section" id="tradeFormSection"></div>
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
@@ -511,25 +522,15 @@
         let tvWidget = null;
         let priceUpdateInterval = null;
 
-        // Cryptocurrency price data
-        const cryptoPrices = {
-            BTC: 78312.00,
-            ETH: 2297.32,
-            SOL: 168.42,
-            XRP: 0.624,
-            DOGE: 0.162,
-            BNB: 615.81,
-            ADA: 0.483
-        };
-
-        const cryptoNames = {
-            BTC: 'Bitcoin',
-            ETH: 'Ethereum',
-            SOL: 'Solana',
-            XRP: 'Ripple',
-            DOGE: 'Dogecoin',
-            BNB: 'Binance Coin',
-            ADA: 'Cardano'
+        // Cryptocurrency data
+        const cryptoData = {
+            BTC: { name: 'Bitcoin', pair: 'BINANCE:BTCUSDT', price: 78312.00 },
+            ETH: { name: 'Ethereum', pair: 'BINANCE:ETHUSDT', price: 2297.32 },
+            SOL: { name: 'Solana', pair: 'BINANCE:SOLUSDT', price: 168.42 },
+            XRP: { name: 'Ripple', pair: 'BINANCE:XRPUSDT', price: 0.624 },
+            DOGE: { name: 'Dogecoin', pair: 'BINANCE:DOGEUSDT', price: 0.162 },
+            BNB: { name: 'Binance Coin', pair: 'BINANCE:BNBUSDT', price: 615.81 },
+            ADA: { name: 'Cardano', pair: 'BINANCE:ADAUSDT', price: 0.483 }
         };
 
         // Update navbar based on user state
@@ -594,7 +595,7 @@
             }
         }
 
-        // Show login required message for guests
+        // Show login required for guests
         function showLoginRequired() {
             const container = document.getElementById('tradeFormSection');
             if (!container) return;
@@ -624,9 +625,9 @@
                 </div>
 
                 <div class="selected-coin">
-                    <div class="coin-name-large" id="selectedCoinName">${cryptoNames[currentSymbol]}</div>
+                    <div class="coin-name-large" id="selectedCoinName">${cryptoData[currentSymbol].name}</div>
                     <div class="coin-symbol" id="selectedCoinSymbol">${currentSymbol}/USD</div>
-                    <div class="current-price-large" id="currentPrice">$${cryptoPrices[currentSymbol].toLocaleString()}</div>
+                    <div class="current-price-large" id="currentPrice">$${cryptoData[currentSymbol].price.toLocaleString()}</div>
                     <div class="live-badge">● LIVE</div>
                 </div>
 
@@ -688,7 +689,6 @@
         }
 
         function attachTradeFormEvents() {
-            // Trade type buttons
             const buyBtn = document.querySelector('.trade-type-btn.buy');
             const sellBtn = document.querySelector('.trade-type-btn.sell');
             if (buyBtn && sellBtn) {
@@ -706,7 +706,6 @@
                 });
             }
 
-            // Duration buttons
             document.querySelectorAll('.duration-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
@@ -718,11 +717,9 @@
                 });
             });
 
-            // Amount input
             const amountInput = document.getElementById('tradeAmount');
             if (amountInput) amountInput.addEventListener('input', () => updateTradeSummary());
 
-            // Confirm button
             const confirmBtn = document.getElementById('confirmTrade');
             if (confirmBtn) confirmBtn.addEventListener('click', () => executeTrade());
         }
@@ -790,17 +787,13 @@
             const newBalance = (currentUser.balance || 0) - total;
             
             try {
-                // Update balance in Supabase
                 if (typeof supabaseDB !== 'undefined') {
                     await supabaseDB.updateUserBalance(currentUser.id, newBalance);
                 }
                 
                 currentUser.balance = newBalance;
-                
-                // Update session storage
                 sessionStorage.setItem('pocket_user_id', currentUser.id);
                 
-                // Create trade record
                 const trade = {
                     id: Date.now(),
                     user_id: currentUser.id,
@@ -830,15 +823,12 @@
                 
                 showNotification(`Trade placed! ${currentTradeType.toUpperCase()} $${amount} ${currentSymbol} for ${selectedDuration}s`, 'success');
                 
-                // Reset form
                 const amountInput = document.getElementById('tradeAmount');
                 if (amountInput) amountInput.value = '';
                 updateTradeSummary();
                 updateUserBalance();
                 
-                // Simulate trade result
                 simulateTradeResult(trade);
-                
             } catch (error) {
                 console.error('Error executing trade:', error);
                 showNotification('Failed to execute trade', 'error');
@@ -872,8 +862,6 @@
                     }
                     
                     currentUser.balance = newBalance;
-                    sessionStorage.setItem('pocket_user_id', currentUser.id);
-                    
                     showNotification(`🎉 WIN! You won $${winAmount.toFixed(2)} on ${trade.symbol}!`, 'success');
                 } else {
                     if (typeof supabaseDB !== 'undefined') {
@@ -905,7 +893,7 @@
             const container = document.getElementById('tv_chart_container');
             if (!container || typeof TradingView === 'undefined') return;
             
-            const pair = `BINANCE:${currentSymbol}USDT`;
+            const pair = cryptoData[currentSymbol].pair;
             
             if (tvWidget) tvWidget.remove();
             
@@ -931,17 +919,17 @@
 
         function changeSymbol(symbol) {
             currentSymbol = symbol;
-            currentPrice = cryptoPrices[symbol];
+            currentPrice = cryptoData[symbol].price;
             
             const nameEl = document.getElementById('selectedCoinName');
             const symbolEl = document.getElementById('selectedCoinSymbol');
             const priceEl = document.getElementById('currentPrice');
             
-            if (nameEl) nameEl.textContent = cryptoNames[symbol];
+            if (nameEl) nameEl.textContent = cryptoData[symbol].name;
             if (symbolEl) symbolEl.textContent = `${symbol}/USD`;
             if (priceEl) priceEl.textContent = `$${currentPrice.toLocaleString()}`;
             
-            if (tvWidget) tvWidget.setSymbol(`BINANCE:${symbol}USDT`);
+            if (tvWidget) tvWidget.setSymbol(cryptoData[symbol].pair);
             updateTradeSummary();
         }
 
@@ -950,30 +938,27 @@
         }
 
         function showNotification(message, type) {
-            const existing = document.querySelector('.auth-notification');
-            if (existing) existing.remove();
-            
-            const notification = document.createElement('div');
-            notification.textContent = message;
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: ${type === 'error' ? '#FF4757' : (type === 'success' ? '#00D897' : '#FFA502')};
-                color: white;
-                padding: 12px 20px;
-                border-radius: 12px;
-                z-index: 10000;
-                animation: slideIn 0.3s ease-out;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                font-weight: 500;
-            `;
-            document.body.appendChild(notification);
-            setTimeout(() => notification.remove(), 3000);
+            if (typeof auth !== 'undefined' && auth.showNotification) {
+                auth.showNotification(message, type);
+            } else {
+                const notification = document.createElement('div');
+                notification.textContent = message;
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${type === 'error' ? '#FF4757' : '#00D897'};
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 12px;
+                    z-index: 10000;
+                `;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 3000);
+            }
         }
 
         function setupEventListeners() {
-            // Crypto selector
             document.querySelectorAll('.crypto-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.crypto-btn').forEach(b => b.classList.remove('active'));
@@ -982,7 +967,6 @@
                 });
             });
 
-            // Timeframes
             document.querySelectorAll('.time-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
@@ -991,7 +975,6 @@
                 });
             });
 
-            // Mobile menu
             const mobileBtn = document.getElementById('mobileMenuBtn');
             const mobileMenu = document.getElementById('mobileMenu');
             if (mobileBtn && mobileMenu) {
@@ -1001,18 +984,17 @@
 
         function startPriceUpdates() {
             priceUpdateInterval = setInterval(() => {
-                Object.keys(cryptoPrices).forEach(symbol => {
+                Object.keys(cryptoData).forEach(symbol => {
                     const change = (Math.random() - 0.5) * 50;
-                    cryptoPrices[symbol] = Math.max(0.01, cryptoPrices[symbol] + change);
+                    cryptoData[symbol].price = Math.max(0.01, cryptoData[symbol].price + change);
                 });
-                currentPrice = cryptoPrices[currentSymbol];
+                currentPrice = cryptoData[currentSymbol].price;
                 const priceEl = document.getElementById('currentPrice');
                 if (priceEl) priceEl.textContent = `$${currentPrice.toLocaleString()}`;
                 updateTradeSummary();
             }, 5000);
         }
 
-        // Initialize page
         async function init() {
             await new Promise(resolve => {
                 const check = setInterval(() => {
@@ -1021,19 +1003,21 @@
                         resolve();
                     }
                 }, 100);
+                setTimeout(() => {
+                    clearInterval(check);
+                    resolve();
+                }, 3000);
             });
             
             currentUser = auth.getUser();
             updateNavbar();
             
             if (currentUser) {
-                // Logged in - show trade form
                 showTradeForm();
                 initTradingView();
                 setupEventListeners();
                 startPriceUpdates();
             } else {
-                // Guest - show login required
                 showLoginRequired();
                 initTradingView();
                 setupEventListeners();
