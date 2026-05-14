@@ -77,6 +77,7 @@
             color: #00D897;
         }
 
+        /* Guest Buttons */
         .guest-buttons {
             display: flex;
             gap: 12px;
@@ -98,6 +99,7 @@
             color: white;
         }
 
+        /* User Section - Logged In */
         .user-section {
             display: flex;
             align-items: center;
@@ -154,6 +156,7 @@
             font-weight: 500;
         }
 
+        /* Mobile Menu */
         .mobile-menu-btn {
             display: none;
             background: none;
@@ -205,6 +208,7 @@
             font-size: 14px;
         }
 
+        /* Stats Bar */
         .stats-bar {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -223,6 +227,7 @@
         .positive { color: #00D897; }
         .negative { color: #FF4757; }
 
+        /* Filters Bar */
         .filters-bar {
             display: flex;
             justify-content: space-between;
@@ -254,7 +259,12 @@
             color: white;
             width: 250px;
         }
+        .search-input:focus {
+            outline: none;
+            border-color: #00D897;
+        }
 
+        /* Markets Table */
         .table-container {
             background: rgba(255,255,255,0.05);
             border-radius: 20px;
@@ -299,11 +309,14 @@
             margin-top: 12px;
         }
 
+        /* Responsive */
         @media (max-width: 768px) {
             .nav-links, .guest-buttons, .user-section { display: none; }
             .mobile-menu-btn { display: block; }
             .main-content { padding: 16px; }
-            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .stat-value { font-size: 18px; }
+            .filters-bar { flex-direction: column; align-items: stretch; }
             .search-input { width: 100%; }
         }
     </style>
@@ -365,6 +378,7 @@
         <div class="last-updated" id="lastUpdated">Last updated: --</div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
@@ -378,18 +392,18 @@
 
         // Default market data (will be replaced by Supabase data)
         const defaultMarkets = [
-            { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 78312.00, change: 2.34, volume: '32.5B', category: 'large' },
-            { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2297.32, change: 1.29, volume: '18.2B', category: 'large' },
-            { symbol: 'SOL', name: 'Solana', icon: '◎', price: 168.42, change: 5.23, volume: '4.8B', category: 'large' },
-            { symbol: 'XRP', name: 'Ripple', icon: 'X', price: 0.624, change: -0.45, volume: '1.2B', category: 'large' },
-            { symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð', price: 0.162, change: 8.91, volume: '892M', category: 'meme' },
-            { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 615.81, change: 0.21, volume: '2.1B', category: 'large' },
-            { symbol: 'ADA', name: 'Cardano', icon: 'A', price: 0.483, change: -1.23, volume: '456M', category: 'mid' },
-            { symbol: 'AVAX', name: 'Avalanche', icon: 'A', price: 42.15, change: 3.45, volume: '678M', category: 'mid' },
-            { symbol: 'MATIC', name: 'Polygon', icon: 'M', price: 0.89, change: -2.11, volume: '345M', category: 'mid' },
-            { symbol: 'SHIB', name: 'Shiba Inu', icon: '🐕', price: 0.000023, change: 4.56, volume: '234M', category: 'meme' },
-            { symbol: 'UNI', name: 'Uniswap', icon: 'U', price: 11.23, change: -0.89, volume: '167M', category: 'defi' },
-            { symbol: 'LINK', name: 'Chainlink', icon: 'L', price: 18.34, change: 1.56, volume: '234M', category: 'defi' }
+            { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 78312.00, change_24h: 2.34, volume: '32.5B', category: 'large' },
+            { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2297.32, change_24h: 1.29, volume: '18.2B', category: 'large' },
+            { symbol: 'SOL', name: 'Solana', icon: '◎', price: 168.42, change_24h: 5.23, volume: '4.8B', category: 'large' },
+            { symbol: 'XRP', name: 'Ripple', icon: 'X', price: 0.624, change_24h: -0.45, volume: '1.2B', category: 'large' },
+            { symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð', price: 0.162, change_24h: 8.91, volume: '892M', category: 'meme' },
+            { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 615.81, change_24h: 0.21, volume: '2.1B', category: 'large' },
+            { symbol: 'ADA', name: 'Cardano', icon: 'A', price: 0.483, change_24h: -1.23, volume: '456M', category: 'mid' },
+            { symbol: 'AVAX', name: 'Avalanche', icon: 'A', price: 42.15, change_24h: 3.45, volume: '678M', category: 'mid' },
+            { symbol: 'MATIC', name: 'Polygon', icon: 'M', price: 0.89, change_24h: -2.11, volume: '345M', category: 'mid' },
+            { symbol: 'SHIB', name: 'Shiba Inu', icon: '🐕', price: 0.000023, change_24h: 4.56, volume: '234M', category: 'meme' },
+            { symbol: 'UNI', name: 'Uniswap', icon: 'U', price: 11.23, change_24h: -0.89, volume: '167M', category: 'defi' },
+            { symbol: 'LINK', name: 'Chainlink', icon: 'L', price: 18.34, change_24h: 1.56, volume: '234M', category: 'defi' }
         ];
 
         // Update navbar based on user state
@@ -489,8 +503,8 @@
                         </div>
                     </td>
                     <td>$${formatPrice(m.price)}</td>
-                    <td class="${m.change >= 0 ? 'positive' : 'negative'}">
-                        ${m.change >= 0 ? '▲' : '▼'} ${Math.abs(m.change)}%
+                    <td class="${m.change_24h >= 0 ? 'positive' : 'negative'}">
+                        ${m.change_24h >= 0 ? '▲' : '▼'} ${Math.abs(m.change_24h)}%
                     </td>
                     <td>${m.volume || '—'}</td>
                     <td>
@@ -502,7 +516,7 @@
 
         // Update market stats
         function updateStats() {
-            const totalChange = allMarkets.reduce((sum, m) => sum + (m.change || 0), 0) / allMarkets.length;
+            const totalChange = allMarkets.reduce((sum, m) => sum + (m.change_24h || 0), 0) / allMarkets.length;
             const totalVolume = allMarkets.reduce((sum, m) => {
                 let vol = 0;
                 if (typeof m.volume === 'string') {
@@ -537,7 +551,16 @@
                 if (typeof supabaseDB !== 'undefined' && supabaseDB.supabase) {
                     const dbMarkets = await supabaseDB.getAllMarkets();
                     if (dbMarkets && dbMarkets.length > 0) {
-                        allMarkets = dbMarkets;
+                        // Map database fields to our format
+                        allMarkets = dbMarkets.map(m => ({
+                            symbol: m.symbol,
+                            name: m.name,
+                            icon: m.icon || '📈',
+                            price: m.price,
+                            change_24h: m.change_24h || 0,
+                            volume: m.volume || '—',
+                            category: m.category || 'all'
+                        }));
                     } else {
                         allMarkets = [...defaultMarkets];
                     }
@@ -560,7 +583,7 @@
                 allMarkets = allMarkets.map(m => ({
                     ...m,
                     price: m.price * (1 + (Math.random() - 0.5) * 0.002),
-                    change: m.change + (Math.random() - 0.5) * 0.2
+                    change_24h: m.change_24h + (Math.random() - 0.5) * 0.2
                 }));
                 renderMarkets();
                 updateStats();
@@ -610,6 +633,10 @@
                         resolve();
                     }
                 }, 100);
+                setTimeout(() => {
+                    clearInterval(check);
+                    resolve();
+                }, 3000);
             });
             
             currentUser = auth.getUser();
