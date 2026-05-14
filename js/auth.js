@@ -29,7 +29,6 @@ class AuthManager {
                         resolve();
                     }
                 }, 100);
-                // Timeout after 5 seconds
                 setTimeout(() => {
                     clearInterval(checkInterval);
                     console.warn('Supabase timeout, continuing anyway');
@@ -40,7 +39,6 @@ class AuthManager {
     }
 
     async restoreSession() {
-        // Try to get user ID from storage
         const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
         
         if (!userId) {
@@ -55,7 +53,6 @@ class AuthManager {
                 this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
                 console.log('✅ Session restored for:', this.currentUser.email);
             } else {
-                // User not found in database, clear session
                 this.clearSession();
             }
         } catch (error) {
@@ -96,20 +93,19 @@ class AuthManager {
         });
     }
 
+    // ============ LOGIN ============
+    
     async login(email, password, rememberMe = false) {
         try {
             const user = await supabaseDB.getUserByEmail(email);
             
             if (user && user.password === password) {
-                // Update last login
                 await supabaseDB.updateUser(user.id, { 
                     last_login: new Date().toISOString() 
                 });
                 
-                // Set admin flag
                 user.isAdmin = (user.email === 'ephremgojo@gmail.com');
                 
-                // Store session - ONLY THE USER ID, not the whole user object
                 if (rememberMe) {
                     localStorage.setItem('pocket_user_id', user.id);
                     sessionStorage.removeItem('pocket_user_id');
@@ -138,6 +134,8 @@ class AuthManager {
         }
     }
 
+    // ============ REGISTER ============
+    
     async register(fullName, email, password) {
         try {
             const existingUser = await supabaseDB.getUserByEmail(email);
@@ -146,15 +144,12 @@ class AuthManager {
                 return false;
             }
             
-            // Format name
             const formattedName = fullName.trim().split(/\s+/)
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
                 .join(' ');
             
-            // Check if admin
             const isAdmin = (email === 'ephremgojo@gmail.com');
             
-            // Create new user (no timezone field)
             const newUser = {
                 id: Date.now(),
                 name: formattedName,
@@ -171,7 +166,6 @@ class AuthManager {
             
             await supabaseDB.createUser(newUser);
             
-            // Auto-login after registration
             newUser.isAdmin = isAdmin;
             sessionStorage.setItem('pocket_user_id', newUser.id);
             localStorage.removeItem('pocket_user_id');
@@ -189,6 +183,181 @@ class AuthManager {
         }
     }
 
+    // ============ PASSWORD RESET ============
+    
+    // Step 1: Request password reset (sends email with reset link)
+    async requestPasswordReset(email) {
+        try {
+            const user = await supabaseDB.getUserByEmail(email);
+            
+            if (!user) {
+                this.showNotification('No account found with this email address.', 'error');
+                return false;
+            }
+            
+            // Generate a unique reset token
+            const resetToken = this.generateResetToken();
+            const expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 1); // Token valid for 1 hour
+            
+            // Save token to database
+            await supabaseDB.setPasswordResetToken(email, resetToken, expiresAt.toISOString());
+            
+            // Create reset link
+            const resetLink = `${window.location.origin}/reset-password.html?token=${resetToken}`;
+            
+            // In a production environment, you would send an email here
+            // For now, we'll show the link in a notification (for testing)
+            console.log('Reset link (for testing):', resetLink);
+            
+            // Show reset link in notification (temporary for testing)
+            this.showNotificationWithLink(
+                `Password reset link (TEST MODE): Click to reset password`, 
+                resetLink,
+                'info'
+            );
+            
+            // TODO: Replace with actual email sending service
+            // await this.sendResetEmail(user.email, user.name, resetLink);
+            
+            this.showNotification(`If an account exists with this email, you will receive a password reset link.`, 'success');
+            return true;
+            
+        } catch (error) {
+            console.error('Password reset request error:', error);
+            this.showNotification('Failed to process request. Please try again.', 'error');
+            return false;
+        }
+    }
+    
+    // Generate a secure random token
+    generateResetToken() {
+        return Math.random().toString(36).substring(2, 15) + 
+               Math.random().toString(36).substring(2, 15) + 
+               Date.now().toString(36);
+    }
+    
+    // Show notification with clickable link (for testing)
+    showNotificationWithLink(message, link, type) {
+        const existing = document.querySelector('.auth-notification');
+        if (existing) existing.remove();
+        
+        const notification = document.createElement('div');
+        notification.className = `auth-notification notification-${type}`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'error' ? '#FF4757' : (type === 'success' ? '#00D897' : '#FFA502')};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            font-weight: 500;
+            max-width: 350px;
+        `;
+        
+        notification.innerHTML = `
+            ${message}<br>
+            <a href="${link}" style="color: white; text-decoration: underline; display: inline-block; margin-top: 8px;">Click here to reset password</a>
+            <br><small style="font-size: 10px; opacity: 0.8;">(This link will expire in 1 hour)</small>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, 10000);
+    }
+    
+    // Step 2: Validate reset token and show reset form
+    async validateResetToken(token) {
+        try {
+            const user = await supabaseDB.getUserByResetToken(token);
+            
+            if (!user) {
+                this.showNotification('Invalid or expired reset link. Please request a new one.', 'error');
+                return false;
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Token validation error:', error);
+            this.showNotification('Invalid or expired reset link.', 'error');
+            return false;
+        }
+    }
+    
+    // Step 3: Reset password using token
+    async resetPassword(token, newPassword, confirmPassword) {
+        // Validate passwords match
+        if (newPassword !== confirmPassword) {
+            this.showNotification('Passwords do not match', 'error');
+            return false;
+        }
+        
+        // Validate password length
+        if (newPassword.length < 8) {
+            this.showNotification('Password must be at least 8 characters', 'error');
+            return false;
+        }
+        
+        try {
+            // Verify token is valid
+            const user = await supabaseDB.getUserByResetToken(token);
+            
+            if (!user) {
+                this.showNotification('Invalid or expired reset link. Please request a new one.', 'error');
+                return false;
+            }
+            
+            // Update password
+            await supabaseDB.updatePasswordWithResetToken(token, newPassword);
+            
+            // Clear any existing sessions for this user
+            this.showNotification('Password reset successful! Please login with your new password.', 'success');
+            
+            // Redirect to login page after 2 seconds
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+            
+            return true;
+            
+        } catch (error) {
+            console.error('Password reset error:', error);
+            this.showNotification('Failed to reset password. Please try again.', 'error');
+            return false;
+        }
+    }
+
+    // ============ EMAIL SENDING (To be implemented with actual email service) ============
+    
+    // This method would be replaced with actual email service like EmailJS, Resend, etc.
+    async sendResetEmail(toEmail, userName, resetLink) {
+        // TODO: Implement actual email sending
+        // Example using EmailJS:
+        /*
+        const emailParams = {
+            to_email: toEmail,
+            to_name: userName,
+            reset_link: resetLink,
+            site_name: 'PocketTrading'
+        };
+        
+        await emailjs.send('service_id', 'template_id', emailParams);
+        */
+        
+        console.log(`Email would be sent to: ${toEmail}`);
+        console.log(`Reset link: ${resetLink}`);
+    }
+
+    // ============ BALANCE & TRADES ============
+    
     async updateBalance(userId, amount, transactionDetails = {}) {
         try {
             const user = await supabaseDB.getUserById(userId);
@@ -226,6 +395,8 @@ class AuthManager {
         return await supabaseDB.getUserActivities(userId);
     }
 
+    // ============ LOGOUT ============
+    
     logout() {
         this.clearSession();
         this.dispatchAuthEvent();
@@ -233,6 +404,8 @@ class AuthManager {
         window.location.href = 'index.html';
     }
 
+    // ============ GETTERS ============
+    
     isLoggedIn() {
         return this.currentUser !== null;
     }
@@ -250,6 +423,8 @@ class AuthManager {
         return this.currentUser.name || this.currentUser.email.split('@')[0];
     }
 
+    // ============ NOTIFICATIONS ============
+    
     showNotification(message, type) {
         const existing = document.querySelector('.auth-notification');
         if (existing) existing.remove();
