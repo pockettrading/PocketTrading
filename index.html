@@ -467,7 +467,7 @@
                 const isAdmin = currentUser.email === 'ephremgojo@gmail.com';
                 const userName = currentUser.name || currentUser.email.split('@')[0];
                 
-                // Desktop nav links (same for all logged-in users)
+                // Desktop nav links for logged-in users
                 navLinks.innerHTML = `
                     <a href="index.html" class="nav-link">Home</a>
                     <a href="markets.html" class="nav-link">Markets</a>
@@ -475,7 +475,7 @@
                     <a href="profile.html" class="nav-link">My Profile</a>
                 `;
                 
-                // Desktop right section
+                // Desktop right section for logged-in users
                 rightNav.innerHTML = `
                     <div class="user-section">
                         <div class="user-info">
@@ -487,7 +487,7 @@
                     </div>
                 `;
                 
-                // Mobile menu
+                // Mobile menu for logged-in users
                 mobileMenu.innerHTML = `
                     <a href="index.html" class="mobile-nav-link">🏠 Home</a>
                     <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
@@ -497,13 +497,14 @@
                     <button class="logout-btn" style="margin-top:12px;" onclick="logout()">Logout</button>
                 `;
             } else {
-                // Guest user
+                // Desktop nav links for guests
                 navLinks.innerHTML = `
                     <a href="index.html" class="nav-link">Home</a>
                     <a href="markets.html" class="nav-link">Markets</a>
                     <a href="trades.html" class="nav-link">Trades</a>
                 `;
                 
+                // Desktop right section for guests
                 rightNav.innerHTML = `
                     <div class="guest-buttons">
                         <a href="login.html" class="btn-login">Login</a>
@@ -511,6 +512,7 @@
                     </div>
                 `;
                 
+                // Mobile menu for guests
                 mobileMenu.innerHTML = `
                     <a href="index.html" class="mobile-nav-link">🏠 Home</a>
                     <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
@@ -553,6 +555,10 @@
                         resolve();
                     }
                 }, 100);
+                setTimeout(() => {
+                    clearInterval(check);
+                    resolve();
+                }, 3000);
             });
             
             currentUser = auth.getUser();
