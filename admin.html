@@ -420,6 +420,24 @@
             cursor: pointer;
         }
 
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0,216,151,0.3);
+            border-top-color: #00D897;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         @media (max-width: 1024px) {
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
             .settings-grid { grid-template-columns: 1fr; }
@@ -490,7 +508,7 @@
                 </select>
                 <button class="btn-approve" onclick="adminManager.refreshUsers()">🔄 Refresh</button>
             </div>
-            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Email</th><th>Balance</th><th>KYC Status</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="usersTableBody"></table><td colspan="7"><div class="loading" style="text-align:center; padding:40px;">Loading...</div></td></tbody></table></div>
+            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Email</th><th>Balance</th><th>KYC Status</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="usersTableBody"></td><td colspan="7"><div class="loading"><div class="spinner"></div>Loading...</div></td></tbody></table></div>
         </div>
 
         <!-- Deposits Tab -->
@@ -504,7 +522,7 @@
                 </select>
                 <button class="btn-approve" onclick="adminManager.refreshDeposits()">🔄 Refresh</button>
             </div>
-            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Amount</th><th>Currency</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="depositsTableBody"><tr><td colspan="6"><div class="loading" style="text-align:center; padding:40px;">Loading...</div></td></tr></tbody></table></div>
+            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Amount</th><th>Currency</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="depositsTableBody"><tr><td colspan="6"><div class="loading"><div class="spinner"></div>Loading...</div></tr></tbody></table></div>
         </div>
 
         <!-- Withdrawals Tab -->
@@ -518,7 +536,7 @@
                 </select>
                 <button class="btn-approve" onclick="adminManager.refreshWithdrawals()">🔄 Refresh</button>
             </div>
-            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Amount</th><th>Crypto</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="withdrawalsTableBody"><tr><td colspan="6"><div class="loading" style="text-align:center; padding:40px;">Loading...</div></td></tr></tbody></table></div>
+            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Amount</th><th>Crypto</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="withdrawalsTableBody"><tr><td colspan="6"><div class="loading"><div class="spinner"></div>Loading...</div></tr></tbody></tr></div>
         </div>
 
         <!-- KYC Tab -->
@@ -532,7 +550,7 @@
                 </select>
                 <button class="btn-approve" onclick="adminManager.refreshKYC()">🔄 Refresh</button>
             </div>
-            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Full Name</th><th>ID Type</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="kycTableBody"><tr><td colspan="6"><div class="loading" style="text-align:center; padding:40px;">Loading...</div></td></tr></tbody></table></div>
+            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Full Name</th><th>ID Type</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="kycTableBody"><tr><td colspan="6"><div class="loading"><div class="spinner"></div>Loading...</div></tr></tbody></table></div>
         </div>
 
         <!-- Trades Tab -->
@@ -546,7 +564,7 @@
                 </select>
                 <button class="btn-approve" onclick="adminManager.refreshTrades()">🔄 Refresh</button>
             </div>
-            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Symbol</th><th>Type</th><th>Amount</th><th>Leverage</th><th>P&L</th><th>Status</th><th>Date</th></tr></thead><tbody id="tradesTableBody"><tr><td colspan="8"><div class="loading" style="text-align:center; padding:40px;">Loading...</div></td></tr></tbody></table></div>
+            <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Symbol</th><th>Type</th><th>Amount</th><th>Leverage</th><th>P&L</th><th>Status</th><th>Date</th></tr></thead><tbody id="tradesTableBody"><tr><td colspan="8"><div class="loading"><div class="spinner"></div>Loading...</div></tr></tbody></table></div>
         </div>
 
         <!-- Settings Tab -->
