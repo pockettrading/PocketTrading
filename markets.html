@@ -259,10 +259,6 @@
             color: white;
             width: 250px;
         }
-        .search-input:focus {
-            outline: none;
-            border-color: #00D897;
-        }
 
         /* Markets Table */
         .table-container {
@@ -309,7 +305,6 @@
             margin-top: 12px;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .nav-links, .guest-buttons, .user-section { display: none; }
             .mobile-menu-btn { display: block; }
@@ -390,31 +385,18 @@
         let searchTerm = '';
         let priceUpdateInterval = null;
 
-        // Complete cryptocurrency list with categories
+        // Default market data
         const defaultMarkets = [
             { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 78312.00, change_24h: 2.34, volume: '32.5B', category: 'large' },
             { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', price: 2297.32, change_24h: 1.29, volume: '18.2B', category: 'large' },
-            { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 615.81, change_24h: 0.21, volume: '2.1B', category: 'large' },
             { symbol: 'SOL', name: 'Solana', icon: '◎', price: 168.42, change_24h: 5.23, volume: '4.8B', category: 'large' },
             { symbol: 'XRP', name: 'Ripple', icon: 'X', price: 0.624, change_24h: -0.45, volume: '1.2B', category: 'large' },
-            { symbol: 'ADA', name: 'Cardano', icon: 'A', price: 0.483, change_24h: -1.23, volume: '456M', category: 'mid' },
             { symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð', price: 0.162, change_24h: 8.91, volume: '892M', category: 'meme' },
-            { symbol: 'AVAX', name: 'Avalanche', icon: 'A', price: 42.15, change_24h: 3.45, volume: '678M', category: 'mid' },
-            { symbol: 'MATIC', name: 'Polygon', icon: 'M', price: 0.89, change_24h: -2.11, volume: '345M', category: 'mid' },
-            { symbol: 'SHIB', name: 'Shiba Inu', icon: '🐕', price: 0.000023, change_24h: 4.56, volume: '234M', category: 'meme' },
-            { symbol: 'UNI', name: 'Uniswap', icon: 'U', price: 11.23, change_24h: -0.89, volume: '167M', category: 'defi' },
-            { symbol: 'LINK', name: 'Chainlink', icon: 'L', price: 18.34, change_24h: 1.56, volume: '234M', category: 'defi' },
-            { symbol: 'ATOM', name: 'Cosmos', icon: '⨀', price: 9.87, change_24h: 2.34, volume: '123M', category: 'defi' },
-            { symbol: 'ALGO', name: 'Algorand', icon: 'A', price: 0.18, change_24h: -0.89, volume: '78M', category: 'mid' },
-            { symbol: 'VET', name: 'VeChain', icon: 'V', price: 0.032, change_24h: 1.23, volume: '56M', category: 'mid' },
-            { symbol: 'EGLD', name: 'MultiversX', icon: 'E', price: 42.50, change_24h: 3.21, volume: '45M', category: 'mid' },
-            { symbol: 'FLOW', name: 'Flow', icon: 'F', price: 0.75, change_24h: -1.45, volume: '34M', category: 'mid' },
-            { symbol: 'THETA', name: 'Theta', icon: 'Θ', price: 1.23, change_24h: 0.56, volume: '28M', category: 'mid' },
-            { symbol: 'SAND', name: 'The Sandbox', icon: '⛱️', price: 0.45, change_24h: 2.34, volume: '67M', category: 'defi' },
-            { symbol: 'GALA', name: 'Gala', icon: 'G', price: 0.024, change_24h: 3.45, volume: '89M', category: 'defi' }
+            { symbol: 'BNB', name: 'Binance Coin', icon: 'B', price: 615.81, change_24h: 0.21, volume: '2.1B', category: 'large' },
+            { symbol: 'ADA', name: 'Cardano', icon: 'A', price: 0.483, change_24h: -1.23, volume: '456M', category: 'mid' }
         ];
 
-        // Update navbar based on user state
+        // Function to update navbar based on user state
         function updateNavbar() {
             const navLinks = document.getElementById('navLinks');
             const rightNav = document.getElementById('rightNav');
@@ -422,10 +404,13 @@
             
             if (!navLinks) return;
             
+            console.log('Updating navbar, currentUser:', currentUser);
+            
             if (currentUser) {
                 const isAdmin = currentUser.email === 'ephremgojo@gmail.com';
                 const userName = currentUser.name || currentUser.email.split('@')[0];
                 
+                // Desktop nav links for logged-in users
                 navLinks.innerHTML = `
                     <a href="index.html" class="nav-link">Home</a>
                     <a href="markets.html" class="nav-link active">Markets</a>
@@ -433,6 +418,7 @@
                     <a href="profile.html" class="nav-link">My Profile</a>
                 `;
                 
+                // Desktop right section for logged-in users
                 rightNav.innerHTML = `
                     <div class="user-section">
                         <div class="user-info">
@@ -444,6 +430,7 @@
                     </div>
                 `;
                 
+                // Mobile menu for logged-in users
                 mobileMenu.innerHTML = `
                     <a href="index.html" class="mobile-nav-link">🏠 Home</a>
                     <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
@@ -453,12 +440,14 @@
                     <button class="logout-btn" style="margin-top:12px;" onclick="logout()">Logout</button>
                 `;
             } else {
+                // Desktop nav links for guests
                 navLinks.innerHTML = `
                     <a href="index.html" class="nav-link">Home</a>
                     <a href="markets.html" class="nav-link active">Markets</a>
                     <a href="trades.html" class="nav-link">Trades</a>
                 `;
                 
+                // Desktop right section for guests
                 rightNav.innerHTML = `
                     <div class="guest-buttons">
                         <a href="login.html" class="btn-login">Login</a>
@@ -466,6 +455,7 @@
                     </div>
                 `;
                 
+                // Mobile menu for guests
                 mobileMenu.innerHTML = `
                     <a href="index.html" class="mobile-nav-link">🏠 Home</a>
                     <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
@@ -476,10 +466,9 @@
             }
         }
 
-        // Format price (handles both large and small numbers)
+        // Format price
         function formatPrice(price) {
             if (!price && price !== 0) return '0.00';
-            if (price < 0.01 && price > 0) return price.toFixed(6);
             if (price < 1) return price.toFixed(4);
             return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
@@ -523,7 +512,7 @@
             `).join('');
         }
 
-        // Update market statistics
+        // Update market stats
         function updateStats() {
             const totalChange = allMarkets.reduce((sum, m) => sum + (m.change_24h || 0), 0) / allMarkets.length;
             const totalVolume = allMarkets.reduce((sum, m) => {
@@ -563,15 +552,7 @@
                 if (typeof supabaseDB !== 'undefined' && supabaseDB.supabase) {
                     const dbMarkets = await supabaseDB.getAllMarkets();
                     if (dbMarkets && dbMarkets.length > 0) {
-                        allMarkets = dbMarkets.map(m => ({
-                            symbol: m.symbol,
-                            name: m.name,
-                            icon: m.icon || this.getIconForSymbol(m.symbol),
-                            price: m.price,
-                            change_24h: m.change_24h || 0,
-                            volume: m.volume || '—',
-                            category: m.category || this.getCategoryForSymbol(m.symbol)
-                        }));
+                        allMarkets = dbMarkets;
                     } else {
                         allMarkets = [...defaultMarkets];
                     }
@@ -586,31 +567,6 @@
                 renderMarkets();
                 updateStats();
             }
-        }
-
-        // Helper function to get icon for symbol
-        function getIconForSymbol(symbol) {
-            const icons = {
-                'BTC': '₿', 'ETH': 'Ξ', 'BNB': 'B', 'SOL': '◎', 'XRP': 'X',
-                'ADA': 'A', 'DOGE': 'Ð', 'AVAX': 'A', 'MATIC': 'M', 'SHIB': '🐕',
-                'UNI': 'U', 'LINK': 'L', 'ATOM': '⨀', 'ALGO': 'A', 'VET': 'V',
-                'EGLD': 'E', 'FLOW': 'F', 'THETA': 'Θ', 'SAND': '⛱️', 'GALA': 'G'
-            };
-            return icons[symbol] || '📈';
-        }
-
-        // Helper function to get category for symbol
-        function getCategoryForSymbol(symbol) {
-            const largeCap = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP'];
-            const midCap = ['ADA', 'AVAX', 'MATIC', 'ALGO', 'VET', 'EGLD', 'FLOW', 'THETA'];
-            const memeCoins = ['DOGE', 'SHIB'];
-            const defi = ['UNI', 'LINK', 'ATOM', 'SAND', 'GALA'];
-            
-            if (largeCap.includes(symbol)) return 'large';
-            if (midCap.includes(symbol)) return 'mid';
-            if (memeCoins.includes(symbol)) return 'meme';
-            if (defi.includes(symbol)) return 'defi';
-            return 'all';
         }
 
         // Start real-time price updates
@@ -660,8 +616,26 @@
             }
         }
 
+        // Get user from sessionStorage directly (fallback)
+        async function getUserFromSession() {
+            const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
+            if (userId) {
+                try {
+                    const user = await supabaseDB.getUserById(parseInt(userId));
+                    if (user) {
+                        user.isAdmin = (user.email === 'ephremgojo@gmail.com');
+                        return user;
+                    }
+                } catch (e) {
+                    console.error('Error fetching user:', e);
+                }
+            }
+            return null;
+        }
+
         // Initialize page
         async function init() {
+            // Wait for auth to be ready
             await new Promise(resolve => {
                 const check = setInterval(() => {
                     if (typeof auth !== 'undefined') {
@@ -675,14 +649,30 @@
                 }, 3000);
             });
             
+            // Try to get user from auth
             currentUser = auth.getUser();
+            
+            // If auth returns null, try sessionStorage directly
+            if (!currentUser) {
+                currentUser = await getUserFromSession();
+                if (currentUser && typeof auth !== 'undefined') {
+                    auth.currentUser = currentUser;
+                }
+            }
+            
+            console.log('Current user:', currentUser);
+            
+            // Update navbar immediately
             updateNavbar();
+            
+            // Load markets
             await loadMarkets();
             setupEventListeners();
             startPriceUpdates();
             
             // Listen for auth state changes
             window.addEventListener('authStateChanged', (e) => {
+                console.log('Auth state changed:', e.detail);
                 currentUser = e.detail.user;
                 updateNavbar();
             });
@@ -693,12 +683,15 @@
             if (typeof auth !== 'undefined' && auth.logout) {
                 auth.logout();
             } else {
+                sessionStorage.removeItem('pocket_user_id');
+                localStorage.removeItem('pocket_user_id');
                 window.location.href = 'index.html';
             }
         };
         
         window.openTradingView = openTradingView;
 
+        // Start the app
         init();
     </script>
 </body>
