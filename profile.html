@@ -304,6 +304,7 @@
             font-weight: 600;
             text-decoration: none;
             display: inline-block;
+            transition: all 0.2s;
         }
         .action-btn.deposit {
             background: linear-gradient(135deg, #00D897, #00B8A0);
@@ -415,8 +416,15 @@
             margin-bottom: 24px;
             border: 1px solid rgba(0, 216, 151, 0.2);
         }
-        .welcome-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
-        .welcome-subtitle { color: #8B93A5; font-size: 14px; }
+        .welcome-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .welcome-subtitle {
+            color: #8B93A5;
+            font-size: 14px;
+        }
 
         .activity-item {
             display: flex;
@@ -558,6 +566,7 @@
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
@@ -608,14 +617,25 @@
                     <button class="logout-btn" style="margin-top:12px;" onclick="logout()">Logout</button>
                 `;
             } else {
-                // Guest users should not be on profile page, redirect to index
-                window.location.href = 'index.html';
-                return;
+                // Guest users should not be on profile page - redirect to login
+                window.location.href = 'login.html';
             }
         }
 
         // Load user data
         async function loadUserData() {
+            try {
+                const userData = await supabaseDB.getUserById(currentUser.id);
+                if (userData) {
+                    currentUser = { ...currentUser, ...userData };
+                    currentUser.isAdmin = (currentUser.email === 'ephremgojo@gmail.com');
+                    sessionStorage.setItem('pocket_user_id', currentUser.id);
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+            
+            // Update UI elements
             const displayName = document.getElementById('displayName');
             const displayEmail = document.getElementById('displayEmail');
             const displayMemberSince = document.getElementById('displayMemberSince');
@@ -649,9 +669,13 @@
 
         // Load trades
         async function loadTrades() {
-            if (typeof supabaseDB !== 'undefined') {
+            try {
                 userTrades = await supabaseDB.getUserTrades(currentUser.id);
                 userActivities = await supabaseDB.getUserActivities(currentUser.id, 10);
+            } catch (error) {
+                console.error('Error loading trades:', error);
+                userTrades = [];
+                userActivities = [];
             }
             
             updateDashboardStats();
@@ -691,7 +715,7 @@
             if (!tbody) return;
             
             if (userTrades.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No trades yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No trades yet</td><\/tr>';
                 return;
             }
             
@@ -703,7 +727,7 @@
                     <td>$${(t.amount || 0).toLocaleString()}</td>
                     <td class="${(t.pnl || 0) >= 0 ? 'positive' : 'negative'}">${(t.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(t.pnl || 0).toLocaleString()}</td>
                     <td><span class="kyc-badge ${t.status === 'open' ? 'kyc-pending' : 'kyc-verified'}">${t.status || 'N/A'}</span></td>
-            </tr>
+                </tr>
             `).join('');
         }
 
@@ -728,7 +752,7 @@
             const pnlCtx = document.getElementById('pnlChart')?.getContext('2d');
             const distCtx = document.getElementById('distributionChart')?.getContext('2d');
             
-            if (pnlCtx) {
+            if (pnlCtx && userTrades.length > 0) {
                 const last7Days = [];
                 const dailyPnL = [];
                 for (let i = 6; i >= 0; i--) {
@@ -741,21 +765,55 @@
                     }).reduce((sum, t) => sum + (t.pnl || 0), 0);
                     dailyPnL.push(dayPnL);
                 }
+                
+                if (pnlChart) pnlChart.destroy();
                 pnlChart = new Chart(pnlCtx, {
                     type: 'line',
-                    data: { labels: last7Days, datasets: [{ label: 'Daily P&L', data: dailyPnL, borderColor: '#00D897', backgroundColor: 'rgba(0,216,151,0.1)', borderWidth: 2, fill: true, tension: 0.4 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#FFFFFF' } } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } }, y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } } } }
+                    data: {
+                        labels: last7Days,
+                        datasets: [{
+                            label: 'Daily P&L',
+                            data: dailyPnL,
+                            borderColor: '#00D897',
+                            backgroundColor: 'rgba(0,216,151,0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { labels: { color: '#FFFFFF' } } },
+                        scales: {
+                            x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } },
+                            y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } }
+                        }
+                    }
                 });
             }
             
-            if (distCtx) {
+            if (distCtx && userTrades.length > 0) {
                 const closedTrades = userTrades.filter(t => t.status === 'closed');
                 const wins = closedTrades.filter(t => (t.pnl || 0) > 0).length;
                 const losses = closedTrades.filter(t => (t.pnl || 0) <= 0).length;
+                
+                if (distributionChart) distributionChart.destroy();
                 distributionChart = new Chart(distCtx, {
                     type: 'doughnut',
-                    data: { labels: ['Winning Trades', 'Losing Trades'], datasets: [{ data: [wins, losses], backgroundColor: ['#00D897', '#FF4757'], borderWidth: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#FFFFFF' } } } }
+                    data: {
+                        labels: ['Winning Trades', 'Losing Trades'],
+                        datasets: [{
+                            data: [wins, losses],
+                            backgroundColor: ['#00D897', '#FF4757'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { labels: { color: '#FFFFFF' } } }
+                    }
                 });
             }
         }
@@ -786,18 +844,20 @@
             const updates = { name: fullName, phone: phone, country: country };
             if (newPass) updates.password = newPass;
             
-            if (typeof supabaseDB !== 'undefined') {
+            try {
                 await supabaseDB.updateUser(currentUser.id, updates);
                 currentUser = { ...currentUser, ...updates };
                 sessionStorage.setItem('pocket_user_id', currentUser.id);
+                showNotification('Profile updated successfully!', 'success');
+                
+                document.getElementById('currentPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmNewPassword').value = '';
+                loadUserData();
+                updateNavbar();
+            } catch (error) {
+                showNotification('Failed to update profile', 'error');
             }
-            
-            showNotification('Profile updated successfully!', 'success');
-            document.getElementById('currentPassword').value = '';
-            document.getElementById('newPassword').value = '';
-            document.getElementById('confirmNewPassword').value = '';
-            loadUserData();
-            updateNavbar();
         }
 
         async function submitKYC() {
@@ -810,7 +870,7 @@
                 return;
             }
             
-            if (typeof supabaseDB !== 'undefined') {
+            try {
                 await supabaseDB.updateUserKYCStatus(currentUser.id, 'pending');
                 await supabaseDB.createKYCRequest({
                     id: Date.now(),
@@ -830,17 +890,19 @@
                     description: 'Identity verification documents submitted',
                     created_at: new Date().toISOString()
                 });
+                
+                currentUser.kyc_status = 'pending';
+                loadUserData();
+                
+                const kycForm = document.getElementById('kycForm');
+                const kycPendingMessage = document.getElementById('kycPendingMessage');
+                if (kycForm) kycForm.style.display = 'none';
+                if (kycPendingMessage) kycPendingMessage.style.display = 'block';
+                
+                showNotification('KYC documents submitted for review!', 'success');
+            } catch (error) {
+                showNotification('Failed to submit KYC', 'error');
             }
-            
-            currentUser.kyc_status = 'pending';
-            loadUserData();
-            
-            const kycForm = document.getElementById('kycForm');
-            const kycPendingMessage = document.getElementById('kycPendingMessage');
-            if (kycForm) kycForm.style.display = 'none';
-            if (kycPendingMessage) kycPendingMessage.style.display = 'block';
-            
-            showNotification('KYC documents submitted for review!', 'success');
         }
 
         async function sendSupport() {
@@ -852,7 +914,7 @@
                 return;
             }
             
-            if (typeof supabaseDB !== 'undefined') {
+            try {
                 await supabaseDB.createUserActivity({
                     id: Date.now(),
                     user_id: currentUser.id,
@@ -861,26 +923,30 @@
                     description: `Subject: ${subject}`,
                     created_at: new Date().toISOString()
                 });
+                showNotification(`Support ticket submitted!\nSubject: ${subject}\n\nWe will respond within 24 hours.`, 'success');
+                document.getElementById('supportSubject').value = '';
+                document.getElementById('supportMessage').value = '';
+            } catch (error) {
+                showNotification('Failed to submit support ticket', 'error');
             }
-            
-            showNotification(`Support ticket submitted!\nSubject: ${subject}\n\nWe will respond within 24 hours.`, 'success');
-            document.getElementById('supportSubject').value = '';
-            document.getElementById('supportMessage').value = '';
         }
 
         async function deleteAccount() {
             if (!confirm('Are you sure you want to delete your account? This cannot be undone!')) return;
             
-            if (typeof supabaseDB !== 'undefined') {
-                for (const trade of userTrades) await supabaseDB.delete('trades', trade.id);
-                for (const activity of userActivities) await supabaseDB.delete('user_activities', activity.id);
+            try {
+                for (const trade of userTrades) {
+                    await supabaseDB.delete('trades', trade.id);
+                }
                 await supabaseDB.deleteUser(currentUser.id);
+                
+                sessionStorage.removeItem('pocket_user_id');
+                localStorage.removeItem('pocket_user_id');
+                showNotification('Account deleted successfully', 'success');
+                setTimeout(() => window.location.href = 'index.html', 2000);
+            } catch (error) {
+                showNotification('Failed to delete account', 'error');
             }
-            
-            sessionStorage.removeItem('pocket_user_id');
-            localStorage.removeItem('pocket_user_id');
-            showNotification('Account deleted successfully', 'success');
-            setTimeout(() => window.location.href = 'index.html', 2000);
         }
 
         function formatDate(dateString) {
@@ -899,21 +965,24 @@
         }
 
         function showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.textContent = message;
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: ${type === 'error' ? '#FF4757' : '#00D897'};
-                color: white;
-                padding: 12px 20px;
-                border-radius: 12px;
-                z-index: 10000;
-                animation: slideIn 0.3s ease-out;
-            `;
-            document.body.appendChild(notification);
-            setTimeout(() => notification.remove(), 3000);
+            if (typeof auth !== 'undefined' && auth.showNotification) {
+                auth.showNotification(message, type);
+            } else {
+                const notification = document.createElement('div');
+                notification.textContent = message;
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${type === 'error' ? '#FF4757' : '#00D897'};
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 12px;
+                    z-index: 10000;
+                `;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 3000);
+            }
         }
 
         function setupEventListeners() {
@@ -950,6 +1019,10 @@
                         resolve();
                     }
                 }, 100);
+                setTimeout(() => {
+                    clearInterval(check);
+                    resolve();
+                }, 3000);
             });
             
             currentUser = auth.getUser();
