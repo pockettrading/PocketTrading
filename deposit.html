@@ -261,6 +261,10 @@
             font-size: 18px;
             font-weight: 600;
         }
+        .amount-input:focus {
+            outline: none;
+            border-color: #00D897;
+        }
         .preset-amounts {
             display: flex;
             gap: 12px;
@@ -276,6 +280,11 @@
             color: #8B93A5;
             cursor: pointer;
             font-size: 14px;
+            transition: all 0.2s;
+        }
+        .preset-btn:hover {
+            border-color: #00D897;
+            color: #00D897;
         }
 
         .crypto-address {
@@ -347,6 +356,15 @@
             font-size: 16px;
             font-weight: 700;
             cursor: pointer;
+            transition: all 0.2s;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 216, 151, 0.3);
+        }
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .info-text {
@@ -354,6 +372,26 @@
             font-size: 12px;
             color: #5A6475;
             margin-top: 20px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+            max-width: 350px;
+        }
+        .notification-success { background: rgba(0, 216, 151, 0.95); color: white; }
+        .notification-error { background: rgba(255, 71, 87, 0.95); color: white; }
+        .notification-info { background: rgba(255, 165, 2, 0.95); color: white; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
 
         @media (max-width: 768px) {
@@ -438,20 +476,305 @@
         </div>
     </div>
 
-    <!-- Scripts - Load in correct order -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/deposit.js"></script>
     
     <script>
-        window.copyAddress = function() {
-            const address = document.getElementById('cryptoAddress')?.textContent;
-            if (address) {
-                navigator.clipboard.writeText(address);
-                alert('Address copied to clipboard!');
-            }
+        let currentUser = null;
+        let selectedCurrency = 'USDT';
+        
+        // Network fees for each currency
+        const networkFees = {
+            USDT: 1.00,
+            BTC: 0.0002,
+            ETH: 0.005
         };
+
+        // Default crypto addresses (will be overridden by admin settings)
+        let cryptoAddresses = {
+            USDT: 'TX8xKJk3g5xVHhRq2LpN7mY9wQeRtYuIoP',
+            BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+            ETH: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5'
+        };
+
+        // Update navbar based on user state
+        function updateNavbar() {
+            const navLinks = document.getElementById('navLinks');
+            const rightNav = document.getElementById('rightNav');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            if (!navLinks) return;
+            
+            if (currentUser) {
+                const isAdmin = currentUser.email === 'ephremgojo@gmail.com';
+                const userName = currentUser.name || currentUser.email.split('@')[0];
+                
+                navLinks.innerHTML = `
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="markets.html" class="nav-link">Markets</a>
+                    <a href="trades.html" class="nav-link">Trades</a>
+                    <a href="profile.html" class="nav-link">My Profile</a>
+                `;
+                
+                rightNav.innerHTML = `
+                    <div class="user-section">
+                        <div class="user-info">
+                            <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
+                            <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
+                        </div>
+                        ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
+                        <button class="logout-btn" onclick="logout()">Logout</button>
+                    </div>
+                `;
+                
+                mobileMenu.innerHTML = `
+                    <a href="index.html" class="mobile-nav-link">🏠 Home</a>
+                    <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
+                    <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+                    <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
+                    ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
+                    <button class="logout-btn" style="margin-top:12px;" onclick="logout()">Logout</button>
+                `;
+            } else {
+                // Guest users should not be on deposit page - redirect to login
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Load crypto addresses from Supabase
+        async function loadCryptoAddresses() {
+            try {
+                const settings = await supabaseDB.getPlatformSettings();
+                if (settings && settings.crypto_deposit_addresses) {
+                    cryptoAddresses = settings.crypto_deposit_addresses;
+                }
+            } catch (error) {
+                console.error('Error loading crypto addresses:', error);
+            }
+            updateCryptoAddress();
+        }
+
+        function updateCryptoAddress() {
+            const address = cryptoAddresses[selectedCurrency] || cryptoAddresses['USDT'];
+            const addressEl = document.getElementById('cryptoAddress');
+            const addressLabel = document.getElementById('addressLabel');
+            
+            if (addressEl) addressEl.textContent = address;
+            if (addressLabel) {
+                let network = 'TRC20';
+                if (selectedCurrency === 'BTC') network = 'BTC';
+                if (selectedCurrency === 'ETH') network = 'ERC20';
+                addressLabel.textContent = `Send ${selectedCurrency} (${network}) to this address:`;
+            }
+        }
+
+        function updateBalanceDisplay() {
+            const balance = currentUser.balance || 0;
+            const balanceEl = document.getElementById('currentBalance');
+            if (balanceEl) {
+                balanceEl.textContent = `$${balance.toLocaleString()}`;
+            }
+        }
+
+        function updateSummary() {
+            const amount = parseFloat(document.getElementById('depositAmount').value) || 0;
+            const fee = networkFees[selectedCurrency] || 1;
+            const total = amount + fee;
+            
+            const summaryAmount = document.getElementById('summaryAmount');
+            const networkFee = document.getElementById('networkFee');
+            const totalAmount = document.getElementById('totalAmount');
+            const submitBtn = document.getElementById('submitDeposit');
+            
+            if (summaryAmount) summaryAmount.textContent = `$${amount.toFixed(2)}`;
+            if (networkFee) networkFee.textContent = `$${fee.toFixed(4)}`;
+            if (totalAmount) totalAmount.textContent = `$${total.toFixed(4)}`;
+            
+            if (submitBtn) {
+                if (amount < 10 && amount > 0) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Minimum $10';
+                } else if (!amount || amount <= 0) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Enter Amount';
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Deposit Request';
+                }
+            }
+        }
+
+        async function submitDeposit() {
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            
+            if (!amount || amount < 10) {
+                showNotification('Please enter a valid amount (minimum $10)', 'error');
+                return;
+            }
+            
+            const fee = networkFees[selectedCurrency] || 1;
+            const total = amount + fee;
+            
+            const depositRequest = {
+                id: Date.now(),
+                user_id: currentUser.id,
+                user_email: currentUser.email,
+                user_name: currentUser.name,
+                amount: amount,
+                currency: selectedCurrency,
+                fee: fee,
+                total: total,
+                status: 'pending',
+                date: new Date().toISOString()
+            };
+            
+            try {
+                await supabaseDB.createDepositRequest(depositRequest);
+                await supabaseDB.createUserActivity({
+                    id: Date.now(),
+                    user_id: currentUser.id,
+                    type: 'deposit',
+                    title: 'Deposit Request Submitted',
+                    description: `$${amount} ${selectedCurrency} deposit requested`,
+                    created_at: new Date().toISOString()
+                });
+                
+                showNotification(`Deposit request submitted!\nAmount: $${amount.toFixed(2)} ${selectedCurrency}\n\nYour deposit will be processed within 5-30 minutes.`, 'success');
+                
+                // Reset form
+                document.getElementById('depositAmount').value = '';
+                updateSummary();
+                
+                // Auto-approve for admin user (testing)
+                if (currentUser.email === 'ephremgojo@gmail.com') {
+                    await autoApproveDeposit(depositRequest);
+                }
+            } catch (error) {
+                console.error('Error submitting deposit:', error);
+                showNotification('Failed to submit deposit request', 'error');
+            }
+        }
+
+        async function autoApproveDeposit(depositRequest) {
+            try {
+                await supabaseDB.updateDepositRequest(depositRequest.id, { status: 'approved' });
+                
+                const newBalance = (currentUser.balance || 0) + depositRequest.amount;
+                await supabaseDB.updateUserBalance(currentUser.id, newBalance);
+                currentUser.balance = newBalance;
+                sessionStorage.setItem('pocket_user_id', currentUser.id);
+                
+                await supabaseDB.createTransaction({
+                    id: Date.now(),
+                    user_id: currentUser.id,
+                    amount: depositRequest.amount,
+                    type: 'deposit',
+                    description: `Deposit of $${depositRequest.amount} ${depositRequest.currency}`,
+                    date: new Date().toISOString()
+                });
+                
+                await supabaseDB.createUserActivity({
+                    id: Date.now(),
+                    user_id: currentUser.id,
+                    type: 'deposit_approved',
+                    title: 'Deposit Approved',
+                    description: `$${depositRequest.amount} deposit has been approved`,
+                    created_at: new Date().toISOString()
+                });
+                
+                updateBalanceDisplay();
+                showNotification(`✅ Deposit auto-approved! New balance: $${newBalance.toFixed(2)}`, 'success');
+            } catch (error) {
+                console.error('Error auto-approving deposit:', error);
+            }
+        }
+
+        function showNotification(message, type) {
+            const existing = document.querySelector('.notification');
+            if (existing) existing.remove();
+            
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
+
+        function setupEventListeners() {
+            document.querySelectorAll('.currency-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.currency-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectedCurrency = btn.dataset.currency;
+                    updateCryptoAddress();
+                    updateSummary();
+                });
+            });
+            
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const amount = btn.dataset.amount;
+                    document.getElementById('depositAmount').value = amount;
+                    updateSummary();
+                });
+            });
+            
+            document.getElementById('depositAmount').addEventListener('input', updateSummary);
+            document.getElementById('submitDeposit').addEventListener('click', submitDeposit);
+            
+            const mobileBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileBtn && mobileMenu) {
+                mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('show'));
+            }
+        }
+
+        window.copyAddress = function() {
+            const address = document.getElementById('cryptoAddress').textContent;
+            navigator.clipboard.writeText(address);
+            showNotification('Address copied to clipboard!', 'info');
+        };
+
+        window.logout = function() {
+            if (typeof auth !== 'undefined' && auth.logout) auth.logout();
+            else window.location.href = 'index.html';
+        };
+
+        async function init() {
+            await new Promise(resolve => {
+                const check = setInterval(() => {
+                    if (typeof auth !== 'undefined') {
+                        clearInterval(check);
+                        resolve();
+                    }
+                }, 100);
+                setTimeout(() => {
+                    clearInterval(check);
+                    resolve();
+                }, 3000);
+            });
+            
+            currentUser = auth.getUser();
+            
+            if (!currentUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            updateNavbar();
+            updateBalanceDisplay();
+            await loadCryptoAddresses();
+            setupEventListeners();
+            updateSummary();
+        }
+
+        init();
     </script>
 </body>
 </html>
