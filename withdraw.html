@@ -77,6 +77,29 @@
             color: #00D897;
         }
 
+        /* Guest Buttons */
+        .guest-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .btn-login, .btn-register {
+            padding: 8px 24px;
+            border-radius: 40px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-login {
+            background: transparent;
+            border: 1px solid rgba(0, 216, 151, 0.5);
+            color: #00D897;
+        }
+        .btn-register {
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            color: white;
+        }
+
+        /* User Section - Logged In */
         .user-section {
             display: flex;
             align-items: center;
@@ -200,6 +223,7 @@
             padding: 24px;
         }
 
+        /* Balance Display */
         .balance-display {
             background: rgba(0, 216, 151, 0.1);
             border-radius: 16px;
@@ -219,6 +243,7 @@
             color: #00D897;
         }
 
+        /* Currency Selector */
         .currency-selector {
             display: flex;
             gap: 12px;
@@ -242,6 +267,7 @@
             border-color: transparent;
         }
 
+        /* Amount Section */
         .amount-section {
             margin-bottom: 24px;
         }
@@ -287,6 +313,7 @@
             color: #00D897;
         }
 
+        /* Wallet Address Section */
         .wallet-section {
             margin-bottom: 24px;
         }
@@ -311,6 +338,7 @@
             border-color: #00D897;
         }
 
+        /* Summary */
         .summary {
             background: rgba(0, 0, 0, 0.2);
             border-radius: 16px;
@@ -342,6 +370,7 @@
             color: #00D897;
         }
 
+        /* Submit Button */
         .submit-btn {
             width: 100%;
             padding: 14px;
@@ -371,6 +400,7 @@
             margin-top: 20px;
         }
 
+        /* Notification */
         .notification {
             position: fixed;
             top: 20px;
@@ -392,7 +422,7 @@
         }
 
         @media (max-width: 768px) {
-            .nav-links, .user-section { display: none; }
+            .nav-links, .guest-buttons, .user-section { display: none; }
             .mobile-menu-btn { display: block; }
             .main-content { padding: 16px; }
             .withdraw-card { max-width: 100%; }
@@ -472,316 +502,16 @@
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- ============================================ -->
+    <!-- SCRIPTS - CORRECT ORDER IS CRITICAL         -->
+    <!-- ============================================ -->
+    <!-- 1. Supabase CDN (MUST BE FIRST) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- 2. Database Wrapper -->
     <script src="js/supabase-db.js"></script>
+    <!-- 3. Authentication -->
     <script src="js/auth.js"></script>
-    
-    <script>
-        let currentUser = null;
-        let selectedCurrency = 'USDT';
-        let withdrawalFee = 1.5;
-        let minWithdrawal = 10;
-
-        // Update navbar based on user state
-        function updateNavbar() {
-            const navLinks = document.getElementById('navLinks');
-            const rightNav = document.getElementById('rightNav');
-            const mobileMenu = document.getElementById('mobileMenu');
-            
-            if (!navLinks) return;
-            
-            if (currentUser) {
-                const isAdmin = currentUser.email === 'ephremgojo@gmail.com';
-                const userName = currentUser.name || currentUser.email.split('@')[0];
-                
-                navLinks.innerHTML = `
-                    <a href="index.html" class="nav-link">Home</a>
-                    <a href="markets.html" class="nav-link">Markets</a>
-                    <a href="trades.html" class="nav-link">Trades</a>
-                    <a href="profile.html" class="nav-link">My Profile</a>
-                `;
-                
-                rightNav.innerHTML = `
-                    <div class="user-section">
-                        <div class="user-info">
-                            <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
-                            <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
-                        </div>
-                        ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
-                        <button class="logout-btn" onclick="logout()">Logout</button>
-                    </div>
-                `;
-                
-                mobileMenu.innerHTML = `
-                    <a href="index.html" class="mobile-nav-link">🏠 Home</a>
-                    <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
-                    <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
-                    <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
-                    ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
-                    <button class="logout-btn" style="margin-top:12px;" onclick="logout()">Logout</button>
-                `;
-            } else {
-                // Guest users should not be on withdraw page - redirect to login
-                window.location.href = 'login.html';
-            }
-        }
-
-        // Load settings from Supabase
-        async function loadSettings() {
-            try {
-                const settings = await supabaseDB.getPlatformSettings();
-                if (settings && settings.trading_settings) {
-                    withdrawalFee = settings.trading_settings.withdrawalFee || 1.5;
-                    minWithdrawal = settings.trading_settings.minTradeAmount || 10;
-                }
-                const feePercentEl = document.getElementById('feePercent');
-                if (feePercentEl) feePercentEl.textContent = withdrawalFee;
-            } catch (error) {
-                console.error('Error loading settings:', error);
-            }
-        }
-
-        function updateBalanceDisplay() {
-            const balance = currentUser.balance || 0;
-            const balanceEl = document.getElementById('currentBalance');
-            if (balanceEl) {
-                balanceEl.textContent = `$${balance.toLocaleString()}`;
-                if (balance < minWithdrawal) {
-                    balanceEl.style.color = '#FF4757';
-                } else {
-                    balanceEl.style.color = '#00D897';
-                }
-            }
-        }
-
-        function updateSummary() {
-            const amount = parseFloat(document.getElementById('withdrawAmount').value) || 0;
-            const fee = (amount * withdrawalFee) / 100;
-            const receiveAmount = amount - fee;
-            
-            const summaryAmount = document.getElementById('summaryAmount');
-            const feeAmount = document.getElementById('feeAmount');
-            const receiveAmountEl = document.getElementById('receiveAmount');
-            const submitBtn = document.getElementById('submitWithdraw');
-            const walletInput = document.getElementById('walletAddress');
-            const balance = currentUser.balance || 0;
-            
-            if (summaryAmount) summaryAmount.textContent = `$${amount.toFixed(2)}`;
-            if (feeAmount) feeAmount.textContent = `$${fee.toFixed(4)}`;
-            if (receiveAmountEl) receiveAmountEl.textContent = `$${receiveAmount.toFixed(4)}`;
-            
-            if (submitBtn) {
-                if (amount < minWithdrawal && amount > 0) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = `Minimum $${minWithdrawal}`;
-                } else if (amount > balance) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Insufficient Balance';
-                } else if (!amount || amount <= 0) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Enter Amount';
-                } else if (!walletInput?.value.trim()) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Enter Wallet Address';
-                } else {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Request Withdrawal';
-                }
-            }
-        }
-
-        async function submitWithdrawal() {
-            const amount = parseFloat(document.getElementById('withdrawAmount').value);
-            const walletAddress = document.getElementById('walletAddress').value.trim();
-            
-            if (!amount || amount < minWithdrawal) {
-                showNotification(`Minimum withdrawal amount is $${minWithdrawal}`, 'error');
-                return;
-            }
-            
-            if (amount > (currentUser.balance || 0)) {
-                showNotification('Insufficient balance', 'error');
-                return;
-            }
-            
-            if (!walletAddress) {
-                showNotification('Please enter your wallet address', 'error');
-                return;
-            }
-            
-            const fee = (amount * withdrawalFee) / 100;
-            const receiveAmount = amount - fee;
-            
-            const withdrawalRequest = {
-                id: Date.now(),
-                user_id: currentUser.id,
-                user_email: currentUser.email,
-                user_name: currentUser.name,
-                amount: amount,
-                crypto: selectedCurrency,
-                wallet_address: walletAddress,
-                fee_percent: withdrawalFee,
-                fee_amount: fee,
-                receive_amount: receiveAmount,
-                status: 'pending',
-                date: new Date().toISOString()
-            };
-            
-            try {
-                await supabaseDB.createWithdrawalRequest(withdrawalRequest);
-                await supabaseDB.createUserActivity({
-                    id: Date.now(),
-                    user_id: currentUser.id,
-                    type: 'withdrawal',
-                    title: 'Withdrawal Request Submitted',
-                    description: `$${amount} ${selectedCurrency} withdrawal requested`,
-                    created_at: new Date().toISOString()
-                });
-                
-                showNotification(
-                    `Withdrawal request submitted!\nAmount: $${amount.toFixed(2)} ${selectedCurrency}\nFee: $${fee.toFixed(4)}\nYou will receive: $${receiveAmount.toFixed(4)}\n\nYour withdrawal will be processed within 24-48 hours.`, 
-                    'success'
-                );
-                
-                // Reset form
-                document.getElementById('withdrawAmount').value = '';
-                document.getElementById('walletAddress').value = '';
-                updateSummary();
-                
-                // Auto-approve for admin user (testing)
-                if (currentUser.email === 'ephremgojo@gmail.com') {
-                    await autoApproveWithdrawal(withdrawalRequest);
-                }
-            } catch (error) {
-                console.error('Error submitting withdrawal:', error);
-                showNotification('Failed to submit withdrawal request', 'error');
-            }
-        }
-
-        async function autoApproveWithdrawal(withdrawalRequest) {
-            try {
-                if ((currentUser.balance || 0) < withdrawalRequest.amount) {
-                    showNotification('Insufficient balance for withdrawal', 'error');
-                    return;
-                }
-                
-                await supabaseDB.updateWithdrawalRequest(withdrawalRequest.id, { status: 'approved' });
-                
-                const newBalance = (currentUser.balance || 0) - withdrawalRequest.amount;
-                await supabaseDB.updateUserBalance(currentUser.id, newBalance);
-                currentUser.balance = newBalance;
-                sessionStorage.setItem('pocket_user_id', currentUser.id);
-                
-                await supabaseDB.createTransaction({
-                    id: Date.now(),
-                    user_id: currentUser.id,
-                    amount: -withdrawalRequest.amount,
-                    type: 'withdrawal',
-                    description: `Withdrawal of $${withdrawalRequest.amount} ${withdrawalRequest.crypto}`,
-                    date: new Date().toISOString()
-                });
-                
-                await supabaseDB.createUserActivity({
-                    id: Date.now(),
-                    user_id: currentUser.id,
-                    type: 'withdrawal_approved',
-                    title: 'Withdrawal Approved',
-                    description: `$${withdrawalRequest.amount} withdrawal has been processed`,
-                    created_at: new Date().toISOString()
-                });
-                
-                updateBalanceDisplay();
-                showNotification(`✅ Withdrawal auto-approved! New balance: $${newBalance.toFixed(2)}`, 'success');
-            } catch (error) {
-                console.error('Error auto-approving withdrawal:', error);
-                showNotification('Failed to auto-approve withdrawal', 'error');
-            }
-        }
-
-        function showNotification(message, type) {
-            const existing = document.querySelector('.notification');
-            if (existing) existing.remove();
-            
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.animation = 'slideOut 0.3s ease-out';
-                setTimeout(() => notification.remove(), 300);
-            }, 5000);
-        }
-
-        function setupEventListeners() {
-            document.querySelectorAll('.currency-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.currency-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    selectedCurrency = btn.dataset.currency;
-                    updateSummary();
-                });
-            });
-            
-            document.querySelectorAll('.preset-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const amount = btn.dataset.amount;
-                    document.getElementById('withdrawAmount').value = amount;
-                    updateSummary();
-                });
-            });
-            
-            document.getElementById('withdrawAmount').addEventListener('input', updateSummary);
-            
-            const walletInput = document.getElementById('walletAddress');
-            if (walletInput) {
-                walletInput.addEventListener('input', updateSummary);
-            }
-            
-            document.getElementById('submitWithdraw').addEventListener('click', submitWithdrawal);
-            
-            const mobileBtn = document.getElementById('mobileMenuBtn');
-            const mobileMenu = document.getElementById('mobileMenu');
-            if (mobileBtn && mobileMenu) {
-                mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('show'));
-            }
-        }
-
-        window.logout = function() {
-            if (typeof auth !== 'undefined' && auth.logout) auth.logout();
-            else window.location.href = 'index.html';
-        };
-
-        async function init() {
-            await new Promise(resolve => {
-                const check = setInterval(() => {
-                    if (typeof auth !== 'undefined') {
-                        clearInterval(check);
-                        resolve();
-                    }
-                }, 100);
-                setTimeout(() => {
-                    clearInterval(check);
-                    resolve();
-                }, 3000);
-            });
-            
-            currentUser = auth.getUser();
-            
-            if (!currentUser) {
-                window.location.href = 'login.html';
-                return;
-            }
-            
-            updateNavbar();
-            updateBalanceDisplay();
-            await loadSettings();
-            setupEventListeners();
-            updateSummary();
-        }
-
-        init();
-    </script>
+    <!-- 4. Withdraw Page Script -->
+    <script src="js/withdraw.js"></script>
 </body>
 </html>
