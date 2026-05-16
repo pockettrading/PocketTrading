@@ -13,19 +13,41 @@ class WithdrawManager {
 
     async init() {
         await this.waitForDependencies();
+        await this.waitForSession();
         
         this.currentUser = auth.getUser();
+        
+        // Fallback to sessionStorage
+        if (!this.currentUser) {
+            const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
+            if (userId) {
+                try {
+                    const user = await supabaseDB.getUserById(parseInt(userId));
+                    if (user) {
+                        this.currentUser = user;
+                        this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
+                        if (typeof auth !== 'undefined') auth.currentUser = user;
+                    }
+                } catch (e) {}
+            }
+        }
         
         if (!this.currentUser) {
             window.location.href = 'login.html';
             return;
         }
         
+        this.updateNavbar();
         await this.loadSettings();
-        this.setupNavigation();
         this.updateBalanceDisplay();
         this.setupEventListeners();
         this.updateSummary();
+        
+        window.addEventListener('authStateChanged', (e) => {
+            this.currentUser = e.detail.user;
+            this.updateNavbar();
+            if (this.currentUser) this.updateBalanceDisplay();
+        });
     }
 
     async waitForDependencies() {
@@ -36,7 +58,77 @@ class WithdrawManager {
                     resolve();
                 }
             }, 100);
+            setTimeout(() => {
+                clearInterval(check);
+                resolve();
+            }, 5000);
         });
+    }
+
+    async waitForSession() {
+        return new Promise((resolve) => {
+            if (typeof auth !== 'undefined' && auth.getUser() !== null) {
+                resolve();
+                return;
+            }
+            const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
+            if (userId) {
+                resolve();
+                return;
+            }
+            const check = setInterval(() => {
+                if (typeof auth !== 'undefined' && auth.getUser() !== null) {
+                    clearInterval(check);
+                    resolve();
+                }
+            }, 100);
+            setTimeout(() => {
+                clearInterval(check);
+                resolve();
+            }, 3000);
+        });
+    }
+
+    updateNavbar() {
+        const navLinks = document.getElementById('navLinks');
+        const rightNav = document.getElementById('rightNav');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        if (!navLinks) return;
+        
+        if (this.currentUser) {
+            const isAdmin = this.currentUser.email === 'ephremgojo@gmail.com';
+            const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
+            
+            navLinks.innerHTML = `
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="markets.html" class="nav-link">Markets</a>
+                <a href="trades.html" class="nav-link">Trades</a>
+                <a href="profile.html" class="nav-link">My Profile</a>
+            `;
+            
+            rightNav.innerHTML = `
+                <div class="user-section">
+                    <div class="user-info">
+                        <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
+                        <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
+                    </div>
+                    ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
+                    <button class="logout-btn" onclick="window.logout()">Logout</button>
+                </div>
+            `;
+            
+            mobileMenu.innerHTML = `
+                <a href="index.html" class="mobile-nav-link">🏠 Home</a>
+                <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
+                <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+                <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
+                ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
+                <button class="logout-btn" style="margin-top:12px;" onclick="window.logout()">Logout</button>
+            `;
+        } else {
+            window.location.href = 'login.html';
+        }
     }
 
     async loadSettings() {
@@ -46,54 +138,10 @@ class WithdrawManager {
                 this.withdrawalFee = settings.trading_settings.withdrawalFee || 1.5;
                 this.minWithdrawal = settings.trading_settings.minTradeAmount || 10;
             }
-            
-            // Update fee display
             const feePercentEl = document.getElementById('feePercent');
             if (feePercentEl) feePercentEl.textContent = this.withdrawalFee;
         } catch (error) {
             console.error('Error loading settings:', error);
-        }
-    }
-
-    setupNavigation() {
-        const navLinks = document.getElementById('navLinks');
-        const rightNav = document.getElementById('rightNav');
-        const mobileMenu = document.getElementById('mobileMenu');
-        
-        const isAdmin = this.currentUser.email === 'ephremgojo@gmail.com';
-        const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
-        
-        if (navLinks) {
-            navLinks.innerHTML = `
-                <a href="index.html" class="nav-link">Home</a>
-                <a href="markets.html" class="nav-link">Markets</a>
-                <a href="trades.html" class="nav-link">Trades</a>
-                <a href="profile.html" class="nav-link">My Profile</a>
-            `;
-        }
-        
-        if (rightNav) {
-            rightNav.innerHTML = `
-                <div class="user-section">
-                    <div class="user-info">
-                        <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
-                        <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
-                    </div>
-                    ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
-                    <button class="logout-btn" onclick="handleLogout()">Logout</button>
-                </div>
-            `;
-        }
-        
-        if (mobileMenu) {
-            mobileMenu.innerHTML = `
-                <a href="index.html" class="mobile-nav-link">🏠 Home</a>
-                <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
-                <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
-                <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
-                ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
-                <button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>
-            `;
         }
     }
 
@@ -111,7 +159,7 @@ class WithdrawManager {
     }
 
     updateSummary() {
-        const amount = parseFloat(document.getElementById('withdrawAmount')?.value) || 0;
+        const amount = parseFloat(document.getElementById('withdrawAmount').value) || 0;
         const fee = (amount * this.withdrawalFee) / 100;
         const receiveAmount = amount - fee;
         
@@ -148,10 +196,9 @@ class WithdrawManager {
 
     setupEventListeners() {
         // Currency selector
-        const currencyBtns = document.querySelectorAll('.currency-btn');
-        currencyBtns.forEach(btn => {
+        document.querySelectorAll('.currency-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                currencyBtns.forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.currency-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.selectedCurrency = btn.dataset.currency;
                 this.updateSummary();
@@ -159,19 +206,16 @@ class WithdrawManager {
         });
         
         // Preset amounts
-        const presetBtns = document.querySelectorAll('.preset-btn');
-        presetBtns.forEach(btn => {
+        document.querySelectorAll('.preset-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const amount = btn.dataset.amount;
-                const amountInput = document.getElementById('withdrawAmount');
-                if (amountInput) amountInput.value = amount;
+                document.getElementById('withdrawAmount').value = amount;
                 this.updateSummary();
             });
         });
         
         // Amount input
-        const amountInput = document.getElementById('withdrawAmount');
-        if (amountInput) amountInput.addEventListener('input', () => this.updateSummary());
+        document.getElementById('withdrawAmount').addEventListener('input', () => this.updateSummary());
         
         // Wallet address input
         const walletInput = document.getElementById('walletAddress');
@@ -180,8 +224,7 @@ class WithdrawManager {
         }
         
         // Submit button
-        const submitBtn = document.getElementById('submitWithdraw');
-        if (submitBtn) submitBtn.addEventListener('click', () => this.submitWithdrawal());
+        document.getElementById('submitWithdraw').addEventListener('click', () => this.submitWithdrawal());
         
         // Mobile menu
         const mobileBtn = document.getElementById('mobileMenuBtn');
@@ -192,8 +235,8 @@ class WithdrawManager {
     }
 
     async submitWithdrawal() {
-        const amount = parseFloat(document.getElementById('withdrawAmount')?.value);
-        const walletAddress = document.getElementById('walletAddress')?.value.trim();
+        const amount = parseFloat(document.getElementById('withdrawAmount').value);
+        const walletAddress = document.getElementById('walletAddress').value.trim();
         
         if (!amount || amount < this.minWithdrawal) {
             this.showNotification(`Minimum withdrawal amount is $${this.minWithdrawal}`, 'error');
@@ -229,10 +272,7 @@ class WithdrawManager {
         };
         
         try {
-            // Save to Supabase
             await supabaseDB.createWithdrawalRequest(withdrawalRequest);
-            
-            // Create activity record
             await supabaseDB.createUserActivity({
                 id: Date.now(),
                 user_id: this.currentUser.id,
@@ -248,17 +288,14 @@ class WithdrawManager {
             );
             
             // Reset form
-            const amountInput = document.getElementById('withdrawAmount');
-            const walletInput = document.getElementById('walletAddress');
-            if (amountInput) amountInput.value = '';
-            if (walletInput) walletInput.value = '';
+            document.getElementById('withdrawAmount').value = '';
+            document.getElementById('walletAddress').value = '';
             this.updateSummary();
             
-            // Auto-approve for admin user (for testing)
+            // Auto-approve for admin user (testing)
             if (this.currentUser.email === 'ephremgojo@gmail.com') {
                 await this.autoApproveWithdrawal(withdrawalRequest);
             }
-            
         } catch (error) {
             console.error('Error submitting withdrawal:', error);
             this.showNotification('Failed to submit withdrawal request', 'error');
@@ -267,21 +304,18 @@ class WithdrawManager {
 
     async autoApproveWithdrawal(withdrawalRequest) {
         try {
-            // Check if user has sufficient balance
             if ((this.currentUser.balance || 0) < withdrawalRequest.amount) {
                 this.showNotification('Insufficient balance for withdrawal', 'error');
                 return;
             }
             
-            // Update withdrawal request status
             await supabaseDB.updateWithdrawalRequest(withdrawalRequest.id, { status: 'approved' });
             
-            // Deduct from user balance
             const newBalance = (this.currentUser.balance || 0) - withdrawalRequest.amount;
             await supabaseDB.updateUserBalance(this.currentUser.id, newBalance);
             this.currentUser.balance = newBalance;
+            sessionStorage.setItem('pocket_user_id', this.currentUser.id);
             
-            // Create transaction record
             await supabaseDB.createTransaction({
                 id: Date.now(),
                 user_id: this.currentUser.id,
@@ -291,7 +325,6 @@ class WithdrawManager {
                 date: new Date().toISOString()
             });
             
-            // Create activity
             await supabaseDB.createUserActivity({
                 id: Date.now(),
                 user_id: this.currentUser.id,
@@ -303,7 +336,6 @@ class WithdrawManager {
             
             this.updateBalanceDisplay();
             this.showNotification(`✅ Withdrawal auto-approved! New balance: $${newBalance.toFixed(2)}`, 'success');
-            
         } catch (error) {
             console.error('Error auto-approving withdrawal:', error);
             this.showNotification('Failed to auto-approve withdrawal', 'error');
@@ -311,26 +343,34 @@ class WithdrawManager {
     }
 
     showNotification(message, type) {
-        if (typeof auth !== 'undefined' && auth.showNotification) {
-            auth.showNotification(message, type);
-        } else {
-            alert(message);
-        }
+        const existing = document.querySelector('.notification');
+        if (existing) existing.remove();
+        
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
     }
 }
 
-// Initialize when DOM is ready
+// Initialize
 let withdrawManager = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     withdrawManager = new WithdrawManager();
 });
 
-// Global functions
-window.handleLogout = function() {
+window.logout = function() {
     if (typeof auth !== 'undefined' && auth.logout) {
         auth.logout();
     } else {
+        sessionStorage.removeItem('pocket_user_id');
+        localStorage.removeItem('pocket_user_id');
         window.location.href = 'index.html';
     }
 };
