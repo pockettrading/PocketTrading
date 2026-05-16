@@ -45,7 +45,6 @@ class ProfileManager {
         this.renderDashboard();
         this.renderTradeHistory();
         this.initCharts();
-        this.setupEventListeners();
     }
 
     async waitForDependencies() {
@@ -56,6 +55,10 @@ class ProfileManager {
                     resolve();
                 }
             }, 100);
+            setTimeout(() => {
+                clearInterval(check);
+                resolve();
+            }, 5000);
         });
     }
 
@@ -107,8 +110,23 @@ class ProfileManager {
                 const tab = item.dataset.tab;
                 sidebarItems.forEach(i => i.classList.remove('active'));
                 item.classList.add('active');
-                document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
-                document.getElementById(`${tab}Tab`).style.display = 'block';
+                
+                // Hide all tab contents
+                const allTabs = document.querySelectorAll('.tab-content');
+                allTabs.forEach(tabContent => {
+                    tabContent.style.display = 'none';
+                });
+                
+                // Show selected tab
+                const selectedTab = document.getElementById(`${tab}Tab`);
+                if (selectedTab) {
+                    selectedTab.style.display = 'block';
+                }
+                
+                // Refresh data if needed
+                if (tab === 'history') {
+                    this.renderTradeHistory();
+                }
             });
         });
         
@@ -151,6 +169,7 @@ class ProfileManager {
     }
 
     updateUI() {
+        // Update User Profile Tab
         const displayName = document.getElementById('displayName');
         const displayEmail = document.getElementById('displayEmail');
         const displayMemberSince = document.getElementById('displayMemberSince');
@@ -232,20 +251,24 @@ class ProfileManager {
         if (!tbody) return;
         
         if (this.userTrades.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No trades yet<\/td><\/tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">No trades yet</td></tr>';
             return;
         }
         
-        tbody.innerHTML = this.userTrades.slice().reverse().map(t => `
-            <tr>
-                <td>${new Date(t.created_at).toLocaleDateString()}</td>
-                <td>${t.symbol}/USD</td>
-                <td class="${t.type === 'buy' ? 'positive' : 'negative'}">${t.type?.toUpperCase() || 'N/A'}</td>
-                <td>$${(t.amount || 0).toLocaleString()}</td>
-                <td class="${(t.pnl || 0) >= 0 ? 'positive' : 'negative'}">${(t.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(t.pnl || 0).toLocaleString()}</td>
-                <td><span class="kyc-badge ${t.status === 'open' ? 'kyc-pending' : 'kyc-verified'}">${t.status || 'N/A'}</span></td>
-            </tr>
-        `).join('');
+        let html = '';
+        this.userTrades.slice().reverse().forEach(trade => {
+            html += `
+                <tr>
+                    <td>${new Date(trade.created_at).toLocaleDateString()}</td>
+                    <td>${trade.symbol}/USD</td>
+                    <td class="${trade.type === 'buy' ? 'positive' : 'negative'}">${trade.type?.toUpperCase() || 'N/A'}</td>
+                    <td>$${(trade.amount || 0).toLocaleString()}</td>
+                    <td class="${(trade.pnl || 0) >= 0 ? 'positive' : 'negative'}">${(trade.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(trade.pnl || 0).toLocaleString()}</td>
+                    <td><span class="kyc-badge ${trade.status === 'open' ? 'kyc-pending' : 'kyc-verified'}">${trade.status || 'N/A'}</span></td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
     }
 
     initCharts() {
@@ -269,8 +292,27 @@ class ProfileManager {
             if (this.pnlChart) this.pnlChart.destroy();
             this.pnlChart = new Chart(pnlCtx, {
                 type: 'line',
-                data: { labels: last7Days, datasets: [{ label: 'Daily P&L', data: dailyPnL, borderColor: '#00D897', backgroundColor: 'rgba(0,216,151,0.1)', borderWidth: 2, fill: true, tension: 0.4 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#FFFFFF' } } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } }, y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } } } }
+                data: {
+                    labels: last7Days,
+                    datasets: [{
+                        label: 'Daily P&L',
+                        data: dailyPnL,
+                        borderColor: '#00D897',
+                        backgroundColor: 'rgba(0,216,151,0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#FFFFFF' } } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } }
+                    }
+                }
             });
         }
         
@@ -282,8 +324,19 @@ class ProfileManager {
             if (this.distributionChart) this.distributionChart.destroy();
             this.distributionChart = new Chart(distCtx, {
                 type: 'doughnut',
-                data: { labels: ['Winning Trades', 'Losing Trades'], datasets: [{ data: [wins, losses], backgroundColor: ['#00D897', '#FF4757'], borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#FFFFFF' } } } }
+                data: {
+                    labels: ['Winning Trades', 'Losing Trades'],
+                    datasets: [{
+                        data: [wins, losses],
+                        backgroundColor: ['#00D897', '#FF4757'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#FFFFFF' } } }
+                }
             });
         }
     }
@@ -453,11 +506,6 @@ class ProfileManager {
             document.body.appendChild(notification);
             setTimeout(() => notification.remove(), 3000);
         }
-    }
-
-    setupEventListeners() {
-        const updateForm = document.getElementById('updateProfileForm');
-        if (updateForm) updateForm.addEventListener('submit', (e) => this.updateProfile(e));
     }
 }
 
