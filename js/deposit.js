@@ -6,6 +6,7 @@ class DepositManager {
     constructor() {
         this.currentUser = null;
         this.selectedCurrency = 'USDT';
+        this.minDeposit = 10;
         this.cryptoAddresses = {
             USDT: 'TX8xKJk3g5xVHhRq2LpN7mY9wQeRtYuIoP',
             BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
@@ -16,26 +17,47 @@ class DepositManager {
             BTC: 0.0002,
             ETH: 0.005
         };
-        this.minDeposit = 10;
         this.init();
     }
 
     async init() {
         await this.waitForDependencies();
+        await this.waitForSession();
         
         this.currentUser = auth.getUser();
+        
+        // Fallback to sessionStorage
+        if (!this.currentUser) {
+            const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
+            if (userId) {
+                try {
+                    const user = await supabaseDB.getUserById(parseInt(userId));
+                    if (user) {
+                        this.currentUser = user;
+                        this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
+                        if (typeof auth !== 'undefined') auth.currentUser = user;
+                    }
+                } catch (e) {}
+            }
+        }
         
         if (!this.currentUser) {
             window.location.href = 'login.html';
             return;
         }
         
+        this.updateNavbar();
         await this.loadSettings();
         await this.loadCryptoAddresses();
-        this.setupNavigation();
         this.updateBalanceDisplay();
         this.setupEventListeners();
         this.updateSummary();
+        
+        window.addEventListener('authStateChanged', (e) => {
+            this.currentUser = e.detail.user;
+            this.updateNavbar();
+            if (this.currentUser) this.updateBalanceDisplay();
+        });
     }
 
     async waitForDependencies() {
@@ -46,7 +68,77 @@ class DepositManager {
                     resolve();
                 }
             }, 100);
+            setTimeout(() => {
+                clearInterval(check);
+                resolve();
+            }, 5000);
         });
+    }
+
+    async waitForSession() {
+        return new Promise((resolve) => {
+            if (typeof auth !== 'undefined' && auth.getUser() !== null) {
+                resolve();
+                return;
+            }
+            const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
+            if (userId) {
+                resolve();
+                return;
+            }
+            const check = setInterval(() => {
+                if (typeof auth !== 'undefined' && auth.getUser() !== null) {
+                    clearInterval(check);
+                    resolve();
+                }
+            }, 100);
+            setTimeout(() => {
+                clearInterval(check);
+                resolve();
+            }, 3000);
+        });
+    }
+
+    updateNavbar() {
+        const navLinks = document.getElementById('navLinks');
+        const rightNav = document.getElementById('rightNav');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        if (!navLinks) return;
+        
+        if (this.currentUser) {
+            const isAdmin = this.currentUser.email === 'ephremgojo@gmail.com';
+            const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
+            
+            navLinks.innerHTML = `
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="markets.html" class="nav-link">Markets</a>
+                <a href="trades.html" class="nav-link">Trades</a>
+                <a href="profile.html" class="nav-link">My Profile</a>
+            `;
+            
+            rightNav.innerHTML = `
+                <div class="user-section">
+                    <div class="user-info">
+                        <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
+                        <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
+                    </div>
+                    ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
+                    <button class="logout-btn" onclick="window.logout()">Logout</button>
+                </div>
+            `;
+            
+            mobileMenu.innerHTML = `
+                <a href="index.html" class="mobile-nav-link">🏠 Home</a>
+                <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
+                <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+                <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
+                ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
+                <button class="logout-btn" style="margin-top:12px;" onclick="window.logout()">Logout</button>
+            `;
+        } else {
+            window.location.href = 'login.html';
+        }
     }
 
     async loadSettings() {
@@ -72,56 +164,6 @@ class DepositManager {
         this.updateCryptoAddress();
     }
 
-    setupNavigation() {
-        const navLinks = document.getElementById('navLinks');
-        const rightNav = document.getElementById('rightNav');
-        const mobileMenu = document.getElementById('mobileMenu');
-        
-        const isAdmin = this.currentUser.email === 'ephremgojo@gmail.com';
-        const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
-        
-        if (navLinks) {
-            navLinks.innerHTML = `
-                <a href="index.html" class="nav-link">Home</a>
-                <a href="markets.html" class="nav-link">Markets</a>
-                <a href="trades.html" class="nav-link">Trades</a>
-                <a href="profile.html" class="nav-link">My Profile</a>
-            `;
-        }
-        
-        if (rightNav) {
-            rightNav.innerHTML = `
-                <div class="user-section">
-                    <div class="user-info">
-                        <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
-                        <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
-                    </div>
-                    ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
-                    <button class="logout-btn" onclick="handleLogout()">Logout</button>
-                </div>
-            `;
-        }
-        
-        if (mobileMenu) {
-            mobileMenu.innerHTML = `
-                <a href="index.html" class="mobile-nav-link">🏠 Home</a>
-                <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
-                <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
-                <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
-                ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
-                <button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>
-            `;
-        }
-    }
-
-    updateBalanceDisplay() {
-        const balance = this.currentUser.balance || 0;
-        const balanceEl = document.getElementById('currentBalance');
-        if (balanceEl) {
-            balanceEl.textContent = `$${balance.toLocaleString()}`;
-        }
-    }
-
     updateCryptoAddress() {
         const address = this.cryptoAddresses[this.selectedCurrency] || this.cryptoAddresses['USDT'];
         const addressEl = document.getElementById('cryptoAddress');
@@ -136,8 +178,16 @@ class DepositManager {
         }
     }
 
+    updateBalanceDisplay() {
+        const balance = this.currentUser.balance || 0;
+        const balanceEl = document.getElementById('currentBalance');
+        if (balanceEl) {
+            balanceEl.textContent = `$${balance.toLocaleString()}`;
+        }
+    }
+
     updateSummary() {
-        const amount = parseFloat(document.getElementById('depositAmount')?.value) || 0;
+        const amount = parseFloat(document.getElementById('depositAmount').value) || 0;
         const fee = this.networkFees[this.selectedCurrency] || 1;
         const total = amount + fee;
         
@@ -166,10 +216,9 @@ class DepositManager {
 
     setupEventListeners() {
         // Currency selector
-        const currencyBtns = document.querySelectorAll('.currency-btn');
-        currencyBtns.forEach(btn => {
+        document.querySelectorAll('.currency-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                currencyBtns.forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.currency-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.selectedCurrency = btn.dataset.currency;
                 this.updateCryptoAddress();
@@ -178,23 +227,19 @@ class DepositManager {
         });
         
         // Preset amounts
-        const presetBtns = document.querySelectorAll('.preset-btn');
-        presetBtns.forEach(btn => {
+        document.querySelectorAll('.preset-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const amount = btn.dataset.amount;
-                const amountInput = document.getElementById('depositAmount');
-                if (amountInput) amountInput.value = amount;
+                document.getElementById('depositAmount').value = amount;
                 this.updateSummary();
             });
         });
         
         // Amount input
-        const amountInput = document.getElementById('depositAmount');
-        if (amountInput) amountInput.addEventListener('input', () => this.updateSummary());
+        document.getElementById('depositAmount').addEventListener('input', () => this.updateSummary());
         
         // Submit button
-        const submitBtn = document.getElementById('submitDeposit');
-        if (submitBtn) submitBtn.addEventListener('click', () => this.submitDeposit());
+        document.getElementById('submitDeposit').addEventListener('click', () => this.submitDeposit());
         
         // Mobile menu
         const mobileBtn = document.getElementById('mobileMenuBtn');
@@ -205,7 +250,7 @@ class DepositManager {
     }
 
     async submitDeposit() {
-        const amount = parseFloat(document.getElementById('depositAmount')?.value);
+        const amount = parseFloat(document.getElementById('depositAmount').value);
         
         if (!amount || amount < this.minDeposit) {
             this.showNotification(`Minimum deposit amount is $${this.minDeposit}`, 'error');
@@ -229,10 +274,7 @@ class DepositManager {
         };
         
         try {
-            // Save to Supabase
             await supabaseDB.createDepositRequest(depositRequest);
-            
-            // Create activity record
             await supabaseDB.createUserActivity({
                 id: Date.now(),
                 user_id: this.currentUser.id,
@@ -245,15 +287,13 @@ class DepositManager {
             this.showNotification(`Deposit request submitted!\nAmount: $${amount.toFixed(2)} ${this.selectedCurrency}\n\nYour deposit will be processed within 5-30 minutes.`, 'success');
             
             // Reset form
-            const amountInput = document.getElementById('depositAmount');
-            if (amountInput) amountInput.value = '';
+            document.getElementById('depositAmount').value = '';
             this.updateSummary();
             
-            // Auto-approve for admin user (for testing)
+            // Auto-approve for admin user (testing)
             if (this.currentUser.email === 'ephremgojo@gmail.com') {
                 await this.autoApproveDeposit(depositRequest);
             }
-            
         } catch (error) {
             console.error('Error submitting deposit:', error);
             this.showNotification('Failed to submit deposit request', 'error');
@@ -262,15 +302,13 @@ class DepositManager {
 
     async autoApproveDeposit(depositRequest) {
         try {
-            // Update deposit request status
             await supabaseDB.updateDepositRequest(depositRequest.id, { status: 'approved' });
             
-            // Update user balance
             const newBalance = (this.currentUser.balance || 0) + depositRequest.amount;
             await supabaseDB.updateUserBalance(this.currentUser.id, newBalance);
             this.currentUser.balance = newBalance;
+            sessionStorage.setItem('pocket_user_id', this.currentUser.id);
             
-            // Create transaction record
             await supabaseDB.createTransaction({
                 id: Date.now(),
                 user_id: this.currentUser.id,
@@ -280,7 +318,6 @@ class DepositManager {
                 date: new Date().toISOString()
             });
             
-            // Create activity
             await supabaseDB.createUserActivity({
                 id: Date.now(),
                 user_id: this.currentUser.id,
@@ -292,41 +329,48 @@ class DepositManager {
             
             this.updateBalanceDisplay();
             this.showNotification(`✅ Deposit auto-approved! New balance: $${newBalance.toFixed(2)}`, 'success');
-            
         } catch (error) {
             console.error('Error auto-approving deposit:', error);
         }
     }
 
     showNotification(message, type) {
-        if (typeof auth !== 'undefined' && auth.showNotification) {
-            auth.showNotification(message, type);
-        } else {
-            alert(message);
-        }
+        const existing = document.querySelector('.notification');
+        if (existing) existing.remove();
+        
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
     }
 }
 
-// Initialize when DOM is ready
+// Initialize
 let depositManager = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     depositManager = new DepositManager();
 });
 
-// Global functions
 window.copyAddress = function() {
-    const address = document.getElementById('cryptoAddress')?.textContent;
+    const address = document.getElementById('cryptoAddress').textContent;
     if (address) {
         navigator.clipboard.writeText(address);
         alert('Address copied to clipboard!');
     }
 };
 
-window.handleLogout = function() {
+window.logout = function() {
     if (typeof auth !== 'undefined' && auth.logout) {
         auth.logout();
     } else {
+        sessionStorage.removeItem('pocket_user_id');
+        localStorage.removeItem('pocket_user_id');
         window.location.href = 'index.html';
     }
 };
