@@ -16,16 +16,23 @@ class MarketsManager {
     async init() {
         await this.waitForDependencies();
         
-        this.currentUser = auth.getUser();
-        console.log('Markets page - Current user:', this.currentUser);
+        // Wait for session to be restored (important!)
+        await this.waitForSession();
         
+        this.currentUser = auth.getUser();
+        console.log('Markets page - Current user after wait:', this.currentUser);
+        
+        // Update navbar immediately
         this.updateNavbar();
+        
         await this.loadMarkets();
         this.setupEventListeners();
         this.startPriceUpdates();
         this.updateMarketStats();
         
+        // Listen for auth state changes
         window.addEventListener('authStateChanged', (e) => {
+            console.log('Auth state changed:', e.detail);
             this.currentUser = e.detail.user;
             this.updateNavbar();
         });
@@ -46,12 +53,50 @@ class MarketsManager {
         });
     }
 
+    async waitForSession() {
+        return new Promise((resolve) => {
+            // Check if user is already available
+            if (auth.getUser() !== null) {
+                resolve();
+                return;
+            }
+            
+            // Check sessionStorage directly
+            const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
+            if (userId) {
+                // Fetch user and set it
+                supabaseDB.getUserById(parseInt(userId)).then(user => {
+                    if (user && typeof auth !== 'undefined') {
+                        auth.currentUser = user;
+                    }
+                    resolve();
+                }).catch(() => resolve());
+                return;
+            }
+            
+            // Wait for auth to restore session
+            let attempts = 0;
+            const check = setInterval(() => {
+                attempts++;
+                if (auth.getUser() !== null) {
+                    clearInterval(check);
+                    resolve();
+                } else if (attempts >= 50) { // 5 seconds timeout
+                    clearInterval(check);
+                    resolve();
+                }
+            }, 100);
+        });
+    }
+
     updateNavbar() {
         const navLinks = document.getElementById('navLinks');
         const rightNav = document.getElementById('rightNav');
         const mobileMenu = document.getElementById('mobileMenu');
         
         if (!navLinks) return;
+        
+        console.log('Updating navbar, user:', this.currentUser);
         
         if (this.currentUser) {
             const isAdmin = this.currentUser.email === 'ephremgojo@gmail.com';
@@ -107,7 +152,6 @@ class MarketsManager {
         }
     }
 
-    // Complete cryptocurrency list with real icons/logos
     getDefaultMarkets() {
         return [
             { symbol: 'BTC', name: 'Bitcoin', icon: '₿', price: 78312.00, change_24h: 2.34, volume: '32.5B', category: 'large', rank: 1 },
@@ -121,15 +165,7 @@ class MarketsManager {
             { symbol: 'MATIC', name: 'Polygon', icon: 'M', price: 0.89, change_24h: -2.11, volume: '345M', category: 'mid', rank: 9 },
             { symbol: 'SHIB', name: 'Shiba Inu', icon: '🐕', price: 0.000023, change_24h: 4.56, volume: '234M', category: 'meme', rank: 10 },
             { symbol: 'UNI', name: 'Uniswap', icon: 'U', price: 11.23, change_24h: -0.89, volume: '167M', category: 'defi', rank: 11 },
-            { symbol: 'LINK', name: 'Chainlink', icon: 'L', price: 18.34, change_24h: 1.56, volume: '234M', category: 'defi', rank: 12 },
-            { symbol: 'ATOM', name: 'Cosmos', icon: '⨀', price: 9.87, change_24h: 2.34, volume: '123M', category: 'defi', rank: 13 },
-            { symbol: 'ALGO', name: 'Algorand', icon: 'A', price: 0.18, change_24h: -0.89, volume: '78M', category: 'mid', rank: 14 },
-            { symbol: 'VET', name: 'VeChain', icon: 'V', price: 0.032, change_24h: 1.23, volume: '56M', category: 'mid', rank: 15 },
-            { symbol: 'EGLD', name: 'MultiversX', icon: 'E', price: 42.50, change_24h: 3.21, volume: '45M', category: 'mid', rank: 16 },
-            { symbol: 'FLOW', name: 'Flow', icon: 'F', price: 0.75, change_24h: -1.45, volume: '34M', category: 'mid', rank: 17 },
-            { symbol: 'THETA', name: 'Theta', icon: 'Θ', price: 1.23, change_24h: 0.56, volume: '28M', category: 'mid', rank: 18 },
-            { symbol: 'SAND', name: 'The Sandbox', icon: '⛱️', price: 0.45, change_24h: 2.34, volume: '67M', category: 'defi', rank: 19 },
-            { symbol: 'GALA', name: 'Gala', icon: 'G', price: 0.024, change_24h: 3.45, volume: '89M', category: 'defi', rank: 20 }
+            { symbol: 'LINK', name: 'Chainlink', icon: 'L', price: 18.34, change_24h: 1.56, volume: '234M', category: 'defi', rank: 12 }
         ];
     }
 
@@ -170,7 +206,7 @@ class MarketsManager {
                 </td>
                 <td style="font-weight: 600;">$${this.formatPrice(m.price)}</td>
                 <td class="${m.change_24h >= 0 ? 'positive' : 'negative'}" style="font-weight: 600;">
-                    ${m.change_24h >= 0 ? '▲' : '▼'} ${Math.abs(m.change_24h)}%
+                    ${m.change_24h >= 0 ? '▲' : '▼'} ${Math.abs(m.change_24h).toFixed(2)}%
                 </td>
                 <td>${m.volume || '—'}</td>
                 <td>
@@ -217,7 +253,6 @@ class MarketsManager {
 
     async loadMarkets() {
         try {
-            // First try to load from Supabase
             if (typeof supabaseDB !== 'undefined' && supabaseDB.supabase) {
                 const dbMarkets = await supabaseDB.getAllMarkets();
                 if (dbMarkets && dbMarkets.length > 0) {
@@ -285,7 +320,6 @@ class MarketsManager {
     }
 }
 
-// Initialize
 let marketsManager = null;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -300,6 +334,8 @@ window.logout = function() {
     if (typeof auth !== 'undefined' && auth.logout) {
         auth.logout();
     } else {
+        sessionStorage.removeItem('pocket_user_id');
+        localStorage.removeItem('pocket_user_id');
         window.location.href = 'index.html';
     }
 };
