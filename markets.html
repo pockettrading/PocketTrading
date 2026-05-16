@@ -156,7 +156,6 @@
             font-weight: 500;
         }
 
-        /* Mobile Menu */
         .mobile-menu-btn {
             display: none;
             background: none;
@@ -282,7 +281,7 @@
             font-size: 13px;
         }
         .coin-info { display: flex; align-items: center; gap: 12px; }
-        .coin-icon { font-size: 28px; }
+        .coin-icon { font-size: 32px; width: 40px; text-align: center; }
         .coin-name { font-weight: 600; }
         .coin-symbol { font-size: 11px; color: #8B93A5; }
         .tradingview-btn {
@@ -374,13 +373,9 @@
     </div>
 
     <!-- SCRIPTS - CORRECT ORDER IS CRITICAL -->
-    <!-- 1. Supabase CDN (MUST BE FIRST) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- 2. Database Wrapper -->
     <script src="js/supabase-db.js"></script>
-    <!-- 3. Authentication -->
     <script src="js/auth.js"></script>
-    <!-- 4. Markets Page Script -->
     <script src="js/markets.js"></script>
 </body>
 </html>
