@@ -495,9 +495,9 @@
         </div>
 
         <!-- Main Content -->
-        <div class="profile-content" id="profileContent">
+        <div class="profile-content">
             <!-- Dashboard Tab -->
-            <div id="dashboardTab" class="tab-content active">
+            <div id="dashboardTab" class="tab-content" style="display: block;">
                 <div class="welcome-section">
                     <h1 class="welcome-title" id="welcomeMessage">Welcome back, Trader! 👋</h1>
                     <p class="welcome-subtitle">Here's an overview of your trading activity and account status.</p>
@@ -545,27 +545,94 @@
             <!-- Trade History Tab -->
             <div id="historyTab" class="tab-content" style="display: none;">
                 <div class="content-header"><h2>Trade History</h2><p>View all your past trades</p></div>
-                <div class="card"><div class="card-header"><h3>Your Trades</h3></div><div class="card-body"><div style="overflow-x:auto;"><table class="trades-table"><thead><tr><th>Date</th><th>Market</th><th>Type</th><th>Amount</th><th>P&L</th><th>Status</th></tr></thead><tbody id="tradeHistoryBody"><tr><td colspan="6" style="text-align:center;">Loading trades...</td><\/tr><\/tbody><\/table><\/div><\/div><\/div>
+                <div class="card">
+                    <div class="card-header"><h3>Your Trades</h3></div>
+                    <div class="card-body">
+                        <div style="overflow-x: auto;">
+                            <table class="trades-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Market</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>P&L</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tradeHistoryBody">
+                                    <tr><td colspan="6" style="text-align:center;">Loading trades...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- KYC Verification Tab -->
             <div id="kycTab" class="tab-content" style="display: none;">
                 <div class="content-header"><h2>KYC Verification</h2><p>Verify your identity to increase withdrawal limits</p></div>
-                <div class="card"><div class="card-header"><h3>Identity Verification</h3></div><div class="card-body" id="kycForm"><div class="form-group"><label>Full Name (as on ID)</label><input type="text" id="kycFullName" placeholder="Enter full name"></div><div class="form-group"><label>Date of Birth</label><input type="date" id="kycDob"></div><div class="form-group"><label>ID Type</label><select id="kycIdType"><option value="">Select ID Type</option><option value="passport">Passport</option><option value="drivers_license">Driver's License</option><option value="national_id">National ID</option></select></div><div class="upload-area" onclick="document.getElementById('idFront').click()"><div>📄</div><p>Upload Front Side of ID</p><input type="file" id="idFront" class="file-input" accept="image/*"></div><div class="upload-area" onclick="document.getElementById('idBack').click()"><div>📄</div><p>Upload Back Side of ID</p><input type="file" id="idBack" class="file-input" accept="image/*"></div><button class="btn-save" onclick="submitKYC()">Submit KYC Application</button></div><div id="kycPendingMessage" style="display:none; text-align:center; padding:40px;"><div style="font-size:48px;">⏳</div><h4>KYC Verification Pending</h4><p>Your documents are being reviewed. This usually takes 24-48 hours.</p></div></div>
+                <div class="card">
+                    <div class="card-header"><h3>Identity Verification</h3></div>
+                    <div class="card-body" id="kycForm">
+                        <div class="form-group"><label>Full Name (as on ID)</label><input type="text" id="kycFullName" placeholder="Enter full name"></div>
+                        <div class="form-group"><label>Date of Birth</label><input type="date" id="kycDob"></div>
+                        <div class="form-group"><label>ID Type</label><select id="kycIdType"><option value="">Select ID Type</option><option value="passport">Passport</option><option value="drivers_license">Driver's License</option><option value="national_id">National ID</option></select></div>
+                        <div class="upload-area" onclick="document.getElementById('idFront').click()"><div>📄</div><p>Upload Front Side of ID</p><input type="file" id="idFront" class="file-input" accept="image/*"></div>
+                        <div class="upload-area" onclick="document.getElementById('idBack').click()"><div>📄</div><p>Upload Back Side of ID</p><input type="file" id="idBack" class="file-input" accept="image/*"></div>
+                        <button class="btn-save" onclick="submitKYC()">Submit KYC Application</button>
+                    </div>
+                    <div id="kycPendingMessage" style="display:none; text-align:center; padding:40px;">
+                        <div style="font-size:48px;">⏳</div>
+                        <h4>KYC Verification Pending</h4>
+                        <p>Your documents are being reviewed. This usually takes 24-48 hours.</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Update Profile Tab -->
             <div id="updateTab" class="tab-content" style="display: none;">
                 <div class="content-header"><h2>Update Profile</h2><p>Manage your account settings</p></div>
-                <div class="card"><div class="card-header"><h3>Personal Information</h3></div><div class="card-body"><form id="updateProfileForm"><div class="form-group"><label>Full Name</label><input type="text" id="updateFullName" placeholder="Enter full name"></div><div class="form-group"><label>Phone Number</label><input type="tel" id="updatePhone" placeholder="+1 234 567 8900"></div><div class="form-group"><label>Country</label><select id="updateCountry"><option value="">Select Country</option><option value="US">United States</option><option value="UK">United Kingdom</option><option value="CA">Canada</option><option value="AU">Australia</option><option value="IN">India</option></select></div><div class="form-group"><label>Current Password</label><input type="password" id="currentPassword" placeholder="Enter current password"></div><div class="form-group"><label>New Password</label><input type="password" id="newPassword" placeholder="Enter new password"></div><div class="form-group"><label>Confirm Password</label><input type="password" id="confirmNewPassword" placeholder="Confirm new password"></div><button type="submit" class="btn-save">Save Changes</button></form></div></div>
-                <div class="danger-zone"><h4>⚠️ Danger Zone</h4><p>Once you delete your account, all data will be permanently removed.</p><button class="btn-danger" onclick="deleteAccount()">Delete Account</button></div>
+                <div class="card">
+                    <div class="card-header"><h3>Personal Information</h3></div>
+                    <div class="card-body">
+                        <form id="updateProfileForm">
+                            <div class="form-group"><label>Full Name</label><input type="text" id="updateFullName" placeholder="Enter full name"></div>
+                            <div class="form-group"><label>Phone Number</label><input type="tel" id="updatePhone" placeholder="+1 234 567 8900"></div>
+                            <div class="form-group"><label>Country</label><select id="updateCountry"><option value="">Select Country</option><option value="US">United States</option><option value="UK">United Kingdom</option><option value="CA">Canada</option><option value="AU">Australia</option><option value="IN">India</option></select></div>
+                            <div class="form-group"><label>Current Password</label><input type="password" id="currentPassword" placeholder="Enter current password"></div>
+                            <div class="form-group"><label>New Password</label><input type="password" id="newPassword" placeholder="Enter new password"></div>
+                            <div class="form-group"><label>Confirm Password</label><input type="password" id="confirmNewPassword" placeholder="Confirm new password"></div>
+                            <button type="submit" class="btn-save">Save Changes</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="danger-zone">
+                    <h4>⚠️ Danger Zone</h4>
+                    <p>Once you delete your account, all data will be permanently removed.</p>
+                    <button class="btn-danger" onclick="deleteAccount()">Delete Account</button>
+                </div>
             </div>
 
             <!-- Customer Support Tab -->
             <div id="supportTab" class="tab-content" style="display: none;">
                 <div class="content-header"><h2>Customer Support</h2><p>Get help from our support team</p></div>
-                <div class="card"><div class="card-header"><h3>Contact Support</h3></div><div class="card-body"><div class="form-group"><label>Subject</label><input type="text" id="supportSubject" placeholder="What is your issue about?"></div><div class="form-group"><label>Message</label><textarea id="supportMessage" rows="5" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; color:white;" placeholder="Describe your issue..."></textarea></div><button class="btn-save" onclick="sendSupport()">Send Message</button></div></div>
-                <div class="card"><div class="card-header"><h3>FAQ</h3></div><div class="card-body"><div style="margin-bottom:16px;"><strong>How do I deposit funds?</strong><p style="color:#8B93A5; font-size:13px; margin-top:4px;">Go to Profile → Deposit button to add funds to your account.</p></div><div style="margin-bottom:16px;"><strong>How long do withdrawals take?</strong><p style="color:#8B93A5; font-size:13px; margin-top:4px;">Withdrawals are processed within 24-48 hours after approval.</p></div><div><strong>What is the minimum trade amount?</strong><p style="color:#8B93A5; font-size:13px; margin-top:4px;">Minimum trade amount is $10 USD.</p></div></div></div>
+                <div class="card">
+                    <div class="card-header"><h3>Contact Support</h3></div>
+                    <div class="card-body">
+                        <div class="form-group"><label>Subject</label><input type="text" id="supportSubject" placeholder="What is your issue about?"></div>
+                        <div class="form-group"><label>Message</label><textarea id="supportMessage" rows="5" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; color:white;" placeholder="Describe your issue..."></textarea></div>
+                        <button class="btn-save" onclick="sendSupport()">Send Message</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>FAQ</h3></div>
+                    <div class="card-body">
+                        <div style="margin-bottom:16px;"><strong>How do I deposit funds?</strong><p style="color:#8B93A5; font-size:13px; margin-top:4px;">Go to Profile → Deposit button to add funds to your account.</p></div>
+                        <div style="margin-bottom:16px;"><strong>How long do withdrawals take?</strong><p style="color:#8B93A5; font-size:13px; margin-top:4px;">Withdrawals are processed within 24-48 hours after approval.</p></div>
+                        <div><strong>What is the minimum trade amount?</strong><p style="color:#8B93A5; font-size:13px; margin-top:4px;">Minimum trade amount is $10 USD.</p></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
