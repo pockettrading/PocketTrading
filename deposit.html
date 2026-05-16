@@ -77,7 +77,6 @@
             color: #00D897;
         }
 
-        /* Guest Buttons */
         .guest-buttons {
             display: flex;
             gap: 12px;
@@ -99,7 +98,6 @@
             color: white;
         }
 
-        /* User Section - Logged In */
         .user-section {
             display: flex;
             align-items: center;
@@ -185,7 +183,7 @@
             border-radius: 12px;
         }
 
-        /* Main Content - Wider Form */
+        /* Main Content */
         .main-content {
             margin-top: 70px;
             padding: 32px;
@@ -223,7 +221,6 @@
             padding: 24px;
         }
 
-        /* Balance Display */
         .balance-display {
             background: rgba(0, 216, 151, 0.1);
             border-radius: 16px;
@@ -243,7 +240,6 @@
             color: #00D897;
         }
 
-        /* Currency Selector */
         .currency-selector {
             display: flex;
             gap: 12px;
@@ -267,7 +263,6 @@
             border-color: transparent;
         }
 
-        /* Amount Section */
         .amount-section {
             margin-bottom: 24px;
         }
@@ -287,10 +282,6 @@
             font-size: 18px;
             font-weight: 600;
         }
-        .amount-input:focus {
-            outline: none;
-            border-color: #00D897;
-        }
         .preset-amounts {
             display: flex;
             gap: 12px;
@@ -306,14 +297,8 @@
             color: #8B93A5;
             cursor: pointer;
             font-size: 14px;
-            transition: all 0.2s;
-        }
-        .preset-btn:hover {
-            border-color: #00D897;
-            color: #00D897;
         }
 
-        /* Crypto Address Section */
         .crypto-address {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 16px;
@@ -345,7 +330,62 @@
             font-size: 13px;
         }
 
-        /* Summary */
+        /* Screenshot Upload Section */
+        .upload-section {
+            margin-bottom: 24px;
+        }
+        .upload-label {
+            font-size: 13px;
+            color: #8B93A5;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .upload-area:hover {
+            border-color: #00D897;
+            background: rgba(0, 216, 151, 0.05);
+        }
+        .upload-icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+        .upload-area p {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .upload-area small {
+            font-size: 11px;
+            color: #5A6475;
+        }
+        .file-input {
+            display: none;
+        }
+        .file-preview {
+            margin-top: 12px;
+            padding: 8px 12px;
+            background: rgba(0, 216, 151, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+        .remove-file {
+            background: none;
+            border: none;
+            color: #FF4757;
+            cursor: pointer;
+            margin-left: auto;
+            font-size: 16px;
+        }
+
         .summary {
             background: rgba(0, 0, 0, 0.2);
             border-radius: 16px;
@@ -374,7 +414,6 @@
             font-size: 20px;
         }
 
-        /* Submit Button */
         .submit-btn {
             width: 100%;
             padding: 14px;
@@ -386,10 +425,6 @@
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s;
-        }
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 216, 151, 0.3);
         }
         .submit-btn:disabled {
             opacity: 0.5;
@@ -403,7 +438,6 @@
             margin-top: 20px;
         }
 
-        /* Notification */
         .notification {
             position: fixed;
             top: 20px;
@@ -417,7 +451,6 @@
         }
         .notification-success { background: rgba(0, 216, 151, 0.95); color: white; }
         .notification-error { background: rgba(255, 71, 87, 0.95); color: white; }
-        .notification-info { background: rgba(255, 165, 2, 0.95); color: white; }
 
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
@@ -430,7 +463,6 @@
             .main-content { padding: 16px; }
             .deposit-card { max-width: 100%; }
             .summary { flex-direction: column; }
-            .summary-item { text-align: left; }
         }
     </style>
 </head>
@@ -483,6 +515,22 @@
                     <button class="copy-btn" onclick="copyAddress()">📋 Copy Address</button>
                 </div>
 
+                <!-- Screenshot Upload Section -->
+                <div class="upload-section">
+                    <div class="upload-label">Screenshot of Payment (Proof of Transfer)</div>
+                    <div class="upload-area" id="uploadArea" onclick="document.getElementById('screenshotInput').click()">
+                        <div class="upload-icon">📸</div>
+                        <p>Click or drag to upload screenshot</p>
+                        <small>PNG, JPG up to 5MB</small>
+                        <input type="file" id="screenshotInput" class="file-input" accept="image/*">
+                    </div>
+                    <div id="filePreview" style="display: none;" class="file-preview">
+                        <span>📎</span>
+                        <span id="fileName"></span>
+                        <button type="button" class="remove-file" onclick="removeSelectedFile()">✕</button>
+                    </div>
+                </div>
+
                 <div class="summary">
                     <div class="summary-item">
                         <div class="summary-label">Deposit Amount</div>
@@ -509,13 +557,9 @@
     <!-- ============================================ -->
     <!-- SCRIPTS - CORRECT ORDER IS CRITICAL         -->
     <!-- ============================================ -->
-    <!-- 1. Supabase CDN (MUST BE FIRST) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- 2. Database Wrapper -->
     <script src="js/supabase-db.js"></script>
-    <!-- 3. Authentication -->
     <script src="js/auth.js"></script>
-    <!-- 4. Deposit Page Script -->
     <script src="js/deposit.js"></script>
 </body>
 </html>
