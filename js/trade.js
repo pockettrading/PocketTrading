@@ -17,10 +17,12 @@ class TradesManager {
     }
 
     async init() {
+        console.log('TradesManager initializing...');
         await this.waitForDependencies();
         await this.waitForSession();
         
         this.currentUser = auth.getUser();
+        console.log('Current user after session:', this.currentUser);
         
         if (!this.currentUser) {
             const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
@@ -31,20 +33,25 @@ class TradesManager {
                         this.currentUser = user;
                         this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
                         if (typeof auth !== 'undefined') auth.currentUser = user;
+                        console.log('User restored from sessionStorage:', this.currentUser.email);
                     }
-                } catch (e) {}
+                } catch (e) {
+                    console.error('Error restoring user:', e);
+                }
             }
         }
         
         this.updateNavbar();
         
         if (this.currentUser) {
+            console.log('User is logged in, showing trade form');
             await this.loadUserBalance();
             this.showTradeForm();
             this.initTradingView();
             this.setupEventListeners();
             this.startPriceUpdates();
         } else {
+            console.log('No user logged in, showing login required');
             this.showLoginRequired();
             this.initTradingView();
             this.setupEventListeners();
@@ -52,6 +59,7 @@ class TradesManager {
         }
         
         window.addEventListener('authStateChanged', (e) => {
+            console.log('Auth state changed:', e.detail);
             this.currentUser = e.detail.user;
             this.updateNavbar();
             if (this.currentUser) {
@@ -165,7 +173,10 @@ class TradesManager {
 
     showLoginRequired() {
         const container = document.getElementById('tradeFormSection');
-        if (!container) return;
+        if (!container) {
+            console.error('tradeFormSection container not found!');
+            return;
+        }
         
         container.innerHTML = `
             <div class="login-required">
@@ -182,7 +193,12 @@ class TradesManager {
 
     showTradeForm() {
         const container = document.getElementById('tradeFormSection');
-        if (!container) return;
+        if (!container) {
+            console.error('tradeFormSection container not found!');
+            return;
+        }
+        
+        console.log('Rendering trade form...');
         
         container.innerHTML = `
             <div class="trade-type-buttons">
@@ -257,6 +273,7 @@ class TradesManager {
     attachTradeFormEvents() {
         const buyBtn = document.querySelector('.trade-type-btn.buy');
         const sellBtn = document.querySelector('.trade-type-btn.sell');
+        
         if (buyBtn && sellBtn) {
             buyBtn.addEventListener('click', () => {
                 buyBtn.classList.add('active');
@@ -272,9 +289,10 @@ class TradesManager {
             });
         }
 
-        document.querySelectorAll('.duration-btn').forEach(btn => {
+        const durationBtns = document.querySelectorAll('.duration-btn');
+        durationBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
+                durationBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.selectedDuration = parseInt(btn.dataset.duration);
                 this.selectedPayout = parseInt(btn.dataset.payout);
@@ -284,10 +302,14 @@ class TradesManager {
         });
 
         const amountInput = document.getElementById('tradeAmount');
-        if (amountInput) amountInput.addEventListener('input', () => this.updateTradeSummary());
+        if (amountInput) {
+            amountInput.addEventListener('input', () => this.updateTradeSummary());
+        }
 
         const confirmBtn = document.getElementById('confirmTrade');
-        if (confirmBtn) confirmBtn.addEventListener('click', () => this.executeTrade());
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', () => this.executeTrade());
+        }
     }
 
     async loadUserBalance() {
@@ -343,6 +365,11 @@ class TradesManager {
     }
 
     async executeTrade() {
+        if (!this.currentUser) {
+            this.showNotification('Please login to trade', 'error');
+            return;
+        }
+        
         const amount = parseFloat(document.getElementById('tradeAmount')?.value);
         
         if (!amount || amount < 10) {
@@ -469,7 +496,10 @@ class TradesManager {
 
     initTradingView() {
         const container = document.getElementById('tv_chart_container');
-        if (!container || typeof TradingView === 'undefined') return;
+        if (!container || typeof TradingView === 'undefined') {
+            console.error('TradingView container or library not found');
+            return;
+        }
         
         if (this.tvWidget) this.tvWidget.remove();
         
@@ -542,17 +572,19 @@ class TradesManager {
     }
 
     setupEventListeners() {
-        document.querySelectorAll('.crypto-btn').forEach(btn => {
+        const cryptoBtns = document.querySelectorAll('.crypto-btn');
+        cryptoBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.crypto-btn').forEach(b => b.classList.remove('active'));
+                cryptoBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.changeSymbol(btn.dataset.symbol);
             });
         });
 
-        document.querySelectorAll('.time-btn').forEach(btn => {
+        const timeBtns = document.querySelectorAll('.time-btn');
+        timeBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+                timeBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.changeInterval(btn.dataset.interval);
             });
@@ -596,6 +628,7 @@ class TradesManager {
 let tradesManager = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing TradesManager...');
     tradesManager = new TradesManager();
 });
 
