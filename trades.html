@@ -5,9 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Trade - PocketTrading</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <!-- TradingView Widget Library -->
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    
     <style>
+        /* ============================================ */
+        /* GLOBAL STYLES                                */
+        /* ============================================ */
         * {
             margin: 0;
             padding: 0;
@@ -21,7 +26,9 @@
             overflow-x: hidden;
         }
 
-        /* Top Navigation Bar */
+        /* ============================================ */
+        /* TOP NAVIGATION BAR                           */
+        /* ============================================ */
         .navbar {
             position: fixed;
             top: 0;
@@ -50,7 +57,10 @@
             text-decoration: none;
         }
 
-        .logo-icon { font-size: 28px; }
+        .logo-icon {
+            font-size: 28px;
+        }
+
         .logo-text {
             font-size: 20px;
             font-weight: 800;
@@ -66,6 +76,7 @@
             align-items: center;
             flex-wrap: wrap;
         }
+
         .nav-link {
             padding: 8px 20px;
             border-radius: 40px;
@@ -74,7 +85,9 @@
             font-weight: 500;
             transition: all 0.2s;
         }
-        .nav-link:hover, .nav-link.active {
+
+        .nav-link:hover,
+        .nav-link.active {
             background: rgba(0, 216, 151, 0.1);
             color: #00D897;
         }
@@ -84,21 +97,34 @@
             display: flex;
             gap: 12px;
         }
-        .btn-login, .btn-register {
+
+        .btn-login,
+        .btn-register {
             padding: 8px 24px;
             border-radius: 40px;
             text-decoration: none;
             font-weight: 500;
             transition: all 0.2s;
         }
+
         .btn-login {
             background: transparent;
             border: 1px solid rgba(0, 216, 151, 0.5);
             color: #00D897;
         }
+
+        .btn-login:hover {
+            background: rgba(0, 216, 151, 0.1);
+        }
+
         .btn-register {
             background: linear-gradient(135deg, #00D897, #00B8A0);
             color: white;
+        }
+
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 216, 151, 0.3);
         }
 
         /* User Section - Logged In */
@@ -107,6 +133,7 @@
             align-items: center;
             gap: 12px;
         }
+
         .user-info {
             display: flex;
             align-items: center;
@@ -116,6 +143,7 @@
             border-radius: 40px;
             cursor: pointer;
         }
+
         .user-avatar {
             width: 36px;
             height: 36px;
@@ -126,10 +154,12 @@
             justify-content: center;
             font-size: 18px;
         }
+
         .user-name {
             font-size: 14px;
             font-weight: 600;
         }
+
         .admin-badge {
             font-size: 10px;
             background: linear-gradient(135deg, #00D897, #00B8A0);
@@ -138,6 +168,7 @@
             color: white;
             margin-left: 6px;
         }
+
         .admin-link {
             padding: 8px 16px;
             background: rgba(0, 216, 151, 0.15);
@@ -148,6 +179,7 @@
             font-size: 13px;
             font-weight: 500;
         }
+
         .logout-btn {
             padding: 8px 20px;
             background: rgba(255, 71, 87, 0.15);
@@ -158,6 +190,7 @@
             font-weight: 500;
         }
 
+        /* Mobile Menu */
         .mobile-menu-btn {
             display: none;
             background: none;
@@ -166,6 +199,7 @@
             color: white;
             cursor: pointer;
         }
+
         .mobile-menu {
             display: none;
             position: fixed;
@@ -173,13 +207,17 @@
             left: 0;
             right: 0;
             background: #0F1420;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             padding: 20px;
             z-index: 999;
             flex-direction: column;
             gap: 12px;
         }
-        .mobile-menu.show { display: flex; }
+
+        .mobile-menu.show {
+            display: flex;
+        }
+
         .mobile-nav-link {
             padding: 12px;
             color: #8B93A5;
@@ -187,7 +225,9 @@
             border-radius: 12px;
         }
 
-        /* Main Content */
+        /* ============================================ */
+        /* MAIN CONTENT                                 */
+        /* ============================================ */
         .main-content {
             margin-top: 70px;
             padding: 20px 32px;
@@ -207,7 +247,9 @@
             min-height: 0;
         }
 
-        /* Chart Section - 60% */
+        /* ============================================ */
+        /* CHART SECTION (60% WIDTH)                    */
+        /* ============================================ */
         .chart-section {
             flex: 1.5;
             min-width: 0;
@@ -220,6 +262,7 @@
             height: 100%;
         }
 
+        /* Cryptocurrency Selector */
         .crypto-selector {
             display: flex;
             justify-content: space-between;
@@ -228,11 +271,13 @@
             flex-wrap: wrap;
             gap: 8px;
         }
+
         .crypto-buttons {
             display: flex;
             gap: 6px;
             flex-wrap: wrap;
         }
+
         .crypto-btn {
             padding: 4px 10px;
             background: rgba(255, 255, 255, 0.05);
@@ -243,18 +288,26 @@
             font-size: 11px;
             transition: all 0.2s;
         }
+
         .crypto-btn.active {
             background: linear-gradient(135deg, #00D897, #00B8A0);
             color: white;
             border-color: transparent;
         }
 
+        .crypto-btn:hover {
+            border-color: #00D897;
+            color: #00D897;
+        }
+
+        /* Timeframes */
         .timeframes {
             display: flex;
             gap: 6px;
             margin-bottom: 12px;
             flex-wrap: wrap;
         }
+
         .time-btn {
             padding: 4px 10px;
             background: rgba(255, 255, 255, 0.05);
@@ -265,12 +318,19 @@
             font-size: 11px;
             transition: all 0.2s;
         }
+
         .time-btn.active {
             background: rgba(0, 216, 151, 0.2);
             color: #00D897;
             border-color: #00D897;
         }
 
+        .time-btn:hover {
+            border-color: #00D897;
+            color: #00D897;
+        }
+
+        /* Chart Container */
         .chart-container {
             flex: 1;
             width: 100%;
@@ -280,7 +340,9 @@
             min-height: 500px;
         }
 
-        /* Trade Form Section - 40% */
+        /* ============================================ */
+        /* TRADE FORM SECTION (40% WIDTH)               */
+        /* ============================================ */
         .trade-form-section {
             flex: 1;
             min-width: 280px;
@@ -294,11 +356,13 @@
             overflow-y: auto;
         }
 
+        /* Trade Type Buttons (BUY/SELL) */
         .trade-type-buttons {
             display: flex;
             gap: 8px;
             margin-bottom: 16px;
         }
+
         .trade-type-btn {
             flex: 1;
             padding: 10px;
@@ -310,23 +374,28 @@
             text-transform: uppercase;
             transition: all 0.2s;
         }
+
         .trade-type-btn.buy {
             background: rgba(0, 216, 151, 0.2);
             color: #00D897;
         }
+
         .trade-type-btn.buy.active {
             background: #00D897;
             color: white;
         }
+
         .trade-type-btn.sell {
             background: rgba(255, 71, 87, 0.2);
             color: #FF4757;
         }
+
         .trade-type-btn.sell.active {
             background: #FF4757;
             color: white;
         }
 
+        /* Selected Coin Display */
         .selected-coin {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 12px;
@@ -334,14 +403,51 @@
             margin-bottom: 16px;
             text-align: center;
         }
-        .coin-name-large { font-size: 16px; font-weight: 700; }
-        .coin-symbol { font-size: 11px; color: #8B93A5; margin-top: 2px; }
-        .current-price-large { font-size: 22px; font-weight: 800; margin: 6px 0; }
-        .live-badge { font-size: 10px; color: #FF4757; animation: pulse 1s infinite; }
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-        .form-group { margin-bottom: 16px; }
-        .form-label { font-size: 12px; color: #8B93A5; margin-bottom: 6px; display: block; }
+        .coin-name-large {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .coin-symbol {
+            font-size: 11px;
+            color: #8B93A5;
+            margin-top: 2px;
+        }
+
+        .current-price-large {
+            font-size: 22px;
+            font-weight: 800;
+            margin: 6px 0;
+        }
+
+        .live-badge {
+            font-size: 10px;
+            color: #FF4757;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            font-size: 12px;
+            color: #8B93A5;
+            margin-bottom: 6px;
+            display: block;
+        }
+
         .amount-input {
             width: 100%;
             padding: 10px 12px;
@@ -351,17 +457,20 @@
             color: white;
             font-size: 14px;
         }
+
         .amount-input:focus {
             outline: none;
             border-color: #00D897;
         }
 
+        /* Duration Grid */
         .duration-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 8px;
             margin-bottom: 16px;
         }
+
         .duration-btn {
             padding: 8px;
             background: rgba(255, 255, 255, 0.05);
@@ -372,26 +481,48 @@
             text-align: center;
             transition: all 0.2s;
         }
+
         .duration-btn.active {
             background: linear-gradient(135deg, #00D897, #00B8A0);
             border-color: transparent;
         }
-        .duration-time { font-size: 12px; font-weight: 700; }
-        .duration-payout { font-size: 10px; color: #00D897; margin-top: 2px; }
-        .duration-min { font-size: 8px; color: #5A6475; margin-top: 2px; }
 
+        .duration-btn:hover {
+            border-color: #00D897;
+        }
+
+        .duration-time {
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .duration-payout {
+            font-size: 10px;
+            color: #00D897;
+            margin-top: 2px;
+        }
+
+        .duration-min {
+            font-size: 8px;
+            color: #5A6475;
+            margin-top: 2px;
+        }
+
+        /* Trade Summary */
         .trade-summary {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
             padding: 10px;
             margin-bottom: 16px;
         }
+
         .summary-row {
             display: flex;
             justify-content: space-between;
             font-size: 12px;
             padding: 5px 0;
         }
+
         .summary-row.total {
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             margin-top: 6px;
@@ -400,6 +531,7 @@
             font-size: 13px;
         }
 
+        /* Confirm Button */
         .confirm-btn {
             width: 100%;
             padding: 12px;
@@ -412,9 +544,16 @@
             font-size: 14px;
             transition: all 0.2s;
         }
+
+        .confirm-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 216, 151, 0.3);
+        }
+
         .confirm-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
 
         /* Login Required Message */
@@ -422,28 +561,79 @@
             text-align: center;
             padding: 50px 20px;
         }
-        .login-required-icon { font-size: 56px; margin-bottom: 16px; }
-        .login-required h3 { font-size: 22px; margin-bottom: 12px; }
-        .login-required p { color: #8B93A5; margin-bottom: 28px; }
-        .login-buttons { display: flex; gap: 16px; justify-content: center; }
 
-        .trade-form-section::-webkit-scrollbar { width: 4px; }
-        .trade-form-section::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 4px; }
-        .trade-form-section::-webkit-scrollbar-thumb { background: #00D897; border-radius: 4px; }
-
-        @media (max-width: 900px) {
-            .trading-layout { flex-direction: column; }
-            .chart-container { min-height: 400px; }
-            .main-content { height: auto; }
+        .login-required-icon {
+            font-size: 56px;
+            margin-bottom: 16px;
         }
+
+        .login-required h3 {
+            font-size: 22px;
+            margin-bottom: 12px;
+        }
+
+        .login-required p {
+            color: #8B93A5;
+            margin-bottom: 28px;
+        }
+
+        .login-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        /* Scrollbar */
+        .trade-form-section::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .trade-form-section::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        .trade-form-section::-webkit-scrollbar-thumb {
+            background: #00D897;
+            border-radius: 4px;
+        }
+
+        /* ============================================ */
+        /* RESPONSIVE DESIGN                            */
+        /* ============================================ */
+        @media (max-width: 900px) {
+            .trading-layout {
+                flex-direction: column;
+            }
+            .chart-container {
+                min-height: 400px;
+            }
+            .main-content {
+                height: auto;
+            }
+        }
+
         @media (max-width: 768px) {
-            .nav-links, .guest-buttons, .user-section { display: none; }
-            .mobile-menu-btn { display: block; }
-            .main-content { padding: 12px; height: auto; }
+            .nav-links,
+            .guest-buttons,
+            .user-section {
+                display: none;
+            }
+            .mobile-menu-btn {
+                display: block;
+            }
+            .main-content {
+                padding: 12px;
+                height: auto;
+            }
         }
     </style>
 </head>
 <body>
+
+    <!-- ============================================ -->
+    <!-- TOP NAVIGATION BAR                           -->
+    <!-- ============================================ -->
     <nav class="navbar">
         <div class="nav-container">
             <a href="index.html" class="logo">
@@ -457,10 +647,15 @@
     </nav>
     <div class="mobile-menu" id="mobileMenu"></div>
 
+    <!-- ============================================ -->
+    <!-- MAIN CONTENT                                 -->
+    <!-- ============================================ -->
     <div class="main-content">
         <div class="trading-layout">
-            <!-- Left: Chart Section -->
+            
+            <!-- LEFT: CHART SECTION -->
             <div class="chart-section">
+                <!-- Cryptocurrency Selector -->
                 <div class="crypto-selector">
                     <div class="crypto-buttons" id="cryptoButtons">
                         <button class="crypto-btn active" data-symbol="BTC">BTC</button>
@@ -472,6 +667,8 @@
                         <button class="crypto-btn" data-symbol="ADA">ADA</button>
                     </div>
                 </div>
+                
+                <!-- Timeframes -->
                 <div class="timeframes" id="timeframes">
                     <button class="time-btn active" data-interval="1">1m</button>
                     <button class="time-btn" data-interval="5">5m</button>
@@ -481,20 +678,33 @@
                     <button class="time-btn" data-interval="1D">1d</button>
                     <button class="time-btn" data-interval="1W">1w</button>
                 </div>
+                
+                <!-- TradingView Chart Container -->
                 <div class="chart-container" id="tv_chart_container"></div>
             </div>
-
-            <!-- Right: Trade Form Section -->
-            <div class="trade-form-section" id="tradeFormSection"></div>
+            
+            <!-- RIGHT: TRADE FORM SECTION (will be populated by JavaScript) -->
+            <div class="trade-form-section" id="tradeFormSection">
+                <!-- Content will be inserted by trades.js -->
+            </div>
+            
         </div>
     </div>
 
     <!-- ============================================ -->
-    <!-- SCRIPTS - CORRECT ORDER IS CRITICAL         -->
+    <!-- SCRIPTS - CORRECT ORDER IS CRITICAL          -->
     <!-- ============================================ -->
+    <!-- 1. Supabase CDN (MUST BE FIRST) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- 2. Database Wrapper -->
     <script src="js/supabase-db.js"></script>
+    
+    <!-- 3. Authentication -->
     <script src="js/auth.js"></script>
+    
+    <!-- 4. Trades Page Script -->
     <script src="js/trades.js"></script>
+
 </body>
 </html>
