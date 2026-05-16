@@ -13,24 +13,34 @@ class ProfileManager {
     }
 
     async init() {
-        // Wait for auth to be ready
-        await this.waitForAuth();
+        await this.waitForDependencies();
         
-        // Get user - this will wait if session is still restoring
-        this.currentUser = await this.getUserWithRetry();
+        this.currentUser = auth.getUser();
         
         if (!this.currentUser) {
-            console.log('No user found, redirecting to login');
+            const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
+            if (userId) {
+                try {
+                    const user = await supabaseDB.getUserById(parseInt(userId));
+                    if (user) {
+                        this.currentUser = user;
+                        this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
+                        if (typeof auth !== 'undefined') auth.currentUser = user;
+                    }
+                } catch (e) {}
+            }
+        }
+        
+        if (!this.currentUser) {
             window.location.href = 'login.html';
             return;
         }
         
-        console.log('Profile page loaded for user:', this.currentUser.email);
-        
         await this.loadUserData();
         await this.loadUserTrades();
         await this.loadUserActivities();
-        this.setupNavigation();
+        this.updateNavbar();
+        this.setupSidebar();
         this.updateUI();
         this.renderDashboard();
         this.renderTradeHistory();
@@ -38,58 +48,75 @@ class ProfileManager {
         this.setupEventListeners();
     }
 
-    async waitForAuth() {
+    async waitForDependencies() {
         return new Promise((resolve) => {
-            if (typeof auth !== 'undefined') {
-                resolve();
-                return;
-            }
             const check = setInterval(() => {
-                if (typeof auth !== 'undefined') {
+                if (typeof auth !== 'undefined' && typeof supabaseDB !== 'undefined') {
                     clearInterval(check);
                     resolve();
                 }
-            }, 50);
-            setTimeout(() => {
-                clearInterval(check);
-                resolve();
-            }, 5000);
+            }, 100);
         });
     }
 
-    async getUserWithRetry(maxRetries = 30, delay = 100) {
-        // First try to get from auth
-        let user = null;
+    updateNavbar() {
+        const navLinks = document.getElementById('navLinks');
+        const rightNav = document.getElementById('rightNav');
+        const mobileMenu = document.getElementById('mobileMenu');
         
-        for (let i = 0; i < maxRetries; i++) {
-            if (typeof auth !== 'undefined') {
-                user = auth.getUser();
-                if (user) {
-                    return user;
-                }
-            }
-            
-            // Also check sessionStorage directly as fallback
-            const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
-            if (userId && !user) {
-                try {
-                    user = await supabaseDB.getUserById(parseInt(userId));
-                    if (user) {
-                        // Update auth if possible
-                        if (typeof auth !== 'undefined') {
-                            auth.currentUser = user;
-                        }
-                        return user;
-                    }
-                } catch (e) {
-                    console.error('Error fetching user by ID:', e);
-                }
-            }
-            
-            await new Promise(r => setTimeout(r, delay));
+        if (!navLinks) return;
+        
+        const isAdmin = this.currentUser.email === 'ephremgojo@gmail.com';
+        const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
+        
+        navLinks.innerHTML = `
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="markets.html" class="nav-link">Markets</a>
+            <a href="trades.html" class="nav-link">Trades</a>
+            <a href="profile.html" class="nav-link active">My Profile</a>
+        `;
+        
+        rightNav.innerHTML = `
+            <div class="user-section">
+                <div class="user-info">
+                    <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
+                    <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
+                </div>
+                ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        `;
+        
+        mobileMenu.innerHTML = `
+            <a href="index.html" class="mobile-nav-link">🏠 Home</a>
+            <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
+            <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
+            <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
+            ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
+            <button class="logout-btn" style="margin-top:12px;" onclick="logout()">Logout</button>
+        `;
+        
+        const welcomeMsg = document.getElementById('welcomeMessage');
+        if (welcomeMsg) welcomeMsg.innerHTML = `Welcome back, ${userName}! 👋`;
+    }
+
+    setupSidebar() {
+        const sidebarItems = document.querySelectorAll('.sidebar-item');
+        sidebarItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const tab = item.dataset.tab;
+                sidebarItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+                document.getElementById(`${tab}Tab`).style.display = 'block';
+            });
+        });
+        
+        const mobileBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('profileSidebar');
+        if (mobileBtn && sidebar) {
+            mobileBtn.addEventListener('click', () => sidebar.classList.toggle('show'));
         }
-        
-        return null;
     }
 
     async loadUserData() {
@@ -98,7 +125,6 @@ class ProfileManager {
             if (userData) {
                 this.currentUser = { ...this.currentUser, ...userData };
                 this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
-                // Update session storage
                 sessionStorage.setItem('pocket_user_id', this.currentUser.id);
             }
         } catch (error) {
@@ -124,59 +150,16 @@ class ProfileManager {
         }
     }
 
-    setupNavigation() {
-        const navLinks = document.getElementById('navLinks');
-        const rightNav = document.getElementById('rightNav');
-        const mobileMenu = document.getElementById('mobileMenu');
-        
-        const isAdmin = this.currentUser.email === 'ephremgojo@gmail.com';
-        const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
-        
-        if (navLinks) {
-            navLinks.innerHTML = `
-                <a href="index.html" class="nav-link">Home</a>
-                <a href="markets.html" class="nav-link">Markets</a>
-                <a href="trades.html" class="nav-link">Trades</a>
-                <a href="profile.html" class="nav-link active">My Profile</a>
-            `;
-        }
-        
-        if (rightNav) {
-            rightNav.innerHTML = `
-                <div class="user-section">
-                    <div class="user-info">
-                        <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
-                        <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
-                    </div>
-                    ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
-                    <button class="logout-btn" onclick="handleLogout()">Logout</button>
-                </div>
-            `;
-        }
-        
-        if (mobileMenu) {
-            mobileMenu.innerHTML = `
-                <a href="index.html" class="mobile-nav-link">🏠 Home</a>
-                <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
-                <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
-                <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
-                ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
-                <button class="logout-btn" style="margin-top:12px;" onclick="handleLogout()">Logout</button>
-            `;
-        }
-        
-        const welcomeMsg = document.getElementById('welcomeMessage');
-        if (welcomeMsg) {
-            welcomeMsg.innerHTML = `Welcome back, ${userName}! 👋`;
-        }
-    }
-
     updateUI() {
         const displayName = document.getElementById('displayName');
         const displayEmail = document.getElementById('displayEmail');
         const displayMemberSince = document.getElementById('displayMemberSince');
         const profileBalance = document.getElementById('profileBalance');
         const displayKyc = document.getElementById('displayKyc');
+        const updateFullName = document.getElementById('updateFullName');
+        const updatePhone = document.getElementById('updatePhone');
+        const updateCountry = document.getElementById('updateCountry');
+        const kycFullName = document.getElementById('kycFullName');
         
         if (displayName) displayName.textContent = this.currentUser.name || 'N/A';
         if (displayEmail) displayEmail.textContent = this.currentUser.email;
@@ -193,11 +176,6 @@ class ProfileManager {
             displayKyc.className = `kyc-badge kyc-${kycStatus === 'verified' ? 'verified' : (kycStatus === 'pending' ? 'pending' : 'none')}`;
         }
         
-        const updateFullName = document.getElementById('updateFullName');
-        const updatePhone = document.getElementById('updatePhone');
-        const updateCountry = document.getElementById('updateCountry');
-        const kycFullName = document.getElementById('kycFullName');
-        
         if (updateFullName) updateFullName.value = this.currentUser.name || '';
         if (updatePhone) updatePhone.value = this.currentUser.phone || '';
         if (updateCountry) updateCountry.value = this.currentUser.country || '';
@@ -209,25 +187,22 @@ class ProfileManager {
         const dashTotalTrades = document.getElementById('dashTotalTrades');
         const dashWinRate = document.getElementById('dashWinRate');
         const dashPnL = document.getElementById('dashPnL');
+        const statTotalTrades = document.getElementById('statTotalTrades');
+        const statWinRate = document.getElementById('statWinRate');
+        const statTotalVolume = document.getElementById('statTotalVolume');
         
         const totalTrades = this.userTrades.length;
         const closedTrades = this.userTrades.filter(t => t.status === 'closed');
         const winningTrades = closedTrades.filter(t => (t.pnl || 0) > 0).length;
         const winRate = closedTrades.length > 0 ? (winningTrades / closedTrades.length * 100).toFixed(1) : 0;
         const totalPnL = this.userTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+        const totalVolume = this.userTrades.reduce((sum, t) => sum + (t.amount || 0), 0);
+        const balance = this.currentUser.balance || 0;
         
-        if (dashBalance) dashBalance.innerHTML = `$${(this.currentUser.balance || 0).toLocaleString()}`;
+        if (dashBalance) dashBalance.innerHTML = `$${balance.toLocaleString()}`;
         if (dashTotalTrades) dashTotalTrades.textContent = totalTrades;
         if (dashWinRate) dashWinRate.textContent = `${winRate}%`;
-        if (dashPnL) {
-            dashPnL.innerHTML = `<span class="${totalPnL >= 0 ? 'positive' : 'negative'}">${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}</span>`;
-        }
-        
-        const statTotalTrades = document.getElementById('statTotalTrades');
-        const statWinRate = document.getElementById('statWinRate');
-        const statTotalVolume = document.getElementById('statTotalVolume');
-        const totalVolume = this.userTrades.reduce((sum, t) => sum + (t.amount || 0), 0);
-        
+        if (dashPnL) dashPnL.innerHTML = `<span class="${totalPnL >= 0 ? 'positive' : 'negative'}">${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}</span>`;
         if (statTotalTrades) statTotalTrades.textContent = totalTrades;
         if (statWinRate) statWinRate.textContent = `${winRate}%`;
         if (statTotalVolume) statTotalVolume.textContent = `$${totalVolume.toLocaleString()}`;
@@ -240,7 +215,7 @@ class ProfileManager {
         if (!container) return;
         
         if (this.userActivities.length === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #8B93A5;">No recent activity. Start trading!</div>';
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:#8B93A5;">No recent activity. Start trading!</div>';
             return;
         }
         
@@ -257,18 +232,18 @@ class ProfileManager {
         if (!tbody) return;
         
         if (this.userTrades.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No trades yet</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No trades yet<\/td><\/tr>';
             return;
         }
         
-        tbody.innerHTML = this.userTrades.slice().reverse().map(trade => `
+        tbody.innerHTML = this.userTrades.slice().reverse().map(t => `
             <tr>
-                <td>${new Date(trade.created_at).toLocaleDateString()}</td>
-                <td>${trade.symbol}/USD</td>
-                <td class="${trade.type === 'buy' ? 'positive' : 'negative'}">${trade.type?.toUpperCase() || 'N/A'}</td>
-                <td>$${(trade.amount || 0).toLocaleString()}</td>
-                <td class="${(trade.pnl || 0) >= 0 ? 'positive' : 'negative'}">${(trade.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(trade.pnl || 0).toLocaleString()}</td>
-                <td><span class="kyc-badge ${trade.status === 'open' ? 'kyc-pending' : 'kyc-verified'}">${trade.status || 'N/A'}</span></td>
+                <td>${new Date(t.created_at).toLocaleDateString()}</td>
+                <td>${t.symbol}/USD</td>
+                <td class="${t.type === 'buy' ? 'positive' : 'negative'}">${t.type?.toUpperCase() || 'N/A'}</td>
+                <td>$${(t.amount || 0).toLocaleString()}</td>
+                <td class="${(t.pnl || 0) >= 0 ? 'positive' : 'negative'}">${(t.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(t.pnl || 0).toLocaleString()}</td>
+                <td><span class="kyc-badge ${t.status === 'open' ? 'kyc-pending' : 'kyc-verified'}">${t.status || 'N/A'}</span></td>
             </tr>
         `).join('');
     }
@@ -277,7 +252,7 @@ class ProfileManager {
         const pnlCtx = document.getElementById('pnlChart')?.getContext('2d');
         const distCtx = document.getElementById('distributionChart')?.getContext('2d');
         
-        if (pnlCtx) {
+        if (pnlCtx && this.userTrades.length > 0) {
             const last7Days = [];
             const dailyPnL = [];
             for (let i = 6; i >= 0; i--) {
@@ -294,31 +269,12 @@ class ProfileManager {
             if (this.pnlChart) this.pnlChart.destroy();
             this.pnlChart = new Chart(pnlCtx, {
                 type: 'line',
-                data: {
-                    labels: last7Days,
-                    datasets: [{
-                        label: 'Daily P&L',
-                        data: dailyPnL,
-                        borderColor: '#00D897',
-                        backgroundColor: 'rgba(0,216,151,0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#FFFFFF' } } },
-                    scales: {
-                        x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } },
-                        y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } }
-                    }
-                }
+                data: { labels: last7Days, datasets: [{ label: 'Daily P&L', data: dailyPnL, borderColor: '#00D897', backgroundColor: 'rgba(0,216,151,0.1)', borderWidth: 2, fill: true, tension: 0.4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#FFFFFF' } } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } }, y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } } } }
             });
         }
         
-        if (distCtx) {
+        if (distCtx && this.userTrades.length > 0) {
             const closedTrades = this.userTrades.filter(t => t.status === 'closed');
             const wins = closedTrades.filter(t => (t.pnl || 0) > 0).length;
             const losses = closedTrades.filter(t => (t.pnl || 0) <= 0).length;
@@ -326,19 +282,8 @@ class ProfileManager {
             if (this.distributionChart) this.distributionChart.destroy();
             this.distributionChart = new Chart(distCtx, {
                 type: 'doughnut',
-                data: {
-                    labels: ['Winning Trades', 'Losing Trades'],
-                    datasets: [{
-                        data: [wins, losses],
-                        backgroundColor: ['#00D897', '#FF4757'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#FFFFFF' } } }
-                }
+                data: { labels: ['Winning Trades', 'Losing Trades'], datasets: [{ data: [wins, losses], backgroundColor: ['#00D897', '#FF4757'], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#FFFFFF' } } } }
             });
         }
     }
@@ -366,28 +311,21 @@ class ProfileManager {
             return;
         }
         
-        const updates = {
-            name: fullName,
-            phone: phone,
-            country: country,
-            updated_at: new Date().toISOString()
-        };
+        const updates = { name: fullName, phone: phone, country: country };
         if (newPass) updates.password = newPass;
         
         try {
             await supabaseDB.updateUser(this.currentUser.id, updates);
             this.currentUser = { ...this.currentUser, ...updates };
             sessionStorage.setItem('pocket_user_id', this.currentUser.id);
-            
             this.showNotification('Profile updated successfully!', 'success');
+            
             document.getElementById('currentPassword').value = '';
             document.getElementById('newPassword').value = '';
             document.getElementById('confirmNewPassword').value = '';
-            
             this.updateUI();
-            this.setupNavigation();
+            this.updateNavbar();
         } catch (error) {
-            console.error('Error updating profile:', error);
             this.showNotification('Failed to update profile', 'error');
         }
     }
@@ -433,7 +371,6 @@ class ProfileManager {
             
             this.showNotification('KYC documents submitted for review!', 'success');
         } catch (error) {
-            console.error('Error submitting KYC:', error);
             this.showNotification('Failed to submit KYC', 'error');
         }
     }
@@ -447,18 +384,21 @@ class ProfileManager {
             return;
         }
         
-        await supabaseDB.createUserActivity({
-            id: Date.now(),
-            user_id: this.currentUser.id,
-            type: 'support',
-            title: 'Support Ticket',
-            description: `Subject: ${subject}`,
-            created_at: new Date().toISOString()
-        });
-        
-        this.showNotification(`Support ticket submitted!\nSubject: ${subject}\n\nWe will respond within 24 hours.`, 'success');
-        document.getElementById('supportSubject').value = '';
-        document.getElementById('supportMessage').value = '';
+        try {
+            await supabaseDB.createUserActivity({
+                id: Date.now(),
+                user_id: this.currentUser.id,
+                type: 'support',
+                title: 'Support Ticket',
+                description: `Subject: ${subject}`,
+                created_at: new Date().toISOString()
+            });
+            this.showNotification(`Support ticket submitted!\nSubject: ${subject}\n\nWe will respond within 24 hours.`, 'success');
+            document.getElementById('supportSubject').value = '';
+            document.getElementById('supportMessage').value = '';
+        } catch (error) {
+            this.showNotification('Failed to submit support ticket', 'error');
+        }
     }
 
     async deleteAccount() {
@@ -468,45 +408,14 @@ class ProfileManager {
             for (const trade of this.userTrades) {
                 await supabaseDB.delete('trades', trade.id);
             }
-            for (const activity of this.userActivities) {
-                await supabaseDB.delete('user_activities', activity.id);
-            }
             await supabaseDB.deleteUser(this.currentUser.id);
             
             sessionStorage.removeItem('pocket_user_id');
             localStorage.removeItem('pocket_user_id');
-            
             this.showNotification('Account deleted successfully', 'success');
             setTimeout(() => window.location.href = 'index.html', 2000);
         } catch (error) {
-            console.error('Error deleting account:', error);
             this.showNotification('Failed to delete account', 'error');
-        }
-    }
-
-    setupEventListeners() {
-        document.querySelectorAll('.sidebar-item').forEach(item => {
-            item.addEventListener('click', () => {
-                document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
-                item.classList.add('active');
-                const tab = item.dataset.tab;
-                document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
-                if (tab === 'dashboard') document.getElementById('dashboardTab').style.display = 'block';
-                if (tab === 'profile') document.getElementById('profileTab').style.display = 'block';
-                if (tab === 'history') document.getElementById('historyTab').style.display = 'block';
-                if (tab === 'kyc') document.getElementById('kycTab').style.display = 'block';
-                if (tab === 'update') document.getElementById('updateTab').style.display = 'block';
-                if (tab === 'support') document.getElementById('supportTab').style.display = 'block';
-            });
-        });
-        
-        const updateForm = document.getElementById('updateProfileForm');
-        if (updateForm) updateForm.addEventListener('submit', (e) => this.updateProfile(e));
-        
-        const mobileBtn = document.getElementById('mobileMenuBtn');
-        const mobileMenu = document.getElementById('mobileMenu');
-        if (mobileBtn && mobileMenu) {
-            mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('show'));
         }
     }
 
@@ -545,21 +454,17 @@ class ProfileManager {
             setTimeout(() => notification.remove(), 3000);
         }
     }
+
+    setupEventListeners() {
+        const updateForm = document.getElementById('updateProfileForm');
+        if (updateForm) updateForm.addEventListener('submit', (e) => this.updateProfile(e));
+    }
 }
 
 let profileManager = null;
-
-document.addEventListener('DOMContentLoaded', () => {
-    profileManager = new ProfileManager();
-});
+document.addEventListener('DOMContentLoaded', () => { profileManager = new ProfileManager(); });
 
 window.submitKYC = () => profileManager?.submitKYC();
 window.sendSupport = () => profileManager?.sendSupport();
 window.deleteAccount = () => profileManager?.deleteAccount();
-window.handleLogout = function() {
-    if (typeof auth !== 'undefined' && auth.logout) {
-        auth.logout();
-    } else {
-        window.location.href = 'index.html';
-    }
-};
+window.logout = () => { if (auth?.logout) auth.logout(); else window.location.href = 'index.html'; };
