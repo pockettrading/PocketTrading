@@ -14,6 +14,7 @@ class ProfileManager {
 
     async init() {
         await this.waitForDependencies();
+        await this.waitForSession();
         
         this.currentUser = auth.getUser();
         
@@ -27,7 +28,9 @@ class ProfileManager {
                         this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
                         if (typeof auth !== 'undefined') auth.currentUser = user;
                     }
-                } catch (e) {}
+                } catch (e) {
+                    console.error('Error restoring user:', e);
+                }
             }
         }
         
@@ -45,6 +48,12 @@ class ProfileManager {
         this.renderDashboard();
         this.renderTradeHistory();
         this.initCharts();
+        this.setupEventListeners();
+        
+        window.addEventListener('authStateChanged', (e) => {
+            this.currentUser = e.detail.user;
+            this.updateNavbar();
+        });
     }
 
     async waitForDependencies() {
@@ -59,6 +68,30 @@ class ProfileManager {
                 clearInterval(check);
                 resolve();
             }, 5000);
+        });
+    }
+
+    async waitForSession() {
+        return new Promise((resolve) => {
+            if (typeof auth !== 'undefined' && auth.getUser() !== null) {
+                resolve();
+                return;
+            }
+            const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
+            if (userId) {
+                resolve();
+                return;
+            }
+            const check = setInterval(() => {
+                if (typeof auth !== 'undefined' && auth.getUser() !== null) {
+                    clearInterval(check);
+                    resolve();
+                }
+            }, 100);
+            setTimeout(() => {
+                clearInterval(check);
+                resolve();
+            }, 3000);
         });
     }
 
@@ -86,7 +119,7 @@ class ProfileManager {
                     <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
                 </div>
                 ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
-                <button class="logout-btn" onclick="logout()">Logout</button>
+                <button class="logout-btn" onclick="window.logout()">Logout</button>
             </div>
         `;
         
@@ -96,7 +129,7 @@ class ProfileManager {
             <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
             <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
             ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
-            <button class="logout-btn" style="margin-top:12px;" onclick="logout()">Logout</button>
+            <button class="logout-btn" style="margin-top:12px;" onclick="window.logout()">Logout</button>
         `;
         
         const welcomeMsg = document.getElementById('welcomeMessage');
@@ -111,19 +144,16 @@ class ProfileManager {
                 sidebarItems.forEach(i => i.classList.remove('active'));
                 item.classList.add('active');
                 
-                // Hide all tab contents
                 const allTabs = document.querySelectorAll('.tab-content');
                 allTabs.forEach(tabContent => {
                     tabContent.style.display = 'none';
                 });
                 
-                // Show selected tab
                 const selectedTab = document.getElementById(`${tab}Tab`);
                 if (selectedTab) {
                     selectedTab.style.display = 'block';
                 }
                 
-                // Refresh data if needed
                 if (tab === 'history') {
                     this.renderTradeHistory();
                 }
@@ -169,7 +199,6 @@ class ProfileManager {
     }
 
     updateUI() {
-        // Update User Profile Tab
         const displayName = document.getElementById('displayName');
         const displayEmail = document.getElementById('displayEmail');
         const displayMemberSince = document.getElementById('displayMemberSince');
@@ -221,7 +250,9 @@ class ProfileManager {
         if (dashBalance) dashBalance.innerHTML = `$${balance.toLocaleString()}`;
         if (dashTotalTrades) dashTotalTrades.textContent = totalTrades;
         if (dashWinRate) dashWinRate.textContent = `${winRate}%`;
-        if (dashPnL) dashPnL.innerHTML = `<span class="${totalPnL >= 0 ? 'positive' : 'negative'}">${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}</span>`;
+        if (dashPnL) {
+            dashPnL.innerHTML = `<span class="${totalPnL >= 0 ? 'positive' : 'negative'}">${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}</span>`;
+        }
         if (statTotalTrades) statTotalTrades.textContent = totalTrades;
         if (statWinRate) statWinRate.textContent = `${winRate}%`;
         if (statTotalVolume) statTotalVolume.textContent = `$${totalVolume.toLocaleString()}`;
@@ -251,7 +282,7 @@ class ProfileManager {
         if (!tbody) return;
         
         if (this.userTrades.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">No trades yet</td></tr>';
+            tbody.innerHTML = '</table><td colspan="6" style="text-align:center; padding:40px;">No trades yet. Start trading from the Markets page!<\/td><\/tr>';
             return;
         }
         
@@ -274,70 +305,95 @@ class ProfileManager {
     initCharts() {
         const pnlCtx = document.getElementById('pnlChart')?.getContext('2d');
         const distCtx = document.getElementById('distributionChart')?.getContext('2d');
+        const pnlEmptyMsg = document.getElementById('pnlEmptyMessage');
+        const distEmptyMsg = document.getElementById('distEmptyMessage');
         
-        if (pnlCtx && this.userTrades.length > 0) {
-            const last7Days = [];
-            const dailyPnL = [];
-            for (let i = 6; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                last7Days.push(date.toLocaleDateString());
-                const dayPnL = this.userTrades.filter(t => {
-                    const tradeDate = new Date(t.created_at);
-                    return tradeDate.toLocaleDateString() === date.toLocaleDateString() && t.status === 'closed';
-                }).reduce((sum, t) => sum + (t.pnl || 0), 0);
-                dailyPnL.push(dayPnL);
-            }
+        // PnL Chart
+        if (pnlCtx) {
+            const closedTrades = this.userTrades.filter(t => t.status === 'closed');
             
-            if (this.pnlChart) this.pnlChart.destroy();
-            this.pnlChart = new Chart(pnlCtx, {
-                type: 'line',
-                data: {
-                    labels: last7Days,
-                    datasets: [{
-                        label: 'Daily P&L',
-                        data: dailyPnL,
-                        borderColor: '#00D897',
-                        backgroundColor: 'rgba(0,216,151,0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#FFFFFF' } } },
-                    scales: {
-                        x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } },
-                        y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } }
-                    }
+            if (closedTrades.length === 0) {
+                if (pnlEmptyMsg) pnlEmptyMsg.style.display = 'block';
+                if (this.pnlChart) this.pnlChart.destroy();
+            } else {
+                if (pnlEmptyMsg) pnlEmptyMsg.style.display = 'none';
+                
+                const last7Days = [];
+                const dailyPnL = [];
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    last7Days.push(date.toLocaleDateString());
+                    
+                    const dayPnL = closedTrades.filter(t => {
+                        const tradeDate = new Date(t.closed_at || t.created_at);
+                        return tradeDate.toLocaleDateString() === date.toLocaleDateString();
+                    }).reduce((sum, t) => sum + (t.pnl || 0), 0);
+                    dailyPnL.push(dayPnL);
                 }
-            });
+                
+                if (this.pnlChart) this.pnlChart.destroy();
+                this.pnlChart = new Chart(pnlCtx, {
+                    type: 'line',
+                    data: {
+                        labels: last7Days,
+                        datasets: [{
+                            label: 'Daily P&L',
+                            data: dailyPnL,
+                            borderColor: '#00D897',
+                            backgroundColor: 'rgba(0,216,151,0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { color: '#FFFFFF' } }
+                        },
+                        scales: {
+                            x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } },
+                            y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } }
+                        }
+                    }
+                });
+            }
         }
         
-        if (distCtx && this.userTrades.length > 0) {
+        // Distribution Chart
+        if (distCtx) {
             const closedTrades = this.userTrades.filter(t => t.status === 'closed');
             const wins = closedTrades.filter(t => (t.pnl || 0) > 0).length;
             const losses = closedTrades.filter(t => (t.pnl || 0) <= 0).length;
             
-            if (this.distributionChart) this.distributionChart.destroy();
-            this.distributionChart = new Chart(distCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Winning Trades', 'Losing Trades'],
-                    datasets: [{
-                        data: [wins, losses],
-                        backgroundColor: ['#00D897', '#FF4757'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#FFFFFF' } } }
-                }
-            });
+            if (closedTrades.length === 0) {
+                if (distEmptyMsg) distEmptyMsg.style.display = 'block';
+                if (this.distributionChart) this.distributionChart.destroy();
+            } else {
+                if (distEmptyMsg) distEmptyMsg.style.display = 'none';
+                
+                if (this.distributionChart) this.distributionChart.destroy();
+                this.distributionChart = new Chart(distCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Winning Trades', 'Losing Trades'],
+                        datasets: [{
+                            data: [wins, losses],
+                            backgroundColor: ['#00D897', '#FF4757'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { color: '#FFFFFF' } }
+                        }
+                    }
+                });
+            }
         }
     }
 
@@ -507,12 +563,28 @@ class ProfileManager {
             setTimeout(() => notification.remove(), 3000);
         }
     }
+
+    setupEventListeners() {
+        const updateForm = document.getElementById('updateProfileForm');
+        if (updateForm) updateForm.addEventListener('submit', (e) => this.updateProfile(e));
+    }
 }
 
 let profileManager = null;
-document.addEventListener('DOMContentLoaded', () => { profileManager = new ProfileManager(); });
+
+document.addEventListener('DOMContentLoaded', () => {
+    profileManager = new ProfileManager();
+});
 
 window.submitKYC = () => profileManager?.submitKYC();
 window.sendSupport = () => profileManager?.sendSupport();
 window.deleteAccount = () => profileManager?.deleteAccount();
-window.logout = () => { if (auth?.logout) auth.logout(); else window.location.href = 'index.html'; };
+window.logout = function() {
+    if (typeof auth !== 'undefined' && auth.logout) {
+        auth.logout();
+    } else {
+        sessionStorage.removeItem('pocket_user_id');
+        localStorage.removeItem('pocket_user_id');
+        window.location.href = 'index.html';
+    }
+};
