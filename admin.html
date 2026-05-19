@@ -210,16 +210,9 @@
             padding: 24px 32px;
         }
 
-        /* Top Bar with Emergency Switch */
-        .content-top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .page-header {
             margin-bottom: 24px;
-            flex-wrap: wrap;
-            gap: 16px;
         }
-
         .page-header h1 {
             font-size: 28px;
             font-weight: 700;
@@ -228,66 +221,6 @@
         .page-header p {
             color: #8B93A5;
             font-size: 14px;
-        }
-
-        /* Emergency Stop Switch - Top Right */
-        .emergency-stop {
-            background: rgba(255, 71, 87, 0.15);
-            border: 1px solid rgba(255, 71, 87, 0.3);
-            border-radius: 40px;
-            padding: 8px 20px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .emergency-stop.enabled {
-            background: rgba(0, 216, 151, 0.15);
-            border-color: rgba(0, 216, 151, 0.3);
-        }
-        .emergency-status {
-            font-size: 13px;
-            font-weight: 600;
-        }
-        .emergency-status.enabled { color: #00D897; }
-        .emergency-status.disabled { color: #FF4757; }
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 28px;
-        }
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #FF4757;
-            transition: .3s;
-            border-radius: 34px;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 22px;
-            width: 22px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .3s;
-            border-radius: 50%;
-        }
-        input:checked + .slider {
-            background-color: #00D897;
-        }
-        input:checked + .slider:before {
-            transform: translateX(22px);
         }
 
         /* Stats Cards */
@@ -308,25 +241,62 @@
         .stat-card-label { font-size: 13px; color: #8B93A5; }
         .positive { color: #00D897; }
 
-        /* Charts Row */
-        .charts-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+        /* Emergency Stop Switch */
+        .emergency-stop {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-radius: 16px;
+            padding: 16px 24px;
             margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
         }
-        .chart-card {
-            background: rgba(255,255,255,0.05);
-            border-radius: 20px;
-            padding: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
+        .emergency-stop.enabled {
+            background: rgba(0, 216, 151, 0.1);
+            border-color: rgba(0, 216, 151, 0.3);
         }
-        .chart-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 16px;
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
         }
-        .chart-container { height: 300px; }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #FF4757;
+            transition: .3s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #00D897;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
 
         /* Tables */
         .table-container {
@@ -380,7 +350,25 @@
         .btn-view { background: rgba(255, 165, 2, 0.2); color: #FFA502; }
         .btn-delete { background: rgba(255, 71, 87, 0.2); color: #FF4757; }
 
-        /* Form Inputs */
+        /* Settings Cards */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+        .settings-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .settings-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
         .form-group { margin-bottom: 16px; }
         .form-group label {
             display: block;
@@ -501,7 +489,7 @@
             .admin-sidebar { width: 220px; }
             .admin-content { margin-left: 220px; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .charts-row { grid-template-columns: 1fr; }
+            .settings-grid { grid-template-columns: 1fr; }
         }
         @media (max-width: 768px) {
             .admin-sidebar { transform: translateX(-100%); position: fixed; z-index: 100; transition: transform 0.3s; width: 260px; }
@@ -509,7 +497,6 @@
             .admin-content { margin-left: 0; padding: 16px; }
             .mobile-menu-btn { display: block; }
             .stats-grid { grid-template-columns: 1fr; }
-            .content-top-bar { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
@@ -559,12 +546,9 @@
         <div class="admin-content" id="adminContent">
             <!-- Dashboard Tab -->
             <div id="dashboardTab" class="tab-content active">
-                <div class="content-top-bar">
-                    <div class="page-header">
-                        <h1>Dashboard</h1>
-                        <p>Platform overview and statistics</p>
-                    </div>
-                    <div id="emergencyStopContainer"></div>
+                <div class="page-header">
+                    <h1>Dashboard</h1>
+                    <p>Platform overview and statistics</p>
                 </div>
                 <div class="stats-grid" id="dashboardStats">
                     <div class="stat-card"><div class="stat-card-icon">👥</div><div class="stat-card-value" id="totalUsers">0</div><div class="stat-card-label">Total Users</div></div>
@@ -572,11 +556,14 @@
                     <div class="stat-card"><div class="stat-card-icon">🏦</div><div class="stat-card-value" id="totalDeposits">$0</div><div class="stat-card-label">Total Deposits</div></div>
                     <div class="stat-card"><div class="stat-card-icon">📊</div><div class="stat-card-value" id="pendingRequests">0</div><div class="stat-card-label">Pending Requests</div></div>
                 </div>
-                <div class="charts-row">
-                    <div class="chart-card"><div class="chart-title">User Growth</div><div class="chart-container"><canvas id="userGrowthChart"></canvas></div></div>
-                    <div class="chart-card"><div class="chart-title">Volume Overview</div><div class="chart-container"><canvas id="volumeChart"></canvas></div></div>
+                <div id="emergencyStopContainer"></div>
+                <div class="stats-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 0;">
+                    <div class="stat-card"><div class="stat-card-icon">📈</div><div class="stat-card-value" id="userGrowthChartDummy">Loading...</div><div class="stat-card-label">User Growth</div></div>
+                    <div class="stat-card"><div class="stat-card-icon">📊</div><div class="stat-card-value" id="volumeChartDummy">Loading...</div><div class="stat-card-label">Volume Overview</div></div>
                 </div>
-                <div class="chart-card"><div class="chart-title">Recent Activity</div><div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Action</th><th>Amount</th><th>Date</th></tr></thead><tbody id="recentActivityBody"><tr><td colspan="4"><div class="empty-state">Loading...</div></td></tr></tbody></table></div></div>
+                <div class="table-container" style="margin-top: 24px;">
+                    <table class="data-table"><thead><tr><th>User</th><th>Action</th><th>Amount</th><th>Date</th></tr></thead><tbody id="recentActivityBody"><tr><td colspan="4"><div class="empty-state">Loading...</div><\/tr><\/tbody></table>
+                </div>
             </div>
 
             <!-- Users Tab -->
@@ -587,7 +574,7 @@
                     <select id="userRoleFilter" class="filter-select"><option value="all">All Users</option><option value="admin">Admins</option><option value="user">Regular Users</option></select>
                     <button class="btn-approve" onclick="adminManager.refreshUsers()">Refresh</button>
                 </div>
-                <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Email</th><th>Balance</th><th>KYC</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="usersTableBody"><tr><td colspan="7"><div class="empty-state">Loading...</div></td></tr></tbody></table></div>
+                <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Email</th><th>Balance</th><th>KYC</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="usersTableBody"><tr><td colspan="7"><div class="empty-state">Loading...</div><\/tr><\/tbody></tr></div>
             </div>
 
             <!-- Deposits Tab -->
@@ -597,7 +584,7 @@
                     <select id="depositStatusFilter" class="filter-select"><option value="all">All</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
                     <button class="btn-approve" onclick="adminManager.refreshDeposits()">Refresh</button>
                 </div>
-                <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Amount</th><th>Currency</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="depositsTableBody"><tr><td colspan="6"><div class="empty-state">Loading...</div></td></tr></tbody></table></div>
+                <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Amount</th><th>Currency</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="depositsTableBody"><tr><td colspan="6"><div class="empty-state">Loading...</div><\/tr><\/tbody></table></div>
             </div>
 
             <!-- Withdrawals Tab -->
@@ -607,7 +594,7 @@
                     <select id="withdrawStatusFilter" class="filter-select"><option value="all">All</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
                     <button class="btn-approve" onclick="adminManager.refreshWithdrawals()">Refresh</button>
                 </div>
-                <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Amount</th><th>Crypto</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="withdrawalsTableBody"><tr><td colspan="6"><div class="empty-state">Loading...</div></td></tr></tbody></table></div>
+                <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Amount</th><th>Crypto</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="withdrawalsTableBody"><tr><td colspan="6"><div class="empty-state">Loading...</div><\/tr><\/tbody></tr></div>
             </div>
 
             <!-- KYC Tab -->
@@ -617,7 +604,7 @@
                     <select id="kycStatusFilter" class="filter-select"><option value="all">All</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
                     <button class="btn-approve" onclick="adminManager.refreshKYC()">Refresh</button>
                 </div>
-                <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Full Name</th><th>ID Type</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="kycTableBody"><tr><td colspan="6"><div class="empty-state">Loading...</div></td></tr></tbody></table></div>
+                <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Full Name</th><th>ID Type</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="kycTableBody"><tr><td colspan="6"><div class="empty-state">Loading...</div><\/tr><\/tbody></table></div>
             </div>
 
             <!-- Trades Tab -->
@@ -628,19 +615,67 @@
                     <select id="tradeStatusFilter" class="filter-select"><option value="all">All</option><option value="open">Open</option><option value="closed">Closed</option></select>
                     <button class="btn-approve" onclick="adminManager.refreshTrades()">Refresh</button>
                 </div>
-                <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Symbol</th><th>Type</th><th>Amount</th><th>Leverage</th><th>P&L</th><th>Status</th><th>Date</th></tr></thead><tbody id="tradesTableBody"><tr><td colspan="8"><div class="empty-state">Loading...</div></td></tr></tbody></table></div>
+                <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Symbol</th><th>Type</th><th>Amount</th><th>Leverage</th><th>P&L</th><th>Status</th><th>Date</th></td></thead><tbody id="tradesTableBody"><tr><td colspan="8"><div class="empty-state">Loading...</div><\/tr><\/tbody></table></div>
             </div>
 
             <!-- Settings Tab -->
             <div id="settingsTab" class="tab-content" style="display: none;">
                 <div class="page-header"><h1>Settings</h1><p>Platform configuration</p></div>
-                <div class="stats-grid" style="grid-template-columns: 1fr 1fr;">
-                    <div class="stat-card"><h3 style="margin-bottom:16px;">Trading Settings</h3><div class="form-group"><label>Minimum Trade Amount ($)</label><input type="number" id="minTradeAmount" class="form-input" value="10"></div><div class="form-group"><label>Maximum Leverage</label><select id="maxLeverage" class="form-input"><option value="10">10x</option><option value="20">20x</option><option value="50">50x</option><option value="100" selected>100x</option></select></div><div class="form-group"><label>Withdrawal Fee (%)</label><input type="number" id="withdrawalFee" class="form-input" step="0.1" value="1.5"></div><button class="btn-save" onclick="adminManager.saveTradingSettings()">Save Settings</button></div>
-                    <div class="stat-card"><h3 style="margin-bottom:16px;">Deposit Wallet Addresses</h3><div class="form-group"><label>USDT (TRC20)</label><input type="text" id="adminUSDTAddress" class="form-input" placeholder="USDT address"></div><div class="form-group"><label>BTC Address</label><input type="text" id="adminBTCAddress" class="form-input" placeholder="BTC address"></div><div class="form-group"><label>ETH (ERC20)</label><input type="text" id="adminETHAddress" class="form-input" placeholder="ETH address"></div><button class="btn-save" onclick="adminManager.saveDepositAddresses()">Save Addresses</button></div>
-                </div>
-                <div class="stats-grid" style="grid-template-columns: 1fr 1fr; margin-top:20px;">
-                    <div class="stat-card"><h3 style="margin-bottom:16px;">System Status</h3><div class="detail-row"><span class="detail-label">Platform Status</span><span class="detail-value positive">● Operational</span></div><div class="detail-row"><span class="detail-label">Database</span><span class="detail-value positive">● Connected</span></div><div class="detail-row"><span class="detail-label">Version</span><span class="detail-value">2.0.0</span></div><button class="btn-save" style="margin-top:16px;" onclick="adminManager.backupDatabase()">Backup Database</button></div>
-                    <div class="stat-card"><h3 style="margin-bottom:16px;">Admin Actions</h3><button class="btn-approve" style="width:100%; margin-bottom:12px; padding:10px;" onclick="adminManager.exportUserData()">Export User Data</button><button class="btn-approve" style="width:100%; margin-bottom:12px; padding:10px;" onclick="adminManager.exportTradeData()">Export Trade Data</button><button class="btn-reject" style="width:100%; padding:10px;" onclick="adminManager.clearLogs()">Clear Logs</button></div>
+                <div class="settings-grid">
+                    <!-- Trading Settings -->
+                    <div class="settings-card">
+                        <h3>Trading Settings</h3>
+                        <div class="form-group"><label>Minimum Trade Amount ($)</label><input type="number" id="minTradeAmount" class="form-input" value="10"></div>
+                        <div class="form-group"><label>Maximum Leverage</label><select id="maxLeverage" class="form-input"><option value="10">10x</option><option value="20">20x</option><option value="50">50x</option><option value="100" selected>100x</option></select></div>
+                        <div class="form-group"><label>Withdrawal Fee (%)</label><input type="number" id="withdrawalFee" class="form-input" step="0.1" value="1.5"></div>
+                        <button class="btn-save" onclick="adminManager.saveTradingSettings()">Save Settings</button>
+                    </div>
+                    
+                    <!-- Deposit Wallet Addresses -->
+                    <div class="settings-card">
+                        <h3>💰 Deposit Wallet Addresses</h3>
+                        <div class="form-group"><label>USDT (TRC20)</label><input type="text" id="adminUSDTAddress" class="form-input" placeholder="USDT address"></div>
+                        <div class="form-group"><label>BTC Address</label><input type="text" id="adminBTCAddress" class="form-input" placeholder="BTC address"></div>
+                        <div class="form-group"><label>ETH (ERC20)</label><input type="text" id="adminETHAddress" class="form-input" placeholder="ETH address"></div>
+                        <button class="btn-save" onclick="adminManager.saveDepositAddresses()">Save Addresses</button>
+                    </div>
+                    
+                    <!-- Balance Management Tool -->
+                    <div class="settings-card">
+                        <h3>💰 Balance Management</h3>
+                        <div class="form-group">
+                            <label>Select User</label>
+                            <select id="adminBalanceUser" class="form-input">
+                                <option value="">Loading users...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount ($)</label>
+                            <input type="number" id="adminBalanceAmount" class="form-input" placeholder="Enter amount" step="10" value="100">
+                        </div>
+                        <div style="display: flex; gap: 12px;">
+                            <button class="btn-approve" onclick="adminManager.addBalance()" style="flex:1; padding: 10px;">➕ Add Balance</button>
+                            <button class="btn-reject" onclick="adminManager.subtractBalance()" style="flex:1; padding: 10px;">➖ Subtract Balance</button>
+                            <button class="btn-view" onclick="adminManager.setBalance()" style="flex:1; padding: 10px;">🎯 Set Balance</button>
+                        </div>
+                    </div>
+                    
+                    <!-- System Status -->
+                    <div class="settings-card">
+                        <h3>System Status</h3>
+                        <div class="detail-row"><span class="detail-label">Platform Status</span><span class="detail-value positive">● Operational</span></div>
+                        <div class="detail-row"><span class="detail-label">Database</span><span class="detail-value positive">● Connected</span></div>
+                        <div class="detail-row"><span class="detail-label">Version</span><span class="detail-value">2.0.0</span></div>
+                        <button class="btn-save" style="margin-top:16px;" onclick="adminManager.backupDatabase()">💾 Backup Database</button>
+                    </div>
+                    
+                    <!-- Admin Actions -->
+                    <div class="settings-card">
+                        <h3>Admin Actions</h3>
+                        <button class="btn-approve" style="width:100%; margin-bottom:12px; padding:10px;" onclick="adminManager.exportUserData()">📥 Export User Data</button>
+                        <button class="btn-approve" style="width:100%; margin-bottom:12px; padding:10px;" onclick="adminManager.exportTradeData()">📥 Export Trade Data</button>
+                        <button class="btn-reject" style="width:100%; padding:10px;" onclick="adminManager.clearLogs()">🗑️ Clear Logs</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -649,10 +684,19 @@
     <!-- Details Modal -->
     <div id="detailsModal" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="modalTitle">Details</h3><span class="modal-close" onclick="adminManager?.closeModal()">&times;</span></div><div class="modal-body" id="modalBody"></div><div class="modal-buttons" id="modalButtons"></div></div></div>
 
-    <!-- Scripts -->
+    <!-- ============================================ -->
+    <!-- SCRIPTS - CORRECT ORDER IS CRITICAL          -->
+    <!-- ============================================ -->
+    <!-- 1. Supabase CDN (MUST BE FIRST) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- 2. Database Wrapper -->
     <script src="js/supabase-db.js"></script>
+    
+    <!-- 3. Authentication -->
     <script src="js/auth.js"></script>
+    
+    <!-- 4. Admin Page Script -->
     <script src="js/admin.js"></script>
 </body>
 </html>
