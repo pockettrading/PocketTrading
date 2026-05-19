@@ -135,6 +135,16 @@ class TradesManager {
         const container = document.getElementById('tradeFormSection');
         if (!container) return;
         
+        const cryptoData = {
+            BTC: { name: 'Bitcoin', price: 78312.00 },
+            ETH: { name: 'Ethereum', price: 2297.32 },
+            SOL: { name: 'Solana', price: 168.42 },
+            XRP: { name: 'Ripple', price: 0.624 },
+            DOGE: { name: 'Dogecoin', price: 0.162 },
+            BNB: { name: 'Binance Coin', price: 615.81 },
+            ADA: { name: 'Cardano', price: 0.483 }
+        };
+        
         container.innerHTML = `
             <div class="trade-type-buttons">
                 <button class="trade-type-btn buy active" data-type="buy">BUY</button>
@@ -142,9 +152,9 @@ class TradesManager {
             </div>
 
             <div class="selected-coin">
-                <div class="coin-name-large" id="selectedCoinName">Bitcoin</div>
-                <div class="coin-symbol" id="selectedCoinSymbol">BTC/USD</div>
-                <div class="current-price-large" id="currentPrice">$${this.currentPrice.toLocaleString()}</div>
+                <div class="coin-name-large" id="selectedCoinName">${cryptoData[this.currentSymbol].name}</div>
+                <div class="coin-symbol" id="selectedCoinSymbol">${this.currentSymbol}/USD</div>
+                <div class="current-price-large" id="currentPrice">$${cryptoData[this.currentSymbol].price.toLocaleString()}</div>
                 <div class="live-badge">● LIVE</div>
             </div>
 
@@ -333,7 +343,7 @@ class TradesManager {
             await supabaseDB.updateUserBalance(this.currentUser.id, newBalance);
             this.currentUser.balance = newBalance;
             
-            // Create trade record with payout_percent
+            // Create trade record
             const trade = {
                 id: Date.now(),
                 user_id: this.currentUser.id,
@@ -464,13 +474,23 @@ class TradesManager {
         const container = document.getElementById('tv_chart_container');
         if (!container || typeof TradingView === 'undefined') return;
         
+        const cryptoData = {
+            BTC: { pair: 'BINANCE:BTCUSDT' },
+            ETH: { pair: 'BINANCE:ETHUSDT' },
+            SOL: { pair: 'BINANCE:SOLUSDT' },
+            XRP: { pair: 'BINANCE:XRPUSDT' },
+            DOGE: { pair: 'BINANCE:DOGEUSDT' },
+            BNB: { pair: 'BINANCE:BNBUSDT' },
+            ADA: { pair: 'BINANCE:ADAUSDT' }
+        };
+        
         if (this.tvWidget) this.tvWidget.remove();
         
         this.tvWidget = new TradingView.widget({
             container_id: "tv_chart_container",
             width: "100%",
             height: "100%",
-            symbol: `BINANCE:${this.currentSymbol}USDT`,
+            symbol: cryptoData[this.currentSymbol].pair,
             interval: "1",
             timezone: "Etc/UTC",
             theme: "dark",
@@ -515,7 +535,12 @@ class TradesManager {
         this.currentSymbol = symbol;
         this.updateSelectedCoinDisplay();
         if (this.tvWidget) {
-            this.tvWidget.setSymbol(`BINANCE:${symbol}USDT`);
+            const cryptoData = {
+                BTC: 'BINANCE:BTCUSDT', ETH: 'BINANCE:ETHUSDT', SOL: 'BINANCE:SOLUSDT',
+                XRP: 'BINANCE:XRPUSDT', DOGE: 'BINANCE:DOGEUSDT', BNB: 'BINANCE:BNBUSDT',
+                ADA: 'BINANCE:ADAUSDT'
+            };
+            this.tvWidget.setSymbol(cryptoData[symbol]);
         }
         this.updateTradeSummary();
     }
@@ -525,6 +550,11 @@ class TradesManager {
     }
 
     startPriceUpdates() {
+        const cryptoData = {
+            BTC: 78312, ETH: 2297.32, SOL: 168.42, XRP: 0.624,
+            DOGE: 0.162, BNB: 615.81, ADA: 0.483
+        };
+        
         this.priceUpdateInterval = setInterval(() => {
             const change = (Math.random() - 0.5) * 50;
             this.currentPrice = Math.max(0.01, this.currentPrice + change);
@@ -559,32 +589,28 @@ class TradesManager {
     }
 
     showNotification(message, type) {
-        const existing = document.querySelector('.trade-notification');
-        if (existing) existing.remove();
-        
-        const notification = document.createElement('div');
-        notification.className = 'trade-notification';
-        notification.textContent = message;
-        notification.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: ${type === 'error' ? '#FF4757' : (type === 'success' ? '#00D897' : '#FFA502')};
-            color: white;
-            padding: 12px 20px;
-            border-radius: 12px;
-            z-index: 10000;
-            animation: slideIn 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            font-weight: 500;
-            max-width: 350px;
-        `;
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
+        if (typeof auth !== 'undefined' && auth.showNotification) {
+            auth.showNotification(message, type);
+        } else {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: ${type === 'error' ? '#FF4757' : (type === 'success' ? '#00D897' : '#FFA502')};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 12px;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                font-weight: 500;
+                max-width: 350px;
+            `;
+            document.body.appendChild(notification);
             setTimeout(() => notification.remove(), 4000);
-        }, 4000);
+        }
     }
 }
 
