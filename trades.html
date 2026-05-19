@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Trade - PocketTrading</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- TradingView Widget Library -->
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
         * {
@@ -13,14 +12,12 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: 'Inter', sans-serif;
             background: #0A0F1A;
             color: #FFFFFF;
             overflow-x: hidden;
         }
-
         .navbar {
             position: fixed;
             top: 0;
@@ -32,7 +29,6 @@
             z-index: 1000;
             padding: 0 32px;
         }
-
         .nav-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -41,14 +37,12 @@
             align-items: center;
             height: 70px;
         }
-
         .logo {
             display: flex;
             align-items: center;
             gap: 10px;
             text-decoration: none;
         }
-
         .logo-icon { font-size: 28px; }
         .logo-text {
             font-size: 20px;
@@ -58,7 +52,6 @@
             background-clip: text;
             color: transparent;
         }
-
         .nav-links {
             display: flex;
             gap: 8px;
@@ -77,7 +70,6 @@
             background: rgba(0, 216, 151, 0.1);
             color: #00D897;
         }
-
         .guest-buttons {
             display: flex;
             gap: 12px;
@@ -98,7 +90,6 @@
             background: linear-gradient(135deg, #00D897, #00B8A0);
             color: white;
         }
-
         .user-section {
             display: flex;
             align-items: center;
@@ -154,7 +145,6 @@
             cursor: pointer;
             font-weight: 500;
         }
-
         .mobile-menu-btn {
             display: none;
             background: none;
@@ -183,7 +173,6 @@
             text-decoration: none;
             border-radius: 12px;
         }
-
         .main-content {
             margin-top: 70px;
             padding: 20px 32px;
@@ -194,14 +183,12 @@
             display: flex;
             flex-direction: column;
         }
-
         .trading-layout {
             display: flex;
             gap: 20px;
             flex: 1;
             min-height: 0;
         }
-
         .chart-section {
             flex: 1.5;
             min-width: 0;
@@ -213,7 +200,6 @@
             flex-direction: column;
             height: 100%;
         }
-
         .crypto-selector {
             display: flex;
             justify-content: space-between;
@@ -235,12 +221,13 @@
             color: #8B93A5;
             cursor: pointer;
             font-size: 11px;
+            transition: all 0.2s;
         }
         .crypto-btn.active {
             background: linear-gradient(135deg, #00D897, #00B8A0);
             color: white;
+            border-color: transparent;
         }
-
         .timeframes {
             display: flex;
             gap: 6px;
@@ -255,13 +242,13 @@
             color: #8B93A5;
             cursor: pointer;
             font-size: 11px;
+            transition: all 0.2s;
         }
         .time-btn.active {
             background: rgba(0, 216, 151, 0.2);
             color: #00D897;
             border-color: #00D897;
         }
-
         .chart-container {
             flex: 1;
             width: 100%;
@@ -270,7 +257,6 @@
             overflow: hidden;
             min-height: 500px;
         }
-
         .trade-form-section {
             flex: 1;
             min-width: 280px;
@@ -283,7 +269,6 @@
             height: 100%;
             overflow-y: auto;
         }
-
         .trade-type-buttons {
             display: flex;
             gap: 8px;
@@ -298,6 +283,7 @@
             border-radius: 30px;
             cursor: pointer;
             text-transform: uppercase;
+            transition: all 0.2s;
         }
         .trade-type-btn.buy {
             background: rgba(0, 216, 151, 0.2);
@@ -315,7 +301,6 @@
             background: #FF4757;
             color: white;
         }
-
         .selected-coin {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 12px;
@@ -324,11 +309,10 @@
             text-align: center;
         }
         .coin-name-large { font-size: 16px; font-weight: 700; }
-        .coin-symbol { font-size: 11px; color: #8B93A5; }
+        .coin-symbol { font-size: 11px; color: #8B93A5; margin-top: 2px; }
         .current-price-large { font-size: 22px; font-weight: 800; margin: 6px 0; }
         .live-badge { font-size: 10px; color: #FF4757; animation: pulse 1s infinite; }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
-
         .form-group { margin-bottom: 16px; }
         .form-label { font-size: 12px; color: #8B93A5; margin-bottom: 6px; display: block; }
         .amount-input {
@@ -340,10 +324,9 @@
             color: white;
             font-size: 14px;
         }
-
         .duration-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 8px;
             margin-bottom: 16px;
         }
@@ -355,14 +338,15 @@
             color: white;
             cursor: pointer;
             text-align: center;
+            transition: all 0.2s;
         }
         .duration-btn.active {
             background: linear-gradient(135deg, #00D897, #00B8A0);
+            border-color: transparent;
         }
         .duration-time { font-size: 12px; font-weight: 700; }
-        .duration-payout { font-size: 10px; color: #00D897; }
+        .duration-payout { font-size: 10px; color: #00D897; margin-top: 2px; }
         .duration-min { font-size: 8px; color: #5A6475; }
-
         .trade-summary {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
@@ -380,8 +364,38 @@
             margin-top: 6px;
             padding-top: 8px;
             font-weight: 700;
+            font-size: 13px;
         }
-
+        .trade-preview {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 16px;
+            border-left: 3px solid #00D897;
+        }
+        .preview-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #00D897;
+            margin-bottom: 10px;
+        }
+        .preview-win {
+            background: rgba(0, 216, 151, 0.1);
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 8px;
+        }
+        .preview-loss {
+            background: rgba(255, 71, 87, 0.1);
+            border-radius: 8px;
+            padding: 8px;
+        }
+        .preview-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            padding: 3px 0;
+        }
         .confirm-btn {
             width: 100%;
             padding: 12px;
@@ -392,12 +406,12 @@
             font-weight: 700;
             cursor: pointer;
             font-size: 14px;
+            transition: all 0.2s;
         }
         .confirm-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
-
         .login-required {
             text-align: center;
             padding: 50px 20px;
@@ -406,16 +420,17 @@
         .login-required h3 { font-size: 22px; margin-bottom: 12px; }
         .login-required p { color: #8B93A5; margin-bottom: 28px; }
         .login-buttons { display: flex; gap: 16px; justify-content: center; }
-
         @media (max-width: 900px) {
             .trading-layout { flex-direction: column; }
             .chart-container { min-height: 400px; }
             .main-content { height: auto; }
+            .duration-grid { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 768px) {
             .nav-links, .guest-buttons, .user-section { display: none; }
             .mobile-menu-btn { display: block; }
             .main-content { padding: 12px; height: auto; }
+            .duration-grid { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
@@ -462,14 +477,13 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
     
     <script>
         // ============================================
-        // TRADES PAGE - ALL JAVASCRIPT INLINE
+        // TRADES PAGE WITH TRADE PREVIEW
         // ============================================
         
         let currentUser = null;
@@ -492,9 +506,8 @@
             ADA: { name: 'Cardano', pair: 'BINANCE:ADAUSDT', price: 0.483 }
         };
 
-        async function init() {
+        document.addEventListener('DOMContentLoaded', async () => {
             await waitForAuth();
-            
             currentUser = auth.getUser();
             updateNavbar();
             
@@ -521,7 +534,7 @@
                     showLoginRequired();
                 }
             });
-        }
+        });
 
         function waitForAuth() {
             return new Promise((resolve) => {
@@ -602,7 +615,6 @@
         function showLoginRequired() {
             const container = document.getElementById('tradeFormSection');
             if (!container) return;
-            
             container.innerHTML = `
                 <div class="login-required">
                     <div class="login-required-icon">🔒</div>
@@ -625,19 +637,16 @@
                     <button class="trade-type-btn buy active" data-type="buy">BUY</button>
                     <button class="trade-type-btn sell" data-type="sell">SELL</button>
                 </div>
-
                 <div class="selected-coin">
                     <div class="coin-name-large" id="selectedCoinName">${cryptoData[currentSymbol].name}</div>
                     <div class="coin-symbol" id="selectedCoinSymbol">${currentSymbol}/USD</div>
                     <div class="current-price-large" id="currentPrice">$${cryptoData[currentSymbol].price.toLocaleString()}</div>
                     <div class="live-badge">● LIVE</div>
                 </div>
-
                 <div class="form-group">
                     <div class="form-label">Amount (USDT)</div>
                     <input type="number" id="tradeAmount" class="amount-input" placeholder="Enter amount" min="10" step="10">
                 </div>
-
                 <div class="form-label">Select Duration</div>
                 <div class="duration-grid" id="durationGrid">
                     <div class="duration-btn active" data-duration="30" data-payout="12" data-min="100">
@@ -645,28 +654,32 @@
                         <div class="duration-payout">+12%</div>
                         <div class="duration-min">Min $100</div>
                     </div>
-                    <div class="duration-btn" data-duration="60" data-payout="18" data-min="15000">
+                    <div class="duration-btn" data-duration="60" data-payout="18" data-min="100">
                         <div class="duration-time">60s</div>
                         <div class="duration-payout">+18%</div>
-                        <div class="duration-min">Min $15K</div>
+                        <div class="duration-min">Min $100</div>
                     </div>
-                    <div class="duration-btn" data-duration="90" data-payout="25" data-min="50000">
+                    <div class="duration-btn" data-duration="90" data-payout="25" data-min="100">
                         <div class="duration-time">90s</div>
                         <div class="duration-payout">+25%</div>
-                        <div class="duration-min">Min $50K</div>
+                        <div class="duration-min">Min $100</div>
                     </div>
-                    <div class="duration-btn" data-duration="180" data-payout="32" data-min="200000">
+                    <div class="duration-btn" data-duration="120" data-payout="30" data-min="100">
+                        <div class="duration-time">120s</div>
+                        <div class="duration-payout">+30%</div>
+                        <div class="duration-min">Min $100</div>
+                    </div>
+                    <div class="duration-btn" data-duration="180" data-payout="35" data-min="100">
                         <div class="duration-time">180s</div>
-                        <div class="duration-payout">+32%</div>
-                        <div class="duration-min">Min $200K</div>
+                        <div class="duration-payout">+35%</div>
+                        <div class="duration-min">Min $100</div>
                     </div>
-                    <div class="duration-btn" data-duration="300" data-payout="45" data-min="900000">
+                    <div class="duration-btn" data-duration="300" data-payout="45" data-min="100">
                         <div class="duration-time">300s</div>
                         <div class="duration-payout">+45%</div>
-                        <div class="duration-min">Min $900K</div>
+                        <div class="duration-min">Min $100</div>
                     </div>
                 </div>
-
                 <div class="trade-summary">
                     <div class="summary-row">
                         <span>Available Balance:</span>
@@ -681,7 +694,16 @@
                         <span id="totalAmount" style="color: #00D897;">0.00 USDT</span>
                     </div>
                 </div>
-
+                <div class="trade-preview" id="tradePreview">
+                    <div class="preview-title">📊 TRADE PREVIEW</div>
+                    <div class="preview-win">
+                        <div class="preview-row"><span>✅ IF YOU WIN:</span><span id="previewProfit" style="color: #00D897;">+$0.00</span></div>
+                        <div class="preview-row"><span>Total Return:</span><span id="previewTotalReturn" style="color: #00D897;">$0.00</span></div>
+                    </div>
+                    <div class="preview-loss">
+                        <div class="preview-row"><span>❌ IF YOU LOSE:</span><span id="previewLoss" style="color: #FF4757;">-$0.00</span></div>
+                    </div>
+                </div>
                 <button class="confirm-btn" id="confirmTrade">Confirm Trade</button>
             `;
             
@@ -721,7 +743,12 @@
             if (amountInput) amountInput.addEventListener('input', () => updateTradeSummary());
 
             const confirmBtn = document.getElementById('confirmTrade');
-            if (confirmBtn) confirmBtn.addEventListener('click', () => executeTrade());
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    executeTrade();
+                });
+            }
         }
 
         async function loadUserBalance() {
@@ -744,14 +771,29 @@
             const amount = parseFloat(document.getElementById('tradeAmount')?.value) || 0;
             const fee = amount * 0.02;
             const total = amount + fee;
+            const profitAmount = amount * (selectedPayout / 100);
+            const totalReturn = amount + profitAmount;
             
             const feeEl = document.getElementById('feeAmount');
             const totalEl = document.getElementById('totalAmount');
+            const previewProfit = document.getElementById('previewProfit');
+            const previewTotalReturn = document.getElementById('previewTotalReturn');
+            const previewLoss = document.getElementById('previewLoss');
             const confirmBtn = document.getElementById('confirmTrade');
             const balance = currentUser?.balance || 0;
             
             if (feeEl) feeEl.textContent = `${fee.toFixed(2)} USDT`;
             if (totalEl) totalEl.textContent = `${total.toFixed(2)} USDT`;
+            
+            if (previewProfit && amount > 0) {
+                previewProfit.innerHTML = `+$${profitAmount.toFixed(2)} (${selectedPayout}%)`;
+                previewTotalReturn.innerHTML = `$${totalReturn.toFixed(2)}`;
+                previewLoss.innerHTML = `-$${amount.toFixed(2)}`;
+            } else if (previewProfit) {
+                previewProfit.innerHTML = '+$0.00';
+                previewTotalReturn.innerHTML = '$0.00';
+                previewLoss.innerHTML = '-$0.00';
+            }
             
             if (confirmBtn) {
                 if (amount < selectedMinAmount && amount > 0) {
@@ -763,6 +805,9 @@
                 } else if (amount < 10 && amount > 0) {
                     confirmBtn.disabled = true;
                     confirmBtn.textContent = 'Minimum $10';
+                } else if (amount === 0) {
+                    confirmBtn.disabled = true;
+                    confirmBtn.textContent = 'Enter Amount';
                 } else {
                     confirmBtn.disabled = false;
                     confirmBtn.textContent = 'Confirm Trade';
@@ -811,6 +856,7 @@
                     status: 'open',
                     duration: selectedDuration,
                     payout_percent: selectedPayout,
+                    expected_payout: winAmount,
                     created_at: new Date().toISOString()
                 };
                 
@@ -824,7 +870,7 @@
                     created_at: new Date().toISOString()
                 });
                 
-                showNotification(`Trade placed! ${currentTradeType.toUpperCase()} $${amount} for ${selectedDuration}s. Potential win: $${profitAmount.toFixed(2)} (${selectedPayout}%)`, 'success');
+                showNotification(`Trade placed! ${currentTradeType.toUpperCase()} $${amount} for ${selectedDuration}s.`, 'success');
                 
                 document.getElementById('tradeAmount').value = '';
                 updateTradeSummary();
@@ -914,15 +960,14 @@
                     
                     showNotification(`😢 LOSS! You lost $${trade.amount.toFixed(2)}`, 'error');
                 }
+                updateBalanceDisplay();
             }, trade.duration * 1000);
         }
 
         function initTradingView() {
             const container = document.getElementById('tv_chart_container');
             if (!container || typeof TradingView === 'undefined') return;
-            
             if (tvWidget) tvWidget.remove();
-            
             tvWidget = new TradingView.widget({
                 container_id: "tv_chart_container",
                 width: "100%",
@@ -941,18 +986,15 @@
                 save_image: false,
                 autosize: true
             });
-            
             updateSelectedCoinDisplay();
         }
 
         function updateSelectedCoinDisplay() {
             const coin = cryptoData[currentSymbol];
             currentPrice = coin.price;
-            
             const nameEl = document.getElementById('selectedCoinName');
             const symbolEl = document.getElementById('selectedCoinSymbol');
             const priceEl = document.getElementById('currentPrice');
-            
             if (nameEl) nameEl.textContent = coin.name;
             if (symbolEl) symbolEl.textContent = `${currentSymbol}/USD`;
             if (priceEl) priceEl.textContent = `$${currentPrice.toLocaleString()}`;
@@ -990,7 +1032,6 @@
                     changeSymbol(btn.dataset.symbol);
                 });
             });
-
             document.querySelectorAll('.time-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
@@ -998,7 +1039,6 @@
                     changeInterval(btn.dataset.interval);
                 });
             });
-
             const mobileBtn = document.getElementById('mobileMenuBtn');
             const mobileMenu = document.getElementById('mobileMenu');
             if (mobileBtn && mobileMenu) {
@@ -1037,9 +1077,6 @@
                 window.location.href = 'index.html';
             }
         }
-
-        // Start the app
-        init();
     </script>
 </body>
 </html>
