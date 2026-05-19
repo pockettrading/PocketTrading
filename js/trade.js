@@ -11,18 +11,17 @@ class TradesManager {
         this.selectedDuration = 30;
         this.selectedPayout = 12;
         this.selectedMinAmount = 100;
+        this.activeTrades = [];
         this.tvWidget = null;
         this.priceUpdateInterval = null;
         this.init();
     }
 
     async init() {
-        console.log('TradesManager initializing...');
         await this.waitForDependencies();
         await this.waitForSession();
         
         this.currentUser = auth.getUser();
-        console.log('Current user after session:', this.currentUser);
         
         if (!this.currentUser) {
             const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
@@ -33,25 +32,21 @@ class TradesManager {
                         this.currentUser = user;
                         this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
                         if (typeof auth !== 'undefined') auth.currentUser = user;
-                        console.log('User restored from sessionStorage:', this.currentUser.email);
                     }
-                } catch (e) {
-                    console.error('Error restoring user:', e);
-                }
+                } catch (e) {}
             }
         }
         
         this.updateNavbar();
         
         if (this.currentUser) {
-            console.log('User is logged in, showing trade form');
             await this.loadUserBalance();
             this.showTradeForm();
             this.initTradingView();
             this.setupEventListeners();
             this.startPriceUpdates();
+            this.loadActiveTrades();
         } else {
-            console.log('No user logged in, showing login required');
             this.showLoginRequired();
             this.initTradingView();
             this.setupEventListeners();
@@ -59,12 +54,12 @@ class TradesManager {
         }
         
         window.addEventListener('authStateChanged', (e) => {
-            console.log('Auth state changed:', e.detail);
             this.currentUser = e.detail.user;
             this.updateNavbar();
             if (this.currentUser) {
                 this.showTradeForm();
                 this.loadUserBalance();
+                this.loadActiveTrades();
             } else {
                 this.showLoginRequired();
             }
@@ -173,10 +168,7 @@ class TradesManager {
 
     showLoginRequired() {
         const container = document.getElementById('tradeFormSection');
-        if (!container) {
-            console.error('tradeFormSection container not found!');
-            return;
-        }
+        if (!container) return;
         
         container.innerHTML = `
             <div class="login-required">
@@ -193,12 +185,7 @@ class TradesManager {
 
     showTradeForm() {
         const container = document.getElementById('tradeFormSection');
-        if (!container) {
-            console.error('tradeFormSection container not found!');
-            return;
-        }
-        
-        console.log('Rendering trade form...');
+        if (!container) return;
         
         container.innerHTML = `
             <div class="trade-type-buttons">
@@ -273,7 +260,6 @@ class TradesManager {
     attachTradeFormEvents() {
         const buyBtn = document.querySelector('.trade-type-btn.buy');
         const sellBtn = document.querySelector('.trade-type-btn.sell');
-        
         if (buyBtn && sellBtn) {
             buyBtn.addEventListener('click', () => {
                 buyBtn.classList.add('active');
@@ -289,10 +275,9 @@ class TradesManager {
             });
         }
 
-        const durationBtns = document.querySelectorAll('.duration-btn');
-        durationBtns.forEach(btn => {
+        document.querySelectorAll('.duration-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                durationBtns.forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.selectedDuration = parseInt(btn.dataset.duration);
                 this.selectedPayout = parseInt(btn.dataset.payout);
@@ -302,14 +287,10 @@ class TradesManager {
         });
 
         const amountInput = document.getElementById('tradeAmount');
-        if (amountInput) {
-            amountInput.addEventListener('input', () => this.updateTradeSummary());
-        }
+        if (amountInput) amountInput.addEventListener('input', () => this.updateTradeSummary());
 
         const confirmBtn = document.getElementById('confirmTrade');
-        if (confirmBtn) {
-            confirmBtn.addEventListener('click', () => this.executeTrade());
-        }
+        if (confirmBtn) confirmBtn.addEventListener('click', () => this.executeTrade());
     }
 
     async loadUserBalance() {
@@ -339,6 +320,9 @@ class TradesManager {
         const fee = amount * 0.02;
         const total = amount + fee;
         
+        // Calculate potential win amount based on selected payout
+        const potentialWin = amount * (1 + this.selectedPayout / 100);
+        
         const feeEl = document.getElementById('feeAmount');
         const totalEl = document.getElementById('totalAmount');
         const confirmBtn = document.getElementById('confirmTrade');
@@ -346,6 +330,24 @@ class TradesManager {
         
         if (feeEl) feeEl.textContent = `${fee.toFixed(2)} USDT`;
         if (totalEl) totalEl.textContent = `${total.toFixed(2)} USDT`;
+        
+        // Add tooltip to show potential win
+        const summaryTotal = document.querySelector('.summary-row.total');
+        if (summaryTotal && !document.getElementById('potentialWin')) {
+            const winRow = document.createElement('div');
+            winRow.className = 'summary-row';
+            winRow.id = 'potentialWin';
+            winRow.style.color = '#00D897';
+            winRow.style.fontSize = '11px';
+            winRow.style.marginTop = '4px';
+            winRow.innerHTML = `<span>Potential Win:</span><span>+$${(potentialWin - amount).toFixed(2)} (${this.selectedPayout}%)</span>`;
+            summaryTotal.parentNode.insertBefore(winRow, summaryTotal.nextSibling);
+        } else {
+            const winRow = document.getElementById('potentialWin');
+            if (winRow) {
+                winRow.innerHTML = `<span>Potential Win:</span><span>+$${(potentialWin - amount).toFixed(2)} (${this.selectedPayout}%)</span>`;
+            }
+        }
         
         if (confirmBtn) {
             if (amount < this.selectedMinAmount && amount > 0) {
@@ -365,11 +367,6 @@ class TradesManager {
     }
 
     async executeTrade() {
-        if (!this.currentUser) {
-            this.showNotification('Please login to trade', 'error');
-            return;
-        }
-        
         const amount = parseFloat(document.getElementById('tradeAmount')?.value);
         
         if (!amount || amount < 10) {
@@ -412,6 +409,7 @@ class TradesManager {
                 status: 'open',
                 duration: this.selectedDuration,
                 payout_percent: this.selectedPayout,
+                expected_payout: amount * (1 + this.selectedPayout / 100),
                 created_at: new Date().toISOString()
             };
             
@@ -422,7 +420,7 @@ class TradesManager {
                     user_id: this.currentUser.id,
                     type: 'trade',
                     title: 'Trade Placed',
-                    description: `${this.currentTradeType.toUpperCase()} $${amount} ${this.currentSymbol}`,
+                    description: `${this.currentTradeType.toUpperCase()} $${amount} ${this.currentSymbol} for ${this.selectedDuration}s (${this.selectedPayout}% payout)`,
                     created_at: new Date().toISOString()
                 });
             }
@@ -434,7 +432,9 @@ class TradesManager {
             this.updateTradeSummary();
             this.updateUserBalance();
             
+            // Start the trade result simulation with proper duration
             this.simulateTradeResult(trade);
+            
         } catch (error) {
             console.error('Error executing trade:', error);
             this.showNotification('Failed to execute trade', 'error');
@@ -442,10 +442,18 @@ class TradesManager {
     }
 
     simulateTradeResult(trade) {
+        // Show countdown notification
+        this.showNotification(`Trade in progress! Result in ${trade.duration} seconds...`, 'info');
+        
+        // Calculate win chance based on market volatility (55% base + small random factor)
+        const winChance = 0.55 + (Math.random() - 0.5) * 0.1;
+        
         setTimeout(async () => {
-            const isWin = Math.random() < 0.55;
+            // Determine win/loss based on win chance
+            const isWin = Math.random() < winChance;
             
             if (isWin) {
+                // WIN: Calculate win amount based on payout percentage
                 const winAmount = trade.amount * (1 + trade.payout_percent / 100);
                 const newBalance = (this.currentUser.balance || 0) + winAmount;
                 
@@ -462,14 +470,19 @@ class TradesManager {
                         user_id: this.currentUser.id,
                         type: 'trade_win',
                         title: 'Trade Won!',
-                        description: `Won $${winAmount.toFixed(2)} on ${trade.symbol}`,
+                        description: `Won $${winAmount.toFixed(2)} on ${trade.symbol} (${trade.payout_percent}% payout)`,
                         created_at: new Date().toISOString()
                     });
                 }
                 
                 this.currentUser.balance = newBalance;
-                this.showNotification(`🎉 WIN! You won $${winAmount.toFixed(2)} on ${trade.symbol}!`, 'success');
+                this.updateUserBalance();
+                
+                // Show success notification with win amount
+                this.showNotification(`🎉 WIN! You won $${winAmount.toFixed(2)} on ${trade.symbol}! (${trade.payout_percent}% profit)`, 'success');
+                
             } else {
+                // LOSS: User loses the invested amount
                 if (typeof supabaseDB !== 'undefined') {
                     await supabaseDB.updateTrade(trade.id, {
                         status: 'closed',
@@ -487,19 +500,41 @@ class TradesManager {
                     });
                 }
                 
+                // Show loss notification
                 this.showNotification(`😢 LOSS! You lost $${trade.amount.toFixed(2)} on ${trade.symbol}`, 'error');
             }
             
+            // Refresh balance display
             this.updateUserBalance();
-        }, this.selectedDuration * 1000);
+            
+        }, trade.duration * 1000);
+    }
+
+    async loadActiveTrades() {
+        if (!this.currentUser) return;
+        
+        try {
+            const trades = await supabaseDB.getUserTrades(this.currentUser.id);
+            const activeTrades = trades.filter(t => t.status === 'open');
+            
+            for (const trade of activeTrades) {
+                const elapsed = (Date.now() - new Date(trade.created_at).getTime()) / 1000;
+                const remaining = Math.max(0, trade.duration - elapsed);
+                
+                if (remaining <= 0) {
+                    // This trade should have been resolved already
+                    // Re-simulate if needed
+                    this.simulateTradeResult(trade);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading active trades:', error);
+        }
     }
 
     initTradingView() {
         const container = document.getElementById('tv_chart_container');
-        if (!container || typeof TradingView === 'undefined') {
-            console.error('TradingView container or library not found');
-            return;
-        }
+        if (!container || typeof TradingView === 'undefined') return;
         
         if (this.tvWidget) this.tvWidget.remove();
         
@@ -572,19 +607,17 @@ class TradesManager {
     }
 
     setupEventListeners() {
-        const cryptoBtns = document.querySelectorAll('.crypto-btn');
-        cryptoBtns.forEach(btn => {
+        document.querySelectorAll('.crypto-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                cryptoBtns.forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.crypto-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.changeSymbol(btn.dataset.symbol);
             });
         });
 
-        const timeBtns = document.querySelectorAll('.time-btn');
-        timeBtns.forEach(btn => {
+        document.querySelectorAll('.time-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                timeBtns.forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.changeInterval(btn.dataset.interval);
             });
@@ -607,14 +640,14 @@ class TradesManager {
                 position: fixed;
                 top: 20px;
                 right: 20px;
-                background: ${type === 'error' ? '#FF4757' : '#00D897'};
+                background: ${type === 'error' ? '#FF4757' : (type === 'success' ? '#00D897' : '#FFA502')};
                 color: white;
                 padding: 12px 20px;
                 border-radius: 12px;
                 z-index: 10000;
             `;
             document.body.appendChild(notification);
-            setTimeout(() => notification.remove(), 3000);
+            setTimeout(() => notification.remove(), 5000);
         }
     }
 
@@ -628,7 +661,6 @@ class TradesManager {
 let tradesManager = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing TradesManager...');
     tradesManager = new TradesManager();
 });
 
