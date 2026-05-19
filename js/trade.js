@@ -247,6 +247,14 @@ class TradesManager {
                     <span>Total to Pay:</span>
                     <span id="totalAmount" style="color: #00D897;">0.00 USDT</span>
                 </div>
+                <div class="summary-row potential-win" id="potentialWinRow" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <span>🎯 Potential Win:</span>
+                    <span id="potentialWinAmount" style="color: #00D897; font-weight: 700;">$0.00</span>
+                </div>
+                <div class="summary-row total-return" id="totalReturnRow">
+                    <span>💰 Total Return if Win:</span>
+                    <span id="totalReturnAmount" style="color: #00D897; font-weight: 700;">$0.00</span>
+                </div>
             </div>
 
             <button class="confirm-btn" id="confirmTrade">Confirm Trade</button>
@@ -320,32 +328,37 @@ class TradesManager {
         const fee = amount * 0.02;
         const total = amount + fee;
         
-        // Calculate potential win amount based on selected payout
-        const potentialWin = amount * (1 + this.selectedPayout / 100);
+        // Calculate potential win based on selected payout percentage
+        const profitAmount = amount * (this.selectedPayout / 100);
+        const totalReturn = amount + profitAmount;
         
         const feeEl = document.getElementById('feeAmount');
         const totalEl = document.getElementById('totalAmount');
+        const potentialWinEl = document.getElementById('potentialWinAmount');
+        const totalReturnEl = document.getElementById('totalReturnAmount');
         const confirmBtn = document.getElementById('confirmTrade');
         const balance = this.currentUser?.balance || 0;
         
         if (feeEl) feeEl.textContent = `${fee.toFixed(2)} USDT`;
         if (totalEl) totalEl.textContent = `${total.toFixed(2)} USDT`;
         
-        // Add tooltip to show potential win
-        const summaryTotal = document.querySelector('.summary-row.total');
-        if (summaryTotal && !document.getElementById('potentialWin')) {
-            const winRow = document.createElement('div');
-            winRow.className = 'summary-row';
-            winRow.id = 'potentialWin';
-            winRow.style.color = '#00D897';
-            winRow.style.fontSize = '11px';
-            winRow.style.marginTop = '4px';
-            winRow.innerHTML = `<span>Potential Win:</span><span>+$${(potentialWin - amount).toFixed(2)} (${this.selectedPayout}%)</span>`;
-            summaryTotal.parentNode.insertBefore(winRow, summaryTotal.nextSibling);
-        } else {
-            const winRow = document.getElementById('potentialWin');
-            if (winRow) {
-                winRow.innerHTML = `<span>Potential Win:</span><span>+$${(potentialWin - amount).toFixed(2)} (${this.selectedPayout}%)</span>`;
+        // Update potential win display
+        if (potentialWinEl) {
+            if (amount > 0) {
+                potentialWinEl.innerHTML = `+$${profitAmount.toFixed(2)} (${this.selectedPayout}%)`;
+                potentialWinEl.style.color = '#00D897';
+            } else {
+                potentialWinEl.textContent = '$0.00';
+            }
+        }
+        
+        // Update total return display
+        if (totalReturnEl) {
+            if (amount > 0) {
+                totalReturnEl.innerHTML = `$${totalReturn.toFixed(2)}`;
+                totalReturnEl.style.color = '#00D897';
+            } else {
+                totalReturnEl.textContent = '$0.00';
             }
         }
         
@@ -389,6 +402,9 @@ class TradesManager {
         
         const newBalance = (this.currentUser.balance || 0) - total;
         
+        // Calculate expected win amount based on payout percentage
+        const expectedWinAmount = amount * (1 + this.selectedPayout / 100);
+        
         try {
             if (typeof supabaseDB !== 'undefined') {
                 await supabaseDB.updateUserBalance(this.currentUser.id, newBalance);
@@ -409,7 +425,7 @@ class TradesManager {
                 status: 'open',
                 duration: this.selectedDuration,
                 payout_percent: this.selectedPayout,
-                expected_payout: amount * (1 + this.selectedPayout / 100),
+                expected_payout: expectedWinAmount,
                 created_at: new Date().toISOString()
             };
             
@@ -442,8 +458,12 @@ class TradesManager {
     }
 
     simulateTradeResult(trade) {
+        // Calculate profit amount based on payout percentage
+        const profitAmount = trade.amount * (trade.payout_percent / 100);
+        const winAmount = trade.amount + profitAmount;
+        
         // Show countdown notification
-        this.showNotification(`Trade in progress! Result in ${trade.duration} seconds...`, 'info');
+        this.showNotification(`Trade in progress! Result in ${trade.duration} seconds... Potential profit: $${profitAmount.toFixed(2)} (${trade.payout_percent}%)`, 'info');
         
         // Calculate win chance based on market volatility (55% base + small random factor)
         const winChance = 0.55 + (Math.random() - 0.5) * 0.1;
@@ -453,8 +473,7 @@ class TradesManager {
             const isWin = Math.random() < winChance;
             
             if (isWin) {
-                // WIN: Calculate win amount based on payout percentage
-                const winAmount = trade.amount * (1 + trade.payout_percent / 100);
+                // WIN: User gets bet amount + profit based on payout percentage
                 const newBalance = (this.currentUser.balance || 0) + winAmount;
                 
                 if (typeof supabaseDB !== 'undefined') {
@@ -463,6 +482,7 @@ class TradesManager {
                         status: 'closed',
                         result: 'win',
                         pnl: winAmount,
+                        profit_percent: trade.payout_percent,
                         closed_at: new Date().toISOString()
                     });
                     await supabaseDB.createUserActivity({
@@ -470,7 +490,7 @@ class TradesManager {
                         user_id: this.currentUser.id,
                         type: 'trade_win',
                         title: 'Trade Won!',
-                        description: `Won $${winAmount.toFixed(2)} on ${trade.symbol} (${trade.payout_percent}% payout)`,
+                        description: `Won $${winAmount.toFixed(2)} on ${trade.symbol} (${trade.payout_percent}% payout = $${profitAmount.toFixed(2)} profit)`,
                         created_at: new Date().toISOString()
                     });
                 }
@@ -478,8 +498,8 @@ class TradesManager {
                 this.currentUser.balance = newBalance;
                 this.updateUserBalance();
                 
-                // Show success notification with win amount
-                this.showNotification(`🎉 WIN! You won $${winAmount.toFixed(2)} on ${trade.symbol}! (${trade.payout_percent}% profit)`, 'success');
+                // Show success notification with win amount and profit breakdown
+                this.showNotification(`🎉 WIN! You won $${winAmount.toFixed(2)} on ${trade.symbol}! ($${profitAmount.toFixed(2)} profit at ${trade.payout_percent}% payout)`, 'success');
                 
             } else {
                 // LOSS: User loses the invested amount
