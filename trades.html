@@ -346,7 +346,7 @@
         }
         .duration-time { font-size: 12px; font-weight: 700; }
         .duration-payout { font-size: 10px; color: #00D897; margin-top: 2px; }
-        .duration-min { font-size: 8px; color: #5A6475; }
+        .duration-min { font-size: 8px; color: #00D897; margin-top: 2px; }
         .trade-summary {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
@@ -483,7 +483,7 @@
     
     <script>
         // ============================================
-        // TRADES PAGE WITH TRADE PREVIEW
+        // TRADES PAGE WITH MIN/MAX LIMITS
         // ============================================
         
         let currentUser = null;
@@ -493,8 +493,19 @@
         let selectedDuration = 30;
         let selectedPayout = 12;
         let selectedMinAmount = 100;
+        let selectedMaxAmount = 10000;
         let tvWidget = null;
         let priceUpdateInterval = null;
+
+        // Duration configuration with Min and Max limits
+        const durationConfig = {
+            30: { payout: 12, min: 100, max: 10000 },
+            60: { payout: 18, min: 15000, max: 45000 },
+            90: { payout: 25, min: 50000, max: 120000 },
+            120: { payout: 30, min: 200000, max: 350000 },
+            180: { payout: 35, min: 500000, max: 750000 },
+            300: { payout: 45, min: 1000000, max: 1300000 }
+        };
 
         const cryptoData = {
             BTC: { name: 'Bitcoin', pair: 'BINANCE:BTCUSDT', price: 78312.00 },
@@ -628,6 +639,12 @@
             `;
         }
 
+        function formatNumber(num) {
+            if (num >= 1000000) return '$' + (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return '$' + (num / 1000).toFixed(1) + 'K';
+            return '$' + num.toLocaleString();
+        }
+
         function showTradeForm() {
             const container = document.getElementById('tradeFormSection');
             if (!container) return;
@@ -645,45 +662,45 @@
                 </div>
                 <div class="form-group">
                     <div class="form-label">Amount (USDT)</div>
-                    <input type="number" id="tradeAmount" class="amount-input" placeholder="Enter amount" min="10" step="10">
+                    <input type="number" id="tradeAmount" class="amount-input" placeholder="Enter amount" step="10">
                 </div>
                 <div class="form-label">Select Duration</div>
                 <div class="duration-grid" id="durationGrid">
-                    <div class="duration-btn active" data-duration="30" data-payout="12" data-min="100">
+                    <div class="duration-btn active" data-duration="30" data-payout="12" data-min="100" data-max="10000">
                         <div class="duration-time">30s</div>
                         <div class="duration-payout">+12%</div>
-                        <div class="duration-min">Min $100</div>
+                        <div class="duration-min">Min: $100</div>
                     </div>
-                    <div class="duration-btn" data-duration="60" data-payout="18" data-min="100">
+                    <div class="duration-btn" data-duration="60" data-payout="18" data-min="15000" data-max="45000">
                         <div class="duration-time">60s</div>
                         <div class="duration-payout">+18%</div>
-                        <div class="duration-min">Min $100</div>
+                        <div class="duration-min">Min: $15K</div>
                     </div>
-                    <div class="duration-btn" data-duration="90" data-payout="25" data-min="100">
+                    <div class="duration-btn" data-duration="90" data-payout="25" data-min="50000" data-max="120000">
                         <div class="duration-time">90s</div>
                         <div class="duration-payout">+25%</div>
-                        <div class="duration-min">Min $100</div>
+                        <div class="duration-min">Min: $50K</div>
                     </div>
-                    <div class="duration-btn" data-duration="120" data-payout="30" data-min="100">
+                    <div class="duration-btn" data-duration="120" data-payout="30" data-min="200000" data-max="350000">
                         <div class="duration-time">120s</div>
                         <div class="duration-payout">+30%</div>
-                        <div class="duration-min">Min $100</div>
+                        <div class="duration-min">Min: $200K</div>
                     </div>
-                    <div class="duration-btn" data-duration="180" data-payout="35" data-min="100">
+                    <div class="duration-btn" data-duration="180" data-payout="35" data-min="500000" data-max="750000">
                         <div class="duration-time">180s</div>
                         <div class="duration-payout">+35%</div>
-                        <div class="duration-min">Min $100</div>
+                        <div class="duration-min">Min: $500K</div>
                     </div>
-                    <div class="duration-btn" data-duration="300" data-payout="45" data-min="100">
+                    <div class="duration-btn" data-duration="300" data-payout="45" data-min="1000000" data-max="1300000">
                         <div class="duration-time">300s</div>
                         <div class="duration-payout">+45%</div>
-                        <div class="duration-min">Min $100</div>
+                        <div class="duration-min">Min: $1M</div>
                     </div>
                 </div>
                 <div class="trade-summary">
                     <div class="summary-row">
                         <span>Available Balance:</span>
-                        <span id="availableBalance">${(currentUser?.balance || 0).toFixed(2)} USDT</span>
+                        <span id="availableBalance">${(currentUser?.balance || 0).toLocaleString()} USDT</span>
                     </div>
                     <div class="summary-row">
                         <span>Transaction Fee (2%):</span>
@@ -735,6 +752,7 @@
                     selectedDuration = parseInt(btn.dataset.duration);
                     selectedPayout = parseInt(btn.dataset.payout);
                     selectedMinAmount = parseInt(btn.dataset.min);
+                    selectedMaxAmount = parseInt(btn.dataset.max);
                     updateTradeSummary();
                 });
             });
@@ -758,7 +776,7 @@
                     currentUser.balance = userData.balance || 0;
                     const balanceEl = document.getElementById('availableBalance');
                     if (balanceEl) {
-                        balanceEl.textContent = `${currentUser.balance.toFixed(2)} USDT`;
+                        balanceEl.textContent = `${currentUser.balance.toLocaleString()} USDT`;
                         balanceEl.style.color = currentUser.balance > 0 ? '#00D897' : '#FF4757';
                     }
                 }
@@ -786,28 +804,30 @@
             if (totalEl) totalEl.textContent = `${total.toFixed(2)} USDT`;
             
             if (previewProfit && amount > 0) {
-                previewProfit.innerHTML = `+$${profitAmount.toFixed(2)} (${selectedPayout}%)`;
-                previewTotalReturn.innerHTML = `$${totalReturn.toFixed(2)}`;
-                previewLoss.innerHTML = `-$${amount.toFixed(2)}`;
+                previewProfit.innerHTML = `+$${profitAmount.toLocaleString()} (${selectedPayout}%)`;
+                previewTotalReturn.innerHTML = `$${totalReturn.toLocaleString()}`;
+                previewLoss.innerHTML = `-$${amount.toLocaleString()}`;
             } else if (previewProfit) {
                 previewProfit.innerHTML = '+$0.00';
                 previewTotalReturn.innerHTML = '$0.00';
                 previewLoss.innerHTML = '-$0.00';
             }
             
+            // Validate amount against min/max and balance
             if (confirmBtn) {
-                if (amount < selectedMinAmount && amount > 0) {
+                if (amount === 0) {
+                    confirmBtn.disabled = true;
+                    confirmBtn.textContent = 'Enter Amount';
+                } else if (amount < selectedMinAmount) {
                     confirmBtn.disabled = true;
                     confirmBtn.textContent = `Min $${selectedMinAmount.toLocaleString()}`;
+                } else if (amount > selectedMaxAmount) {
+                    confirmBtn.disabled = true;
+                    confirmBtn.textContent = `Max $${selectedMaxAmount.toLocaleString()}`;
+                    showNotification(`Maximum amount for ${selectedDuration}s is $${selectedMaxAmount.toLocaleString()}`, 'error');
                 } else if (amount > balance) {
                     confirmBtn.disabled = true;
                     confirmBtn.textContent = 'Insufficient Balance';
-                } else if (amount < 10 && amount > 0) {
-                    confirmBtn.disabled = true;
-                    confirmBtn.textContent = 'Minimum $10';
-                } else if (amount === 0) {
-                    confirmBtn.disabled = true;
-                    confirmBtn.textContent = 'Enter Amount';
                 } else {
                     confirmBtn.disabled = false;
                     confirmBtn.textContent = 'Confirm Trade';
@@ -819,12 +839,17 @@
             const amount = parseFloat(document.getElementById('tradeAmount')?.value);
             
             if (!amount || amount < 10) {
-                showNotification('Please enter a valid amount (minimum $10)', 'error');
+                showNotification('Please enter a valid amount', 'error');
                 return;
             }
             
             if (amount < selectedMinAmount) {
                 showNotification(`Minimum amount for ${selectedDuration}s is $${selectedMinAmount.toLocaleString()}`, 'error');
+                return;
+            }
+            
+            if (amount > selectedMaxAmount) {
+                showNotification(`Maximum amount for ${selectedDuration}s is $${selectedMaxAmount.toLocaleString()}`, 'error');
                 return;
             }
             
@@ -866,11 +891,11 @@
                     user_id: currentUser.id,
                     type: 'trade',
                     title: 'Trade Placed',
-                    description: `${currentTradeType.toUpperCase()} $${amount} ${currentSymbol} for ${selectedDuration}s (${selectedPayout}% payout)`,
+                    description: `${currentTradeType.toUpperCase()} $${amount.toLocaleString()} ${currentSymbol} for ${selectedDuration}s (${selectedPayout}% payout)`,
                     created_at: new Date().toISOString()
                 });
                 
-                showNotification(`Trade placed! ${currentTradeType.toUpperCase()} $${amount} for ${selectedDuration}s.`, 'success');
+                showNotification(`Trade placed! ${currentTradeType.toUpperCase()} $${amount.toLocaleString()} for ${selectedDuration}s.`, 'success');
                 
                 document.getElementById('tradeAmount').value = '';
                 updateTradeSummary();
@@ -890,7 +915,7 @@
                     currentUser.balance = userData.balance || 0;
                     const balanceEl = document.getElementById('availableBalance');
                     if (balanceEl) {
-                        balanceEl.textContent = `${currentUser.balance.toFixed(2)} USDT`;
+                        balanceEl.textContent = `${currentUser.balance.toLocaleString()} USDT`;
                         balanceEl.style.color = currentUser.balance > 0 ? '#00D897' : '#FF4757';
                     }
                 }
@@ -926,7 +951,7 @@
                         user_id: currentUser.id,
                         type: 'trade_win',
                         title: 'Trade Won!',
-                        description: `Won $${winAmount.toFixed(2)} on ${trade.symbol} ($${profitAmount.toFixed(2)} profit at ${trade.payout_percent}%)`,
+                        description: `Won $${winAmount.toLocaleString()} on ${trade.symbol} ($${profitAmount.toLocaleString()} profit at ${trade.payout_percent}%)`,
                         created_at: new Date().toISOString()
                     });
                     
@@ -940,7 +965,7 @@
                     });
                     
                     updateBalanceDisplay();
-                    showNotification(`🎉 WIN! You won $${winAmount.toFixed(2)}! ($${profitAmount.toFixed(2)} profit at ${trade.payout_percent}%)`, 'success');
+                    showNotification(`🎉 WIN! You won $${winAmount.toLocaleString()}! ($${profitAmount.toLocaleString()} profit at ${trade.payout_percent}%)`, 'success');
                 } else {
                     await supabaseDB.updateTrade(trade.id, {
                         status: 'closed',
@@ -954,11 +979,11 @@
                         user_id: currentUser.id,
                         type: 'trade_loss',
                         title: 'Trade Lost',
-                        description: `Lost $${trade.amount.toFixed(2)} on ${trade.symbol}`,
+                        description: `Lost $${trade.amount.toLocaleString()} on ${trade.symbol}`,
                         created_at: new Date().toISOString()
                     });
                     
-                    showNotification(`😢 LOSS! You lost $${trade.amount.toFixed(2)}`, 'error');
+                    showNotification(`😢 LOSS! You lost $${trade.amount.toLocaleString()}`, 'error');
                 }
                 updateBalanceDisplay();
             }, trade.duration * 1000);
