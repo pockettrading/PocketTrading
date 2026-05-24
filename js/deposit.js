@@ -1,14 +1,11 @@
 // Deposit Page Controller - PocketTrading
 // File: js/deposit.js
-// Pure Supabase - No localStorage
 
 class DepositManager {
     constructor() {
         this.currentUser = null;
         this.selectedCurrency = 'USDT';
         this.minDeposit = 10;
-        this.selectedFile = null;
-        this.selectedFileName = null;
         this.cryptoAddresses = {
             USDT: 'TX8xKJk3g5xVHhRq2LpN7mY9wQeRtYuIoP',
             BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
@@ -53,7 +50,6 @@ class DepositManager {
         this.updateBalanceDisplay();
         this.setupEventListeners();
         this.updateSummary();
-        this.setupFileUpload();
         
         window.addEventListener('authStateChanged', (e) => {
             this.currentUser = e.detail.user;
@@ -70,34 +66,22 @@ class DepositManager {
                     resolve();
                 }
             }, 100);
-            setTimeout(() => {
-                clearInterval(check);
-                resolve();
-            }, 5000);
+            setTimeout(() => { clearInterval(check); resolve(); }, 5000);
         });
     }
 
     async waitForSession() {
         return new Promise((resolve) => {
-            if (typeof auth !== 'undefined' && auth.getUser() !== null) {
-                resolve();
-                return;
-            }
+            if (typeof auth !== 'undefined' && auth.getUser() !== null) { resolve(); return; }
             const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
-            if (userId) {
-                resolve();
-                return;
-            }
+            if (userId) { resolve(); return; }
             const check = setInterval(() => {
                 if (typeof auth !== 'undefined' && auth.getUser() !== null) {
                     clearInterval(check);
                     resolve();
                 }
             }, 100);
-            setTimeout(() => {
-                clearInterval(check);
-                resolve();
-            }, 3000);
+            setTimeout(() => { clearInterval(check); resolve(); }, 3000);
         });
     }
 
@@ -105,91 +89,17 @@ class DepositManager {
         const navLinks = document.getElementById('navLinks');
         const rightNav = document.getElementById('rightNav');
         const mobileMenu = document.getElementById('mobileMenu');
-        
         if (!navLinks) return;
         
         if (this.currentUser) {
             const isAdmin = this.currentUser.email === 'ephremgojo@gmail.com';
             const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
-            
-            navLinks.innerHTML = `
-                <a href="index.html" class="nav-link">Home</a>
-                <a href="markets.html" class="nav-link">Markets</a>
-                <a href="trades.html" class="nav-link">Trades</a>
-                <a href="profile.html" class="nav-link">My Profile</a>
-            `;
-            
-            rightNav.innerHTML = `
-                <div class="user-section">
-                    <div class="user-info">
-                        <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
-                        <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
-                    </div>
-                    ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
-                    <button class="logout-btn" onclick="window.logout()">Logout</button>
-                </div>
-            `;
-            
-            mobileMenu.innerHTML = `
-                <a href="index.html" class="mobile-nav-link">🏠 Home</a>
-                <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
-                <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
-                <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
-                ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
-                <button class="logout-btn" style="margin-top:12px;" onclick="window.logout()">Logout</button>
-            `;
+            navLinks.innerHTML = `<a href="index.html" class="nav-link">Home</a><a href="markets.html" class="nav-link">Markets</a><a href="trades.html" class="nav-link">Trades</a><a href="profile.html" class="nav-link">My Profile</a>`;
+            rightNav.innerHTML = `<div class="user-section"><div class="user-info"><div class="user-avatar">${userName.charAt(0).toUpperCase()}</div><div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div></div>${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}<button class="logout-btn" onclick="window.logout()">Logout</button></div>`;
+            mobileMenu.innerHTML = `<a href="index.html" class="mobile-nav-link">🏠 Home</a><a href="markets.html" class="mobile-nav-link">📊 Markets</a><a href="trades.html" class="mobile-nav-link">🔄 Trades</a><a href="profile.html" class="mobile-nav-link">👤 My Profile</a>${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}<button class="logout-btn" onclick="window.logout()">Logout</button>`;
         } else {
             window.location.href = 'login.html';
         }
-    }
-
-    setupFileUpload() {
-        const fileInput = document.getElementById('screenshotInput');
-        if (fileInput) {
-            fileInput.addEventListener('change', (e) => {
-                if (e.target.files && e.target.files[0]) {
-                    const file = e.target.files[0];
-                    if (file.size > 5 * 1024 * 1024) {
-                        this.showNotification('File too large. Max 5MB', 'error');
-                        return;
-                    }
-                    if (!file.type.match('image.*')) {
-                        this.showNotification('Only image files are allowed', 'error');
-                        return;
-                    }
-                    this.selectedFile = file;
-                    this.selectedFileName = file.name;
-                    
-                    const preview = document.getElementById('filePreview');
-                    const fileNameSpan = document.getElementById('fileName');
-                    if (preview && fileNameSpan) {
-                        fileNameSpan.textContent = file.name;
-                        preview.style.display = 'flex';
-                    }
-                }
-            });
-        }
-    }
-
-    removeSelectedFile() {
-        this.selectedFile = null;
-        this.selectedFileName = null;
-        const fileInput = document.getElementById('screenshotInput');
-        const preview = document.getElementById('filePreview');
-        if (fileInput) fileInput.value = '';
-        if (preview) preview.style.display = 'none';
-    }
-
-    async convertFileToBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64String = reader.result;
-                resolve(base64String);
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
     }
 
     async loadSettings() {
@@ -198,9 +108,7 @@ class DepositManager {
             if (settings && settings.trading_settings) {
                 this.minDeposit = settings.trading_settings.minTradeAmount || 10;
             }
-        } catch (error) {
-            console.error('Error loading settings:', error);
-        }
+        } catch (error) { console.error('Error loading settings:', error); }
     }
 
     async loadCryptoAddresses() {
@@ -209,9 +117,7 @@ class DepositManager {
             if (settings && settings.crypto_deposit_addresses) {
                 this.cryptoAddresses = settings.crypto_deposit_addresses;
             }
-        } catch (error) {
-            console.error('Error loading crypto addresses:', error);
-        }
+        } catch (error) { console.error('Error loading crypto addresses:', error); }
         this.updateCryptoAddress();
     }
 
@@ -219,7 +125,6 @@ class DepositManager {
         const address = this.cryptoAddresses[this.selectedCurrency] || this.cryptoAddresses['USDT'];
         const addressEl = document.getElementById('cryptoAddress');
         const addressLabel = document.getElementById('addressLabel');
-        
         if (addressEl) addressEl.textContent = address;
         if (addressLabel) {
             let network = 'TRC20';
@@ -232,9 +137,7 @@ class DepositManager {
     updateBalanceDisplay() {
         const balance = this.currentUser.balance || 0;
         const balanceEl = document.getElementById('currentBalance');
-        if (balanceEl) {
-            balanceEl.textContent = `$${balance.toLocaleString()}`;
-        }
+        if (balanceEl) balanceEl.textContent = `$${balance.toLocaleString()}`;
     }
 
     updateSummary() {
@@ -242,15 +145,11 @@ class DepositManager {
         const fee = this.networkFees[this.selectedCurrency] || 1;
         const total = amount + fee;
         
-        const summaryAmount = document.getElementById('summaryAmount');
-        const networkFee = document.getElementById('networkFee');
-        const totalAmount = document.getElementById('totalAmount');
+        document.getElementById('summaryAmount').textContent = `$${amount.toFixed(2)}`;
+        document.getElementById('networkFee').textContent = `$${fee.toFixed(4)}`;
+        document.getElementById('totalAmount').textContent = `$${total.toFixed(4)}`;
+        
         const submitBtn = document.getElementById('submitDeposit');
-        
-        if (summaryAmount) summaryAmount.textContent = `$${amount.toFixed(2)}`;
-        if (networkFee) networkFee.textContent = `$${fee.toFixed(4)}`;
-        if (totalAmount) totalAmount.textContent = `$${total.toFixed(4)}`;
-        
         if (submitBtn) {
             if (amount < this.minDeposit && amount > 0) {
                 submitBtn.disabled = true;
@@ -278,8 +177,7 @@ class DepositManager {
         
         document.querySelectorAll('.preset-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const amount = btn.dataset.amount;
-                document.getElementById('depositAmount').value = amount;
+                document.getElementById('depositAmount').value = btn.dataset.amount;
                 this.updateSummary();
             });
         });
@@ -305,11 +203,6 @@ class DepositManager {
         const fee = this.networkFees[this.selectedCurrency] || 1;
         const total = amount + fee;
         
-        let screenshotBase64 = null;
-        if (this.selectedFile) {
-            screenshotBase64 = await this.convertFileToBase64(this.selectedFile);
-        }
-        
         const depositRequest = {
             id: Date.now(),
             user_id: this.currentUser.id,
@@ -319,8 +212,6 @@ class DepositManager {
             currency: this.selectedCurrency,
             fee: fee,
             total: total,
-            screenshot: screenshotBase64,
-            screenshot_name: this.selectedFileName,
             status: 'pending',
             date: new Date().toISOString()
         };
@@ -332,14 +223,13 @@ class DepositManager {
                 user_id: this.currentUser.id,
                 type: 'deposit',
                 title: 'Deposit Request Submitted',
-                description: `$${amount} ${this.selectedCurrency} deposit requested${this.selectedFile ? ' with screenshot' : ''}`,
+                description: `$${amount} ${this.selectedCurrency} deposit requested`,
                 created_at: new Date().toISOString()
             });
             
             this.showNotification(`Deposit request submitted!\nAmount: $${amount.toFixed(2)} ${this.selectedCurrency}\n\nYour deposit will be processed within 5-30 minutes.`, 'success');
             
             document.getElementById('depositAmount').value = '';
-            this.removeSelectedFile();
             this.updateSummary();
             
             if (this.currentUser.email === 'ephremgojo@gmail.com') {
@@ -402,10 +292,7 @@ class DepositManager {
 }
 
 let depositManager = null;
-
-document.addEventListener('DOMContentLoaded', () => {
-    depositManager = new DepositManager();
-});
+document.addEventListener('DOMContentLoaded', () => { depositManager = new DepositManager(); });
 
 window.copyAddress = function() {
     const address = document.getElementById('cryptoAddress').textContent;
@@ -415,16 +302,7 @@ window.copyAddress = function() {
     }
 };
 
-window.removeSelectedFile = function() {
-    if (depositManager) depositManager.removeSelectedFile();
-};
-
 window.logout = function() {
-    if (typeof auth !== 'undefined' && auth.logout) {
-        auth.logout();
-    } else {
-        sessionStorage.removeItem('pocket_user_id');
-        localStorage.removeItem('pocket_user_id');
-        window.location.href = 'index.html';
-    }
+    if (typeof auth !== 'undefined' && auth.logout) auth.logout();
+    else window.location.href = 'index.html';
 };
