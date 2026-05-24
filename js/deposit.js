@@ -1,11 +1,14 @@
 // Deposit Page Controller - PocketTrading
 // File: js/deposit.js
+// With Screenshot Upload Support
 
 class DepositManager {
     constructor() {
         this.currentUser = null;
         this.selectedCurrency = 'USDT';
         this.minDeposit = 10;
+        this.selectedFile = null;
+        this.selectedFileName = null;
         this.cryptoAddresses = {
             USDT: 'TX8xKJk3g5xVHhRq2LpN7mY9wQeRtYuIoP',
             BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
@@ -35,7 +38,9 @@ class DepositManager {
                         this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
                         if (typeof auth !== 'undefined') auth.currentUser = user;
                     }
-                } catch (e) {}
+                } catch (e) {
+                    console.error('Error fetching user:', e);
+                }
             }
         }
         
@@ -50,6 +55,7 @@ class DepositManager {
         this.updateBalanceDisplay();
         this.setupEventListeners();
         this.updateSummary();
+        this.setupFileUpload();
         
         window.addEventListener('authStateChanged', (e) => {
             this.currentUser = e.detail.user;
@@ -100,6 +106,55 @@ class DepositManager {
         } else {
             window.location.href = 'login.html';
         }
+    }
+
+    setupFileUpload() {
+        const fileInput = document.getElementById('screenshotInput');
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    if (file.size > 5 * 1024 * 1024) {
+                        this.showNotification('File too large. Max 5MB', 'error');
+                        return;
+                    }
+                    if (!file.type.match('image.*')) {
+                        this.showNotification('Only image files are allowed', 'error');
+                        return;
+                    }
+                    this.selectedFile = file;
+                    this.selectedFileName = file.name;
+                    
+                    const preview = document.getElementById('filePreview');
+                    const fileNameSpan = document.getElementById('fileName');
+                    if (preview && fileNameSpan) {
+                        fileNameSpan.textContent = file.name;
+                        preview.style.display = 'flex';
+                    }
+                }
+            });
+        }
+    }
+
+    removeSelectedFile() {
+        this.selectedFile = null;
+        this.selectedFileName = null;
+        const fileInput = document.getElementById('screenshotInput');
+        const preview = document.getElementById('filePreview');
+        if (fileInput) fileInput.value = '';
+        if (preview) preview.style.display = 'none';
+    }
+
+    async convertFileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result;
+                resolve(base64String);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
     }
 
     async loadSettings() {
@@ -203,6 +258,11 @@ class DepositManager {
         const fee = this.networkFees[this.selectedCurrency] || 1;
         const total = amount + fee;
         
+        let screenshotBase64 = null;
+        if (this.selectedFile) {
+            screenshotBase64 = await this.convertFileToBase64(this.selectedFile);
+        }
+        
         const depositRequest = {
             id: Date.now(),
             user_id: this.currentUser.id,
@@ -212,24 +272,32 @@ class DepositManager {
             currency: this.selectedCurrency,
             fee: fee,
             total: total,
+            screenshot: screenshotBase64,
+            screenshot_name: this.selectedFileName,
             status: 'pending',
             date: new Date().toISOString()
         };
         
+        console.log('Submitting deposit request:', depositRequest);
+        
         try {
-            await supabaseDB.createDepositRequest(depositRequest);
+            const result = await supabaseDB.createDepositRequest(depositRequest);
+            console.log('Deposit request result:', result);
+            
             await supabaseDB.createUserActivity({
                 id: Date.now(),
                 user_id: this.currentUser.id,
                 type: 'deposit',
                 title: 'Deposit Request Submitted',
-                description: `$${amount} ${this.selectedCurrency} deposit requested`,
+                description: `$${amount} ${this.selectedCurrency} deposit requested${this.selectedFile ? ' with screenshot' : ''}`,
                 created_at: new Date().toISOString()
             });
             
             this.showNotification(`Deposit request submitted!\nAmount: $${amount.toFixed(2)} ${this.selectedCurrency}\n\nYour deposit will be processed within 5-30 minutes.`, 'success');
             
+            // Reset form
             document.getElementById('depositAmount').value = '';
+            this.removeSelectedFile();
             this.updateSummary();
             
             if (this.currentUser.email === 'ephremgojo@gmail.com') {
@@ -237,7 +305,7 @@ class DepositManager {
             }
         } catch (error) {
             console.error('Error submitting deposit:', error);
-            this.showNotification('Failed to submit deposit request', 'error');
+            this.showNotification('Failed to submit deposit request. Please try again.', 'error');
         }
     }
 
@@ -292,7 +360,10 @@ class DepositManager {
 }
 
 let depositManager = null;
-document.addEventListener('DOMContentLoaded', () => { depositManager = new DepositManager(); });
+document.addEventListener('DOMContentLoaded', () => { 
+    depositManager = new DepositManager();
+    window.depositManager = depositManager;
+});
 
 window.copyAddress = function() {
     const address = document.getElementById('cryptoAddress').textContent;
@@ -300,6 +371,10 @@ window.copyAddress = function() {
         navigator.clipboard.writeText(address);
         alert('Address copied to clipboard!');
     }
+};
+
+window.removeSelectedFile = function() {
+    if (depositManager) depositManager.removeSelectedFile();
 };
 
 window.logout = function() {
