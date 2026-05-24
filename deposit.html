@@ -183,10 +183,10 @@
             border-radius: 12px;
         }
 
-        /* Main Content */
+        /* Main Content - Compact */
         .main-content {
             margin-top: 70px;
-            padding: 32px;
+            padding: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -194,237 +194,197 @@
         }
 
         .deposit-card {
-            max-width: 700px;
+            max-width: 600px;
             width: 100%;
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 24px;
+            border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             overflow: hidden;
         }
 
         .card-header {
-            padding: 24px;
+            padding: 16px 20px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             background: rgba(0, 0, 0, 0.2);
         }
         .card-header h1 {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
         .card-header p {
             color: #8B93A5;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .card-body {
-            padding: 24px;
+            padding: 20px;
         }
 
+        /* Balance Display - Compact */
         .balance-display {
             background: rgba(0, 216, 151, 0.1);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 24px;
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 16px;
             text-align: center;
             border: 1px solid rgba(0, 216, 151, 0.2);
         }
         .balance-label {
-            font-size: 13px;
+            font-size: 12px;
             color: #8B93A5;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
         .balance-value {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 800;
             color: #00D897;
         }
 
+        /* Currency Selector - Compact */
         .currency-selector {
             display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
+            gap: 10px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
         }
         .currency-btn {
             flex: 1;
-            padding: 12px;
+            padding: 8px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            border-radius: 10px;
             color: white;
             cursor: pointer;
             transition: all 0.2s;
             text-align: center;
             font-weight: 600;
+            font-size: 14px;
         }
         .currency-btn.active {
             background: linear-gradient(135deg, #00D897, #00B8A0);
             border-color: transparent;
         }
 
+        /* Amount Section - Compact */
         .amount-section {
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
         .amount-label {
-            font-size: 13px;
+            font-size: 12px;
             color: #8B93A5;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             display: block;
         }
         .amount-input {
             width: 100%;
-            padding: 14px;
+            padding: 10px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            border-radius: 10px;
             color: white;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
         }
         .preset-amounts {
             display: flex;
-            gap: 12px;
-            margin-top: 12px;
+            gap: 8px;
+            margin-top: 8px;
             flex-wrap: wrap;
         }
         .preset-btn {
             flex: 1;
-            padding: 8px;
+            padding: 6px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 40px;
+            border-radius: 30px;
             color: #8B93A5;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .preset-btn:hover {
+            border-color: #00D897;
+            color: #00D897;
         }
 
+        /* Crypto Address - Compact */
         .crypto-address {
             background: rgba(0, 0, 0, 0.3);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 24px;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
             text-align: center;
         }
         .address-label {
-            font-size: 12px;
+            font-size: 11px;
             color: #8B93A5;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         .address-value {
-            font-size: 14px;
+            font-size: 12px;
             font-family: monospace;
             background: rgba(0, 0, 0, 0.5);
-            padding: 12px;
-            border-radius: 12px;
+            padding: 8px;
+            border-radius: 8px;
             word-break: break-all;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
         .copy-btn {
-            padding: 8px 20px;
+            padding: 6px 16px;
             background: rgba(0, 216, 151, 0.15);
             border: 1px solid rgba(0, 216, 151, 0.3);
-            border-radius: 40px;
+            border-radius: 30px;
             color: #00D897;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 12px;
         }
 
-        /* Screenshot Upload Section */
-        .upload-section {
-            margin-bottom: 24px;
-        }
-        .upload-label {
-            font-size: 13px;
-            color: #8B93A5;
-            margin-bottom: 8px;
-            display: block;
-        }
-        .upload-area {
-            border: 2px dashed rgba(255, 255, 255, 0.2);
-            border-radius: 16px;
-            padding: 24px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .upload-area:hover {
-            border-color: #00D897;
-            background: rgba(0, 216, 151, 0.05);
-        }
-        .upload-icon {
-            font-size: 40px;
-            margin-bottom: 8px;
-        }
-        .upload-area p {
-            font-size: 14px;
-            margin-bottom: 4px;
-        }
-        .upload-area small {
-            font-size: 11px;
-            color: #5A6475;
-        }
-        .file-input {
-            display: none;
-        }
-        .file-preview {
-            margin-top: 12px;
-            padding: 8px 12px;
-            background: rgba(0, 216, 151, 0.1);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-        }
-        .remove-file {
-            background: none;
-            border: none;
-            color: #FF4757;
-            cursor: pointer;
-            margin-left: auto;
-            font-size: 16px;
-        }
-
+        /* Summary - Compact */
         .summary {
             background: rgba(0, 0, 0, 0.2);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 24px;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
             display: flex;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 16px;
+            gap: 12px;
         }
         .summary-item {
             flex: 1;
             text-align: center;
         }
         .summary-label {
-            font-size: 12px;
+            font-size: 11px;
             color: #8B93A5;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .summary-value {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
         }
         .summary-value.total {
             color: #00D897;
-            font-size: 20px;
+            font-size: 18px;
         }
 
+        /* Submit Button - Compact */
         .submit-btn {
             width: 100%;
-            padding: 14px;
+            padding: 10px;
             background: linear-gradient(135deg, #00D897, #00B8A0);
             border: none;
-            border-radius: 40px;
+            border-radius: 30px;
             color: white;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s;
+        }
+        .submit-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 216, 151, 0.3);
         }
         .submit-btn:disabled {
             opacity: 0.5;
@@ -433,18 +393,18 @@
 
         .info-text {
             text-align: center;
-            font-size: 12px;
+            font-size: 10px;
             color: #5A6475;
-            margin-top: 20px;
+            margin-top: 12px;
         }
 
         .notification {
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 12px 20px;
-            border-radius: 12px;
-            font-size: 14px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 13px;
             z-index: 10000;
             animation: slideIn 0.3s ease-out;
             max-width: 350px;
@@ -460,9 +420,12 @@
         @media (max-width: 768px) {
             .nav-links, .guest-buttons, .user-section { display: none; }
             .mobile-menu-btn { display: block; }
-            .main-content { padding: 16px; }
+            .main-content { padding: 12px; }
             .deposit-card { max-width: 100%; }
-            .summary { flex-direction: column; }
+            .summary { flex-direction: column; gap: 8px; }
+            .summary-item { text-align: left; }
+            .preset-amounts { gap: 6px; }
+            .preset-btn { font-size: 11px; padding: 4px; }
         }
     </style>
 </head>
@@ -487,17 +450,20 @@
                 <p>Add funds to your trading account</p>
             </div>
             <div class="card-body">
+                <!-- Balance -->
                 <div class="balance-display">
                     <div class="balance-label">Current Balance</div>
                     <div class="balance-value" id="currentBalance">$0.00</div>
                 </div>
 
+                <!-- Currency Selector -->
                 <div class="currency-selector" id="currencySelector">
                     <button class="currency-btn active" data-currency="USDT">USDT</button>
                     <button class="currency-btn" data-currency="BTC">BTC</button>
                     <button class="currency-btn" data-currency="ETH">ETH</button>
                 </div>
 
+                <!-- Amount -->
                 <div class="amount-section">
                     <div class="amount-label">Amount</div>
                     <input type="number" id="depositAmount" class="amount-input" placeholder="Enter amount" min="10" step="10">
@@ -509,28 +475,14 @@
                     </div>
                 </div>
 
+                <!-- Crypto Address -->
                 <div class="crypto-address" id="cryptoAddressSection">
                     <div class="address-label" id="addressLabel">Send USDT (TRC20) to this address:</div>
                     <div class="address-value" id="cryptoAddress">TX8xKJk3g5xVHhRq2LpN7mY9wQeRtYuIoP</div>
                     <button class="copy-btn" onclick="copyAddress()">📋 Copy Address</button>
                 </div>
 
-                <!-- Screenshot Upload Section -->
-                <div class="upload-section">
-                    <div class="upload-label">Screenshot of Payment (Proof of Transfer)</div>
-                    <div class="upload-area" id="uploadArea" onclick="document.getElementById('screenshotInput').click()">
-                        <div class="upload-icon">📸</div>
-                        <p>Click or drag to upload screenshot</p>
-                        <small>PNG, JPG up to 5MB</small>
-                        <input type="file" id="screenshotInput" class="file-input" accept="image/*">
-                    </div>
-                    <div id="filePreview" style="display: none;" class="file-preview">
-                        <span>📎</span>
-                        <span id="fileName"></span>
-                        <button type="button" class="remove-file" onclick="removeSelectedFile()">✕</button>
-                    </div>
-                </div>
-
+                <!-- Summary -->
                 <div class="summary">
                     <div class="summary-item">
                         <div class="summary-label">Deposit Amount</div>
@@ -546,20 +498,29 @@
                     </div>
                 </div>
 
+                <!-- Submit Button -->
                 <button class="submit-btn" id="submitDeposit">Submit Deposit Request</button>
                 <div class="info-text">
-                    ⏱️ Deposits are processed within 5-30 minutes. Minimum deposit: $10
+                    ⏱️ Deposits processed within 5-30 minutes. Minimum: $10
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ============================================ -->
-    <!-- SCRIPTS - CORRECT ORDER IS CRITICAL         -->
-    <!-- ============================================ -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/deposit.js"></script>
+    
+    <script>
+        window.copyAddress = function() {
+            const address = document.getElementById('cryptoAddress')?.textContent;
+            if (address) {
+                navigator.clipboard.writeText(address);
+                alert('Address copied to clipboard!');
+            }
+        };
+    </script>
 </body>
 </html>
