@@ -6,6 +6,7 @@
     <title>Deposit Funds - PocketTrading</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* Same styles as before - keep compact design */
         * {
             margin: 0;
             padding: 0;
@@ -19,7 +20,6 @@
             overflow-x: hidden;
         }
 
-        /* Top Navigation Bar */
         .navbar {
             position: fixed;
             top: 0;
@@ -221,7 +221,6 @@
             padding: 20px;
         }
 
-        /* Balance Display - Compact */
         .balance-display {
             background: rgba(0, 216, 151, 0.1);
             border-radius: 12px;
@@ -241,7 +240,6 @@
             color: #00D897;
         }
 
-        /* Currency Selector - Compact */
         .currency-selector {
             display: flex;
             gap: 10px;
@@ -266,7 +264,6 @@
             border-color: transparent;
         }
 
-        /* Amount Section - Compact */
         .amount-section {
             margin-bottom: 16px;
         }
@@ -308,7 +305,6 @@
             color: #00D897;
         }
 
-        /* Crypto Address - Compact */
         .crypto-address {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 12px;
@@ -340,7 +336,6 @@
             font-size: 12px;
         }
 
-        /* Screenshot Upload - Compact */
         .upload-section {
             margin-bottom: 16px;
         }
@@ -396,7 +391,6 @@
             font-size: 14px;
         }
 
-        /* Summary - Compact */
         .summary {
             background: rgba(0, 0, 0, 0.2);
             border-radius: 12px;
@@ -425,7 +419,6 @@
             font-size: 18px;
         }
 
-        /* Submit Button - Compact */
         .submit-btn {
             width: 100%;
             padding: 10px;
@@ -506,39 +499,34 @@
                 <p>Add funds to your trading account</p>
             </div>
             <div class="card-body">
-                <!-- Balance -->
                 <div class="balance-display">
                     <div class="balance-label">Current Balance</div>
                     <div class="balance-value" id="currentBalance">$0.00</div>
                 </div>
 
-                <!-- Currency Selector -->
                 <div class="currency-selector" id="currencySelector">
                     <button class="currency-btn active" data-currency="USDT">USDT</button>
                     <button class="currency-btn" data-currency="BTC">BTC</button>
                     <button class="currency-btn" data-currency="ETH">ETH</button>
                 </div>
 
-                <!-- Amount -->
                 <div class="amount-section">
-                    <div class="amount-label">Amount</div>
-                    <input type="number" id="depositAmount" class="amount-input" placeholder="Enter amount" min="10" step="10">
+                    <div class="amount-label">Amount (Minimum $100)</div>
+                    <input type="number" id="depositAmount" class="amount-input" placeholder="Enter amount" min="100" step="10">
                     <div class="preset-amounts">
-                        <button class="preset-btn" data-amount="50">$50</button>
                         <button class="preset-btn" data-amount="100">$100</button>
                         <button class="preset-btn" data-amount="500">$500</button>
                         <button class="preset-btn" data-amount="1000">$1,000</button>
+                        <button class="preset-btn" data-amount="5000">$5,000</button>
                     </div>
                 </div>
 
-                <!-- Crypto Address -->
                 <div class="crypto-address" id="cryptoAddressSection">
                     <div class="address-label" id="addressLabel">Send USDT (TRC20) to this address:</div>
                     <div class="address-value" id="cryptoAddress">TX8xKJk3g5xVHhRq2LpN7mY9wQeRtYuIoP</div>
                     <button class="copy-btn" onclick="copyAddress()">📋 Copy Address</button>
                 </div>
 
-                <!-- Screenshot Upload Section -->
                 <div class="upload-section">
                     <div class="upload-label">Screenshot of Payment (Proof of Transfer)</div>
                     <div class="upload-area" id="uploadArea" onclick="document.getElementById('screenshotInput').click()">
@@ -554,7 +542,6 @@
                     </div>
                 </div>
 
-                <!-- Summary -->
                 <div class="summary">
                     <div class="summary-item">
                         <div class="summary-label">Deposit Amount</div>
@@ -570,16 +557,14 @@
                     </div>
                 </div>
 
-                <!-- Submit Button -->
                 <button class="submit-btn" id="submitDeposit">Submit Deposit Request</button>
                 <div class="info-text">
-                    ⏱️ Deposits processed within 5-30 minutes. Minimum: $10
+                    ⏱️ Deposits processed within 5-30 minutes. Minimum: $100
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-db.js"></script>
     <script src="js/auth.js"></script>
