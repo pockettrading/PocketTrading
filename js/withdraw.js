@@ -1,13 +1,12 @@
 // Withdrawal Page Controller - PocketTrading
 // File: js/withdraw.js
-// Pure Supabase - No localStorage
 
 class WithdrawManager {
     constructor() {
         this.currentUser = null;
         this.selectedCurrency = 'USDT';
         this.withdrawalFee = 1.5;
-        this.minWithdrawal = 10;
+        this.minWithdrawal = 100;  // Changed from 10 to 100
         this.init();
     }
 
@@ -16,8 +15,6 @@ class WithdrawManager {
         await this.waitForSession();
         
         this.currentUser = auth.getUser();
-        
-        // Fallback to sessionStorage
         if (!this.currentUser) {
             const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
             if (userId) {
@@ -28,7 +25,7 @@ class WithdrawManager {
                         this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
                         if (typeof auth !== 'undefined') auth.currentUser = user;
                     }
-                } catch (e) {}
+                } catch(e) {}
             }
         }
         
@@ -58,34 +55,22 @@ class WithdrawManager {
                     resolve();
                 }
             }, 100);
-            setTimeout(() => {
-                clearInterval(check);
-                resolve();
-            }, 5000);
+            setTimeout(() => { clearInterval(check); resolve(); }, 5000);
         });
     }
 
     async waitForSession() {
         return new Promise((resolve) => {
-            if (typeof auth !== 'undefined' && auth.getUser() !== null) {
-                resolve();
-                return;
-            }
+            if (typeof auth !== 'undefined' && auth.getUser() !== null) { resolve(); return; }
             const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
-            if (userId) {
-                resolve();
-                return;
-            }
+            if (userId) { resolve(); return; }
             const check = setInterval(() => {
                 if (typeof auth !== 'undefined' && auth.getUser() !== null) {
                     clearInterval(check);
                     resolve();
                 }
             }, 100);
-            setTimeout(() => {
-                clearInterval(check);
-                resolve();
-            }, 3000);
+            setTimeout(() => { clearInterval(check); resolve(); }, 3000);
         });
     }
 
@@ -93,39 +78,14 @@ class WithdrawManager {
         const navLinks = document.getElementById('navLinks');
         const rightNav = document.getElementById('rightNav');
         const mobileMenu = document.getElementById('mobileMenu');
-        
         if (!navLinks) return;
         
         if (this.currentUser) {
             const isAdmin = this.currentUser.email === 'ephremgojo@gmail.com';
             const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
-            
-            navLinks.innerHTML = `
-                <a href="index.html" class="nav-link">Home</a>
-                <a href="markets.html" class="nav-link">Markets</a>
-                <a href="trades.html" class="nav-link">Trades</a>
-                <a href="profile.html" class="nav-link">My Profile</a>
-            `;
-            
-            rightNav.innerHTML = `
-                <div class="user-section">
-                    <div class="user-info">
-                        <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
-                        <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
-                    </div>
-                    ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
-                    <button class="logout-btn" onclick="window.logout()">Logout</button>
-                </div>
-            `;
-            
-            mobileMenu.innerHTML = `
-                <a href="index.html" class="mobile-nav-link">🏠 Home</a>
-                <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
-                <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
-                <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
-                ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
-                <button class="logout-btn" style="margin-top:12px;" onclick="window.logout()">Logout</button>
-            `;
+            navLinks.innerHTML = `<a href="index.html" class="nav-link">Home</a><a href="markets.html" class="nav-link">Markets</a><a href="trades.html" class="nav-link">Trades</a><a href="profile.html" class="nav-link">My Profile</a>`;
+            rightNav.innerHTML = `<div class="user-section"><div class="user-info"><div class="user-avatar">${userName.charAt(0).toUpperCase()}</div><div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div></div>${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}<button class="logout-btn" onclick="window.logout()">Logout</button></div>`;
+            mobileMenu.innerHTML = `<a href="index.html" class="mobile-nav-link">🏠 Home</a><a href="markets.html" class="mobile-nav-link">📊 Markets</a><a href="trades.html" class="mobile-nav-link">🔄 Trades</a><a href="profile.html" class="mobile-nav-link">👤 My Profile</a>${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}<button class="logout-btn" onclick="window.logout()">Logout</button>`;
         } else {
             window.location.href = 'login.html';
         }
@@ -136,7 +96,7 @@ class WithdrawManager {
             const settings = await supabaseDB.getPlatformSettings();
             if (settings && settings.trading_settings) {
                 this.withdrawalFee = settings.trading_settings.withdrawalFee || 1.5;
-                this.minWithdrawal = settings.trading_settings.minTradeAmount || 10;
+                this.minWithdrawal = settings.trading_settings.minTradeAmount || 100;
             }
             const feePercentEl = document.getElementById('feePercent');
             if (feePercentEl) feePercentEl.textContent = this.withdrawalFee;
@@ -195,7 +155,6 @@ class WithdrawManager {
     }
 
     setupEventListeners() {
-        // Currency selector
         document.querySelectorAll('.currency-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.currency-btn').forEach(b => b.classList.remove('active'));
@@ -205,28 +164,22 @@ class WithdrawManager {
             });
         });
         
-        // Preset amounts
         document.querySelectorAll('.preset-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const amount = btn.dataset.amount;
-                document.getElementById('withdrawAmount').value = amount;
+                document.getElementById('withdrawAmount').value = btn.dataset.amount;
                 this.updateSummary();
             });
         });
         
-        // Amount input
         document.getElementById('withdrawAmount').addEventListener('input', () => this.updateSummary());
         
-        // Wallet address input
         const walletInput = document.getElementById('walletAddress');
         if (walletInput) {
             walletInput.addEventListener('input', () => this.updateSummary());
         }
         
-        // Submit button
         document.getElementById('submitWithdraw').addEventListener('click', () => this.submitWithdrawal());
         
-        // Mobile menu
         const mobileBtn = document.getElementById('mobileMenuBtn');
         const mobileMenu = document.getElementById('mobileMenu');
         if (mobileBtn && mobileMenu) {
@@ -287,12 +240,10 @@ class WithdrawManager {
                 'success'
             );
             
-            // Reset form
             document.getElementById('withdrawAmount').value = '';
             document.getElementById('walletAddress').value = '';
             this.updateSummary();
             
-            // Auto-approve for admin user (testing)
             if (this.currentUser.email === 'ephremgojo@gmail.com') {
                 await this.autoApproveWithdrawal(withdrawalRequest);
             }
@@ -358,19 +309,10 @@ class WithdrawManager {
     }
 }
 
-// Initialize
 let withdrawManager = null;
-
-document.addEventListener('DOMContentLoaded', () => {
-    withdrawManager = new WithdrawManager();
-});
+document.addEventListener('DOMContentLoaded', () => { withdrawManager = new WithdrawManager(); });
 
 window.logout = function() {
-    if (typeof auth !== 'undefined' && auth.logout) {
-        auth.logout();
-    } else {
-        sessionStorage.removeItem('pocket_user_id');
-        localStorage.removeItem('pocket_user_id');
-        window.location.href = 'index.html';
-    }
+    if (typeof auth !== 'undefined' && auth.logout) auth.logout();
+    else window.location.href = 'index.html';
 };
