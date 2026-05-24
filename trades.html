@@ -483,7 +483,7 @@
     
     <script>
         // ============================================
-        // TRADES PAGE WITH MIN/MAX LIMITS
+        // TRADES PAGE - FULLY WORKING TRADE EXECUTION
         // ============================================
         
         let currentUser = null;
@@ -497,7 +497,6 @@
         let tvWidget = null;
         let priceUpdateInterval = null;
 
-        // Duration configuration with Min and Max limits
         const durationConfig = {
             30: { payout: 12, min: 100, max: 10000 },
             60: { payout: 18, min: 15000, max: 45000 },
@@ -639,10 +638,15 @@
             `;
         }
 
-        function formatNumber(num) {
-            if (num >= 1000000) return '$' + (num / 1000000).toFixed(1) + 'M';
-            if (num >= 1000) return '$' + (num / 1000).toFixed(1) + 'K';
-            return '$' + num.toLocaleString();
+        async function loadUserBalance() {
+            try {
+                const userData = await supabaseDB.getUserById(currentUser.id);
+                if (userData) {
+                    currentUser.balance = userData.balance || 0;
+                }
+            } catch (error) {
+                console.error('Error loading balance:', error);
+            }
         }
 
         function showTradeForm() {
@@ -769,22 +773,6 @@
             }
         }
 
-        async function loadUserBalance() {
-            try {
-                const userData = await supabaseDB.getUserById(currentUser.id);
-                if (userData) {
-                    currentUser.balance = userData.balance || 0;
-                    const balanceEl = document.getElementById('availableBalance');
-                    if (balanceEl) {
-                        balanceEl.textContent = `${currentUser.balance.toLocaleString()} USDT`;
-                        balanceEl.style.color = currentUser.balance > 0 ? '#00D897' : '#FF4757';
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading balance:', error);
-            }
-        }
-
         function updateTradeSummary() {
             const amount = parseFloat(document.getElementById('tradeAmount')?.value) || 0;
             const fee = amount * 0.02;
@@ -799,6 +787,12 @@
             const previewLoss = document.getElementById('previewLoss');
             const confirmBtn = document.getElementById('confirmTrade');
             const balance = currentUser?.balance || 0;
+            const balanceEl = document.getElementById('availableBalance');
+            
+            if (balanceEl) {
+                balanceEl.textContent = `${balance.toLocaleString()} USDT`;
+                balanceEl.style.color = balance > 0 ? '#00D897' : '#FF4757';
+            }
             
             if (feeEl) feeEl.textContent = `${fee.toFixed(2)} USDT`;
             if (totalEl) totalEl.textContent = `${total.toFixed(2)} USDT`;
@@ -813,7 +807,6 @@
                 previewLoss.innerHTML = '-$0.00';
             }
             
-            // Validate amount against min/max and balance
             if (confirmBtn) {
                 if (amount === 0) {
                     confirmBtn.disabled = true;
@@ -899,42 +892,25 @@
                 
                 document.getElementById('tradeAmount').value = '';
                 updateTradeSummary();
-                updateBalanceDisplay();
                 
-                simulateTradeResult(trade);
+                // Simulate result after duration
+                setTimeout(() => simulateTradeResult(trade), selectedDuration * 1000);
+                
             } catch (error) {
                 console.error('Error executing trade:', error);
                 showNotification('Failed to execute trade. Please try again.', 'error');
             }
         }
 
-        async function updateBalanceDisplay() {
-            try {
-                const userData = await supabaseDB.getUserById(currentUser.id);
-                if (userData) {
-                    currentUser.balance = userData.balance || 0;
-                    const balanceEl = document.getElementById('availableBalance');
-                    if (balanceEl) {
-                        balanceEl.textContent = `${currentUser.balance.toLocaleString()} USDT`;
-                        balanceEl.style.color = currentUser.balance > 0 ? '#00D897' : '#FF4757';
-                    }
-                }
-            } catch (error) {
-                console.error('Error updating balance display:', error);
-            }
-        }
-
-        function simulateTradeResult(trade) {
+        async function simulateTradeResult(trade) {
             const profitAmount = trade.amount * (trade.payout_percent / 100);
             const winAmount = trade.amount + profitAmount;
             
-            showNotification(`Trade in progress! Result in ${trade.duration} seconds...`, 'info');
+            const isWin = Math.random() < 0.55;
             
-            setTimeout(async () => {
-                const isWin = Math.random() < 0.55;
-                
-                if (isWin) {
-                    const newBalance = (currentUser.balance || 0) + winAmount;
+            if (isWin) {
+                const newBalance = (currentUser.balance || 0) + winAmount;
+                try {
                     await supabaseDB.updateUserBalance(currentUser.id, newBalance);
                     currentUser.balance = newBalance;
                     
@@ -964,9 +940,13 @@
                         date: new Date().toISOString()
                     });
                     
-                    updateBalanceDisplay();
+                    updateTradeSummary();
                     showNotification(`🎉 WIN! You won $${winAmount.toLocaleString()}! ($${profitAmount.toLocaleString()} profit at ${trade.payout_percent}%)`, 'success');
-                } else {
+                } catch (err) {
+                    console.error('Win update error:', err);
+                }
+            } else {
+                try {
                     await supabaseDB.updateTrade(trade.id, {
                         status: 'closed',
                         result: 'loss',
@@ -983,10 +963,18 @@
                         created_at: new Date().toISOString()
                     });
                     
+                    updateTradeSummary();
                     showNotification(`😢 LOSS! You lost $${trade.amount.toLocaleString()}`, 'error');
+                } catch (err) {
+                    console.error('Loss update error:', err);
                 }
-                updateBalanceDisplay();
-            }, trade.duration * 1000);
+            }
+            // Refresh balance display
+            const balanceEl = document.getElementById('availableBalance');
+            if (balanceEl) {
+                balanceEl.textContent = `${(currentUser.balance || 0).toLocaleString()} USDT`;
+                balanceEl.style.color = currentUser.balance > 0 ? '#00D897' : '#FF4757';
+            }
         }
 
         function initTradingView() {
