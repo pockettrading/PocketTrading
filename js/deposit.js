@@ -1,12 +1,12 @@
 // Deposit Page Controller - PocketTrading
 // File: js/deposit.js
-// With Screenshot Upload Support
+// With Screenshot Upload Support - Minimum deposit $100
 
 class DepositManager {
     constructor() {
         this.currentUser = null;
         this.selectedCurrency = 'USDT';
-        this.minDeposit = 10;
+        this.minDeposit = 100;  // Changed from 10 to 100
         this.selectedFile = null;
         this.selectedFileName = null;
         this.cryptoAddresses = {
@@ -161,7 +161,7 @@ class DepositManager {
         try {
             const settings = await supabaseDB.getPlatformSettings();
             if (settings && settings.trading_settings) {
-                this.minDeposit = settings.trading_settings.minTradeAmount || 10;
+                this.minDeposit = settings.trading_settings.minTradeAmount || 100;
             }
         } catch (error) { console.error('Error loading settings:', error); }
     }
