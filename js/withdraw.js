@@ -6,7 +6,7 @@ class WithdrawManager {
         this.currentUser = null;
         this.selectedCurrency = 'USDT';
         this.withdrawalFee = 1.5;
-        this.minWithdrawal = 100;  // Changed from 10 to 100
+        this.minWithdrawal = 10;
         this.init();
     }
 
@@ -15,6 +15,7 @@ class WithdrawManager {
         await this.waitForSession();
         
         this.currentUser = auth.getUser();
+        
         if (!this.currentUser) {
             const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
             if (userId) {
@@ -25,7 +26,9 @@ class WithdrawManager {
                         this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
                         if (typeof auth !== 'undefined') auth.currentUser = user;
                     }
-                } catch(e) {}
+                } catch (e) {
+                    console.error('Error fetching user:', e);
+                }
             }
         }
         
@@ -96,7 +99,7 @@ class WithdrawManager {
             const settings = await supabaseDB.getPlatformSettings();
             if (settings && settings.trading_settings) {
                 this.withdrawalFee = settings.trading_settings.withdrawalFee || 1.5;
-                this.minWithdrawal = settings.trading_settings.minTradeAmount || 100;
+                this.minWithdrawal = settings.trading_settings.minTradeAmount || 10;
             }
             const feePercentEl = document.getElementById('feePercent');
             if (feePercentEl) feePercentEl.textContent = this.withdrawalFee;
@@ -224,8 +227,12 @@ class WithdrawManager {
             date: new Date().toISOString()
         };
         
+        console.log('Submitting withdrawal request:', withdrawalRequest);
+        
         try {
-            await supabaseDB.createWithdrawalRequest(withdrawalRequest);
+            const result = await supabaseDB.createWithdrawalRequest(withdrawalRequest);
+            console.log('Withdrawal request result:', result);
+            
             await supabaseDB.createUserActivity({
                 id: Date.now(),
                 user_id: this.currentUser.id,
@@ -240,16 +247,19 @@ class WithdrawManager {
                 'success'
             );
             
+            // Reset form
             document.getElementById('withdrawAmount').value = '';
             document.getElementById('walletAddress').value = '';
             this.updateSummary();
             
+            // Auto-approve for admin user (testing)
             if (this.currentUser.email === 'ephremgojo@gmail.com') {
                 await this.autoApproveWithdrawal(withdrawalRequest);
             }
         } catch (error) {
             console.error('Error submitting withdrawal:', error);
-            this.showNotification('Failed to submit withdrawal request', 'error');
+            console.error('Error details:', JSON.stringify(error));
+            this.showNotification('Failed to submit withdrawal request. Please try again.', 'error');
         }
     }
 
@@ -310,7 +320,9 @@ class WithdrawManager {
 }
 
 let withdrawManager = null;
-document.addEventListener('DOMContentLoaded', () => { withdrawManager = new WithdrawManager(); });
+document.addEventListener('DOMContentLoaded', () => {
+    withdrawManager = new WithdrawManager();
+});
 
 window.logout = function() {
     if (typeof auth !== 'undefined' && auth.logout) auth.logout();
