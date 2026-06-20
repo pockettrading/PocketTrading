@@ -1,53 +1,30 @@
 // Deposit Page Controller - PocketTrading
-// File: js/deposit.js
+// Fixed: BIGINT IDs, error handling, screenshot upload
 
 class DepositManager {
     constructor() {
         this.currentUser = null;
         this.selectedCurrency = 'USDT';
-        this.minDeposit = 10;
+        this.minDeposit = 100;
         this.selectedFile = null;
         this.selectedFileName = null;
         this.cryptoAddresses = {
-            USDT: 'TX8xKJk3g5xVHhRq2LpN7mY9wQeRtYuIoP',
+            USDT: '0x4788d5d7f7674ae041a64f8d1d43061a45dfd867',
             BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
             ETH: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5'
         };
-        this.networkFees = {
-            USDT: 1.00,
-            BTC: 0.0002,
-            ETH: 0.005
-        };
+        this.networkFees = { USDT: 1.00, BTC: 0.0002, ETH: 0.005 };
         this.init();
     }
 
     async init() {
         await this.waitForDependencies();
         await this.waitForSession();
-        
         this.currentUser = auth.getUser();
-        
-        if (!this.currentUser) {
-            const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
-            if (userId) {
-                try {
-                    const user = await supabaseDB.getUserById(parseInt(userId));
-                    if (user) {
-                        this.currentUser = user;
-                        this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
-                        if (typeof auth !== 'undefined') auth.currentUser = user;
-                    }
-                } catch (e) {
-                    console.error('Error fetching user:', e);
-                }
-            }
-        }
-        
         if (!this.currentUser) {
             window.location.href = 'login.html';
             return;
         }
-        
         this.updateNavbar();
         await this.loadSettings();
         await this.loadCryptoAddresses();
@@ -55,7 +32,6 @@ class DepositManager {
         this.setupEventListeners();
         this.updateSummary();
         this.setupFileUpload();
-        
         window.addEventListener('authStateChanged', (e) => {
             this.currentUser = e.detail.user;
             this.updateNavbar();
@@ -95,7 +71,6 @@ class DepositManager {
         const rightNav = document.getElementById('rightNav');
         const mobileMenu = document.getElementById('mobileMenu');
         if (!navLinks) return;
-        
         if (this.currentUser) {
             const isAdmin = this.currentUser.email === 'ephremgojo@gmail.com';
             const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
@@ -123,7 +98,6 @@ class DepositManager {
                     }
                     this.selectedFile = file;
                     this.selectedFileName = file.name;
-                    
                     const preview = document.getElementById('filePreview');
                     const fileNameSpan = document.getElementById('fileName');
                     if (preview && fileNameSpan) {
@@ -147,9 +121,7 @@ class DepositManager {
     async convertFileToBase64(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onloadend = () => {
-                resolve(reader.result);
-            };
+            reader.onloadend = () => resolve(reader.result);
             reader.onerror = reject;
             reader.readAsDataURL(file);
         });
@@ -159,11 +131,9 @@ class DepositManager {
         try {
             const settings = await supabaseDB.getPlatformSettings();
             if (settings && settings.trading_settings) {
-                this.minDeposit = settings.trading_settings.minTradeAmount || 10;
+                this.minDeposit = settings.trading_settings.minTradeAmount || 100;
             }
-        } catch (error) {
-            console.error('Error loading settings:', error);
-        }
+        } catch (error) { console.error('Error loading settings:', error); }
     }
 
     async loadCryptoAddresses() {
@@ -172,9 +142,7 @@ class DepositManager {
             if (settings && settings.crypto_deposit_addresses) {
                 this.cryptoAddresses = settings.crypto_deposit_addresses;
             }
-        } catch (error) {
-            console.error('Error loading crypto addresses:', error);
-        }
+        } catch (error) { console.error('Error loading crypto addresses:', error); }
         this.updateCryptoAddress();
     }
 
@@ -194,20 +162,16 @@ class DepositManager {
     updateBalanceDisplay() {
         const balance = this.currentUser.balance || 0;
         const balanceEl = document.getElementById('currentBalance');
-        if (balanceEl) {
-            balanceEl.textContent = `$${balance.toLocaleString()}`;
-        }
+        if (balanceEl) balanceEl.textContent = `$${balance.toLocaleString()}`;
     }
 
     updateSummary() {
         const amount = parseFloat(document.getElementById('depositAmount').value) || 0;
         const fee = this.networkFees[this.selectedCurrency] || 1;
         const total = amount + fee;
-        
         document.getElementById('summaryAmount').textContent = `$${amount.toFixed(2)}`;
         document.getElementById('networkFee').textContent = `$${fee.toFixed(4)}`;
         document.getElementById('totalAmount').textContent = `$${total.toFixed(4)}`;
-        
         const submitBtn = document.getElementById('submitDeposit');
         if (submitBtn) {
             if (amount < this.minDeposit && amount > 0) {
@@ -233,17 +197,14 @@ class DepositManager {
                 this.updateSummary();
             });
         });
-        
         document.querySelectorAll('.preset-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.getElementById('depositAmount').value = btn.dataset.amount;
                 this.updateSummary();
             });
         });
-        
         document.getElementById('depositAmount').addEventListener('input', () => this.updateSummary());
         document.getElementById('submitDeposit').addEventListener('click', () => this.submitDeposit());
-        
         const mobileBtn = document.getElementById('mobileMenuBtn');
         const mobileMenu = document.getElementById('mobileMenu');
         if (mobileBtn && mobileMenu) {
@@ -253,22 +214,23 @@ class DepositManager {
 
     async submitDeposit() {
         const amount = parseFloat(document.getElementById('depositAmount').value);
-        
         if (!amount || amount < this.minDeposit) {
             this.showNotification(`Minimum deposit amount is $${this.minDeposit}`, 'error');
             return;
         }
-        
         const fee = this.networkFees[this.selectedCurrency] || 1;
         const total = amount + fee;
-        
         let screenshotBase64 = null;
         if (this.selectedFile) {
-            screenshotBase64 = await this.convertFileToBase64(this.selectedFile);
+            try {
+                screenshotBase64 = await this.convertFileToBase64(this.selectedFile);
+            } catch (err) {
+                this.showNotification('Failed to read screenshot file', 'error');
+                return;
+            }
         }
-        
         const depositRequest = {
-            id: Date.now(),
+            id: Date.now(), // BIGINT
             user_id: this.currentUser.id,
             user_email: this.currentUser.email,
             user_name: this.currentUser.name,
@@ -281,13 +243,10 @@ class DepositManager {
             status: 'pending',
             date: new Date().toISOString()
         };
-        
-        console.log('Submitting deposit request:', depositRequest);
-        
+
         try {
             const result = await supabaseDB.createDepositRequest(depositRequest);
-            console.log('Deposit request result:', result);
-            
+            console.log('Deposit request created:', result);
             await supabaseDB.createUserActivity({
                 id: Date.now(),
                 user_id: this.currentUser.id,
@@ -296,34 +255,26 @@ class DepositManager {
                 description: `$${amount} ${this.selectedCurrency} deposit requested${this.selectedFile ? ' with screenshot' : ''}`,
                 created_at: new Date().toISOString()
             });
-            
             this.showNotification(`Deposit request submitted!\nAmount: $${amount.toFixed(2)} ${this.selectedCurrency}\n\nYour deposit will be processed within 5-30 minutes.`, 'success');
-            
-            // Reset form
             document.getElementById('depositAmount').value = '';
             this.removeSelectedFile();
             this.updateSummary();
-            
-            // Auto-approve for admin user (testing)
             if (this.currentUser.email === 'ephremgojo@gmail.com') {
                 await this.autoApproveDeposit(depositRequest);
             }
         } catch (error) {
             console.error('Error submitting deposit:', error);
-            console.error('Error details:', JSON.stringify(error));
-            this.showNotification('Failed to submit deposit request. Please try again.', 'error');
+            this.showNotification('Failed to submit deposit: ' + (error.message || 'Unknown error'), 'error');
         }
     }
 
     async autoApproveDeposit(depositRequest) {
         try {
             await supabaseDB.updateDepositRequest(depositRequest.id, { status: 'approved' });
-            
             const newBalance = (this.currentUser.balance || 0) + depositRequest.amount;
             await supabaseDB.updateUserBalance(this.currentUser.id, newBalance);
             this.currentUser.balance = newBalance;
             sessionStorage.setItem('pocket_user_id', this.currentUser.id);
-            
             await supabaseDB.createTransaction({
                 id: Date.now(),
                 user_id: this.currentUser.id,
@@ -332,7 +283,6 @@ class DepositManager {
                 description: `Deposit of $${depositRequest.amount} ${depositRequest.currency}`,
                 date: new Date().toISOString()
             });
-            
             await supabaseDB.createUserActivity({
                 id: Date.now(),
                 user_id: this.currentUser.id,
@@ -341,23 +291,21 @@ class DepositManager {
                 description: `$${depositRequest.amount} deposit has been approved`,
                 created_at: new Date().toISOString()
             });
-            
             this.updateBalanceDisplay();
             this.showNotification(`✅ Deposit auto-approved! New balance: $${newBalance.toFixed(2)}`, 'success');
         } catch (error) {
             console.error('Error auto-approving deposit:', error);
+            this.showNotification('Failed to auto-approve deposit', 'error');
         }
     }
 
     showNotification(message, type) {
         const existing = document.querySelector('.notification');
         if (existing) existing.remove();
-        
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.textContent = message;
         document.body.appendChild(notification);
-        
         setTimeout(() => {
             notification.style.animation = 'slideOut 0.3s ease-out';
             setTimeout(() => notification.remove(), 300);
@@ -366,7 +314,7 @@ class DepositManager {
 }
 
 let depositManager = null;
-document.addEventListener('DOMContentLoaded', () => { 
+document.addEventListener('DOMContentLoaded', () => {
     depositManager = new DepositManager();
     window.depositManager = depositManager;
 });
