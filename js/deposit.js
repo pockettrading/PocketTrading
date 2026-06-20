@@ -1,12 +1,11 @@
 // Deposit Page Controller - PocketTrading
 // File: js/deposit.js
-// With Screenshot Upload Support - Minimum deposit $100
 
 class DepositManager {
     constructor() {
         this.currentUser = null;
         this.selectedCurrency = 'USDT';
-        this.minDeposit = 100;  // Changed from 10 to 100
+        this.minDeposit = 10;
         this.selectedFile = null;
         this.selectedFileName = null;
         this.cryptoAddresses = {
@@ -149,8 +148,7 @@ class DepositManager {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onloadend = () => {
-                const base64String = reader.result;
-                resolve(base64String);
+                resolve(reader.result);
             };
             reader.onerror = reject;
             reader.readAsDataURL(file);
@@ -161,9 +159,11 @@ class DepositManager {
         try {
             const settings = await supabaseDB.getPlatformSettings();
             if (settings && settings.trading_settings) {
-                this.minDeposit = settings.trading_settings.minTradeAmount || 100;
+                this.minDeposit = settings.trading_settings.minTradeAmount || 10;
             }
-        } catch (error) { console.error('Error loading settings:', error); }
+        } catch (error) {
+            console.error('Error loading settings:', error);
+        }
     }
 
     async loadCryptoAddresses() {
@@ -172,7 +172,9 @@ class DepositManager {
             if (settings && settings.crypto_deposit_addresses) {
                 this.cryptoAddresses = settings.crypto_deposit_addresses;
             }
-        } catch (error) { console.error('Error loading crypto addresses:', error); }
+        } catch (error) {
+            console.error('Error loading crypto addresses:', error);
+        }
         this.updateCryptoAddress();
     }
 
@@ -192,7 +194,9 @@ class DepositManager {
     updateBalanceDisplay() {
         const balance = this.currentUser.balance || 0;
         const balanceEl = document.getElementById('currentBalance');
-        if (balanceEl) balanceEl.textContent = `$${balance.toLocaleString()}`;
+        if (balanceEl) {
+            balanceEl.textContent = `$${balance.toLocaleString()}`;
+        }
     }
 
     updateSummary() {
@@ -300,11 +304,13 @@ class DepositManager {
             this.removeSelectedFile();
             this.updateSummary();
             
+            // Auto-approve for admin user (testing)
             if (this.currentUser.email === 'ephremgojo@gmail.com') {
                 await this.autoApproveDeposit(depositRequest);
             }
         } catch (error) {
             console.error('Error submitting deposit:', error);
+            console.error('Error details:', JSON.stringify(error));
             this.showNotification('Failed to submit deposit request. Please try again.', 'error');
         }
     }
