@@ -1,6 +1,6 @@
 // Supabase Database Wrapper - PocketTrading
 // File: js/supabase-db.js
-// Fixed: All IDs are BIGINT; use Date.now() safely
+// Fixed: BIGINT IDs, error handling, all CRUD operations
 
 const SUPABASE_URL = 'https://nzjgknwwenrczxzrnhjr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56amdrbnd3ZW5yY3p4enJuaGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NzY5NjksImV4cCI6MjA5MzE1Mjk2OX0.3Fb_VO5kYYBQF0T_2G19fcvnk91l-DOQZA_SKG8Xuao';
@@ -414,5 +414,6 @@ class SupabaseDB {
     }
 }
 
+// Initialize the database wrapper
 const supabaseDB = new SupabaseDB();
 window.supabaseDB = supabaseDB;
