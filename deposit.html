@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Deposit Funds - PocketTrading</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Same styles as before - keep compact design */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0A0F1A;
+            color: #FFFFFF;
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 20, 32, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            padding: 0 32px;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .logo-icon { font-size: 28px; }
+        .logo-text {
+            font-size: 20px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav-link {
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: #8B93A5;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(0, 216, 151, 0.1);
+            color: #00D897;
+        }
+
+        .guest-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .btn-login, .btn-register {
+            padding: 8px 24px;
+            border-radius: 40px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-login {
+            background: transparent;
+            border: 1px solid rgba(0, 216, 151, 0.5);
+            color: #00D897;
+        }
+        .btn-register {
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            color: white;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 16px 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 40px;
+            cursor: pointer;
+        }
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .admin-badge {
+            font-size: 10px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            padding: 2px 8px;
+            border-radius: 20px;
+            color: white;
+            margin-left: 6px;
+        }
+        .admin-link {
+            padding: 8px 16px;
+            background: rgba(0, 216, 151, 0.15);
+            border: 1px solid rgba(0, 216, 151, 0.3);
+            border-radius: 40px;
+            color: #00D897;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .logout-btn {
+            padding: 8px 20px;
+            background: rgba(255, 71, 87, 0.15);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-radius: 40px;
+            color: #FF4757;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: white;
+            cursor: pointer;
+        }
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 70px;
+            left: 0;
+            right: 0;
+            background: #0F1420;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            z-index: 999;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .mobile-menu.show { display: flex; }
+        .mobile-nav-link {
+            padding: 12px;
+            color: #8B93A5;
+            text-decoration: none;
+            border-radius: 12px;
+        }
+
+        /* Main Content - Compact */
+        .main-content {
+            margin-top: 70px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 70px);
+        }
+
+        .deposit-card {
+            max-width: 600px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .card-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .card-header p {
+            color: #8B93A5;
+            font-size: 13px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .balance-display {
+            background: rgba(0, 216, 151, 0.1);
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 16px;
+            text-align: center;
+            border: 1px solid rgba(0, 216, 151, 0.2);
+        }
+        .balance-label {
+            font-size: 12px;
+            color: #8B93A5;
+            margin-bottom: 4px;
+        }
+        .balance-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #00D897;
+        }
+
+        .currency-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .currency-btn {
+            flex: 1;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .currency-btn.active {
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            border-color: transparent;
+        }
+
+        .amount-section {
+            margin-bottom: 16px;
+        }
+        .amount-label {
+            font-size: 12px;
+            color: #8B93A5;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .amount-input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .preset-amounts {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .preset-btn {
+            flex: 1;
+            padding: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            color: #8B93A5;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .preset-btn:hover {
+            border-color: #00D897;
+            color: #00D897;
+        }
+
+        .crypto-address {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .address-label {
+            font-size: 11px;
+            color: #8B93A5;
+            margin-bottom: 6px;
+        }
+        .address-value {
+            font-size: 12px;
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px;
+            border-radius: 8px;
+            word-break: break-all;
+            margin-bottom: 8px;
+        }
+        .copy-btn {
+            padding: 6px 16px;
+            background: rgba(0, 216, 151, 0.15);
+            border: 1px solid rgba(0, 216, 151, 0.3);
+            border-radius: 30px;
+            color: #00D897;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .upload-section {
+            margin-bottom: 16px;
+        }
+        .upload-label {
+            font-size: 12px;
+            color: #8B93A5;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .upload-area:hover {
+            border-color: #00D897;
+            background: rgba(0, 216, 151, 0.05);
+        }
+        .upload-icon {
+            font-size: 28px;
+            margin-bottom: 4px;
+        }
+        .upload-area p {
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+        .upload-area small {
+            font-size: 10px;
+            color: #5A6475;
+        }
+        .file-input {
+            display: none;
+        }
+        .file-preview {
+            margin-top: 8px;
+            padding: 6px 10px;
+            background: rgba(0, 216, 151, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        .remove-file {
+            background: none;
+            border: none;
+            color: #FF4757;
+            cursor: pointer;
+            margin-left: auto;
+            font-size: 14px;
+        }
+
+        .summary {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .summary-item {
+            flex: 1;
+            text-align: center;
+        }
+        .summary-label {
+            font-size: 11px;
+            color: #8B93A5;
+            margin-bottom: 2px;
+        }
+        .summary-value {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .summary-value.total {
+            color: #00D897;
+            font-size: 18px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #00D897, #00B8A0);
+            border: none;
+            border-radius: 30px;
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .submit-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 216, 151, 0.3);
+        }
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .info-text {
+            text-align: center;
+            font-size: 10px;
+            color: #5A6475;
+            margin-top: 12px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+            max-width: 350px;
+        }
+        .notification-success { background: rgba(0, 216, 151, 0.95); color: white; }
+        .notification-error { background: rgba(255, 71, 87, 0.95); color: white; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links, .guest-buttons, .user-section { display: none; }
+            .mobile-menu-btn { display: block; }
+            .main-content { padding: 12px; }
+            .deposit-card { max-width: 100%; }
+            .summary { flex-direction: column; gap: 8px; }
+            .summary-item { text-align: left; }
+            .preset-amounts { gap: 6px; }
+            .preset-btn { font-size: 11px; padding: 4px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <span class="logo-icon">📈</span>
+                <span class="logo-text">PocketTrading</span>
+            </a>
+            <div class="nav-links" id="navLinks"></div>
+            <div id="rightNav"></div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        </div>
+    </nav>
+    <div class="mobile-menu" id="mobileMenu"></div>
+
+    <div class="main-content">
+        <div class="deposit-card">
+            <div class="card-header">
+                <h1>Deposit Funds</h1>
+                <p>Add funds to your trading account</p>
+            </div>
+            <div class="card-body">
+                <div class="balance-display">
+                    <div class="balance-label">Current Balance</div>
+                    <div class="balance-value" id="currentBalance">$0.00</div>
+                </div>
+
+                <div class="currency-selector" id="currencySelector">
+                    <button class="currency-btn active" data-currency="USDT">USDT</button>
+                    <button class="currency-btn" data-currency="BTC">BTC</button>
+                    <button class="currency-btn" data-currency="ETH">ETH</button>
+                </div>
+
+                <div class="amount-section">
+                    <div class="amount-label">Amount (Minimum $100)</div>
+                    <input type="number" id="depositAmount" class="amount-input" placeholder="Enter amount" min="100" step="10">
+                    <div class="preset-amounts">
+                        <button class="preset-btn" data-amount="100">$100</button>
+                        <button class="preset-btn" data-amount="500">$500</button>
+                        <button class="preset-btn" data-amount="1000">$1,000</button>
+                        <button class="preset-btn" data-amount="5000">$5,000</button>
+                    </div>
+                </div>
+
+                <div class="crypto-address" id="cryptoAddressSection">
+                    <div class="address-label" id="addressLabel">Send USDT (TRC20) to this address:</div>
+                    <div class="address-value" id="cryptoAddress">TX8xKJk3g5xVHhRq2LpN7mY9wQeRtYuIoP</div>
+                    <button class="copy-btn" onclick="copyAddress()">📋 Copy Address</button>
+                </div>
+
+                <div class="upload-section">
+                    <div class="upload-label">Screenshot of Payment (Proof of Transfer)</div>
+                    <div class="upload-area" id="uploadArea" onclick="document.getElementById('screenshotInput').click()">
+                        <div class="upload-icon">📸</div>
+                        <p>Click or drag to upload screenshot</p>
+                        <small>PNG, JPG up to 5MB</small>
+                        <input type="file" id="screenshotInput" class="file-input" accept="image/*">
+                    </div>
+                    <div id="filePreview" style="display: none;" class="file-preview">
+                        <span>📎</span>
+                        <span id="fileName"></span>
+                        <button type="button" class="remove-file" onclick="removeSelectedFile()">✕</button>
+                    </div>
+                </div>
+
+                <div class="summary">
+                    <div class="summary-item">
+                        <div class="summary-label">Deposit Amount</div>
+                        <div class="summary-value" id="summaryAmount">$0.00</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Network Fee</div>
+                        <div class="summary-value" id="networkFee">$1.00</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Total to Pay</div>
+                        <div class="summary-value total" id="totalAmount">$1.00</div>
+                    </div>
+                </div>
+
+                <button class="submit-btn" id="submitDeposit">Submit Deposit Request</button>
+                <div class="info-text">
+                    ⏱️ Deposits processed within 5-30 minutes. Minimum: $100
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-db.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/deposit.js"></script>
+    
+    <script>
+        window.copyAddress = function() {
+            const address = document.getElementById('cryptoAddress')?.textContent;
+            if (address) {
+                navigator.clipboard.writeText(address);
+                alert('Address copied to clipboard!');
+            }
+        };
+        
+        window.removeSelectedFile = function() {
+            if (window.depositManager) {
+                window.depositManager.removeSelectedFile();
+            }
+        };
+    </script>
+</body>
+</html>
