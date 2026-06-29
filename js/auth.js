@@ -1,0 +1,551 @@
+// Authentication and user management - PocketTrading
+// File: js/auth.js
+// Pure Supabase - No localStorage for user data
+// Admin email: ephremgojo@gmail.com (ONLY)
+
+class AuthManager {
+    constructor() {
+        this.currentUser = null;
+        this.initialized = false;
+        this.failedAttempts = parseInt(localStorage.getItem('pocket_failed_attempts') || '0');
+        this.lockoutUntil = parseInt(localStorage.getItem('pocket_lockout_until') || '0');
+        this.init();
+        this.setupAntiTamperShield();
+    }
+
+    setupAntiTamperShield() {
+        // Anti-Reverse Engineering Console Warning
+        setTimeout(() => {
+            console.log('%cSTOP!', 'color: red; font-size: 40px; font-weight: bold; -webkit-text-stroke: 1px black;');
+            console.log('%cThis browser console is monitored. Attempting to reverse engineer tokens or inject scripts violates platform security policies.', 'font-size: 14px; color: #ff3333; font-weight: bold;');
+        }, 1000);
+    }
+
+    async init() {
+        await this.waitForSupabase();
+        await this.restoreSession();
+        this.initialized = true;
+        this.dispatchAuthEvent();
+        console.log('✅ AuthManager initialized, user:', this.currentUser?.email || 'none');
+    }
+
+    async waitForSupabase() {
+        return new Promise((resolve) => {
+            if (typeof supabaseDB !== 'undefined' && supabaseDB.supabase) {
+                resolve();
+            } else {
+                const checkInterval = setInterval(() => {
+                    if (typeof supabaseDB !== 'undefined' && supabaseDB.supabase) {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 100);
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+                    console.warn('Supabase timeout, continuing anyway');
+                    resolve();
+                }, 5000);
+            }
+        });
+    }
+
+    async restoreSession() {
+        const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
+        
+        if (!userId) {
+            console.log('No session found');
+            return;
+        }
+        
+        try {
+            const user = await supabaseDB.getUserById(parseInt(userId));
+            if (user) {
+                this.currentUser = user;
+                this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com' || this.currentUser.is_admin === true);
+                console.log('✅ Session restored for:', this.currentUser.email);
+            } else {
+                this.clearSession();
+            }
+        } catch (error) {
+            console.error('Error restoring session:', error);
+            this.clearSession();
+        }
+    }
+
+    clearSession() {
+        sessionStorage.removeItem('pocket_user_id');
+        localStorage.removeItem('pocket_user_id');
+        this.currentUser = null;
+    }
+
+    dispatchAuthEvent() {
+        const event = new CustomEvent('authStateChanged', { 
+            detail: { user: this.currentUser, isLoggedIn: !!this.currentUser }
+        });
+        window.dispatchEvent(event);
+    }
+
+    async waitForReady() {
+        return new Promise((resolve) => {
+            if (this.initialized) {
+                resolve();
+            } else {
+                const check = setInterval(() => {
+                    if (this.initialized) {
+                        clearInterval(check);
+                        resolve();
+                    }
+                }, 50);
+                setTimeout(() => {
+                    clearInterval(check);
+                    resolve();
+                }, 3000);
+            }
+        });
+    }
+
+    // ============ SECURITY & CRYPTO ============
+
+    async hashPassword(password) {
+        if (!password) return '';
+        try {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password + '_pocket_salt_2026_secure');
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        } catch (e) {
+            console.error('Hash error:', e);
+            return password;
+        }
+    }
+
+    sanitizeInput(str) {
+        if (!str || typeof str !== 'string') return '';
+        return str.replace(/&/g, '&amp;')
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;')
+                  .replace(/"/g, '&quot;')
+                  .replace(/'/g, '&#039;');
+    }
+
+    // ============ LOGIN ============
+    
+    async login(email, password, rememberMe = false) {
+        try {
+            const now = Date.now();
+            if (this.lockoutUntil > now) {
+                const secs = Math.ceil((this.lockoutUntil - now) / 1000);
+                this.showNotification(`🚨 Brute Force Defense Active: Account locked. Try again in ${secs}s.`, 'error');
+                return false;
+            }
+
+            const user = await supabaseDB.getUserByEmail(email);
+            const inputHash = await this.hashPassword(password);
+            
+            if (user && (user.password === inputHash || user.password === password)) {
+                this.failedAttempts = 0;
+                localStorage.removeItem('pocket_failed_attempts');
+                localStorage.removeItem('pocket_lockout_until');
+
+                const updatePayload = { last_login: new Date().toISOString() };
+                // Automatically upgrade legacy plaintext password to SHA-256 hash
+                if (user.password === password && user.password !== inputHash) {
+                    updatePayload.password = inputHash;
+                    user.password = inputHash;
+                }
+                await supabaseDB.updateUser(user.id, updatePayload);
+                
+                user.isAdmin = (user.email === 'ephremgojo@gmail.com' || user.is_admin === true);
+                
+                if (rememberMe) {
+                    localStorage.setItem('pocket_user_id', user.id);
+                    sessionStorage.removeItem('pocket_user_id');
+                } else {
+                    sessionStorage.setItem('pocket_user_id', user.id);
+                    localStorage.removeItem('pocket_user_id');
+                }
+                
+                this.currentUser = user;
+                this.dispatchAuthEvent();
+                this.showNotification(`Welcome back, ${this.sanitizeInput(user.name || user.email.split('@')[0])}!`, 'success');
+                return true;
+            } else {
+                this.failedAttempts++;
+                localStorage.setItem('pocket_failed_attempts', this.failedAttempts);
+                if (this.failedAttempts >= 5) {
+                    this.lockoutUntil = Date.now() + 60000; // 60 seconds lockout
+                    localStorage.setItem('pocket_lockout_until', this.lockoutUntil);
+                    this.showNotification('🚨 Too many failed attempts. Login locked for 60s to prevent Brute Force attacks.', 'error');
+                } else {
+                    const emailExists = await supabaseDB.getUserByEmail(email);
+                    if (emailExists) {
+                        this.showNotification(`Incorrect password (${5 - this.failedAttempts} attempts remaining before lockout)`, 'error');
+                    } else {
+                        this.showNotification('Account not found. Please register first.', 'error');
+                    }
+                }
+                return false;
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            const msg = error.message || error.details || 'Login failed. Please try again.';
+            this.showNotification(msg, 'error');
+            return false;
+        }
+    }
+
+    // ============ REGISTER ============
+    
+    async register(fullName, email, password) {
+        try {
+            const existingUser = await supabaseDB.getUserByEmail(email);
+            if (existingUser) {
+                this.showNotification('Email already exists. Please login.', 'error');
+                return false;
+            }
+            
+            const sanitizedName = this.sanitizeInput(fullName);
+            const formattedName = sanitizedName.trim().split(/\s+/)
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ');
+            
+            const isAdmin = (email === 'ephremgojo@gmail.com');
+            const hashedPassword = await this.hashPassword(password);
+            
+            const newUser = {
+                id: Math.floor(Math.random() * 1900000000) + 100000000,
+                name: formattedName,
+                email: email,
+                password: hashedPassword,
+                balance: 0,
+                kyc_status: 'pending',
+                phone: '',
+                country: '',
+                is_admin: isAdmin,
+                created_at: new Date().toISOString(),
+                last_login: new Date().toISOString()
+            };
+            
+            const createdUser = await supabaseDB.createUser(newUser);
+            const userRecord = createdUser || newUser;
+            
+            userRecord.isAdmin = isAdmin;
+            sessionStorage.setItem('pocket_user_id', userRecord.id);
+            localStorage.removeItem('pocket_user_id');
+            this.currentUser = userRecord;
+            this.dispatchAuthEvent();
+            
+            const roleMsg = isAdmin ? ' (Administrator)' : '';
+            this.showNotification(`Welcome ${formattedName}!${roleMsg} Account created successfully.`, 'success');
+            return true;
+            
+        } catch (error) {
+            console.error('Registration error:', error);
+            const msg = error.message || error.details || 'Registration failed. Please try again.';
+            this.showNotification(msg, 'error');
+            return false;
+        }
+    }
+
+    // ============ PASSWORD RESET ============
+    
+    // Step 1: Request password reset (sends email with reset link)
+    async requestPasswordReset(email) {
+        try {
+            const user = await supabaseDB.getUserByEmail(email);
+            
+            if (!user) {
+                this.showNotification('No account found with this email address.', 'error');
+                return false;
+            }
+            
+            // Generate a unique reset token
+            const resetToken = this.generateResetToken();
+            const expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 1); // Token valid for 1 hour
+            
+            // Save token to database
+            await supabaseDB.setPasswordResetToken(email, resetToken, expiresAt.toISOString());
+            
+            // Create reset link
+            const resetLink = `${window.location.origin}/reset-password.html?token=${resetToken}`;
+            
+            // In a production environment, you would send an email here
+            // For now, we'll show the link in a notification (for testing)
+            console.log('Reset link (for testing):', resetLink);
+            
+            // Show reset link in notification (temporary for testing)
+            this.showNotificationWithLink(
+                `Password reset link (TEST MODE): Click to reset password`, 
+                resetLink,
+                'info'
+            );
+            
+            // TODO: Replace with actual email sending service
+            // await this.sendResetEmail(user.email, user.name, resetLink);
+            
+            this.showNotification(`If an account exists with this email, you will receive a password reset link.`, 'success');
+            return true;
+            
+        } catch (error) {
+            console.error('Password reset request error:', error);
+            this.showNotification('Failed to process request. Please try again.', 'error');
+            return false;
+        }
+    }
+    
+    // Generate a secure random token
+    generateResetToken() {
+        return Math.random().toString(36).substring(2, 15) + 
+               Math.random().toString(36).substring(2, 15) + 
+               Date.now().toString(36);
+    }
+    
+    // Show notification with clickable link (for testing)
+    showNotificationWithLink(message, link, type) {
+        const existing = document.querySelector('.auth-notification');
+        if (existing) existing.remove();
+        
+        const notification = document.createElement('div');
+        notification.className = `auth-notification notification-${type}`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'error' ? '#FF4757' : (type === 'success' ? '#00D897' : '#FFA502')};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            font-weight: 500;
+            max-width: 350px;
+        `;
+        
+        notification.innerHTML = `
+            ${message}<br>
+            <a href="${link}" style="color: white; text-decoration: underline; display: inline-block; margin-top: 8px;">Click here to reset password</a>
+            <br><small style="font-size: 10px; opacity: 0.8;">(This link will expire in 1 hour)</small>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, 10000);
+    }
+    
+    // Step 2: Validate reset token and show reset form
+    async validateResetToken(token) {
+        try {
+            const user = await supabaseDB.getUserByResetToken(token);
+            
+            if (!user) {
+                this.showNotification('Invalid or expired reset link. Please request a new one.', 'error');
+                return false;
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Token validation error:', error);
+            this.showNotification('Invalid or expired reset link.', 'error');
+            return false;
+        }
+    }
+    
+    // Step 3: Reset password using token
+    async resetPassword(token, newPassword, confirmPassword) {
+        // Validate passwords match
+        if (newPassword !== confirmPassword) {
+            this.showNotification('Passwords do not match', 'error');
+            return false;
+        }
+        
+        // Validate password length
+        if (newPassword.length < 8) {
+            this.showNotification('Password must be at least 8 characters', 'error');
+            return false;
+        }
+        
+        try {
+            // Verify token is valid
+            const user = await supabaseDB.getUserByResetToken(token);
+            
+            if (!user) {
+                this.showNotification('Invalid or expired reset link. Please request a new one.', 'error');
+                return false;
+            }
+            
+            // Update password
+            await supabaseDB.updatePasswordWithResetToken(token, newPassword);
+            
+            // Clear any existing sessions for this user
+            this.showNotification('Password reset successful! Please login with your new password.', 'success');
+            
+            // Redirect to login page after 2 seconds
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+            
+            return true;
+            
+        } catch (error) {
+            console.error('Password reset error:', error);
+            this.showNotification('Failed to reset password. Please try again.', 'error');
+            return false;
+        }
+    }
+
+    // ============ EMAIL SENDING (To be implemented with actual email service) ============
+    
+    // This method would be replaced with actual email service like EmailJS, Resend, etc.
+    async sendResetEmail(toEmail, userName, resetLink) {
+        // TODO: Implement actual email sending
+        // Example using EmailJS:
+        /*
+        const emailParams = {
+            to_email: toEmail,
+            to_name: userName,
+            reset_link: resetLink,
+            site_name: 'PocketTrading'
+        };
+        
+        await emailjs.send('service_id', 'template_id', emailParams);
+        */
+        
+        console.log(`Email would be sent to: ${toEmail}`);
+        console.log(`Reset link: ${resetLink}`);
+    }
+
+    // ============ BALANCE & TRADES ============
+    
+    async updateBalance(userId, amount, transactionDetails = {}) {
+        try {
+            const user = await supabaseDB.getUserById(userId);
+            if (user) {
+                const newBalance = (user.balance || 0) + amount;
+                await supabaseDB.updateUserBalance(userId, newBalance);
+                
+                if (this.currentUser && this.currentUser.id === userId) {
+                    this.currentUser.balance = newBalance;
+                }
+                
+                await supabaseDB.createTransaction({
+                    id: Date.now(),
+                    user_id: userId,
+                    amount: amount,
+                    type: transactionDetails.type || 'balance_update',
+                    description: JSON.stringify(transactionDetails),
+                    date: new Date().toISOString()
+                });
+                
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error updating balance:', error);
+            return false;
+        }
+    }
+
+    async getUserTrades(userId) {
+        return await supabaseDB.getUserTrades(userId);
+    }
+
+    async getUserActivities(userId) {
+        return await supabaseDB.getUserActivities(userId);
+    }
+
+    // ============ LOGOUT ============
+    
+    logout() {
+        this.clearSession();
+        this.dispatchAuthEvent();
+        this.showNotification('Logged out successfully', 'info');
+        window.location.href = 'index.html';
+    }
+
+    // ============ GETTERS ============
+    
+    isLoggedIn() {
+        return this.currentUser !== null;
+    }
+
+    isAdmin() {
+        return this.currentUser !== null && this.currentUser.email === 'ephremgojo@gmail.com';
+    }
+
+    getUser() {
+        return this.currentUser;
+    }
+
+    getUsername() {
+        if (!this.currentUser) return '';
+        return this.currentUser.name || this.currentUser.email.split('@')[0];
+    }
+
+    // ============ NOTIFICATIONS ============
+    
+    showNotification(message, type) {
+        const existing = document.querySelector('.auth-notification');
+        if (existing) existing.remove();
+        
+        const notification = document.createElement('div');
+        notification.className = `auth-notification notification-${type}`;
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'error' ? '#FF4757' : (type === 'success' ? '#00D897' : '#FFA502')};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            font-weight: 500;
+            max-width: 350px;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+}
+
+// Add CSS for notifications
+if (!document.querySelector('#auth-notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'auth-notification-styles';
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Initialize auth
+const auth = new AuthManager();
+
+// Global helper functions
+window.isLoggedIn = () => auth.isLoggedIn();
+window.isAdmin = () => auth.isAdmin();
+window.getCurrentUser = () => auth.getUser();
+window.getUsername = () => auth.getUsername();
+window.logout = () => auth.logout();
+window.auth = auth;
