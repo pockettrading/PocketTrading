@@ -1,4 +1,4 @@
-
+ 
 /* PocketTrading PHP Authentication Adapter
    Staging only — preserves the existing Supabase files.
 */
