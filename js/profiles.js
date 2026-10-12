@@ -1,6 +1,19 @@
-// Profile Page Controller - PocketTrading
-// File: js/profile.js
-// Pure Supabase - No localStorage
+
+/*
+ * PocketTrading — PHP Migration Profile Controller
+ * File: js/profiles.js
+ *
+ * Staging version:
+ * - Uses the PHPAuth adapter, not the old Supabase auth manager.
+ * - Does not trust browser storage to establish a login.
+ * - Does not fabricate balances, trade history, or activity.
+ * - Does not claim unsupported KYC, password, support, or deletion
+ *   operations have succeeded.
+ *
+ * Keep this file paired with the next profile.html script update.
+ */
+
+"use strict";
 
 class ProfileManager {
     constructor() {
@@ -13,578 +26,500 @@ class ProfileManager {
     }
 
     async init() {
-        await this.waitForDependencies();
-        await this.waitForSession();
-        
-        this.currentUser = auth.getUser();
-        
-        if (!this.currentUser) {
-            const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
-            if (userId) {
-                try {
-                    const user = await supabaseDB.getUserById(parseInt(userId));
-                    if (user) {
-                        this.currentUser = user;
-                        this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
-                        if (typeof auth !== 'undefined') auth.currentUser = user;
-                    }
-                } catch (e) {
-                    console.error('Error restoring user:', e);
-                }
+        try {
+            if (!window.PHPAuth ||
+                typeof window.PHPAuth.currentUser !== "function") {
+                this.showPageMessage(
+                    "PHP authentication is not loaded. Please update profile.html before testing this page.",
+                    "error"
+                );
+                return;
             }
-        }
-        
-        if (!this.currentUser) {
-            window.location.href = 'login.html';
-            return;
-        }
-        
-        await this.loadUserData();
-        await this.loadUserTrades();
-        await this.loadUserActivities();
-        this.updateNavbar();
-        this.setupSidebar();
-        this.updateUI();
-        this.renderDashboard();
-        this.renderTradeHistory();
-        this.initCharts();
-        this.setupEventListeners();
-        
-        window.addEventListener('authStateChanged', (e) => {
-            this.currentUser = e.detail.user;
+
+            const response = await window.PHPAuth.currentUser();
+            this.currentUser = response.user || response.data?.user || null;
+
+            if (!this.currentUser) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            this.normaliseUser();
             this.updateNavbar();
-        });
-    }
+            this.setupSidebar();
+            this.updateUI();
+            this.renderDashboard();
+            this.renderTradeHistory();
+            this.initCharts();
+            this.setupEventListeners();
+            this.showUnavailableFeatureNotices();
+        } catch (error) {
+            console.error("Profile initialisation failed:", error);
 
-    async waitForDependencies() {
-        return new Promise((resolve) => {
-            const check = setInterval(() => {
-                if (typeof auth !== 'undefined' && typeof supabaseDB !== 'undefined') {
-                    clearInterval(check);
-                    resolve();
-                }
-            }, 100);
-            setTimeout(() => {
-                clearInterval(check);
-                resolve();
-            }, 5000);
-        });
-    }
-
-    async waitForSession() {
-        return new Promise((resolve) => {
-            if (typeof auth !== 'undefined' && auth.getUser() !== null) {
-                resolve();
+            if (error && (
+                error.status === 401 ||
+                /unauthori[sz]ed|not authenticated|session/i.test(error.message || "")
+            )) {
+                window.location.href = "login.html";
                 return;
             }
-            const userId = sessionStorage.getItem('pocket_user_id') || localStorage.getItem('pocket_user_id');
-            if (userId) {
-                resolve();
-                return;
-            }
-            const check = setInterval(() => {
-                if (typeof auth !== 'undefined' && auth.getUser() !== null) {
-                    clearInterval(check);
-                    resolve();
-                }
-            }, 100);
-            setTimeout(() => {
-                clearInterval(check);
-                resolve();
-            }, 3000);
-        });
+
+            this.showPageMessage(
+                "Unable to load your account from the PHP API. Check the API deployment and try again.",
+                "error"
+            );
+        }
+    }
+
+    normaliseUser() {
+        if (!this.currentUser) return;
+
+        // Accommodate common response field names without inventing data.
+        this.currentUser.name =
+            this.currentUser.name ||
+            this.currentUser.full_name ||
+            "";
+
+        this.currentUser.email = this.currentUser.email || "";
+        this.currentUser.balance = Number(this.currentUser.balance || 0);
+    }
+
+    isAdmin() {
+        // Display convenience only. All real admin permissions must be
+        // enforced by the PHP server, never by this browser check.
+        return this.currentUser?.role === "admin" ||
+            this.currentUser?.is_admin === true;
+    }
+
+    escapeHTML(value) {
+        return String(value ?? "").replace(/[&<>"']/g, character => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        })[character]);
     }
 
     updateNavbar() {
-        const navLinks = document.getElementById('navLinks');
-        const rightNav = document.getElementById('rightNav');
-        const mobileMenu = document.getElementById('mobileMenu');
-        
-        if (!navLinks) return;
-        
-        const isAdmin = this.currentUser.email === 'ephremgojo@gmail.com';
-        const userName = this.currentUser.name || this.currentUser.email.split('@')[0];
-        
-        navLinks.innerHTML = `
-            <a href="index.html" class="nav-link">Home</a>
-            <a href="markets.html" class="nav-link">Markets</a>
-            <a href="trades.html" class="nav-link">Trades</a>
-            <a href="profile.html" class="nav-link active">My Profile</a>
-        `;
-        
-        rightNav.innerHTML = `
-            <div class="user-section">
-                <div class="user-info">
-                    <div class="user-avatar">${userName.charAt(0).toUpperCase()}</div>
-                    <div class="user-name">${userName}${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</div>
+        const navLinks = document.getElementById("navLinks");
+        const rightNav = document.getElementById("rightNav");
+        const mobileMenu = document.getElementById("mobileMenu");
+
+        const email = this.currentUser?.email || "";
+        const name = this.currentUser?.name || email.split("@")[0] || "User";
+        const safeName = this.escapeHTML(name);
+        const firstLetter = this.escapeHTML(name.charAt(0).toUpperCase());
+        const adminLink = this.isAdmin()
+            ? '<a href="admin.html" class="admin-link">Admin Panel</a>'
+            : "";
+
+        if (navLinks) {
+            navLinks.innerHTML = `
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="markets.html" class="nav-link">Markets</a>
+                <a href="trades.html" class="nav-link">Trades</a>
+                <a href="profile.html" class="nav-link active">My Profile</a>
+            `;
+        }
+
+        if (rightNav) {
+            rightNav.innerHTML = `
+                <div class="user-section">
+                    <div class="user-info">
+                        <div class="user-avatar">${firstLetter}</div>
+                        <div class="user-name">${safeName}</div>
+                    </div>
+                    ${adminLink}
+                    <button type="button" class="logout-btn" id="profileLogoutBtn">
+                        Logout
+                    </button>
                 </div>
-                ${isAdmin ? '<a href="admin.html" class="admin-link">⚙️ Admin Panel</a>' : ''}
-                <button class="logout-btn" onclick="window.logout()">Logout</button>
-            </div>
-        `;
-        
-        mobileMenu.innerHTML = `
-            <a href="index.html" class="mobile-nav-link">🏠 Home</a>
-            <a href="markets.html" class="mobile-nav-link">📊 Markets</a>
-            <a href="trades.html" class="mobile-nav-link">🔄 Trades</a>
-            <a href="profile.html" class="mobile-nav-link">👤 My Profile</a>
-            ${isAdmin ? '<a href="admin.html" class="mobile-nav-link">⚙️ Admin Panel</a>' : ''}
-            <button class="logout-btn" style="margin-top:12px;" onclick="window.logout()">Logout</button>
-        `;
-        
-        const welcomeMsg = document.getElementById('welcomeMessage');
-        if (welcomeMsg) welcomeMsg.innerHTML = `Welcome back, ${userName}! 👋`;
+            `;
+
+            document.getElementById("profileLogoutBtn")
+                ?.addEventListener("click", () => this.logout());
+        }
+
+        if (mobileMenu) {
+            mobileMenu.innerHTML = `
+                <a href="index.html" class="mobile-nav-link">Home</a>
+                <a href="markets.html" class="mobile-nav-link">Markets</a>
+                <a href="trades.html" class="mobile-nav-link">Trades</a>
+                <a href="profile.html" class="mobile-nav-link">My Profile</a>
+                ${this.isAdmin()
+                    ? '<a href="admin.html" class="mobile-nav-link">Admin Panel</a>'
+                    : ""}
+                <button type="button" class="logout-btn" id="mobileProfileLogoutBtn">
+                    Logout
+                </button>
+            `;
+
+            document.getElementById("mobileProfileLogoutBtn")
+                ?.addEventListener("click", () => this.logout());
+        }
+
+        const welcome = document.getElementById("welcomeMessage");
+        if (welcome) {
+            welcome.textContent = `Welcome back, ${name}!`;
+        }
+
+        const mobileBtn = document.getElementById("mobileMenuBtn");
+        if (mobileBtn && mobileMenu && !mobileBtn.dataset.profileBound) {
+            mobileBtn.dataset.profileBound = "true";
+            mobileBtn.addEventListener("click", () => {
+                mobileMenu.classList.toggle("show");
+            });
+        }
     }
 
     setupSidebar() {
-        const sidebarItems = document.querySelectorAll('.sidebar-item');
-        sidebarItems.forEach(item => {
-            item.addEventListener('click', () => {
+        const items = document.querySelectorAll(".sidebar-item");
+
+        items.forEach(item => {
+            item.addEventListener("click", () => {
                 const tab = item.dataset.tab;
-                sidebarItems.forEach(i => i.classList.remove('active'));
-                item.classList.add('active');
-                
-                const allTabs = document.querySelectorAll('.tab-content');
-                allTabs.forEach(tabContent => {
-                    tabContent.style.display = 'none';
+                if (!tab) return;
+
+                items.forEach(entry => entry.classList.remove("active"));
+                item.classList.add("active");
+
+                document.querySelectorAll(".tab-content").forEach(content => {
+                    content.style.display = "none";
                 });
-                
-                const selectedTab = document.getElementById(`${tab}Tab`);
-                if (selectedTab) {
-                    selectedTab.style.display = 'block';
-                }
-                
-                if (tab === 'history') {
-                    this.renderTradeHistory();
-                }
+
+                const selected = document.getElementById(`${tab}Tab`);
+                if (selected) selected.style.display = "block";
+
+                document.getElementById("profileSidebar")
+                    ?.classList.remove("show");
+
+                if (tab === "history") this.renderTradeHistory();
             });
         });
-        
-        const mobileBtn = document.getElementById('mobileMenuBtn');
-        const sidebar = document.getElementById('profileSidebar');
-        if (mobileBtn && sidebar) {
-            mobileBtn.addEventListener('click', () => sidebar.classList.toggle('show'));
-        }
-    }
 
-    async loadUserData() {
-        try {
-            const userData = await supabaseDB.getUserById(this.currentUser.id);
-            if (userData) {
-                this.currentUser = { ...this.currentUser, ...userData };
-                this.currentUser.isAdmin = (this.currentUser.email === 'ephremgojo@gmail.com');
-                sessionStorage.setItem('pocket_user_id', this.currentUser.id);
-            }
-        } catch (error) {
-            console.error('Error loading user data:', error);
-        }
-    }
+        const mobileBtn = document.getElementById("mobileMenuBtn");
+        const sidebar = document.getElementById("profileSidebar");
 
-    async loadUserTrades() {
-        try {
-            this.userTrades = await supabaseDB.getUserTrades(this.currentUser.id);
-        } catch (error) {
-            console.error('Error loading trades:', error);
-            this.userTrades = [];
-        }
-    }
-
-    async loadUserActivities() {
-        try {
-            this.userActivities = await supabaseDB.getUserActivities(this.currentUser.id, 10);
-        } catch (error) {
-            console.error('Error loading activities:', error);
-            this.userActivities = [];
+        if (mobileBtn && sidebar && !mobileBtn.dataset.sidebarBound) {
+            mobileBtn.dataset.sidebarBound = "true";
+            mobileBtn.addEventListener("click", () => {
+                sidebar.classList.toggle("show");
+            });
         }
     }
 
     updateUI() {
-        const displayName = document.getElementById('displayName');
-        const displayEmail = document.getElementById('displayEmail');
-        const displayMemberSince = document.getElementById('displayMemberSince');
-        const profileBalance = document.getElementById('profileBalance');
-        const displayKyc = document.getElementById('displayKyc');
-        const updateFullName = document.getElementById('updateFullName');
-        const updatePhone = document.getElementById('updatePhone');
-        const updateCountry = document.getElementById('updateCountry');
-        const kycFullName = document.getElementById('kycFullName');
-        
-        if (displayName) displayName.textContent = this.currentUser.name || 'N/A';
-        if (displayEmail) displayEmail.textContent = this.currentUser.email;
-        if (displayMemberSince) {
-            displayMemberSince.textContent = this.currentUser.created_at 
-                ? new Date(this.currentUser.created_at).toLocaleDateString() 
-                : 'N/A';
+        const user = this.currentUser || {};
+
+        this.setText("displayName", user.name || "Not provided");
+        this.setText("displayEmail", user.email || "Not available");
+        this.setText(
+            "displayMemberSince",
+            user.created_at
+                ? new Date(user.created_at).toLocaleDateString()
+                : "Not available"
+        );
+
+        this.setText(
+            "profileBalance",
+            `$${Number(user.balance || 0).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}`
+        );
+
+        const kyc = document.getElementById("displayKyc");
+        if (kyc) {
+            // Show only a status supplied by the API.
+            const status = String(user.kyc_status || "unknown").toLowerCase();
+            kyc.textContent = status === "verified"
+                ? "Verified"
+                : status === "pending"
+                    ? "Pending Review"
+                    : status === "rejected"
+                        ? "Rejected"
+                        : "Not verified";
+
+            kyc.className = "kyc-badge " +
+                (status === "verified"
+                    ? "kyc-verified"
+                    : status === "pending"
+                        ? "kyc-pending"
+                        : "kyc-none");
         }
-        if (profileBalance) profileBalance.textContent = `$${(this.currentUser.balance || 0).toLocaleString()}`;
-        
-        if (displayKyc) {
-            const kycStatus = this.currentUser.kyc_status || 'pending';
-            displayKyc.textContent = kycStatus === 'verified' ? 'Verified ✓' : (kycStatus === 'pending' ? 'Pending Review' : 'Not Verified');
-            displayKyc.className = `kyc-badge kyc-${kycStatus === 'verified' ? 'verified' : (kycStatus === 'pending' ? 'pending' : 'none')}`;
-        }
-        
-        if (updateFullName) updateFullName.value = this.currentUser.name || '';
-        if (updatePhone) updatePhone.value = this.currentUser.phone || '';
-        if (updateCountry) updateCountry.value = this.currentUser.country || '';
-        if (kycFullName) kycFullName.value = this.currentUser.name || '';
+
+        const fullName = document.getElementById("updateFullName");
+        const phone = document.getElementById("updatePhone");
+        const country = document.getElementById("updateCountry");
+        const kycName = document.getElementById("kycFullName");
+
+        if (fullName) fullName.value = user.name || "";
+        if (phone) phone.value = user.phone || "";
+        if (country) country.value = user.country || "";
+        if (kycName) kycName.value = user.name || "";
+    }
+
+    setText(id, value) {
+        const element = document.getElementById(id);
+        if (element) element.textContent = String(value ?? "");
     }
 
     renderDashboard() {
-        const dashBalance = document.getElementById('dashBalance');
-        const dashTotalTrades = document.getElementById('dashTotalTrades');
-        const dashWinRate = document.getElementById('dashWinRate');
-        const dashPnL = document.getElementById('dashPnL');
-        const statTotalTrades = document.getElementById('statTotalTrades');
-        const statWinRate = document.getElementById('statWinRate');
-        const statTotalVolume = document.getElementById('statTotalVolume');
-        
-        const totalTrades = this.userTrades.length;
-        const closedTrades = this.userTrades.filter(t => t.status === 'closed');
-        const winningTrades = closedTrades.filter(t => (t.pnl || 0) > 0).length;
-        const winRate = closedTrades.length > 0 ? (winningTrades / closedTrades.length * 100).toFixed(1) : 0;
-        const totalPnL = this.userTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
-        const totalVolume = this.userTrades.reduce((sum, t) => sum + (t.amount || 0), 0);
-        const balance = this.currentUser.balance || 0;
-        
-        if (dashBalance) dashBalance.innerHTML = `$${balance.toLocaleString()}`;
-        if (dashTotalTrades) dashTotalTrades.textContent = totalTrades;
-        if (dashWinRate) dashWinRate.textContent = `${winRate}%`;
-        if (dashPnL) {
-            dashPnL.innerHTML = `<span class="${totalPnL >= 0 ? 'positive' : 'negative'}">${totalPnL >= 0 ? '+' : ''}$${Math.abs(totalPnL).toLocaleString()}</span>`;
-        }
-        if (statTotalTrades) statTotalTrades.textContent = totalTrades;
-        if (statWinRate) statWinRate.textContent = `${winRate}%`;
-        if (statTotalVolume) statTotalVolume.textContent = `$${totalVolume.toLocaleString()}`;
-        
-        this.renderRecentActivity();
-    }
+        // The current PHP API does not yet provide a confirmed profile
+        // trade-history and activity response. Do not show invented totals.
+        this.setText("dashBalance", "Not available");
+        this.setText("dashTotalTrades", "—");
+        this.setText("dashWinRate", "—");
+        this.setText("statTotalTrades", "—");
+        this.setText("statWinRate", "—");
+        this.setText("statTotalVolume", "—");
 
-    renderRecentActivity() {
-        const container = document.getElementById('recentActivityList');
-        if (!container) return;
-        
-        if (this.userActivities.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:20px; color:#8B93A5;">No recent activity. Start trading!</div>';
-            return;
+        const pnl = document.getElementById("dashPnL");
+        if (pnl) pnl.textContent = "Not available";
+
+        const activity = document.getElementById("recentActivityList");
+        if (activity) {
+            activity.textContent =
+                "Account activity will appear here after the PHP activity endpoint is implemented.";
         }
-        
-        container.innerHTML = this.userActivities.slice(0, 5).map(activity => `
-            <div class="activity-item">
-                <div><strong>${activity.title || activity.type}</strong><br><small style="color:#8B93A5">${activity.description || ''}</small></div>
-                <div><small>${this.formatDate(activity.created_at)}</small></div>
-            </div>
-        `).join('');
     }
 
     renderTradeHistory() {
-        const tbody = document.getElementById('tradeHistoryBody');
+        const tbody = document.getElementById("tradeHistoryBody");
         if (!tbody) return;
-        
-        if (this.userTrades.length === 0) {
-            tbody.innerHTML = '</table><td colspan="6" style="text-align:center; padding:40px;">No trades yet. Start trading from the Markets page!<\/td><\/tr>';
-            return;
-        }
-        
-        let html = '';
-        this.userTrades.slice().reverse().forEach(trade => {
-            html += `
-                <tr>
-                    <td>${new Date(trade.created_at).toLocaleDateString()}</td>
-                    <td>${trade.symbol}/USD</td>
-                    <td class="${trade.type === 'buy' ? 'positive' : 'negative'}">${trade.type?.toUpperCase() || 'N/A'}</td>
-                    <td>$${(trade.amount || 0).toLocaleString()}</td>
-                    <td class="${(trade.pnl || 0) >= 0 ? 'positive' : 'negative'}">${(trade.pnl || 0) >= 0 ? '+' : ''}$${Math.abs(trade.pnl || 0).toLocaleString()}</td>
-                    <td><span class="kyc-badge ${trade.status === 'open' ? 'kyc-pending' : 'kyc-verified'}">${trade.status || 'N/A'}</span></td>
-                </tr>
-            `;
-        });
-        tbody.innerHTML = html;
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align:center;padding:32px;">
+                    Trade history is not connected to the PHP API yet.
+                </td>
+            </tr>
+        `;
     }
 
     initCharts() {
-        const pnlCtx = document.getElementById('pnlChart')?.getContext('2d');
-        const distCtx = document.getElementById('distributionChart')?.getContext('2d');
-        const pnlEmptyMsg = document.getElementById('pnlEmptyMessage');
-        const distEmptyMsg = document.getElementById('distEmptyMessage');
-        
-        // PnL Chart
-        if (pnlCtx) {
-            const closedTrades = this.userTrades.filter(t => t.status === 'closed');
-            
-            if (closedTrades.length === 0) {
-                if (pnlEmptyMsg) pnlEmptyMsg.style.display = 'block';
-                if (this.pnlChart) this.pnlChart.destroy();
-            } else {
-                if (pnlEmptyMsg) pnlEmptyMsg.style.display = 'none';
-                
-                const last7Days = [];
-                const dailyPnL = [];
-                for (let i = 6; i >= 0; i--) {
-                    const date = new Date();
-                    date.setDate(date.getDate() - i);
-                    last7Days.push(date.toLocaleDateString());
-                    
-                    const dayPnL = closedTrades.filter(t => {
-                        const tradeDate = new Date(t.closed_at || t.created_at);
-                        return tradeDate.toLocaleDateString() === date.toLocaleDateString();
-                    }).reduce((sum, t) => sum + (t.pnl || 0), 0);
-                    dailyPnL.push(dayPnL);
-                }
-                
-                if (this.pnlChart) this.pnlChart.destroy();
-                this.pnlChart = new Chart(pnlCtx, {
-                    type: 'line',
-                    data: {
-                        labels: last7Days,
-                        datasets: [{
-                            label: 'Daily P&L',
-                            data: dailyPnL,
-                            borderColor: '#00D897',
-                            backgroundColor: 'rgba(0,216,151,0.1)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { labels: { color: '#FFFFFF' } }
-                        },
-                        scales: {
-                            x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } },
-                            y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#FFFFFF' } }
-                        }
-                    }
-                });
-            }
-        }
-        
-        // Distribution Chart
-        if (distCtx) {
-            const closedTrades = this.userTrades.filter(t => t.status === 'closed');
-            const wins = closedTrades.filter(t => (t.pnl || 0) > 0).length;
-            const losses = closedTrades.filter(t => (t.pnl || 0) <= 0).length;
-            
-            if (closedTrades.length === 0) {
-                if (distEmptyMsg) distEmptyMsg.style.display = 'block';
-                if (this.distributionChart) this.distributionChart.destroy();
-            } else {
-                if (distEmptyMsg) distEmptyMsg.style.display = 'none';
-                
-                if (this.distributionChart) this.distributionChart.destroy();
-                this.distributionChart = new Chart(distCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Winning Trades', 'Losing Trades'],
-                        datasets: [{
-                            data: [wins, losses],
-                            backgroundColor: ['#00D897', '#FF4757'],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { labels: { color: '#FFFFFF' } }
-                        }
-                    }
-                });
-            }
-        }
-    }
+        const pnlEmpty = document.getElementById("pnlEmptyMessage");
+        const distEmpty = document.getElementById("distEmptyMessage");
 
-    async updateProfile(e) {
-        e.preventDefault();
-        
-        const fullName = document.getElementById('updateFullName').value;
-        const phone = document.getElementById('updatePhone').value;
-        const country = document.getElementById('updateCountry').value;
-        const currentPass = document.getElementById('currentPassword').value;
-        const newPass = document.getElementById('newPassword').value;
-        const confirmPass = document.getElementById('confirmNewPassword').value;
-        
-        if (newPass && newPass !== confirmPass) {
-            this.showNotification('New passwords do not match', 'error');
-            return;
+        if (pnlEmpty) {
+            pnlEmpty.style.display = "block";
+            pnlEmpty.textContent =
+                "Chart unavailable until verified trade-history data is connected.";
         }
-        if (newPass && newPass.length < 8) {
-            this.showNotification('Password must be at least 8 characters', 'error');
-            return;
-        }
-        if (currentPass && currentPass !== this.currentUser.password) {
-            this.showNotification('Current password is incorrect', 'error');
-            return;
-        }
-        
-        const updates = { name: fullName, phone: phone, country: country };
-        if (newPass) updates.password = newPass;
-        
-        try {
-            await supabaseDB.updateUser(this.currentUser.id, updates);
-            this.currentUser = { ...this.currentUser, ...updates };
-            sessionStorage.setItem('pocket_user_id', this.currentUser.id);
-            this.showNotification('Profile updated successfully!', 'success');
-            
-            document.getElementById('currentPassword').value = '';
-            document.getElementById('newPassword').value = '';
-            document.getElementById('confirmNewPassword').value = '';
-            this.updateUI();
-            this.updateNavbar();
-        } catch (error) {
-            this.showNotification('Failed to update profile', 'error');
-        }
-    }
 
-    async submitKYC() {
-        const fullName = document.getElementById('kycFullName').value;
-        const dob = document.getElementById('kycDob').value;
-        const idType = document.getElementById('kycIdType').value;
-        
-        if (!fullName || !dob || !idType) {
-            this.showNotification('Please fill all fields', 'error');
-            return;
+        if (distEmpty) {
+            distEmpty.style.display = "block";
+            distEmpty.textContent =
+                "Chart unavailable until verified trade-history data is connected.";
         }
-        
-        try {
-            await supabaseDB.updateUserKYCStatus(this.currentUser.id, 'pending');
-            await supabaseDB.createKYCRequest({
-                id: Date.now(),
-                user_id: this.currentUser.id,
-                user_email: this.currentUser.email,
-                full_name: fullName,
-                dob: dob,
-                id_type: idType,
-                status: 'pending',
-                date: new Date().toISOString()
-            });
-            await supabaseDB.createUserActivity({
-                id: Date.now(),
-                user_id: this.currentUser.id,
-                type: 'kyc',
-                title: 'KYC Submitted',
-                description: 'Identity verification documents submitted',
-                created_at: new Date().toISOString()
-            });
-            
-            this.currentUser.kyc_status = 'pending';
-            this.updateUI();
-            
-            const kycForm = document.getElementById('kycForm');
-            const kycPendingMessage = document.getElementById('kycPendingMessage');
-            if (kycForm) kycForm.style.display = 'none';
-            if (kycPendingMessage) kycPendingMessage.style.display = 'block';
-            
-            this.showNotification('KYC documents submitted for review!', 'success');
-        } catch (error) {
-            this.showNotification('Failed to submit KYC', 'error');
-        }
-    }
 
-    async sendSupport() {
-        const subject = document.getElementById('supportSubject').value;
-        const message = document.getElementById('supportMessage').value;
-        
-        if (!subject || !message) {
-            this.showNotification('Please fill all fields', 'error');
-            return;
+        if (this.pnlChart) {
+            this.pnlChart.destroy();
+            this.pnlChart = null;
         }
-        
-        try {
-            await supabaseDB.createUserActivity({
-                id: Date.now(),
-                user_id: this.currentUser.id,
-                type: 'support',
-                title: 'Support Ticket',
-                description: `Subject: ${subject}`,
-                created_at: new Date().toISOString()
-            });
-            this.showNotification(`Support ticket submitted!\nSubject: ${subject}\n\nWe will respond within 24 hours.`, 'success');
-            document.getElementById('supportSubject').value = '';
-            document.getElementById('supportMessage').value = '';
-        } catch (error) {
-            this.showNotification('Failed to submit support ticket', 'error');
-        }
-    }
 
-    async deleteAccount() {
-        if (!confirm('Are you sure you want to delete your account? This cannot be undone!')) return;
-        
-        try {
-            for (const trade of this.userTrades) {
-                await supabaseDB.delete('trades', trade.id);
-            }
-            await supabaseDB.deleteUser(this.currentUser.id);
-            
-            sessionStorage.removeItem('pocket_user_id');
-            localStorage.removeItem('pocket_user_id');
-            this.showNotification('Account deleted successfully', 'success');
-            setTimeout(() => window.location.href = 'index.html', 2000);
-        } catch (error) {
-            this.showNotification('Failed to delete account', 'error');
-        }
-    }
-
-    formatDate(dateString) {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffMs = now - date;
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMs / 3600000);
-        const diffDays = Math.floor(diffMs / 86400000);
-        
-        if (diffMins < 1) return 'Just now';
-        if (diffMins < 60) return `${diffMins} minutes ago`;
-        if (diffHours < 24) return `${diffHours} hours ago`;
-        if (diffDays < 7) return `${diffDays} days ago`;
-        return date.toLocaleDateString();
-    }
-
-    showNotification(message, type) {
-        if (typeof auth !== 'undefined' && auth.showNotification) {
-            auth.showNotification(message, type);
-        } else {
-            const notification = document.createElement('div');
-            notification.textContent = message;
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: ${type === 'error' ? '#FF4757' : '#00D897'};
-                color: white;
-                padding: 12px 20px;
-                border-radius: 12px;
-                z-index: 10000;
-            `;
-            document.body.appendChild(notification);
-            setTimeout(() => notification.remove(), 3000);
+        if (this.distributionChart) {
+            this.distributionChart.destroy();
+            this.distributionChart = null;
         }
     }
 
     setupEventListeners() {
-        const updateForm = document.getElementById('updateProfileForm');
-        if (updateForm) updateForm.addEventListener('submit', (e) => this.updateProfile(e));
+        const updateForm = document.getElementById("updateProfileForm");
+
+        if (updateForm) {
+            updateForm.addEventListener("submit", event => {
+                event.preventDefault();
+                this.updateProfile();
+            });
+        }
+    }
+
+    async updateProfile() {
+        const nameInput = document.getElementById("updateFullName");
+        const phoneInput = document.getElementById("updatePhone");
+        const countryInput = document.getElementById("updateCountry");
+        const currentPassword = document.getElementById("currentPassword");
+        const newPassword = document.getElementById("newPassword");
+        const confirmPassword = document.getElementById("confirmNewPassword");
+
+        const name = nameInput?.value.trim() || "";
+        const phone = phoneInput?.value.trim() || "";
+        const country = countryInput?.value || "";
+        const newPass = newPassword?.value || "";
+        const confirmPass = confirmPassword?.value || "";
+
+        if (!name) {
+            this.showNotification("Please enter your full name.", "error");
+            return;
+        }
+
+        if (newPass || confirmPass || (currentPassword?.value || "")) {
+            this.showNotification(
+                "Password changes are not enabled on this page yet. They must be implemented through a secure PHP endpoint.",
+                "error"
+            );
+            return;
+        }
+
+        try {
+            /*
+             * This calls the existing PHP profile endpoint.
+             * The PHP server must validate the session and permitted fields.
+             * Do not treat phone/country as saved unless the API confirms it.
+             */
+            const result = await window.PHPAuth.request("profile/update", {
+                method: "POST",
+                body: {
+                    name,
+                    full_name: name,
+                    phone,
+                    country
+                }
+            });
+
+            const updatedUser =
+                result.user ||
+                result.data?.user ||
+                result.data ||
+                {};
+
+            this.currentUser = {
+                ...this.currentUser,
+                ...updatedUser,
+                name: updatedUser.name ||
+                    updatedUser.full_name ||
+                    name
+            };
+
+            this.updateUI();
+            this.updateNavbar();
+
+            if (currentPassword) currentPassword.value = "";
+            if (newPassword) newPassword.value = "";
+            if (confirmPassword) confirmPassword.value = "";
+
+            this.showNotification(
+                "The PHP API accepted the profile update. Verify the saved fields after refreshing.",
+                "success"
+            );
+        } catch (error) {
+            console.error("Profile update failed:", error);
+            this.showNotification(
+                error.message || "Profile update failed. No change was confirmed.",
+                "error"
+            );
+        }
+    }
+
+    async submitKYC() {
+        this.showNotification(
+            "KYC submission is not connected yet. Do not upload identity documents until secure PHP document storage and review endpoints are implemented.",
+            "error"
+        );
+    }
+
+    async sendSupport() {
+        this.showNotification(
+            "Support messages are not connected to a PHP support endpoint yet. Your message has not been sent.",
+            "error"
+        );
+    }
+
+    async deleteAccount() {
+        this.showNotification(
+            "Account deletion is not enabled. A secure server-side deletion endpoint and confirmation process are required.",
+            "error"
+        );
+    }
+
+    showUnavailableFeatureNotices() {
+        const kycForm = document.getElementById("kycForm");
+        if (kycForm) {
+            const notice = document.createElement("p");
+            notice.className = "migration-notice";
+            notice.style.cssText =
+                "padding:12px;margin:12px 0;border-radius:8px;background:rgba(255,165,2,.12);color:#FFA502;";
+            notice.textContent =
+                "KYC upload is temporarily unavailable while secure document handling is implemented.";
+            kycForm.prepend(notice);
+        }
+    }
+
+    async logout() {
+        try {
+            await window.PHPAuth.logout();
+        } catch (error) {
+            console.error("PHP logout request failed:", error);
+        } finally {
+            window.location.href = "login.html";
+        }
+    }
+
+    showPageMessage(message, type = "info") {
+        let box = document.getElementById("profileMigrationMessage");
+
+        if (!box) {
+            box = document.createElement("div");
+            box.id = "profileMigrationMessage";
+            box.style.cssText =
+                "position:relative;margin:16px;padding:14px;border-radius:10px;z-index:10;";
+            document.body.prepend(box);
+        }
+
+        box.style.background = type === "error"
+            ? "rgba(255,71,87,.15)"
+            : "rgba(0,216,151,.12)";
+        box.style.color = type === "error" ? "#FF6B78" : "#00D897";
+        box.textContent = message;
+    }
+
+    showNotification(message, type = "info") {
+        let notification = document.getElementById("profileNotification");
+
+        if (!notification) {
+            notification = document.createElement("div");
+            notification.id = "profileNotification";
+            notification.style.cssText = [
+                "position:fixed",
+                "top:20px",
+                "right:16px",
+                "left:16px",
+                "max-width:460px",
+                "margin-left:auto",
+                "padding:14px 16px",
+                "border-radius:10px",
+                "z-index:10000",
+                "box-shadow:0 8px 24px rgba(0,0,0,.3)",
+                "font-size:14px"
+            ].join(";");
+            document.body.appendChild(notification);
+        }
+
+        notification.style.background = type === "error"
+            ? "#4a1d25"
+            : "#123b31";
+        notification.style.color = "#ffffff";
+        notification.textContent = message;
+
+        if (this.notificationTimeout) {
+            clearTimeout(this.notificationTimeout);
+        }
+
+        this.notificationTimeout = setTimeout(() => {
+            notification.remove();
+        }, 5000);
     }
 }
 
 let profileManager = null;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
     profileManager = new ProfileManager();
 });
 
 window.submitKYC = () => profileManager?.submitKYC();
 window.sendSupport = () => profileManager?.sendSupport();
 window.deleteAccount = () => profileManager?.deleteAccount();
-window.logout = function() {
-    if (typeof auth !== 'undefined' && auth.logout) {
-        auth.logout();
-    } else {
-        sessionStorage.removeItem('pocket_user_id');
-        localStorage.removeItem('pocket_user_id');
-        window.location.href = 'index.html';
-    }
-};
+window.logout = () => profileManager?.logout();
